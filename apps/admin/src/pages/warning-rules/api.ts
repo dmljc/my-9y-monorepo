@@ -5,6 +5,7 @@ import { MOCK_RULES } from "./utils";
 export interface RuleListParams {
 	pageNum: number;
 	pageSize: number;
+	name?: string;
 }
 
 /** 列表返回结果 */
@@ -20,12 +21,16 @@ const rulesStore: WarningRule[] = [...MOCK_RULES];
 /** 获取报警规则列表（分页） */
 export function list(params: RuleListParams): Promise<RuleListResult> {
 	// return request.get("/api/warning/rules", { params });
+	const keyword = params.name?.trim().toLowerCase();
+	const filtered = keyword
+		? rulesStore.filter((item) => item.name.toLowerCase().includes(keyword))
+		: rulesStore;
 	const { pageNum, pageSize } = params;
 	const start = (pageNum - 1) * pageSize;
 
 	return Promise.resolve({
-		list: rulesStore.slice(start, start + pageSize),
-		total: rulesStore.length,
+		list: filtered.slice(start, start + pageSize),
+		total: filtered.length,
 		pageNum,
 		pageSize,
 	});

@@ -1,198 +1,227 @@
-import { App, Button, Empty, Input, Table } from "antd";
+import { App, Button, DatePicker, Empty, Input, Select, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
+import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type DeviceRecord, list, remove, sync } from "./api";
+import { useSearchParams } from "react-router-dom";
+import { type DeviceRecord, list } from "./api";
 import styles from "./index.module.css";
+import {
+  ASSET_NAME_OPTIONS,
+  ASSET_TYPE_OPTIONS,
+  DEFAULT_FILTER,
+  type DeviceFilter,
+  PROPERTY_OPTIONS,
+  parseFilterFromSearch,
+  toListParams,
+} from "./utils";
+
+const { RangePicker } = DatePicker;
 
 const DeviceData = () => {
-	const { message: showMsg, modal: confirmModal } = App.useApp();
-	const [tableLoading, setTableLoading] = useState(false);
-	const [draftDeviceName, setDraftDeviceName] = useState("");
-	const [appliedDeviceName, setAppliedDeviceName] = useState("");
-	const [dataSource, setDataSource] = useState<DeviceRecord[]>([]);
-	const [total, setTotal] = useState(0);
-	const [pageNum, setPageNum] = useState(1);
-	const [pageSize, setPageSize] = useState(10);
+  const { message: showMsg } = App.useApp();
+  const [searchParams] = useSearchParams();
+  const [draftFilter, setDraftFilter] = useState<DeviceFilter>(() =>
+    parseFilterFromSearch(searchParams.toString()),
+  );
+  const [appliedFilter, setAppliedFilter] = useState<DeviceFilter>(() =>
+    parseFilterFromSearch(searchParams.toString()),
+  );
+  const [tableLoading, setTableLoading] = useState(false);
+  const [dataSource, setDataSource] = useState<DeviceRecord[]>([]);
+  const [total, setTotal] = useState(0);
+  const [pageNum, setPageNum] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-	const loadData = useCallback(
-		async (p: number, ps: number, deviceName = appliedDeviceName) => {
-			setTableLoading(true);
-			try {
-				const result = await list({
-					pageNum: p,
-					pageSize: ps,
-					deviceName,
-				});
-				setDataSource(result.list);
-				setTotal(result.total);
-				setPageNum(result.pageNum);
-				setPageSize(result.pageSize);
-			} catch {
-				showMsg.error("加载设备数据失败");
-			} finally {
-				setTableLoading(false);
-			}
-		},
-		[appliedDeviceName, showMsg],
-	);
+  const assetNameOptions = useMemo(
+    () =>
+      draftFilter.assetType
+        ? (ASSET_NAME_OPTIONS[draftFilter.assetType] ?? [])
+        : [],
+    [draftFilter.assetType],
+  );
 
-	const initRef = useRef(false);
-	useEffect(() => {
-		if (!initRef.current) {
-			initRef.current = true;
-			void loadData(pageNum, pageSize);
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+  const loadData = useCallback(
+    async (p: number, ps: number, filter: DeviceFilter = appliedFilter) => {
+      setTableLoading(true);
+      try {
+        const result = await list(toListParams(p, ps, filter));
+        setDataSource(result.list);
+        setTotal(result.total);
+        setPageNum(result.pageNum);
+        setPageSize(result.pageSize);
+      } catch {
+        showMsg.error("加载设备数据失败");
+      } finally {
+        setTableLoading(false);
+      }
+    },
+    [appliedFilter, showMsg],
+  );
 
-	const handleSearch = () => {
-		const nextDeviceName = draftDeviceName.trim();
-		setAppliedDeviceName(nextDeviceName);
-		setPageNum(1);
-		void loadData(1, pageSize, nextDeviceName);
-	};
+  const initRef = useRef(false);
+  useEffect(() => {
+    if (!initRef.current) {
+      initRef.current = true;
+      void loadData(pageNum, pageSize, appliedFilter);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-	const [syncing, setSyncing] = useState(false);
+  const handleSearch = () => {
+    setAppliedFilter({ ...draftFilter });
+    setPageNum(1);
+    void loadData(1, pageSize, draftFilter);
+  };
 
-	const handleSync = useCallback(async () => {
-		setSyncing(true);
-		try {
-			await sync();
-			showMsg.success("同步成功");
-			await loadData(pageNum, pageSize);
-		} catch {
-			showMsg.error("同步失败");
-		} finally {
-			setSyncing(false);
-		}
-	}, [loadData, pageNum, pageSize, showMsg]);
+  const handleReset = () => {
+    setDraftFilter(DEFAULT_FILTER);
+    setAppliedFilter(DEFAULT_FILTER);
+    setPageNum(1);
+    void loadData(1, pageSize, DEFAULT_FILTER);
+  };
 
-	const handleDelete = useCallback(
-		(record: DeviceRecord) => {
-			confirmModal.confirm({
-				title: "确认删除",
-				content: `确定要删除设备数据「${record.deviceName}」吗？`,
-				okText: "删除",
-				okButtonProps: { danger: true },
-				cancelText: "取消",
-				onOk: async () => {
-					await remove(record.id);
-					showMsg.success("删除成功");
-					await loadData(pageNum, pageSize);
-				},
-			});
-		},
-		[confirmModal, loadData, pageNum, pageSize, showMsg],
-	);
+  const handleTableChange = (pagination: TablePaginationConfig) => {
+    const nextPageNum = pagination.current ?? 1;
+    const nextPageSize = pagination.pageSize ?? 10;
+    setPageNum(nextPageNum);
+    setPageSize(nextPageSize);
+    void loadData(nextPageNum, nextPageSize);
+  };
 
-	const handleTableChange = (pagination: TablePaginationConfig) => {
-		const nextPageNum = pagination.current ?? 1;
-		const nextPageSize = pagination.pageSize ?? 10;
-		setPageNum(nextPageNum);
-		setPageSize(nextPageSize);
-		void loadData(nextPageNum, nextPageSize);
-	};
+  const columns = useMemo<ColumnsType<DeviceRecord>>(
+    () => [
+      {
+        title: "物模型名称",
+        dataIndex: "modelName",
+        key: "modelName",
+        ellipsis: true,
+      },
+      {
+        title: "点位名称",
+        dataIndex: "pointName",
+        key: "pointName",
+        ellipsis: true,
+      },
+      {
+        title: "点位ID",
+        dataIndex: "pointId",
+        key: "pointId",
+        ellipsis: true,
+      },
+      {
+        title: "类型",
+        dataIndex: "type",
+        key: "type",
+      },
+      {
+        title: "值",
+        dataIndex: "value",
+        key: "value",
+      },
+      {
+        title: "时间",
+        dataIndex: "time",
+        key: "time",
+      },
+    ],
+    [],
+  );
 
-	const columns = useMemo<ColumnsType<DeviceRecord>>(
-		() => [
-			{ title: "点位名称", dataIndex: "pointName", key: "pointName" },
-			{
-				title: "地址",
-				dataIndex: "address",
-				key: "address",
-			},
-			{ title: "设备名称", dataIndex: "deviceName", key: "deviceName" },
-			{
-				title: "类型",
-				dataIndex: "type",
-				key: "type",
-				width: 100,
-			},
-			{
-				title: "值",
-				dataIndex: "value",
-				key: "value",
-				width: 100,
-			},
-			{
-				title: "时间",
-				dataIndex: "time",
-				key: "time",
-				width: 180,
-			},
-			{
-				title: "操作",
-				key: "actions",
-				width: 120,
-				render: (_: unknown, record) => (
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleDelete(record)}
-					>
-						删除
-					</Button>
-				),
-			},
-		],
-		[handleDelete],
-	);
+  return (
+    <div className={styles.device}>
+      <section className={styles.panel}>
+        <div className={styles.filterBar}>
+          <span className={styles.filterLabel}>物模型名称：</span>
+          <Input
+            className={styles.modelNameInput}
+            placeholder="请输入物模型名称查询"
+            value={draftFilter.modelName}
+            allowClear
+            onChange={(event) =>
+              setDraftFilter((prev) => ({
+                ...prev,
+                modelName: event.target.value,
+              }))
+            }
+            onPressEnter={handleSearch}
+          />
 
-	return (
-		<div className={styles.device}>
-			<section className={styles.panel}>
-				<header className={styles.panelHeader}>
-					<div className={styles.filterBar}>
-						<span className={styles.filterLabel}>设备名称</span>
-						<Input
-							className={styles.searchInput}
-							placeholder="请输入设备名称"
-							value={draftDeviceName}
-							allowClear
-							onChange={(event) =>
-								setDraftDeviceName(event.target.value)
-							}
-							onPressEnter={handleSearch}
-						/>
-						<Button type="primary" onClick={handleSearch}>
-							查询
-						</Button>
-					</div>
-					<Button
-						type="default"
-						loading={syncing}
-						onClick={handleSync}
-						className={styles.syncButton}
-					>
-						同步
-					</Button>
-				</header>
+          <div className={styles.filterItem}>
+            <span className={styles.filterLabel}>点位名称</span>
+            <Select
+              className={styles.filterSelect}
+              placeholder="请选择"
+              allowClear
+              options={PROPERTY_OPTIONS}
+              value={draftFilter.property}
+              onChange={(value) =>
+                setDraftFilter((prev) => ({
+                  ...prev,
+                  property: value,
+                }))
+              }
+            />
+          </div>
 
-				<div className={styles.tableWrap}>
-					<Table
-						size="middle"
-						className={styles.deviceTable}
-						columns={columns}
-						dataSource={dataSource}
-						rowKey="id"
-						loading={tableLoading}
-						locale={{
-							emptyText: <Empty description="暂无设备数据" />,
-						}}
-						pagination={{
-							current: pageNum,
-							pageSize,
-							total,
-							showSizeChanger: true,
-							showQuickJumper: true,
-							showTotal: (count: number) => `共 ${count} 条`,
-						}}
-						onChange={handleTableChange}
-					/>
-				</div>
-			</section>
-		</div>
-	);
+          <div className={styles.filterItem}>
+            <span className={styles.filterLabel}>时间</span>
+            <RangePicker
+              format="YYYY-MM-DD HH:mm"
+              showTime={{ format: "HH:mm" }}
+              className={styles.filterRange}
+              placeholder={["开始时间", "结束时间"]}
+              value={
+                draftFilter.dateRange
+                  ? [
+                      dayjs(draftFilter.dateRange[0]),
+                      dayjs(draftFilter.dateRange[1]),
+                    ]
+                  : null
+              }
+              onChange={(_, dateStrings) => {
+                const [start, end] = dateStrings;
+                setDraftFilter((prev) => ({
+                  ...prev,
+                  dateRange: start && end ? [start, end] : null,
+                }));
+              }}
+            />
+          </div>
+
+          <div className={styles.filterActions}>
+            <Button type="primary" onClick={handleSearch}>
+              查询
+            </Button>
+            <Button onClick={handleReset}>重置</Button>
+          </div>
+        </div>
+
+        <div className={styles.tableWrap}>
+          <Table
+            size="middle"
+            className={styles.deviceTable}
+            columns={columns}
+            dataSource={dataSource}
+            rowKey="id"
+            loading={tableLoading}
+            scroll={{ x: 960 }}
+            locale={{
+              emptyText: <Empty description="暂无设备数据" />,
+            }}
+            pagination={{
+              current: pageNum,
+              pageSize,
+              total,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (count: number) => `共 ${count} 条`,
+            }}
+            onChange={handleTableChange}
+          />
+        </div>
+      </section>
+    </div>
+  );
 };
 
 export default DeviceData;

@@ -1,5 +1,5 @@
 import { PlusOutlined } from "@ant-design/icons";
-import { App, Button, Empty, Switch, Table, Tag } from "antd";
+import { App, Button, Empty, Input, Switch, Table, Tag } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { create, list, remove, update } from "./api";
@@ -26,12 +26,18 @@ const WarningRules = () => {
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
 	const [togglingId, setTogglingId] = useState<string | null>(null);
+	const [draftRuleName, setDraftRuleName] = useState("");
+	const [appliedRuleName, setAppliedRuleName] = useState("");
 
 	const loadData = useCallback(
-		async (p: number, ps: number) => {
+		async (p: number, ps: number, ruleName = appliedRuleName) => {
 			setLoading(true);
 			try {
-				const result = await list({ pageNum: p, pageSize: ps });
+				const result = await list({
+					pageNum: p,
+					pageSize: ps,
+					name: ruleName,
+				});
 				setDataSource(result.list);
 				setTotal(result.total);
 				setPageNum(result.pageNum);
@@ -42,8 +48,15 @@ const WarningRules = () => {
 				setLoading(false);
 			}
 		},
-		[showMsg],
+		[appliedRuleName, showMsg],
 	);
+
+	const handleSearch = () => {
+		const nextRuleName = draftRuleName.trim();
+		setAppliedRuleName(nextRuleName);
+		setPageNum(1);
+		void loadData(1, pageSize, nextRuleName);
+	};
 
 	const initRef = useRef(false);
 	useEffect(() => {
@@ -204,9 +217,21 @@ const WarningRules = () => {
 		<div className={styles.warningRules}>
 			<section className={styles.panel}>
 				<header className={styles.panelHeader}>
-					<div className={styles.panelTitle}>
-						<span className={styles.panelIcon} aria-hidden />
-						<span>报警规则</span>
+					<div className={styles.filterBar}>
+						<span className={styles.filterLabel}>规则名称</span>
+						<Input
+							className={styles.searchInput}
+							placeholder="请输入规则名称"
+							value={draftRuleName}
+							allowClear
+							onChange={(event) =>
+								setDraftRuleName(event.target.value)
+							}
+							onPressEnter={handleSearch}
+						/>
+						<Button type="primary" onClick={handleSearch}>
+							查询
+						</Button>
 					</div>
 					<Button
 						type="primary"

@@ -9,19 +9,18 @@
 	background: #fff;
 }
 
-.panelHeader {
-	display: flex;
-	align-items: center;
-	justify-content: flex-start;
-	gap: 24px;
-	margin-bottom: 16px;
-}
-
 .filterBar {
 	display: flex;
 	align-items: center;
-	gap: 12px;
+	gap: 16px;
 	flex-wrap: wrap;
+	margin-bottom: 16px;
+}
+
+.filterItem {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 
 .filterLabel {
@@ -32,11 +31,22 @@
 	white-space: nowrap;
 }
 
-.searchInput {
-	width: 220px;
+.modelNameInput {
+	width: 200px;
 }
 
-.syncButton {
+.filterSelect {
+	width: 140px;
+}
+
+.filterRange {
+	width: 260px;
+}
+
+.filterActions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
 	margin-left: auto;
 }
 
@@ -59,9 +69,26 @@
 	background: #e6f4ff;
 }
 
-@media (max-width: 900px) {
-	.panelHeader {
-		align-items: flex-start;
-		flex-direction: column;
+.deviceTable :global(.ant-table-pagination) {
+	margin-bottom: 0;
+}
+
+@media (max-width: 1100px) {
+	.filterActions {
+		margin-left: 0;
+		width: 100%;
+	}
+}
+
+@media (max-width: 640px) {
+	.filterItem {
+		width: 100%;
+	}
+
+	.modelNameInput,
+	.filterSelect,
+	.filterRange {
+		width: 100%;
+		flex: 1;
 	}
 }
