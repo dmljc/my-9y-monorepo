@@ -46,14 +46,21 @@
 .topMenu :global(.ant-menu-item-selected) {
 	color: #0984ff;
 	font-weight: 500;
+	background: transparent;
 }
 
-.topMenu :global(.ant-menu-item::after) {
-	border-bottom: none;
+.topMenu:global(.ant-menu-horizontal) > :global(.ant-menu-item::after),
+.topMenu:global(.ant-menu-horizontal)
+	> :global(.ant-menu-item-selected::after),
+.topMenu:global(.ant-menu-horizontal) > :global(.ant-menu-item:hover::after),
+.topMenu:global(.ant-menu-horizontal)
+	> :global(.ant-menu-item-active::after) {
+	display: none !important;
 }
 
 .topMenu :global(.ant-menu-item:hover) {
 	color: #0984ff;
+	background: transparent;
 }
 
 .content {

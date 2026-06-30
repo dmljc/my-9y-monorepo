@@ -1,5 +1,5 @@
 import { Typography } from "antd";
-import styles from "../layout.module.css";
+import styles from "@/pages/warning/layout.module.css";
 
 const WarningRules = () => {
 	return (

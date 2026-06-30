@@ -6,7 +6,7 @@ import cardBlueCircleImg from "@/assets/warning/card-blue-circle.png";
 import cardGreenCircleImg from "@/assets/warning/card-green-circle.png";
 import statUnprocessedImg from "@/assets/warning/stat-unprocessed.png";
 import statWarningCountImg from "@/assets/warning/stat-warning-count.png";
-import { list, processWarning, toListParams } from "../api";
+import { list, processWarning, toListParams } from "@/pages/warning/api";
 import {
 	buildStatCards,
 	getMockStats,
@@ -20,7 +20,7 @@ import {
 	TYPE_LABEL,
 	type WarningItem,
 	type WarningStats,
-} from "../utils";
+} from "@/pages/warning/utils";
 import styles from "./index.module.css";
 
 const { RangePicker } = DatePicker;

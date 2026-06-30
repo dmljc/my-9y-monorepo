@@ -26,15 +26,20 @@
 }
 
 .sideMenu :global(.ant-menu-item-selected) {
-	background: #eaf5ff;
+	background: transparent;
 	color: #0984ff;
 	font-weight: 500;
+}
+
+.sideMenu :global(.ant-menu-item-selected::after) {
+	border-inline-end: none;
+	opacity: 0;
 }
 
 .content {
 	min-width: 0;
 	flex: 1;
-	padding: 24px;
+	padding-left: 24px;
 	background: #f0f4f8;
 }
 

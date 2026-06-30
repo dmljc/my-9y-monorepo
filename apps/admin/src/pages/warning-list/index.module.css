@@ -2,7 +2,6 @@
 	display: flex;
 	flex-direction: column;
 	gap: 24px;
-	height: calc(100vh - 64px - 24px - 24px - 48px);
 	min-height: 0;
 	color: #1d2129;
 }
@@ -123,9 +122,7 @@
 }
 
 .listPanel {
-	flex: 1;
-	min-height: 0;
-	overflow: auto;
+	flex: none;
 	width: 100%;
 	background: #fff;
 	padding: 24px;
@@ -134,6 +131,10 @@
 
 .warningTable {
 	min-width: 960px;
+}
+
+.warningTable :global(.ant-table-pagination) {
+	margin-bottom: 0;
 }
 
 .warningTable :global(.ant-table-tbody > tr.ant-table-row:hover > td) {
@@ -145,15 +146,6 @@
 }
 
 @media (max-width: 1100px) {
-	.warning {
-		height: auto;
-		min-height: calc(100vh - 160px);
-	}
-
-	.listPanel {
-		flex: none;
-	}
-
 	.summaryCards {
 		grid-template-columns: repeat(2, 1fr);
 	}

@@ -10,7 +10,7 @@ import {
 	SafetyOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
-import { Flex, Layout, Menu, Typography } from "antd";
+import { ConfigProvider, Flex, Layout, Menu, Typography } from "antd";
 import { type ReactNode, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import styles from "./index.module.css";
@@ -66,14 +66,26 @@ const AppLayout = () => {
 					<Typography.Title level={4} className={styles.brand}>
 						{import.meta.env.VITE_APP_TITLE}
 					</Typography.Title>
-					<Menu
-						className={styles.topMenu}
-						mode="horizontal"
-						theme="light"
-						selectedKeys={[activeTop]}
-						items={topMenuItems}
-						onClick={onTopMenuClick}
-					/>
+					<ConfigProvider
+						theme={{
+							components: {
+								Menu: {
+									activeBarHeight: 0,
+									horizontalItemSelectedBg: "transparent",
+									horizontalItemHoverBg: "transparent",
+								},
+							},
+						}}
+					>
+						<Menu
+							className={styles.topMenu}
+							mode="horizontal"
+							theme="light"
+							selectedKeys={[activeTop]}
+							items={topMenuItems}
+							onClick={onTopMenuClick}
+						/>
+					</ConfigProvider>
 					<UserDropdown />
 				</Flex>
 			</Header>
