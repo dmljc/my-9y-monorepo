@@ -3,23 +3,20 @@
 /** 物模型数据记录 */
 export interface ModelDataRecord {
 	id: string;
+	deviceName: string;
 	modelName: string;
-	modelKey: string;
-	assetType: "device" | "room";
-	propertyName: string;
-	propertyKey: string;
-	dataType: string;
-	unit: string;
-	description: string;
+	pointName: string;
+	pointId: string;
+	type: string;
+	value: string | number;
+	time: string;
 }
 
 /** 列表查询参数 */
 export interface ModelDataListParams {
 	pageNum: number;
 	pageSize: number;
-	modelName?: string;
-	assetType?: string;
-	dataType?: string;
+	deviceName?: string;
 }
 
 /** 列表返回结果 */
@@ -33,78 +30,57 @@ interface ModelDataListResult {
 const MOCK_RECORDS: ModelDataRecord[] = [
 	{
 		id: "model-001",
+		deviceName: "取样泵-A101",
 		modelName: "取样泵",
-		modelKey: "sampling_pump",
-		assetType: "device",
-		propertyName: "开关状态",
-		propertyKey: "/114_FV201_KDFK",
-		dataType: "BOOL",
-		unit: "-",
-		description: "取样泵启停状态",
+		pointName: "这也是一个名称",
+		pointId: "/114_FV201_KDFK",
+		type: "BOOL",
+		value: 1,
+		time: "2025-11-23 15:14:13",
 	},
 	{
 		id: "model-002",
+		deviceName: "取样泵-A101",
 		modelName: "取样泵",
-		modelKey: "sampling_pump",
-		assetType: "device",
-		propertyName: "运行频率",
-		propertyKey: "/114_FV201_FREQ",
-		dataType: "INT",
-		unit: "Hz",
-		description: "取样泵当前运行频率",
+		pointName: "这也是一个名称",
+		pointId: "/114_FV201_KDFK",
+		type: "INT",
+		value: 666,
+		time: "",
 	},
 	{
 		id: "model-003",
+		deviceName: "反应釜-A114",
 		modelName: "反应釜",
-		modelKey: "reactor",
-		assetType: "device",
-		propertyName: "温度",
-		propertyKey: "/114_FV201_TEMP",
-		dataType: "FLOAT",
-		unit: "℃",
-		description: "反应釜内部温度",
+		pointName: "温度点位",
+		pointId: "/114_FV201_TEMP",
+		type: "FLOAT",
+		value: 36.5,
+		time: "2025-11-23 16:02:41",
 	},
 	{
 		id: "model-004",
+		deviceName: "A区-201",
 		modelName: "房间监测",
-		modelKey: "room_monitor",
-		assetType: "room",
-		propertyName: "氨气浓度",
-		propertyKey: "/201_NH3",
-		dataType: "FLOAT",
-		unit: "ppm",
-		description: "房间氨气浓度监测",
-	},
-	{
-		id: "model-005",
-		modelName: "房间监测",
-		modelKey: "room_monitor",
-		assetType: "room",
-		propertyName: "湿度",
-		propertyKey: "/ROOM_HUMIDITY",
-		dataType: "FLOAT",
-		unit: "%",
-		description: "房间环境湿度",
+		pointName: "氨气浓度",
+		pointId: "/201_NH3",
+		type: "FLOAT",
+		value: 12.8,
+		time: "2025-11-24 09:15:00",
 	},
 ];
 
 const recordsStore: ModelDataRecord[] = [...MOCK_RECORDS];
 
 function filterRecords(params: ModelDataListParams): ModelDataRecord[] {
-	const keyword = params.modelName?.trim().toLowerCase();
+	const keyword = params.deviceName?.trim().toLowerCase();
+	if (!keyword) return recordsStore;
 
-	return recordsStore.filter((item) => {
-		if (keyword && !item.modelName.toLowerCase().includes(keyword)) {
-			return false;
-		}
-		if (params.assetType && item.assetType !== params.assetType) {
-			return false;
-		}
-		if (params.dataType && item.dataType !== params.dataType) {
-			return false;
-		}
-		return true;
-	});
+	return recordsStore.filter(
+		(item) =>
+			item.deviceName.toLowerCase().includes(keyword) ||
+			item.modelName.toLowerCase().includes(keyword),
+	);
 }
 
 /** 获取物模型数据列表（分页） */
@@ -122,4 +98,21 @@ export function list(
 		pageNum,
 		pageSize,
 	});
+}
+
+/** 删除物模型数据记录 */
+export function remove(id: string): Promise<void> {
+	// return request.delete(`/api/model-data/${id}`);
+	const index = recordsStore.findIndex((item) => item.id === id);
+	if (index === -1) {
+		return Promise.reject(new Error("记录不存在"));
+	}
+	recordsStore.splice(index, 1);
+	return Promise.resolve();
+}
+
+/** 同步物模型数据 */
+export function sync(): Promise<void> {
+	// return request.post("/api/model-data/sync");
+	return Promise.resolve();
 }

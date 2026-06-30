@@ -1,38 +1,26 @@
-import { App, Button, Empty, Input, Select, Table, Tag } from "antd";
+import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { list, type ModelDataRecord } from "./api";
+import { list, type ModelDataRecord, remove, sync } from "./api";
 import styles from "./index.module.css";
-import {
-	ASSET_TYPE_LABEL,
-	ASSET_TYPE_OPTIONS,
-	DATA_TYPE_OPTIONS,
-	DEFAULT_FILTER,
-	type ModelDataFilter,
-	toListParams,
-} from "./utils";
+import { toListParams } from "./utils";
 
 const ModelData = () => {
-	const { message: showMsg } = App.useApp();
-	const [draftFilter, setDraftFilter] =
-		useState<ModelDataFilter>(DEFAULT_FILTER);
-	const [appliedFilter, setAppliedFilter] =
-		useState<ModelDataFilter>(DEFAULT_FILTER);
+	const { message: showMsg, modal: confirmModal } = App.useApp();
+	const [draftDeviceName, setDraftDeviceName] = useState("");
+	const [appliedDeviceName, setAppliedDeviceName] = useState("");
 	const [tableLoading, setTableLoading] = useState(false);
+	const [syncing, setSyncing] = useState(false);
 	const [dataSource, setDataSource] = useState<ModelDataRecord[]>([]);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
 
 	const loadData = useCallback(
-		async (
-			p: number,
-			ps: number,
-			filter: ModelDataFilter = appliedFilter,
-		) => {
+		async (p: number, ps: number, deviceName = appliedDeviceName) => {
 			setTableLoading(true);
 			try {
-				const result = await list(toListParams(p, ps, filter));
+				const result = await list(toListParams(p, ps, deviceName));
 				setDataSource(result.list);
 				setTotal(result.total);
 				setPageNum(result.pageNum);
@@ -43,30 +31,62 @@ const ModelData = () => {
 				setTableLoading(false);
 			}
 		},
-		[appliedFilter, showMsg],
+		[appliedDeviceName, showMsg],
 	);
 
 	const initRef = useRef(false);
 	useEffect(() => {
 		if (!initRef.current) {
 			initRef.current = true;
-			void loadData(pageNum, pageSize, appliedFilter);
+			void loadData(pageNum, pageSize);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	const handleSearch = () => {
-		setAppliedFilter({ ...draftFilter });
+		const nextDeviceName = draftDeviceName.trim();
+		setAppliedDeviceName(nextDeviceName);
 		setPageNum(1);
-		void loadData(1, pageSize, draftFilter);
+		void loadData(1, pageSize, nextDeviceName);
 	};
 
 	const handleReset = () => {
-		setDraftFilter(DEFAULT_FILTER);
-		setAppliedFilter(DEFAULT_FILTER);
+		setDraftDeviceName("");
+		setAppliedDeviceName("");
 		setPageNum(1);
-		void loadData(1, pageSize, DEFAULT_FILTER);
+		void loadData(1, pageSize, "");
 	};
+
+	const handleSync = useCallback(async () => {
+		setSyncing(true);
+		try {
+			await sync();
+			showMsg.success("同步成功");
+			await loadData(pageNum, pageSize);
+		} catch {
+			showMsg.error("同步失败");
+		} finally {
+			setSyncing(false);
+		}
+	}, [loadData, pageNum, pageSize, showMsg]);
+
+	const handleDelete = useCallback(
+		(record: ModelDataRecord) => {
+			confirmModal.confirm({
+				title: "确认删除",
+				content: `确定要删除物模型数据「${record.modelName} / ${record.pointName}」吗？`,
+				okText: "删除",
+				okButtonProps: { danger: true },
+				cancelText: "取消",
+				onOk: async () => {
+					await remove(record.id);
+					showMsg.success("删除成功");
+					await loadData(pageNum, pageSize);
+				},
+			});
+		},
+		[confirmModal, loadData, pageNum, pageSize, showMsg],
+	);
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {
 		const nextPageNum = pagination.current ?? 1;
@@ -82,124 +102,90 @@ const ModelData = () => {
 				title: "物模型名称",
 				dataIndex: "modelName",
 				key: "modelName",
-				width: 120,
 				ellipsis: true,
 			},
 			{
-				title: "物模型标识",
-				dataIndex: "modelKey",
-				key: "modelKey",
-				width: 140,
+				title: "点位名称",
+				dataIndex: "pointName",
+				key: "pointName",
 				ellipsis: true,
 			},
 			{
-				title: "资产类型",
-				dataIndex: "assetType",
-				key: "assetType",
+				title: "点位ID",
+				dataIndex: "pointId",
+				key: "pointId",
+				ellipsis: true,
+			},
+			{
+				title: "类型",
+				dataIndex: "type",
+				key: "type",
 				width: 100,
-				render: (type: ModelDataRecord["assetType"]) => (
-					<Tag color={type === "device" ? "blue" : "cyan"}>
-						{ASSET_TYPE_LABEL[type]}
-					</Tag>
+			},
+			{
+				title: "值",
+				dataIndex: "value",
+				key: "value",
+				width: 100,
+			},
+			{
+				title: "时间",
+				dataIndex: "time",
+				key: "time",
+				width: 180,
+				render: (time: string) => time || "-",
+			},
+			{
+				title: "操作",
+				key: "actions",
+				width: 80,
+				fixed: "right",
+				render: (_: unknown, record) => (
+					<div className={styles.actions}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleDelete(record)}
+						>
+							删除
+						</Button>
+					</div>
 				),
 			},
-			{
-				title: "属性名称",
-				dataIndex: "propertyName",
-				key: "propertyName",
-				width: 120,
-				ellipsis: true,
-			},
-			{
-				title: "属性标识",
-				dataIndex: "propertyKey",
-				key: "propertyKey",
-				ellipsis: true,
-			},
-			{
-				title: "数据类型",
-				dataIndex: "dataType",
-				key: "dataType",
-				width: 100,
-			},
-			{
-				title: "单位",
-				dataIndex: "unit",
-				key: "unit",
-				width: 80,
-			},
-			{
-				title: "描述",
-				dataIndex: "description",
-				key: "description",
-				ellipsis: true,
-			},
 		],
-		[],
+		[handleDelete],
 	);
 
 	return (
 		<div className={styles.modelData}>
 			<section className={styles.panel}>
-				<div className={styles.filterBar}>
-					<div className={styles.filterItem}>
-						<span className={styles.filterLabel}>物模型名称</span>
+				<header className={styles.panelHeader}>
+					<div className={styles.filterBar}>
+						<span className={styles.filterLabel}>设备名称</span>
 						<Input
-							className={styles.modelNameInput}
-							placeholder="请输入物模型名称"
-							value={draftFilter.modelName}
+							className={styles.searchInput}
+							placeholder="请输入设备名称"
+							value={draftDeviceName}
 							allowClear
 							onChange={(event) =>
-								setDraftFilter((prev) => ({
-									...prev,
-									modelName: event.target.value,
-								}))
+								setDraftDeviceName(event.target.value)
 							}
 							onPressEnter={handleSearch}
 						/>
-					</div>
-
-					<div className={styles.filterItem}>
-						<span className={styles.filterLabel}>资产类型</span>
-						<Select
-							className={styles.filterSelect}
-							placeholder="请选择"
-							allowClear
-							options={ASSET_TYPE_OPTIONS}
-							value={draftFilter.assetType}
-							onChange={(value) =>
-								setDraftFilter((prev) => ({
-									...prev,
-									assetType: value,
-								}))
-							}
-						/>
-					</div>
-
-					<div className={styles.filterItem}>
-						<span className={styles.filterLabel}>数据类型</span>
-						<Select
-							className={styles.filterSelect}
-							placeholder="请选择"
-							allowClear
-							options={DATA_TYPE_OPTIONS}
-							value={draftFilter.dataType}
-							onChange={(value) =>
-								setDraftFilter((prev) => ({
-									...prev,
-									dataType: value,
-								}))
-							}
-						/>
-					</div>
-
-					<div className={styles.filterActions}>
 						<Button type="primary" onClick={handleSearch}>
 							查询
 						</Button>
 						<Button onClick={handleReset}>重置</Button>
 					</div>
-				</div>
+					<Button
+						type="default"
+						loading={syncing}
+						onClick={handleSync}
+						className={styles.syncButton}
+					>
+						同步
+					</Button>
+				</header>
 
 				<div className={styles.tableWrap}>
 					<Table
@@ -209,7 +195,7 @@ const ModelData = () => {
 						dataSource={dataSource}
 						rowKey="id"
 						loading={tableLoading}
-						scroll={{ x: 1100 }}
+						scroll={{ x: 960 }}
 						locale={{
 							emptyText: <Empty description="暂无物模型数据" />,
 						}}
