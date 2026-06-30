@@ -14,6 +14,7 @@ const WarningRules = lazy(() => import("@/pages/warning-rules"));
 const WarningLevels = lazy(() => import("@/pages/warning-levels"));
 const Task = lazy(() => import("@/pages/task"));
 const HistoricalData = lazy(() => import("@/pages/historical-data"));
+const ModelData = lazy(() => import("@/pages/model-data"));
 const ControlPanel = lazy(() => import("@/pages/control-panel"));
 const ReverseControl = lazy(() => import("@/pages/reverse-control"));
 const System = lazy(() => import("@/pages/system"));
@@ -71,6 +72,7 @@ const routes: RouteObject[] = [
 					},
 					{ path: "/task", element: <Task /> },
 					{ path: "/historical-data", element: <HistoricalData /> },
+					{ path: "/model-data", element: <ModelData /> },
 					{ path: "/control-panel", element: <ControlPanel /> },
 					{ path: "/reverse-control", element: <ReverseControl /> },
 					{ path: "/system", element: <System /> },

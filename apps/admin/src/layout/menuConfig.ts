@@ -5,6 +5,7 @@ export type TopMenuKey =
 	| "warning"
 	| "task"
 	| "historicalData"
+	| "modelData"
 	| "controlPanel"
 	| "reverseControl"
 	| "system"
@@ -28,7 +29,8 @@ export const TOP_MENUS: TopMenuItem[] = [
 		defaultPath: "/warning/list",
 	},
 	// { key: "task", label: "任务管理", path: "/task" },
-	{ key: "historicalData", label: "历史数据查询", path: "/historical-data" },
+	{ key: "historicalData", label: "历史数据", path: "/historical-data" },
+	{ key: "modelData", label: "物模型数据", path: "/model-data" },
 	{ key: "controlPanel", label: "控制面板", path: "/control-panel" },
 	{ key: "reverseControl", label: "设备反控", path: "/reverse-control" },
 	{
