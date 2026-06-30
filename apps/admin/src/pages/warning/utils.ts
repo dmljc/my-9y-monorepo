@@ -174,7 +174,7 @@ export function filterWarnings(
 	});
 }
 
-/** 构建告警前后 15 分钟设备数据页跳转路径 */
+/** 构建告警前后 15 分钟历史数据页跳转路径 */
 export function buildWarningDeviceDataPath(record: WarningItem): string {
 	const center = dayjs(record.time);
 	const params = new URLSearchParams({
@@ -184,5 +184,5 @@ export function buildWarningDeviceDataPath(record: WarningItem): string {
 		type: record.type,
 	});
 
-	return `/device?${params.toString()}`;
+	return `/historical-data?${params.toString()}`;
 }

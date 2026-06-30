@@ -29,7 +29,7 @@ const TOP_MENU_ICONS: Record<TopMenuKey, ReactNode> = {
 	statistics: <BarChartOutlined />,
 	warning: <BellOutlined />,
 	task: <FolderOutlined />,
-	device: <DatabaseOutlined />,
+	historicalData: <DatabaseOutlined />,
 	controlPanel: <AppstoreOutlined />,
 	reverseControl: <ControlOutlined />,
 	system: <ApiOutlined />,

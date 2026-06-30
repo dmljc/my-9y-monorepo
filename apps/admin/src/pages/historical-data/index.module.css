@@ -1,4 +1,4 @@
-.device {
+.historicalData {
 	min-height: calc(100vh - 120px);
 }
 
@@ -55,21 +55,21 @@
 	overflow-x: auto;
 }
 
-.deviceTable {
+.historicalDataTable {
 	min-width: 920px;
 }
 
-.deviceTable :global(.ant-table-thead > tr > th) {
+.historicalDataTable :global(.ant-table-thead > tr > th) {
 	background: #f2f5f8;
 	color: #333;
 	font-weight: 500;
 }
 
-.deviceTable :global(.ant-table-tbody > tr.ant-table-row:hover > td) {
+.historicalDataTable :global(.ant-table-tbody > tr.ant-table-row:hover > td) {
 	background: #e6f4ff;
 }
 
-.deviceTable :global(.ant-table-pagination) {
+.historicalDataTable :global(.ant-table-pagination) {
 	margin-bottom: 0;
 }
 
