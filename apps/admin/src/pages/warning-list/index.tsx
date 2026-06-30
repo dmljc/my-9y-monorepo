@@ -139,16 +139,24 @@ const WarningList = () => {
 
 	const columns: ColumnsType<WarningItem> = [
 		{
-			title: "类型",
-			dataIndex: "type",
-			key: "type",
-			render: (type: WarningItem["type"]) => TYPE_LABEL[type],
+			title: "序号",
+			key: "index",
+			width: 72,
+			align: "center",
+			render: (_: unknown, __: WarningItem, index: number) =>
+				(pageNum - 1) * pageSize + index + 1,
 		},
-		{
+        {
 			title: "名称",
 			dataIndex: "name",
 			key: "name",
 			ellipsis: true,
+		},
+		{
+			title: "类型",
+			dataIndex: "type",
+			key: "type",
+			render: (type: WarningItem["type"]) => TYPE_LABEL[type],
 		},
 		{
 			title: "当前值",

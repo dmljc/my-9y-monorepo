@@ -99,6 +99,14 @@ const ModelData = () => {
 	const columns = useMemo<ColumnsType<ModelDataRecord>>(
 		() => [
 			{
+				title: "序号",
+				key: "index",
+				width: 72,
+				align: "center",
+				render: (_: unknown, __: ModelDataRecord, index: number) =>
+					(pageNum - 1) * pageSize + index + 1,
+			},
+			{
 				title: "物模型名称",
 				dataIndex: "modelName",
 				key: "modelName",
@@ -153,7 +161,7 @@ const ModelData = () => {
 				),
 			},
 		],
-		[handleDelete],
+		[handleDelete, pageNum, pageSize],
 	);
 
 	return (

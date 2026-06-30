@@ -97,6 +97,14 @@ const System = () => {
 	};
 
 	const columns: ColumnsType<ApiConfig> = [
+		{
+			title: "序号",
+			key: "index",
+			width: 72,
+			align: "center",
+			render: (_: unknown, __: ApiConfig, index: number) =>
+				(pageNum - 1) * pageSize + index + 1,
+		},
 		{ title: "名称", dataIndex: "name", key: "name" },
 		{ title: "类型", dataIndex: "type", key: "type" },
 		{ title: "URL", dataIndex: "url", key: "url", ellipsis: true },

@@ -125,6 +125,14 @@ const WarningRules = () => {
 
 	const columns: ColumnsType<WarningRule> = [
 		{
+			title: "序号",
+			key: "index",
+			width: 72,
+			align: "center",
+			render: (_: unknown, __: WarningRule, index: number) =>
+				(pageNum - 1) * pageSize + index + 1,
+		},
+		{
 			title: "规则名称",
 			dataIndex: "name",
 			key: "name",

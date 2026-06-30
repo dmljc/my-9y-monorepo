@@ -81,6 +81,14 @@ const HistoricalData = () => {
 	const columns = useMemo<ColumnsType<DeviceRecord>>(
 		() => [
 			{
+				title: "序号",
+				key: "index",
+				width: 72,
+				align: "center",
+				render: (_: unknown, __: DeviceRecord, index: number) =>
+					(pageNum - 1) * pageSize + index + 1,
+			},
+			{
 				title: "物模型名称",
 				dataIndex: "modelName",
 				key: "modelName",
@@ -114,7 +122,7 @@ const HistoricalData = () => {
 				key: "time",
 			},
 		],
-		[],
+		[pageNum, pageSize],
 	);
 
 	return (

@@ -88,6 +88,14 @@ const WarningLevels = () => {
 
 	const columns: ColumnsType<WarningLevel> = [
 		{
+			title: "序号",
+			key: "index",
+			width: 72,
+			align: "center",
+			render: (_: unknown, __: WarningLevel, index: number) =>
+				(pageNum - 1) * pageSize + index + 1,
+		},
+		{
 			title: "等级名称",
 			dataIndex: "name",
 			key: "name",
