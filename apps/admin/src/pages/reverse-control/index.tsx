@@ -5,11 +5,11 @@ import { useMemo, useState } from "react";
 import CreateRuleModal from "./CreateModal";
 import styles from "./index.module.css";
 import type { ReverseControlRule, RuleFormValues } from "./types";
-import { filterRules } from "./utils";
+import { filterRules, MOCK_RULES } from "./utils";
 
 const ReverseControl = () => {
 	const { message: showMsg, modal: confirmModal } = App.useApp();
-	const [rules, setRules] = useState<ReverseControlRule[]>([]);
+	const [rules, setRules] = useState<ReverseControlRule[]>(MOCK_RULES);
 	const [draftDeviceName, setDraftDeviceName] = useState("");
 	const [appliedDeviceName, setAppliedDeviceName] = useState("");
 	const [modalOpen, setModalOpen] = useState(false);
@@ -95,9 +95,7 @@ const ReverseControl = () => {
 		confirmModal.confirm({
 			title: "确认删除",
 			content: `确定要删除反控规则「${record.name}」吗？`,
-			okText: "删除",
 			okButtonProps: { danger: true },
-			cancelText: "取消",
 			onOk: async () => {
 				setRules((prev) =>
 					prev.filter((rule) => rule.id !== record.id),
@@ -114,10 +112,17 @@ const ReverseControl = () => {
 
 	const columns: ColumnsType<ReverseControlRule> = [
 		{
+			title: "序号",
+			key: "index",
+			width: 72,
+			align: "center",
+			render: (_: unknown, __: ReverseControlRule, index: number) =>
+				(pageNum - 1) * pageSize + index + 1,
+		},
+		{
 			title: "反控规则名称",
 			dataIndex: "name",
 			key: "name",
-			width: 180,
 		},
 		{
 			title: "规则描述",
@@ -129,14 +134,12 @@ const ReverseControl = () => {
 			title: "累计触发",
 			dataIndex: "triggerCount",
 			key: "triggerCount",
-			width: 120,
 			align: "center",
 		},
 		{
 			title: "启停用",
 			dataIndex: "enabled",
 			key: "enabled",
-			width: 120,
 			align: "center",
 			render: (enabled: boolean, record) => (
 				<Switch
@@ -149,7 +152,6 @@ const ReverseControl = () => {
 		{
 			title: "操作",
 			key: "actions",
-			width: 140,
 			align: "center",
 			render: (_: unknown, record) => (
 				<div className={styles.actions}>
@@ -227,6 +229,7 @@ const ReverseControl = () => {
 			<CreateRuleModal
 				open={modalOpen}
 				editingRecord={editingRecord}
+				existingRules={rules}
 				onCancel={() => setModalOpen(false)}
 				onOk={handleModalOk}
 			/>

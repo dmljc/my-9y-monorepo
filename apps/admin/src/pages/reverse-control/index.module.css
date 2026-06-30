@@ -85,6 +85,12 @@
 	color: #333;
 }
 
+.conditionJoin {
+	display: flex;
+	justify-content: center;
+	margin: 4px 0;
+}
+
 .descRow {
 	display: flex;
 	align-items: baseline;
@@ -131,7 +137,17 @@
 }
 
 .actionRow {
-	grid-template-columns: 64px minmax(120px, 1fr) minmax(150px, 1.2fr) 120px 32px;
+	grid-template-columns: 52px minmax(140px, 1.05fr) minmax(140px, 1.05fr) 136px minmax(120px, 0.95fr) 32px;
+}
+
+.actionRow :global(.ant-form-item) {
+	margin-bottom: 0;
+	min-width: 0;
+}
+
+.actionRow :global(.ant-select),
+.actionRow :global(.ant-input-number) {
+	width: 100%;
 }
 
 .rowTitle {
