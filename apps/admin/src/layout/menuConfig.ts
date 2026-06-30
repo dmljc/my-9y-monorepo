@@ -27,7 +27,7 @@ export const TOP_MENUS: TopMenuItem[] = [
 		path: "/warning",
 		defaultPath: "/warning/list",
 	},
-	{ key: "task", label: "任务管理", path: "/task" },
+	// { key: "task", label: "任务管理", path: "/task" },
 	{ key: "device", label: "设备数据", path: "/device" },
 	{ key: "controlPanel", label: "控制面板", path: "/control-panel" },
 	{ key: "reverseControl", label: "设备反控", path: "/reverse-control" },

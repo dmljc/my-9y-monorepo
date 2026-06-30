@@ -173,3 +173,16 @@ export function filterWarnings(
 		return true;
 	});
 }
+
+/** 构建告警前后 15 分钟设备数据页跳转路径 */
+export function buildWarningDeviceDataPath(record: WarningItem): string {
+	const center = dayjs(record.time);
+	const params = new URLSearchParams({
+		startTime: center.subtract(15, "minute").format("YYYY-MM-DD HH:mm:ss"),
+		endTime: center.add(15, "minute").format("YYYY-MM-DD HH:mm:ss"),
+		name: record.name,
+		type: record.type,
+	});
+
+	return `/device?${params.toString()}`;
+}

@@ -119,6 +119,15 @@
 .processedAction {
 	color: #86909c;
 	font-size: 14px;
+	white-space: nowrap;
+}
+
+.actions {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	flex-wrap: nowrap;
+	gap: 4px;
 }
 
 .listPanel {

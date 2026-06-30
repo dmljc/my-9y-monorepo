@@ -2,6 +2,7 @@ import { App, Button, DatePicker, Select, Table, Tag } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import cardBlueCircleImg from "@/assets/warning/card-blue-circle.png";
 import cardGreenCircleImg from "@/assets/warning/card-green-circle.png";
 import statUnprocessedImg from "@/assets/warning/stat-unprocessed.png";
@@ -9,6 +10,7 @@ import statWarningCountImg from "@/assets/warning/stat-warning-count.png";
 import { list, processWarning, toListParams } from "@/pages/warning/api";
 import {
 	buildStatCards,
+	buildWarningDeviceDataPath,
 	getMockStats,
 	LEVEL_COLOR,
 	LEVEL_LABEL,
@@ -59,6 +61,7 @@ function StatCardView({ card }: { card: StatCard }) {
 
 const WarningList = () => {
 	const { message: showMsg } = App.useApp();
+	const navigate = useNavigate();
 
 	const [dateRange, setDateRange] = useState<[string, string] | null>(null);
 	const [status, setStatus] = useState<StatusFilter>("all");
@@ -139,7 +142,6 @@ const WarningList = () => {
 			title: "类型",
 			dataIndex: "type",
 			key: "type",
-			width: 80,
 			render: (type: WarningItem["type"]) => TYPE_LABEL[type],
 		},
 		{
@@ -152,19 +154,16 @@ const WarningList = () => {
 			title: "当前值",
 			dataIndex: "currentValue",
 			key: "currentValue",
-			width: 90,
 		},
 		{
 			title: "阈值范围",
 			dataIndex: "thresholdRange",
 			key: "thresholdRange",
-			width: 110,
 		},
 		{
 			title: "等级",
 			dataIndex: "level",
 			key: "level",
-			width: 80,
 			render: (level: WarningItem["level"]) => (
 				<Tag color={LEVEL_COLOR[level]}>{LEVEL_LABEL[level]}</Tag>
 			),
@@ -173,13 +172,11 @@ const WarningList = () => {
 			title: "时间",
 			dataIndex: "time",
 			key: "time",
-			width: 180,
 		},
 		{
 			title: "状态",
 			dataIndex: "status",
 			key: "status",
-			width: 100,
 			render: (itemStatus: WarningItem["status"]) => (
 				<Tag color={STATUS_COLOR[itemStatus]}>
 					{STATUS_LABEL[itemStatus]}
@@ -189,21 +186,33 @@ const WarningList = () => {
 		{
 			title: "操作",
 			key: "actions",
-			width: 120,
+			width: 250,
 			fixed: "right",
-			render: (_: unknown, record: WarningItem) =>
-				record.status === "unprocessed" ? (
+			render: (_: unknown, record: WarningItem) => (
+				<div className={styles.actions}>
 					<Button
 						type="link"
 						size="small"
-						loading={processingId === record.id}
-						onClick={() => handleProcess(record)}
+						onClick={() =>
+							navigate(buildWarningDeviceDataPath(record))
+						}
 					>
-						标记解决
+						查看前后15分钟数据
 					</Button>
-				) : (
-					<span className={styles.processedAction}>已处理</span>
-				),
+					{record.status === "unprocessed" ? (
+						<Button
+							type="link"
+							size="small"
+							loading={processingId === record.id}
+							onClick={() => handleProcess(record)}
+						>
+							标记解决
+						</Button>
+					) : (
+						<span className={styles.processedAction}>已处理</span>
+					)}
+				</div>
+			),
 		},
 	];
 
@@ -257,7 +266,7 @@ const WarningList = () => {
 					dataSource={dataSource}
 					rowKey="id"
 					loading={loading}
-					scroll={{ x: 1100 }}
+					// scroll={{ x: 1200 }}
 					pagination={{
 						current: pageNum,
 						pageSize,
