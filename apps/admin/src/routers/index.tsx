@@ -12,6 +12,10 @@ const Warning = lazy(() => import("@/pages/warning"));
 const WarningList = lazy(() => import("@/pages/warning-list"));
 const WarningRules = lazy(() => import("@/pages/warning-rules"));
 const WarningLevels = lazy(() => import("@/pages/warning-levels"));
+const Device = lazy(() => import("@/pages/device"));
+const DeviceInspectionLedger = lazy(
+	() => import("@/pages/device-inspection-ledger"),
+);
 const Task = lazy(() => import("@/pages/task"));
 const HistoricalData = lazy(() => import("@/pages/historical-data"));
 const ModelData = lazy(() => import("@/pages/model-data"));
@@ -68,6 +72,27 @@ const routes: RouteObject[] = [
 							{ path: "list", element: <WarningList /> },
 							{ path: "rules", element: <WarningRules /> },
 							{ path: "levels", element: <WarningLevels /> },
+						],
+					},
+					{
+						path: "/device",
+						element: <Device />,
+						children: [
+							{
+								index: true,
+								element: (
+									<Navigate
+										to={getDefaultPathForTop(
+											"device",
+										).replace("/device/", "")}
+										replace
+									/>
+								),
+							},
+							{
+								path: "inspection-ledger",
+								element: <DeviceInspectionLedger />,
+							},
 						],
 					},
 					{ path: "/task", element: <Task /> },

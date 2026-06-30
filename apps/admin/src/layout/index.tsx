@@ -9,6 +9,7 @@ import {
 	FolderOutlined,
 	FundViewOutlined,
 	SafetyOutlined,
+	ToolOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { ConfigProvider, Flex, Layout, Menu, Typography } from "antd";
@@ -29,6 +30,7 @@ const TOP_MENU_ICONS: Record<TopMenuKey, ReactNode> = {
 	dashboard: <FundViewOutlined />,
 	statistics: <BarChartOutlined />,
 	warning: <BellOutlined />,
+	device: <ToolOutlined />,
 	task: <FolderOutlined />,
 	historicalData: <DatabaseOutlined />,
 	modelData: <ClusterOutlined />,

@@ -3,6 +3,7 @@ export type TopMenuKey =
 	| "dashboard"
 	| "statistics"
 	| "warning"
+	| "device"
 	| "task"
 	| "historicalData"
 	| "modelData"
@@ -27,6 +28,12 @@ export const TOP_MENUS: TopMenuItem[] = [
 		label: "警告管理",
 		path: "/warning",
 		defaultPath: "/warning/list",
+	},
+	{
+		key: "device",
+		label: "设备管理",
+		path: "/device",
+		defaultPath: "/device/inspection-ledger",
 	},
 	// { key: "task", label: "任务管理", path: "/task" },
 	{ key: "historicalData", label: "历史数据", path: "/historical-data" },
