@@ -31,7 +31,7 @@ export const TOP_MENUS: TopMenuItem[] = [
 	// { key: "task", label: "任务管理", path: "/task" },
 	{ key: "historicalData", label: "历史数据", path: "/historical-data" },
 	{ key: "modelData", label: "物模型数据", path: "/model-data" },
-	{ key: "controlPanel", label: "控制面板", path: "/control-panel" },
+	// { key: "controlPanel", label: "控制面板", path: "/control-panel" },
 	{ key: "reverseControl", label: "设备反控", path: "/reverse-control" },
 	{
 		key: "system",
