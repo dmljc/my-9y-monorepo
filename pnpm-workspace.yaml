@@ -1,0 +1,68 @@
+# pnpm-workspace.yaml — Monorepo 工作区与共享依赖配置
+#
+# 作用：
+#   1. 声明本仓库哪些目录属于 pnpm workspace（apps、packages 等子项目）
+#   2. 用 catalog 集中管理多包共用的依赖版本，避免各 package.json 版本不一致
+#   3. 配置安装/解析行为（生命周期脚本、版本滞后、覆盖、peer 规则等）
+#
+# 子包如何引用 catalog：
+#   在 package.json 中写 "react": "catalog:" 即可引用 catalog 中的 react 版本；
+#   实际版本由下方 catalog 段解析，升级时优先改本文件（可用 pnpm ncu 检查 catalog）
+
+
+# 工作区包路径（glob）；匹配到的目录需含 package.json
+packages:
+  - "apps/*" # 应用：admin 管理后台、dashboard 大屏等
+  - "packages/*" # 可复用包：如 @cc/image-annotation
+  - "utils/*" # 共享工具：如 @utils/http-client
+
+# 依赖版本目录（catalog）：全仓库统一版本源
+# 子包 dependencies / devDependencies / peerDependencies 可用 "catalog:" 引用
+catalog:
+  # 运行时
+  react: ^19.2.7
+  react-dom: ^19.2.7
+
+  # UI
+  antd: ^6.4.3
+  "@ant-design/icons": ^6.2.5
+
+  # HTTP
+  axios: ^1.17.0
+
+  # Charts & Date
+  echarts: ^5.6.0
+  dayjs: ^1.11.21
+
+  # Router
+  react-router-dom: ^7.16.0
+
+  # 构建
+  vite: ^8.0.16
+  "@vitejs/plugin-react-swc": ^4.3.1
+  typescript: 6.0.3
+
+  # 类型
+  "@types/react": ^19.2.16
+  "@types/react-dom": ^19.2.3
+
+# 允许依赖在安装时执行 postinstall 等生命周期脚本（pnpm 默认可能拦截）
+# Vite/SWC 链路需要；使用 sharp 等原生模块时可将 sharp 设为 true
+allowBuilds:
+  "@swc/core": true
+  esbuild: true
+  sharp: false
+
+# 新版本发布后的最短等待天数，0 表示不等待、可用最新版（与 pnpm ncu 行为相关）
+minimumReleaseAge: 0
+
+# 强制锁定传递依赖版本，用于修复重复安装或已知兼容问题
+overrides:
+  "@rc-component/util": ^1.11.1
+
+# peer 依赖解析规则：放宽第三方包声明的 peer 范围，减少安装告警
+peerDependencyRules:
+  ignoreMissing: [] # 需要忽略的缺失 peer 可填包名
+  allowedVersions:
+    react-lazy-load>react: ">=17"
+    react-lazy-load>react-dom: ">=17"

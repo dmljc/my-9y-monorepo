@@ -1,0 +1,28 @@
+{
+	"name": "admin",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite --host 0.0.0.0",
+		"build": "tsc -b && vite build",
+		"preview": "vite preview"
+	},
+	"dependencies": {
+		"@ant-design/icons": "catalog:",
+		"@cc/image-annotation": "workspace:*",
+		"antd": "catalog:",
+		"axios": "catalog:",
+		"dayjs": "catalog:",
+		"echarts": "catalog:",
+		"react": "catalog:",
+		"react-dom": "catalog:",
+		"react-router-dom": "catalog:"
+	},
+	"devDependencies": {
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
+		"@vitejs/plugin-react-swc": "catalog:",
+		"vite": "catalog:"
+	}
+}

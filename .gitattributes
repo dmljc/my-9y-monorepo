@@ -1,0 +1,9 @@
+# .gitattributes — Git 属性规则（跨平台协作、差异统计）
+#
+# 作用：
+#   告诉 Git 如何对待各类文件，减少 Windows / macOS / Linux 混用时的换行问题，
+#   并影响 diff、合并、部分 IDE 与 linguist 统计行为。
+
+# 由 Git 自动检测文本/二进制；文本文件检出时按仓库规则规范化换行（通常 LF）
+
+* text=auto

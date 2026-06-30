@@ -1,0 +1,69 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
+	"files": {
+		"includes": [
+			"**",
+			"!**/dist",
+			"!**/node_modules",
+			"!**/.git",
+			"!**/cache",
+			"!**/.vitepress/cache",
+			"!**/.vitepress/**/*.js",
+			"!**/coverage",
+			"!**/documentation"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"formatWithErrors": false,
+		"indentStyle": "tab",
+		"indentWidth": 4,
+		"lineWidth": 80,
+		"lineEnding": "lf"
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double",
+			"semicolons": "always",
+			"trailingCommas": "all",
+			"arrowParentheses": "always"
+		}
+	},
+	"json": {
+		"formatter": {
+			"enabled": true
+		}
+	},
+	"css": {
+		"formatter": {
+			"enabled": true
+		},
+		"linter": {
+			"enabled": true
+		}
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"correctness": {
+				"useHookAtTopLevel": "error",
+				"useExhaustiveDependencies": "off",
+				"noUnusedVariables": {
+					"level": "warn",
+					"options": {
+						"ignoreRestSiblings": true
+					}
+				}
+			},
+			"suspicious": {
+				"noExplicitAny": "off",
+				"noUnusedExpressions": "error",
+				"noNonNullAssertedOptionalChain": "error"
+			},
+			"complexity": {
+				"useArrowFunction": "off"
+			}
+		}
+	}
+}

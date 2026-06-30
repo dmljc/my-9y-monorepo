@@ -1,0 +1,152 @@
+[
+	{
+		"id": "warning-001",
+		"type": "room",
+		"name": "房间氨气浓度",
+		"currentValue": "9.5",
+		"thresholdRange": "0-50",
+		"level": "high",
+		"time": "2026-06-30 08:15:22",
+		"status": "unprocessed"
+	},
+	{
+		"id": "warning-002",
+		"type": "room",
+		"name": "房间氨气浓度",
+		"currentValue": "20",
+		"thresholdRange": "0-50",
+		"level": "high",
+		"time": "2026-06-30 09:42:10",
+		"status": "processed"
+	},
+	{
+		"id": "warning-003",
+		"type": "device",
+		"name": "料线控制器",
+		"currentValue": "10",
+		"thresholdRange": "0-50",
+		"level": "high",
+		"time": "2026-06-30 10:18:35",
+		"status": "unprocessed"
+	},
+	{
+		"id": "warning-004",
+		"type": "device",
+		"name": "温控传感器-A101",
+		"currentValue": "86",
+		"thresholdRange": "0-75",
+		"level": "high",
+		"time": "2026-06-30 11:05:00",
+		"status": "processed"
+	},
+	{
+		"id": "warning-005",
+		"type": "room",
+		"name": "房间硫化氢浓度",
+		"currentValue": "12",
+		"thresholdRange": "0-30",
+		"level": "medium",
+		"time": "2026-06-30 13:20:18",
+		"status": "processed"
+	},
+	{
+		"id": "warning-006",
+		"type": "device",
+		"name": "压力表-B203",
+		"currentValue": "1.8",
+		"thresholdRange": "0.5-1.5",
+		"level": "medium",
+		"time": "2026-06-30 14:33:44",
+		"status": "unprocessed"
+	},
+	{
+		"id": "warning-007",
+		"type": "room",
+		"name": "房间温度",
+		"currentValue": "32",
+		"thresholdRange": "18-28",
+		"level": "medium",
+		"time": "2026-06-30 15:10:09",
+		"status": "processed"
+	},
+	{
+		"id": "warning-008",
+		"type": "device",
+		"name": "电机控制器-C305",
+		"currentValue": "95",
+		"thresholdRange": "0-80",
+		"level": "high",
+		"time": "2026-06-30 16:45:27",
+		"status": "processed"
+	},
+	{
+		"id": "warning-009",
+		"type": "device",
+		"name": "烟雾探测器-D108",
+		"currentValue": "0.08",
+		"thresholdRange": "0-0.05",
+		"level": "high",
+		"time": "2026-06-30 17:22:51",
+		"status": "unprocessed"
+	},
+	{
+		"id": "warning-010",
+		"type": "room",
+		"name": "房间湿度",
+		"currentValue": "78",
+		"thresholdRange": "40-70",
+		"level": "low",
+		"time": "2026-06-30 18:08:16",
+		"status": "processed"
+	},
+	{
+		"id": "warning-011",
+		"type": "device",
+		"name": "振动传感器-A205",
+		"currentValue": "4.2",
+		"thresholdRange": "0-3.5",
+		"level": "medium",
+		"time": "2026-06-29 10:30:00",
+		"status": "unprocessed"
+	},
+	{
+		"id": "warning-012",
+		"type": "room",
+		"name": "房间二氧化碳浓度",
+		"currentValue": "1200",
+		"thresholdRange": "0-1000",
+		"level": "medium",
+		"time": "2026-06-28 14:20:00",
+		"status": "processed"
+	},
+	{
+		"id": "warning-013",
+		"type": "device",
+		"name": "流量计-C218",
+		"currentValue": "15",
+		"thresholdRange": "20-60",
+		"level": "low",
+		"time": "2026-06-27 09:15:33",
+		"status": "unprocessed"
+	},
+	{
+		"id": "warning-014",
+		"type": "device",
+		"name": "门禁主机-F102",
+		"currentValue": "离线",
+		"thresholdRange": "在线",
+		"level": "high",
+		"time": "2026-06-26 07:55:12",
+		"status": "processed"
+	},
+	{
+		"id": "warning-015",
+		"type": "room",
+		"name": "房间粉尘浓度",
+		"currentValue": "8.5",
+		"thresholdRange": "0-5",
+		"level": "high",
+		"time": "2026-06-25 16:40:08",
+		"status": "unprocessed"
+	}
+]

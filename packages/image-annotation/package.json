@@ -1,0 +1,32 @@
+{
+	"name": "@cc/image-annotation",
+	"private": true,
+	"version": "0.1.0",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./style.css": "./src/style.css"
+	},
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc -b && vite build",
+		"preview": "vite preview"
+	},
+	"dependencies": {
+		"@dnd-kit/core": "^6.3.1",
+		"konva": "^10.3.0",
+		"react-konva": "^19.2.4",
+		"zustand": "^5.0.14"
+	},
+	"devDependencies": {
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
+		"@vitejs/plugin-react-swc": "catalog:",
+		"typescript": "catalog:",
+		"vite": "catalog:"
+	},
+	"peerDependencies": {
+		"react": "catalog:",
+		"react-dom": "catalog:"
+	}
+}

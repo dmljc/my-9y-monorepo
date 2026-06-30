@@ -1,0 +1,63 @@
+.appLayout {
+	min-height: 100vh;
+	background: #f0f4f8;
+}
+
+.header {
+	background: #fff;
+	border-bottom: 1px solid #e8edf2;
+	padding: 0 32px;
+	height: 64px;
+	line-height: 64px;
+}
+
+.headerInner {
+	height: 64px;
+	gap: 48px;
+}
+
+.brand {
+	margin: 0;
+	flex: none;
+	font-size: 20px;
+	font-weight: 600;
+	color: #1b1b1b;
+	white-space: nowrap;
+}
+
+.topMenu {
+	flex: 1;
+	min-width: 0;
+	justify-content: center;
+	border-bottom: none;
+	background: transparent;
+}
+
+.topMenu :global(.ant-menu-item) {
+	padding-inline: 20px;
+	color: #666;
+	font-size: 15px;
+}
+
+.topMenu :global(.ant-menu-item .anticon) {
+	font-size: 16px;
+}
+
+.topMenu :global(.ant-menu-item-selected) {
+	color: #0984ff;
+	font-weight: 500;
+}
+
+.topMenu :global(.ant-menu-item::after) {
+	border-bottom: none;
+}
+
+.topMenu :global(.ant-menu-item:hover) {
+	color: #0984ff;
+}
+
+.content {
+	overflow: auto;
+	padding: 24px 32px 24px;
+	background: #f0f4f8;
+}

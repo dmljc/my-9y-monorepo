@@ -1,0 +1,37 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+# .vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.tsbuildinfo
+
+# vitepress
+node_modules
+cache
+.DS_Store
+
+# Compodoc
+/packages/server/documentation/**
+
+# Cursor MCP（含 LANHU_COOKIE 等敏感信息）
+.cursor/mcp.json
+

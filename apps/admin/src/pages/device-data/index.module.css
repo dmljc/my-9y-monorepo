@@ -1,0 +1,67 @@
+.device {
+	min-height: calc(100vh - 120px);
+}
+
+.panel {
+	min-height: calc(100vh - 120px);
+	padding: 24px;
+	border-radius: 4px;
+	background: #fff;
+}
+
+.panelHeader {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 24px;
+	margin-bottom: 16px;
+}
+
+.filterBar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.filterLabel {
+	flex: none;
+	font-size: 14px;
+	line-height: 22px;
+	color: #333;
+	white-space: nowrap;
+}
+
+.searchInput {
+	width: 220px;
+}
+
+.syncButton {
+	margin-left: auto;
+}
+
+.tableWrap {
+	width: 100%;
+	overflow-x: auto;
+}
+
+.deviceTable {
+	min-width: 920px;
+}
+
+.deviceTable :global(.ant-table-thead > tr > th) {
+	background: #f2f5f8;
+	color: #333;
+	font-weight: 500;
+}
+
+.deviceTable :global(.ant-table-tbody > tr.ant-table-row:hover > td) {
+	background: #e6f4ff;
+}
+
+@media (max-width: 900px) {
+	.panelHeader {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+}

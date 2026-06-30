@@ -1,0 +1,55 @@
+{
+	"name": "frontend-project-template",
+	"license": "ISC",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"admin:dev": "pnpm -F admin dev",
+		"admin:build": "pnpm -F admin build",
+		"dashboard:dev": "pnpm -F dashboard dev",
+		"dashboard:build": "pnpm -F dashboard build",
+		"annotation:dev": "pnpm -F @cc/image-annotation dev",
+		"annotation:build": "pnpm -F @cc/image-annotation build",
+		"clean:all-dists": "pnpm -r exec rm -rf dist",
+		"clean:all-node_modules": "pnpm -r exec rm -rf node_modules && rm -rf node_modules",
+		"lint": "biome check",
+		"lint:fix": "biome check --write --unsafe",
+		"prepare": "husky",
+		"lint:lint-staged": "lint-staged",
+		"commit": "git-cz",
+		"ncu": "ncu",
+		"ncu:update": "ncu -u"
+	},
+	"lint-staged": {
+		"*.{js,ts,tsx,cjs,mjs}": [
+			"biome check --write --unsafe"
+		],
+		"*.{json,jsonc}": [
+			"biome check --write --unsafe"
+		],
+		"*.{css,scss}": [
+			"biome check --write --unsafe"
+		]
+	},
+	"config": {
+		"commitizen": {
+			"path": "node_modules/cz-git"
+		}
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.16",
+		"@commitlint/cli": "^21.0.2",
+		"@commitlint/config-conventional": "^21.0.2",
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
+		"@vitejs/plugin-react-swc": "catalog:",
+		"commitizen": "^4.3.1",
+		"cz-git": "^1.13.1",
+		"husky": "^9.1.7",
+		"lint-staged": "^17.0.7",
+		"npm-check-updates": "^22.2.2",
+		"typescript": "catalog:",
+		"vite": "catalog:"
+	}
+}
