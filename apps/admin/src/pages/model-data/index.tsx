@@ -197,7 +197,7 @@ const ModelData = () => {
 
 				<div className={styles.tableWrap}>
 					<Table
-						size="middle"
+						size="small"
 						className={styles.modelDataTable}
 						columns={columns}
 						dataSource={dataSource}

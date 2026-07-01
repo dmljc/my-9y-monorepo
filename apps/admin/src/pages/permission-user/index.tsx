@@ -245,7 +245,7 @@ const PermissionUser = () => {
 
 				<div className={styles.tableWrap}>
 					<Table
-						size="middle"
+						size="small"
 						className={styles.table}
 						columns={columns}
 						dataSource={dataSource}

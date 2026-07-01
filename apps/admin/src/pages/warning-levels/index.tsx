@@ -159,7 +159,7 @@ const WarningLevels = () => {
 
 				<div className={styles.tableWrap}>
 					<Table
-						size="middle"
+						size="small"
 						className={styles.levelTable}
 						columns={columns}
 						dataSource={dataSource}

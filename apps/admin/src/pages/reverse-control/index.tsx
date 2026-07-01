@@ -205,7 +205,7 @@ const ReverseControl = () => {
 
 				<div className={styles.tableWrap}>
 					<Table
-						size="middle"
+						size="small"
 						className={styles.ruleTable}
 						columns={columns}
 						dataSource={pagedRules}

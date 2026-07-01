@@ -180,6 +180,7 @@ const WarningList = () => {
 			title: "时间",
 			dataIndex: "time",
 			key: "time",
+			width: 180,
 		},
 		{
 			title: "状态",
@@ -268,7 +269,7 @@ const WarningList = () => {
 
 			<div className={styles.listPanel}>
 				<Table
-					size="middle"
+					size="small"
 					className={styles.warningTable}
 					columns={columns}
 					dataSource={dataSource}

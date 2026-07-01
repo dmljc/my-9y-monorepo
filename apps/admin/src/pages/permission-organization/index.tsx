@@ -182,7 +182,7 @@ const PermissionOrganization = () => {
 			</div>
 
 			<Table
-				size="middle"
+				size="small"
 				columns={columns}
 				dataSource={dataSource}
 				rowKey="id"

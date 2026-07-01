@@ -153,7 +153,7 @@ const InspectionLedger = () => {
 
 			<div className={styles.listPanel}>
 				<Table
-					size="middle"
+					size="small"
 					className={styles.warningTable}
 					columns={columns}
 					dataSource={dataSource}

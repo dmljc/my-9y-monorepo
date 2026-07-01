@@ -197,7 +197,7 @@ const HistoricalData = () => {
 
 				<div className={styles.tableWrap}>
 					<Table
-						size="middle"
+						size="small"
 						className={styles.historicalDataTable}
 						columns={columns}
 						dataSource={dataSource}
