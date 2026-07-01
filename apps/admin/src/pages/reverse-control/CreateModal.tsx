@@ -6,6 +6,7 @@ import {
 	Input,
 	InputNumber,
 	Modal,
+	Radio,
 	Row,
 	Select,
 	Switch,
@@ -20,7 +21,8 @@ import {
 	DEFAULT_CONDITION,
 	DEVICE_OPTIONS,
 	deriveConditionRelation,
-	isDuplicateRuleName,
+	// isDuplicateRuleName,
+	JOIN_OPERATOR_OPTIONS,
 	normalizeConditionsForForm,
 	OPERATOR_OPTIONS,
 	POINT_OPTIONS,
@@ -39,7 +41,7 @@ interface CreateRuleModalProps {
 const CreateRuleModal = ({
 	open,
 	editingRecord,
-	existingRules,
+	// existingRules,
 	onCancel,
 	onOk,
 }: CreateRuleModalProps) => {
@@ -47,23 +49,18 @@ const CreateRuleModal = ({
 	const [loading, setLoading] = useState(false);
 	const isEdit = editingRecord !== null;
 
-	const conditions = Form.useWatch("conditions", form);
-
 	useEffect(() => {
 		if (!open) return;
 		if (editingRecord) {
 			form.setFieldsValue({
 				name: editingRecord.name,
 				description: editingRecord.description,
+				enabled: editingRecord.enabled,
 				conditions: normalizeConditionsForForm(
 					editingRecord.conditions,
 					editingRecord.conditionRelation,
-				).map((item) => ({ ...item })),
-				actions: editingRecord.actions.map((item) => ({
-					...item,
-					delay: item.delay ?? 0,
-				})),
-				enabled: editingRecord.enabled,
+				),
+				actions: editingRecord.actions,
 			});
 			return;
 		}
@@ -74,25 +71,7 @@ const CreateRuleModal = ({
 			conditions: [{ ...DEFAULT_CONDITION }],
 			actions: [{ ...DEFAULT_ACTION }],
 		});
-	}, [open, editingRecord, form]);
-
-	const toggleConditionJoin = (conditionIndex: number) => {
-		const currentConditions: RuleFormValues["conditions"] =
-			form.getFieldValue("conditions") ?? [];
-		const currentJoin =
-			currentConditions[conditionIndex]?.joinOperator ?? "and";
-		form.setFieldsValue({
-			conditions: currentConditions.map((item, index) =>
-				index === conditionIndex
-					? {
-							...item,
-							joinOperator:
-								currentJoin === "and" ? "or" : "and",
-						}
-					: item,
-			),
-		});
-	};
+	}, [open, editingRecord]);
 
 	const handleOk = async () => {
 		try {
@@ -104,8 +83,6 @@ const CreateRuleModal = ({
 				conditionRelation: deriveConditionRelation(values.conditions),
 			});
 			onCancel();
-		} catch {
-			// 表单校验失败，不做处理
 		} finally {
 			setLoading(false);
 		}
@@ -125,7 +102,7 @@ const CreateRuleModal = ({
 		>
 			<Form form={form} preserve={false} className={styles.ruleForm}>
 				<Row gutter={24}>
-					<Col span={24}>
+					<Col span={12}>
 						<Form.Item
 							name="name"
 							label="反控规则名称"
@@ -135,22 +112,22 @@ const CreateRuleModal = ({
 									max: RULE_NAME_MAX_LENGTH,
 									message: `最多输入${RULE_NAME_MAX_LENGTH}个汉字`,
 								},
-								{
-									validator: (_, value: string) => {
-										if (
-											isDuplicateRuleName(
-												existingRules,
-												value,
-												editingRecord?.id,
-											)
-										) {
-											return Promise.reject(
-												new Error("规则名称已存在"),
-											);
-										}
-										return Promise.resolve();
-									},
-								},
+								// {
+								// 	validator: (_, value: string) => {
+								// 		if (
+								// 			isDuplicateRuleName(
+								// 				existingRules,
+								// 				value,
+								// 				editingRecord?.id,
+								// 			)
+								// 		) {
+								// 			return Promise.reject(
+								// 				new Error("规则名称已存在"),
+								// 			);
+								// 		}
+								// 		return Promise.resolve();
+								// 	},
+								// },
 							]}
 						>
 							<Input
@@ -160,10 +137,7 @@ const CreateRuleModal = ({
 							/>
 						</Form.Item>
 					</Col>
-				</Row>
-
-				<Row gutter={24}>
-					<Col span={24}>
+					<Col span={12}>
 						<Form.Item
 							name="description"
 							label="反控规则描述"
@@ -208,24 +182,24 @@ const CreateRuleModal = ({
 															field.name,
 															"joinOperator",
 														]}
-														hidden
+														initialValue="and"
+														rules={[
+															{
+																required: true,
+																message:
+																	"请选择条件关系",
+															},
+														]}
 													>
-														<input type="hidden" />
+														<Radio.Group
+															className={
+																styles.joinRadioGroup
+															}
+															options={
+																JOIN_OPERATOR_OPTIONS
+															}
+														/>
 													</Form.Item>
-													<Button
-														type="link"
-														onClick={() =>
-															toggleConditionJoin(
-																index,
-															)
-														}
-													>
-														{(conditions?.[index]
-															?.joinOperator ??
-															"and") === "and"
-															? "and"
-															: "or"}
-													</Button>
 												</div>
 											)}
 											<div className={styles.ruleRow}>
@@ -301,12 +275,7 @@ const CreateRuleModal = ({
 														},
 													]}
 												>
-													<InputNumber
-														placeholder="请输入数值"
-														style={{
-															width: "100%",
-														}}
-													/>
+													<InputNumber placeholder="请输入数值" />
 												</Form.Item>
 												<Button
 													type="text"

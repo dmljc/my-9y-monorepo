@@ -48,21 +48,23 @@ export const RELATION_OPTIONS = [
 	{ label: "满足以下任一条件", value: "any" },
 ];
 
-/** 新增条件默认值 */
-export const DEFAULT_CONDITION: RuleCondition = {
-	deviceName: "",
-	pointName: "",
+/** 相邻条件之间的 and / or 单选项 */
+export const JOIN_OPERATOR_OPTIONS = [
+	{ label: "and", value: "and" },
+	{ label: "or", value: "or" },
+] as const;
+
+/** 新增条件默认值（不设空字符串，Select 才能显示 placeholder） */
+export const DEFAULT_CONDITION = {
 	operator: ">",
 	value: 0,
-};
+} satisfies Partial<RuleCondition> & Pick<RuleCondition, "operator" | "value">;
 
 /** 新增动作默认值 */
-export const DEFAULT_ACTION: RuleAction = {
-	deviceName: "",
-	pointName: "",
+export const DEFAULT_ACTION = {
 	delay: 0,
 	targetValue: 0,
-};
+} satisfies Partial<RuleAction> & Pick<RuleAction, "delay" | "targetValue">;
 
 /** 规则名称最大长度（汉字） */
 export const RULE_NAME_MAX_LENGTH = 12;
@@ -135,7 +137,9 @@ export function normalizeConditionsForForm(
 export function createConditionSummary(rule: ReverseControlRule): string {
 	const joins = rule.conditions
 		.slice(1)
-		.map((condition) => getConditionJoinOperator(condition, rule.conditionRelation));
+		.map((condition) =>
+			getConditionJoinOperator(condition, rule.conditionRelation),
+		);
 	const hasMixedJoins = new Set(joins).size > 1;
 	const relationText = hasMixedJoins
 		? "混合条件"

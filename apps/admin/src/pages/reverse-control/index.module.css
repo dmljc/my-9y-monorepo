@@ -91,6 +91,22 @@
 	margin: 4px 0;
 }
 
+.conditionJoin :global(.ant-form-item) {
+	margin-bottom: 0;
+}
+
+.joinRadioGroup:global(.ant-radio-group) {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 16px;
+}
+
+.joinRadioGroup :global(.ant-radio-wrapper) {
+	margin-inline-end: 0;
+	line-height: 22px;
+}
+
 .descRow {
 	display: flex;
 	align-items: baseline;
@@ -130,21 +146,20 @@
 	border: 1px solid #e8edf2;
 	border-radius: 4px;
 	background: #fbfdff;
+	grid-template-columns: 52px minmax(140px, 1.05fr) minmax(140px, 1.05fr) 136px minmax(
+			120px,
+			0.95fr
+		) 32px;
 }
 
-.ruleRow {
-	grid-template-columns: 64px minmax(120px, 1fr) minmax(150px, 1.2fr) 96px 120px 32px;
-}
-
-.actionRow {
-	grid-template-columns: 52px minmax(140px, 1.05fr) minmax(140px, 1.05fr) 136px minmax(120px, 0.95fr) 32px;
-}
-
+.ruleRow :global(.ant-form-item),
 .actionRow :global(.ant-form-item) {
 	margin-bottom: 0;
 	min-width: 0;
 }
 
+.ruleRow :global(.ant-select),
+.ruleRow :global(.ant-input-number),
 .actionRow :global(.ant-select),
 .actionRow :global(.ant-input-number) {
 	width: 100%;
