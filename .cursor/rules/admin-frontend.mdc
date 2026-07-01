@@ -18,37 +18,52 @@ alwaysApply: false
 
 ### 事件处理函数命名
 
-**做什么**：组件内响应用户交互、UI 事件的函数统一用 **`handle` + 动作** 命名（camelCase）。
+**做什么**：按场景分两档命名——**页面内直接绑定的交互**（如 `Button` 的 `onClick`）用 **`handle` + 动作**；**Ant Design 等组件自带的回调 prop**（如 Form 的 `onFinish`、Modal 的 `onOk`）处理函数与 **prop 名保持一致**，用 **`on` + 动作**，**不要**改成 `handleFinish`、`handleOk` 等。
 
-**为什么**：与 `handleDelete`、`handleSearch` 等现有写法一致，见名知意为事件回调，避免 `openAdd`、`openEdit` 等偏 UI 实现细节或语义不清的命名。
+**为什么**：`handleSearch`、`handleDelete` 等表达「本页 UI 事件」；Form / Modal 的 `onFinish`、`onOk` 与[官方文档](https://ant.design/docs/react/llms-cn)及 TS 类型一致，prop 与函数同名时 `<Form onFinish={onFinish} />` 一眼可对齐，避免 `onFinish={handleFinish}` 的错位感。
 
 **✅ 推荐**
 
 ```tsx
+// 页面按钮、表格操作等
 const handleAdd = () => {
   setEditingRecord(null);
   setModalOpen(true);
 };
 
-const handleEdit = (record: User) => {
-  setEditingRecord(record);
-  setModalOpen(true);
+<Button onClick={handleAdd}>新增用户</Button>
+
+// Form：函数名与 prop 同名
+const onFinish = (values: LoginFormValues) => {
+  /* 提交 */
 };
 
-<Button onClick={handleAdd}>新增用户</Button>
-<Button onClick={() => handleEdit(record)}>编辑</Button>
+const onFinishFailed = () => {
+  message.error("请完善表单");
+};
+
+<Form onFinish={onFinish} onFinishFailed={onFinishFailed}>
+  {/* ... */}
+</Form>
+
+// Modal / 子组件：prop 仍为 onOk、onCancel
+<CreateModal onOk={handleModalSubmit} onCancel={() => setModalOpen(false)} />
 ```
 
 **❌ 避免**
 
 ```tsx
 const openAdd = () => { /* ... */ };
-const openEdit = (record: User) => { /* ... */ };
+<Button onClick={openAdd}>新增</Button>
 
-<Button onClick={openAdd}>新增用户</Button>
+const handleFinish = (values: LoginFormValues) => { /* ... */ };
+<Form onFinish={handleFinish} />
+
+const handleOk = async () => { /* ... */ };
+<Modal onOk={handleOk} />
 ```
 
-**边界**：`loadData`、`fetchXxx` 等数据加载/请求函数不必加 `handle`；传给子组件的 props 仍可用 `onOk`、`onCancel` 等 `on*` 命名。
+**边界**：`loadData`、`fetchXxx` 等数据加载不必加 `handle` 或 `on`；传给**业务子组件**的 props 若约定为 `onOk` / `onCancel`，父组件侧重写 `handleModalSubmit` 再传入亦可（见 CreateModal 用法）；仅当回调**直接**写在 Ant Design 组件（Form、Modal、Table 的 `onChange` 等）上时，优先 `onXxx` 与 prop 对齐。
 
 ### useCallback / useMemo
 
@@ -89,6 +104,33 @@ const menuItems = useMemo(
 ```
 
 **何时才用**：子组件已用 `memo` 且 profilter 证实 props 引用变化导致多余渲染；Context value 等确需稳定引用；昂贵计算（大列表派生、复杂图表数据）且依赖明确。其余情况优先写普通函数/变量。
+
+### 页面 utils 中文 JSDoc
+
+**做什么**：页面目录下的 `utils.ts`、`types.ts`、`formRules.ts`、`api.ts` 等非组件文件中，**导出的类型、常量、函数**以及**模块内私有常量、工具函数**，均须用 **中文 JSDoc 多行注释**；函数按下方模板补充 **`@param`**、**`@returns`**，类型与常量仅写摘要段。
+
+**为什么**：utils 常被页面、弹窗、hooks 多处引用；统一 `@param {类型} - 说明`、`@returns {类型} - 说明` 格式便于 IDE 悬停阅读，并明确参数与返回值的业务语义。
+
+**格式模板**
+
+```ts
+/**
+ * 函数的作用描述。
+ *
+ * @param {string} - 函数的参数格式描述。
+ * @param {boolean} - 函数的参数格式描述。
+ * @returns {string} - 函数的返回值格式描述。
+ */
+```
+
+**写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 摘要 | 首段说明职责，句末加句号；与标签之间空一行 |
+| `@param` | `@param {类型} - 说明。`；类型后直接接 `-`，不写参数名；多参数各占一行 |
+| `@returns` | `@returns {类型} - 说明。`；与 `@param` 同样用 `-` 分隔类型与说明 |
+| 类型 / 常量 | 仅写摘要段；无参函数省略 `@param` |
 
 ### 列表页 DOM 扁平化
 
@@ -496,6 +538,7 @@ useEffect(() => {
 pages/Login/
   index.tsx
   index.module.css   # 布局、间距；必要时 :global(.ant-*) 或 @media
+  utils.ts           # 类型、常量、工具函数（中文 JSDoc，见「页面 utils 中文 JSDoc」）
 ```
 
 - `index.tsx` 中：`import styles from "./index.module.css"`，用 `className={styles.xxx}`。

@@ -1,5 +1,6 @@
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { Button, Checkbox, Flex, Form, Input, Typography } from "antd";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import loginHero from "@/assets/login/login-hero.webp";
 import { getDefaultPathForTop } from "@/layout/menuConfig";
@@ -11,11 +12,57 @@ interface LoginFormValues {
 	remember?: boolean;
 }
 
+const LOGIN_CREDENTIALS_KEY = "admin_login_credentials";
+
+const loadSavedCredentials = (): Partial<LoginFormValues> | null => {
+	try {
+		const raw = localStorage.getItem(LOGIN_CREDENTIALS_KEY);
+		if (!raw) return null;
+
+		const saved = JSON.parse(raw) as Pick<
+			LoginFormValues,
+			"username" | "password"
+		>;
+		if (!saved.username) return null;
+
+		return {
+			username: saved.username,
+			password: saved.password ?? "",
+			remember: true,
+		};
+	} catch {
+		return null;
+	}
+};
+
+const saveCredentials = (values: LoginFormValues) => {
+	if (values.remember) {
+		localStorage.setItem(
+			LOGIN_CREDENTIALS_KEY,
+			JSON.stringify({
+				username: values.username,
+				password: values.password,
+			}),
+		);
+		return;
+	}
+
+	localStorage.removeItem(LOGIN_CREDENTIALS_KEY);
+};
+
 const Login = () => {
 	const navigate = useNavigate();
 	const [form] = Form.useForm<LoginFormValues>();
 
-	const onFinish = () => {
+	useEffect(() => {
+		const saved = loadSavedCredentials();
+		if (saved) {
+			form.setFieldsValue(saved);
+		}
+	}, []);
+
+	const onFinish = (values: LoginFormValues) => {
+		saveCredentials(values);
 		navigate(getDefaultPathForTop("warning"));
 	};
 
