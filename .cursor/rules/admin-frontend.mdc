@@ -90,6 +90,75 @@ const menuItems = useMemo(
 
 **何时才用**：子组件已用 `memo` 且 profilter 证实 props 引用变化导致多余渲染；Context value 等确需稳定引用；昂贵计算（大列表派生、复杂图表数据）且依赖明确。其余情况优先写普通函数/变量。
 
+### 列表页 DOM 扁平化
+
+**做什么**：列表/CRUD 页在**布局与功能不变**的前提下，尽量少套仅用于布局的 wrapper（`section`、`header`、多层 `div`），保持 JSX 扁平。
+
+**为什么**：无业务含义的嵌套容器增加 DOM 深度与 CSS 选择器链，不利于阅读和维护；多数 admin 列表页结构相似（工具栏 + 表格 + 弹窗），一层根容器 + 一层工具栏 + 表格即可表达。
+
+**✅ 推荐**
+
+```tsx
+<div className={styles.permissionOrganization}>
+  <div className={styles.toolbar}>
+    <span className={styles.filterLabel}>组织名称</span>
+    <Input className={styles.searchInput} placeholder="请输入组织名称" onPressEnter={handleSearch} />
+    <Button type="primary" onClick={handleSearch}>查询</Button>
+    <Button onClick={handleReset}>重置</Button>
+    <div className={styles.panelActions}>
+      <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加组织</Button>
+    </div>
+  </div>
+
+  <Table columns={columns} dataSource={dataSource} scroll={{ x: 640 }} />
+
+  <CreateModal open={modalOpen} onCancel={() => setModalOpen(false)} onOk={handleModalSubmit} />
+</div>
+```
+
+```css
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.panelActions {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+```
+
+**❌ 避免**（仅为布局而叠层）
+
+```tsx
+<div className={styles.page}>
+  <section className={styles.panel}>
+    <header className={styles.panelHeader}>
+      <div className={styles.filterBar}>{/* 筛选项 */}</div>
+      <div className={styles.panelActions}>{/* 操作按钮 */}</div>
+    </header>
+    <div className={styles.tableWrap}>
+      <Table /* ... */ />
+    </div>
+  </section>
+</div>
+```
+
+**常见合并方式**
+
+| 可去掉的层级 | 替代方式 |
+|-------------|---------|
+| 根容器 + 内层 `panel`/`section` | 样式合并到组件同名根类（如 `.permissionOrganization`） |
+| `header` + `filterBar` | 单层 `.toolbar`，筛选项直接作 flex 子项 |
+| 左右分栏再套 `filterBar` | 同一 flex 行，操作区 `.panelActions` 设 `margin-left: auto` |
+| 表格外层 `tableWrap` | Table 设 `scroll={{ x: … }}`，由组件内部处理横向滚动 |
+
+**边界**：弹窗（`<CreateModal />`）与表格并列挂在根容器下即可（Modal 会 portal 到 body）；**仍需保留**有明确职责的分组（如 `.panelActions` 将操作按钮作为一组靠右）；多区块页面（左树右表、上下两块独立卡片）可保留额外容器；不要为了扁平而牺牲响应式换行或无障碍语义。
+
 ## Ant Design
 
 - API、语义以[官方文档](https://ant.design/docs/react/llms-cn)为准，勿臆造 props。

@@ -144,63 +144,55 @@ const PermissionOrganization = () => {
 
 	return (
 		<div className={styles.page}>
-			<section className={styles.panel}>
-				<header className={styles.panelHeader}>
-					<div className={styles.filterBar}>
-						<span className={styles.filterLabel}>组织名称</span>
-						<Input
-							className={styles.searchInput}
-							placeholder="请输入组织名称"
-							value={orgName}
-							allowClear
-							onChange={(event) => setOrgName(event.target.value)}
-							onPressEnter={handleSearch}
-						/>
-						<Button type="primary" onClick={handleSearch}>
-							查询
-						</Button>
-						<Button onClick={handleReset}>重置</Button>
-					</div>
-					<div className={styles.panelActions}>
-						<Button
-							type="primary"
-							icon={<PlusOutlined />}
-							onClick={handleAdd}
-						>
-							添加组织
-						</Button>
-						<Upload
-							showUploadList={false}
-							beforeUpload={() => {
-								handleImport();
-								return false;
-							}}
-						>
-							<Button icon={<UploadOutlined />}>导入</Button>
-						</Upload>
-						<Button
-							icon={<DownloadOutlined />}
-							onClick={handleExport}
-						>
-							导出
-						</Button>
-					</div>
-				</header>
-
-				<div className={styles.tableWrap}>
-					<Table
-						size="middle"
-						className={styles.table}
-						columns={columns}
-						dataSource={dataSource}
-						rowKey="id"
-						loading={loading}
-						pagination={false}
-						defaultExpandAllRows
-						locale={{ emptyText: <Empty description="暂无组织" /> }}
-					/>
+			<div className={styles.toolbar}>
+				<span className={styles.filterLabel}>组织名称</span>
+				<Input
+					className={styles.searchInput}
+					placeholder="请输入组织名称"
+					value={orgName}
+					allowClear
+					onChange={(event) => setOrgName(event.target.value)}
+					onPressEnter={handleSearch}
+				/>
+				<Button type="primary" onClick={handleSearch}>
+					查询
+				</Button>
+				<Button onClick={handleReset}>重置</Button>
+				<div className={styles.panelActions}>
+					<Button
+						type="primary"
+						icon={<PlusOutlined />}
+						onClick={handleAdd}
+					>
+						添加组织
+					</Button>
+					<Upload
+						showUploadList={false}
+						beforeUpload={() => {
+							handleImport();
+							return false;
+						}}
+					>
+						<Button icon={<UploadOutlined />}>导入</Button>
+					</Upload>
+					<Button icon={<DownloadOutlined />} onClick={handleExport}>
+						导出
+					</Button>
 				</div>
-			</section>
+			</div>
+
+			<Table
+				size="middle"
+				className={styles.table}
+				columns={columns}
+				dataSource={dataSource}
+				rowKey="id"
+				loading={loading}
+				pagination={false}
+				defaultExpandAllRows
+				scroll={{ x: 640 }}
+				locale={{ emptyText: <Empty description="暂无组织" /> }}
+			/>
 
 			<CreateModal
 				open={modalOpen}
