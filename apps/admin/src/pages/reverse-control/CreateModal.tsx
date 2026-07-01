@@ -112,22 +112,6 @@ const CreateRuleModal = ({
 									max: RULE_NAME_MAX_LENGTH,
 									message: `最多输入${RULE_NAME_MAX_LENGTH}个汉字`,
 								},
-								// {
-								// 	validator: (_, value: string) => {
-								// 		if (
-								// 			isDuplicateRuleName(
-								// 				existingRules,
-								// 				value,
-								// 				editingRecord?.id,
-								// 			)
-								// 		) {
-								// 			return Promise.reject(
-								// 				new Error("规则名称已存在"),
-								// 			);
-								// 		}
-								// 		return Promise.resolve();
-								// 	},
-								// },
 							]}
 						>
 							<Input
@@ -222,8 +206,10 @@ const CreateRuleModal = ({
 													]}
 												>
 													<Select
-														showSearch
-														optionFilterProp="label"
+														showSearch={{
+															optionFilterProp:
+																"label",
+														}}
 														placeholder="请选择设备"
 														options={DEVICE_OPTIONS}
 													/>
@@ -342,8 +328,10 @@ const CreateRuleModal = ({
 												]}
 											>
 												<Select
-													showSearch
-													optionFilterProp="label"
+													showSearch={{
+														optionFilterProp:
+															"label",
+													}}
 													placeholder="请选择设备"
 													options={DEVICE_OPTIONS}
 												/>

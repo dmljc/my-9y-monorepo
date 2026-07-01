@@ -22,6 +22,42 @@ alwaysApply: false
 - 外网开发时可联网检索，或使用 Cursor @Docs / MCP；无需在仓库内维护 `docs/` 副本。
 - 写样式、`:global(.ant-*)` 覆盖时参考组件语义说明（如 https://ant.design/llms-semantic-cn.md）。
 
+### JSX 属性换行
+
+**做什么**：单行能清晰表达的 JSX 属性尽量写在一行，减少无意义换行。
+
+**为什么**：短属性拆成多行只增加纵向篇幅，降低扫读效率。
+
+**✅ 推荐**
+
+```tsx
+<Form.Item
+  name={[field.name, "deviceName"]}
+  rules={[{ required: true, message: "请选择设备" }]}
+>
+  <Select showSearch={{ optionFilterProp: "label" }} placeholder="请选择设备" options={DEVICE_OPTIONS} />
+</Form.Item>
+```
+
+**❌ 避免**
+
+```tsx
+<Form.Item
+  name={[
+    field.name,
+    "deviceName",
+  ]}
+  rules={[
+    {
+      required: true,
+      message: "请选择设备",
+    },
+  ]}
+>
+```
+
+**边界**：多条 `rules`、长字符串、复杂 JSX 子树、超过可读宽度的 props 仍允许多行；Prettier 强制换行时以 Prettier 为准。
+
 ## 样式（默认）
 
 复杂页面（表单、列表、多区块布局）采用 **CSS Modules**：
