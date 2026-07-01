@@ -25,7 +25,7 @@ const PermissionAssignModal = ({
 	onCancel,
 	onOk,
 }: PermissionAssignModalProps) => {
-	const { message: showMsg } = App.useApp();
+	const { message } = App.useApp();
 	const [loading, setLoading] = useState(false);
 	const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
 
@@ -41,10 +41,10 @@ const PermissionAssignModal = ({
 		setLoading(true);
 		try {
 			await onOk(checkedKeys);
-			showMsg.success("权限分配成功");
+			message.success("权限分配成功");
 			onCancel();
 		} catch {
-			showMsg.error("权限分配失败");
+			message.error("权限分配失败");
 		} finally {
 			setLoading(false);
 		}

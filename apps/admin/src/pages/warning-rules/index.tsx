@@ -15,7 +15,7 @@ import {
 } from "./utils";
 
 const WarningRules = () => {
-	const { message: showMsg, modal: confirmModal } = App.useApp();
+	const { message, modal } = App.useApp();
 	const [loading, setLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<WarningRule[]>([]);
 	const [modalOpen, setModalOpen] = useState(false);
@@ -43,12 +43,12 @@ const WarningRules = () => {
 				setPageNum(result.pageNum);
 				setPageSize(result.pageSize);
 			} catch {
-				showMsg.error("加载报警规则失败");
+				message.error("加载报警规则失败");
 			} finally {
 				setLoading(false);
 			}
 		},
-		[appliedRuleName, showMsg],
+		[appliedRuleName, message],
 	);
 
 	const handleSearch = () => {
@@ -80,10 +80,10 @@ const WarningRules = () => {
 	const handleModalSubmit = async (values: RuleFormValues) => {
 		if (editingRecord) {
 			await update(editingRecord.id, values);
-			showMsg.success("更新成功");
+			message.success("更新成功");
 		} else {
 			await create(values);
-			showMsg.success("创建成功");
+			message.success("创建成功");
 		}
 		await loadData(pageNum, pageSize);
 	};
@@ -95,17 +95,17 @@ const WarningRules = () => {
 		setTogglingId(record.id);
 		try {
 			await update(record.id, { enabled });
-			showMsg.success(enabled ? "已启用" : "已停用");
+			message.success(enabled ? "已启用" : "已停用");
 			await loadData(pageNum, pageSize);
 		} catch {
-			showMsg.error("状态更新失败");
+			message.error("状态更新失败");
 		} finally {
 			setTogglingId(null);
 		}
 	};
 
 	const handleDelete = (record: WarningRule) => {
-		confirmModal.confirm({
+		modal.confirm({
 			title: "确认删除",
 			content: `确定要删除报警规则「${record.name}」吗？`,
 			okText: "删除",
@@ -113,7 +113,7 @@ const WarningRules = () => {
 			cancelText: "取消",
 			onOk: async () => {
 				await remove(record.id);
-				showMsg.success("删除成功");
+				message.success("删除成功");
 				await loadData(pageNum, pageSize);
 			},
 		});

@@ -14,7 +14,7 @@ import {
 } from "./utils";
 
 const PermissionRole = () => {
-	const { message: showMsg, modal: confirmModal } = App.useApp();
+	const { message, modal } = App.useApp();
 	const [loading, setLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<Role[]>([]);
 	const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -36,12 +36,12 @@ const PermissionRole = () => {
 				setPageNum(result.pageNum);
 				setPageSize(result.pageSize);
 			} catch {
-				showMsg.error("加载角色列表失败");
+				message.error("加载角色列表失败");
 			} finally {
 				setLoading(false);
 			}
 		},
-		[appliedName, showMsg],
+		[appliedName, message],
 	);
 
 	const handleSearch = () => {
@@ -78,7 +78,7 @@ const PermissionRole = () => {
 
 	const handleCreate = async (values: RoleFormValues) => {
 		await create(values);
-		showMsg.success("添加成功");
+		message.success("添加成功");
 		await loadData(pageNum, pageSize);
 	};
 
@@ -89,7 +89,7 @@ const PermissionRole = () => {
 	};
 
 	const handleDelete = (record: Role) => {
-		confirmModal.confirm({
+		modal.confirm({
 			title: "确认删除",
 			content: `确定要删除角色「${record.name}」吗？`,
 			okText: "删除",
@@ -98,10 +98,10 @@ const PermissionRole = () => {
 			onOk: async () => {
 				try {
 					await remove(record.id);
-					showMsg.success("删除成功");
+					message.success("删除成功");
 					await loadData(pageNum, pageSize);
 				} catch {
-					showMsg.error("系统角色不可删除");
+					message.error("系统角色不可删除");
 				}
 			},
 		});

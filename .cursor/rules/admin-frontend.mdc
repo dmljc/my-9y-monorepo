@@ -80,7 +80,7 @@ const handleSearch = () => {
 ```tsx
 const loadData = useCallback(async (p: number, ps: number) => {
   // ...
-}, [username, name, showMsg]);
+}, [username, name, message]);
 
 const menuItems = useMemo(
   () => MENUS.map((item) => ({ key: item.key, label: item.label })),
@@ -95,6 +95,37 @@ const menuItems = useMemo(
 - API、语义以[官方文档](https://ant.design/docs/react/llms-cn)为准，勿臆造 props。
 - 外网开发时可联网检索，或使用 Cursor @Docs / MCP；无需在仓库内维护 `docs/` 副本。
 - 写样式、`:global(.ant-*)` 覆盖时参考组件语义说明（如 https://ant.design/llms-semantic-cn.md）。
+
+### App.useApp 解构命名
+
+**做什么**：从 `App.useApp()` 解构时直接使用 **`message`**、**`modal`**，**不要**重命名为 `showMsg`、`confirmModal` 等别名。
+
+**为什么**：与 [Ant Design 官方文档](https://ant.design/components/app-cn)一致，名称已足够表达「全局 Message / Modal 静态方法」；额外别名增加阅读与维护成本。页面里的 `modalOpen`、`<CreateModal />` 是 UI 弹窗状态/组件，与 hook 返回的 `modal.confirm`（确认框 API）职责不同，变量名并不冲突。
+
+**✅ 推荐**
+
+```tsx
+const { message, modal } = App.useApp();
+
+message.success("保存成功");
+modal.confirm({
+  title: "确认删除",
+  okText: "删除",
+  okButtonProps: { danger: true },
+  onOk: async () => { /* ... */ },
+});
+```
+
+**❌ 避免**
+
+```tsx
+const { message: showMsg, modal: confirmModal } = App.useApp();
+
+showMsg.success("保存成功");
+confirmModal.confirm({ /* ... */ });
+```
+
+**边界**：须通过 `App.useApp()` 获取实例（继承 ConfigProvider 主题与 locale），**不要**使用 `import { message, Modal } from "antd"` 的静态 API；`message` / `modal` 实例引用稳定，不必写入 `useCallback` / `useEffect` 依赖数组（与 `form` 实例同理）。
 
 ### JSX 属性换行
 
@@ -239,6 +270,78 @@ useEffect(() => {
 ```
 
 **边界**：仅当 `editingRecord` 中某些字段的值需在回显前做**转换/格式化**（如日期对象转字符串、数组 join）时，才值得手动拆开 `setFieldsValue({ field: transform(record.field), ... })`；若字段名与 `Form.Item` 的 `name` 一一对应且值类型一致，直接传整个 record。
+
+### Modal / confirm 按钮文案
+
+**做什么**：`Modal` 与 `Modal.confirm` **不要**显式配置与 Ant Design 中文默认一致的 `cancelText`（「取消」）；新增/编辑表单弹窗也不要配置 `okText`（「确定」）和 `cancelText`，交给组件默认 locale。
+
+**为什么**：项目使用 Ant Design 默认中文 locale，重复写「确定」「取消」无信息量，只增加噪音；删除确认等场景若需区别于默认主按钮语义，可单独设置 `okText`（如「删除」）。
+
+**✅ 推荐**
+
+```tsx
+<Modal title="新增组织" open={open} onOk={handleOk} onCancel={onCancel}>
+  {/* ... */}
+</Modal>
+
+modal.confirm({
+  title: "确认删除",
+  content: "确定要删除吗？",
+  okText: "删除",
+  okButtonProps: { danger: true },
+  onOk: async () => { /* ... */ },
+});
+```
+
+**❌ 避免**
+
+```tsx
+<Modal okText="保存" cancelText="取消" /* ... */ />
+
+modal.confirm({
+  okText: "删除",
+  cancelText: "取消",
+  /* ... */
+});
+```
+
+**边界**：产品明确要求非默认文案（如「提交审核」「我知道了」）时可配置 `okText` / `cancelText`；删除类确认保留 `okText: "删除"` + `okButtonProps={{ danger: true }}` 即可，不必写 `cancelText`。
+
+### 接口 catch 错误提示
+
+**做什么**：页面里 `try/catch` 包裹接口调用后，在 `catch` 中用**固定、简短的中文文案**提示用户（如 `message.error("操作失败")`），**不要**解析并展示 `error.message`。
+
+**为什么**：接口/ mock 抛出的 `Error.message` 偏开发语义（如「组织不存在」），直接暴露给用户不稳定也不统一；列表页操作失败用固定提示即可，具体原因由后端日志或后续统一错误处理承担。
+
+**✅ 推荐**
+
+```tsx
+try {
+  await update(id, values);
+  message.success("保存成功");
+  loadData();
+} catch {
+  message.error("操作失败");
+}
+
+try {
+  await remove(record.id);
+  message.success("删除成功");
+  loadData();
+} catch {
+  message.error("删除失败");
+}
+```
+
+**❌ 避免**
+
+```tsx
+} catch (error) {
+  message.error(error instanceof Error ? error.message : "操作失败");
+}
+```
+
+**边界**：`catch` 中无需声明未使用的 `error` 参数；不同操作可用不同固定文案（「加载失败」「删除失败」）；若接入全局请求拦截器统一 toast，页面内仍保持简短固定提示，不重复解析异常对象。
 
 ### 异步 / fire-and-forget 调用
 

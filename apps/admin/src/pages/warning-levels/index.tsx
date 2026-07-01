@@ -8,7 +8,7 @@ import styles from "./index.module.css";
 import type { LevelFormValues, WarningLevel } from "./utils";
 
 const WarningLevels = () => {
-	const { message: showMsg, modal: confirmModal } = App.useApp();
+	const { message, modal } = App.useApp();
 	const [loading, setLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<WarningLevel[]>([]);
 	const [modalOpen, setModalOpen] = useState(false);
@@ -29,12 +29,12 @@ const WarningLevels = () => {
 				setPageNum(result.pageNum);
 				setPageSize(result.pageSize);
 			} catch {
-				showMsg.error("加载报警等级失败");
+				message.error("加载报警等级失败");
 			} finally {
 				setLoading(false);
 			}
 		},
-		[showMsg],
+		[message],
 	);
 
 	const initRef = useRef(false);
@@ -59,16 +59,16 @@ const WarningLevels = () => {
 	const handleModalSubmit = async (values: LevelFormValues) => {
 		if (editingRecord) {
 			await update(editingRecord.id, values);
-			showMsg.success("更新成功");
+			message.success("更新成功");
 		} else {
 			await create(values);
-			showMsg.success("创建成功");
+			message.success("创建成功");
 		}
 		await loadData(pageNum, pageSize);
 	};
 
 	const handleDelete = (record: WarningLevel) => {
-		confirmModal.confirm({
+		modal.confirm({
 			title: "确认删除",
 			content: `确定要删除报警等级「${record.name}」吗？`,
 			okText: "删除",
@@ -76,7 +76,7 @@ const WarningLevels = () => {
 			cancelText: "取消",
 			onOk: async () => {
 				await remove(record.id);
-				showMsg.success("删除成功");
+				message.success("删除成功");
 				await loadData(pageNum, pageSize);
 			},
 		});

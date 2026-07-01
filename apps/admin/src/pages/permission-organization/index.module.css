@@ -36,7 +36,14 @@
 }
 
 .searchInput {
-	width: 220px;
+	width: 180px;
+}
+
+.panelActions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
 }
 
 .tableWrap {
@@ -45,7 +52,7 @@
 }
 
 .table {
-	min-width: 1000px;
+	min-width: 640px;
 }
 
 .table :global(.ant-table-thead > tr > th) {

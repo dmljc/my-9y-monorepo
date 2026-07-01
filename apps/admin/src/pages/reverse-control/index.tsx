@@ -8,7 +8,7 @@ import type { ReverseControlRule, RuleFormValues } from "./types";
 import { filterRules, MOCK_RULES } from "./utils";
 
 const ReverseControl = () => {
-	const { message: showMsg, modal: confirmModal } = App.useApp();
+	const { message, modal } = App.useApp();
 	const [rules, setRules] = useState<ReverseControlRule[]>(MOCK_RULES);
 	const [draftDeviceName, setDraftDeviceName] = useState("");
 	const [appliedDeviceName, setAppliedDeviceName] = useState("");
@@ -60,7 +60,7 @@ const ReverseControl = () => {
 						: rule,
 				),
 			);
-			showMsg.success("更新成功");
+			message.success("更新成功");
 		} else {
 			setRules((prev) => [
 				{
@@ -75,7 +75,7 @@ const ReverseControl = () => {
 				},
 				...prev,
 			]);
-			showMsg.success("新增成功");
+			message.success("新增成功");
 		}
 	};
 
@@ -88,11 +88,11 @@ const ReverseControl = () => {
 				rule.id === record.id ? { ...rule, enabled } : rule,
 			),
 		);
-		showMsg.success(enabled ? "已启用" : "已停用");
+		message.success(enabled ? "已启用" : "已停用");
 	};
 
 	const handleDelete = (record: ReverseControlRule) => {
-		confirmModal.confirm({
+		modal.confirm({
 			title: "确认删除",
 			content: `确定要删除反控规则「${record.name}」吗？`,
 			okButtonProps: { danger: true },
@@ -100,7 +100,7 @@ const ReverseControl = () => {
 				setRules((prev) =>
 					prev.filter((rule) => rule.id !== record.id),
 				);
-				showMsg.success("删除成功");
+				message.success("删除成功");
 			},
 		});
 	};

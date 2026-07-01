@@ -30,7 +30,7 @@ interface UseDeviceLedgerOptions {
 
 /** 点检台账列表页：数据加载、筛选、分页与 CRUD 操作 */
 export const useDeviceLedger = ({ statCardAssets }: UseDeviceLedgerOptions) => {
-	const { message: showMsg, modal: confirmModal } = App.useApp();
+	const { message, modal } = App.useApp();
 
 	const [draftFilter, setDraftFilter] =
 		useState<DeviceListFilter>(EMPTY_FILTER);
@@ -77,12 +77,12 @@ export const useDeviceLedger = ({ statCardAssets }: UseDeviceLedgerOptions) => {
 				setStats(result.stats);
 				setAllDevices(getAllDevices());
 			} catch {
-				showMsg.error("加载点检台账失败");
+				message.error("加载点检台账失败");
 			} finally {
 				setLoading(false);
 			}
 		},
-		[appliedFilter, showMsg],
+		[appliedFilter, message],
 	);
 
 	const initRef = useRef(false);
@@ -135,14 +135,14 @@ export const useDeviceLedger = ({ statCardAssets }: UseDeviceLedgerOptions) => {
 		async (values: DeviceFormValues) => {
 			if (editingRecord) {
 				await update(editingRecord.id, values);
-				showMsg.success("更新成功");
+				message.success("更新成功");
 			} else {
 				await create(values);
-				showMsg.success("创建成功");
+				message.success("创建成功");
 			}
 			await loadData(pageNum, pageSize);
 		},
-		[editingRecord, loadData, pageNum, pageSize, showMsg],
+		[editingRecord, loadData, pageNum, pageSize, message],
 	);
 
 	const handlePerformInspection = useCallback(
@@ -150,20 +150,20 @@ export const useDeviceLedger = ({ statCardAssets }: UseDeviceLedgerOptions) => {
 			setInspectingId(record.id);
 			try {
 				await performInspection(record.id);
-				showMsg.success("点检完成");
+				message.success("点检完成");
 				await loadData(pageNum, pageSize);
 			} catch {
-				showMsg.error("点检失败");
+				message.error("点检失败");
 			} finally {
 				setInspectingId(null);
 			}
 		},
-		[loadData, pageNum, pageSize, showMsg],
+		[loadData, pageNum, pageSize, message],
 	);
 
 	const handleDelete = useCallback(
 		(record: InspectionDevice) => {
-			confirmModal.confirm({
+			modal.confirm({
 				title: "确认删除",
 				content: `确定要删除设备「${record.name}」吗？`,
 				okText: "删除",
@@ -171,12 +171,12 @@ export const useDeviceLedger = ({ statCardAssets }: UseDeviceLedgerOptions) => {
 				cancelText: "取消",
 				onOk: async () => {
 					await remove(record.id);
-					showMsg.success("删除成功");
+					message.success("删除成功");
 					await loadData(pageNum, pageSize);
 				},
 			});
 		},
-		[confirmModal, loadData, pageNum, pageSize, showMsg],
+		[modal, loadData, pageNum, pageSize, message],
 	);
 
 	return {

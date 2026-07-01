@@ -13,7 +13,7 @@ import type { User, UserFormValues, UserListFilters } from "./utils";
 import { exportUsersToJson } from "./utils";
 
 const PermissionUser = () => {
-	const { message: showMsg, modal: confirmModal } = App.useApp();
+	const { message, modal } = App.useApp();
 	const [loading, setLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<User[]>([]);
 	const [modalOpen, setModalOpen] = useState(false);
@@ -47,7 +47,7 @@ const PermissionUser = () => {
 			setPageSize(result.pageSize);
 			setSelectedRowKeys([]);
 		} catch {
-			showMsg.error("加载用户列表失败");
+			message.error("加载用户列表失败");
 		} finally {
 			setLoading(false);
 		}
@@ -85,16 +85,16 @@ const PermissionUser = () => {
 	const handleModalSubmit = async (values: UserFormValues) => {
 		if (editingRecord) {
 			await update(editingRecord.id, values);
-			showMsg.success("保存成功");
+			message.success("保存成功");
 		} else {
 			await create(values);
-			showMsg.success("添加成功");
+			message.success("添加成功");
 		}
 		await loadData(pageNum, pageSize);
 	};
 
 	const handleDelete = (record: User) => {
-		confirmModal.confirm({
+		modal.confirm({
 			title: "确认删除",
 			content: `确定要删除用户「${record.name}」吗？`,
 			okText: "删除",
@@ -102,7 +102,7 @@ const PermissionUser = () => {
 			cancelText: "取消",
 			onOk: async () => {
 				await remove(record.id);
-				showMsg.success("删除成功");
+				message.success("删除成功");
 				await loadData(pageNum, pageSize);
 			},
 		});
@@ -114,15 +114,15 @@ const PermissionUser = () => {
 			name: name.trim() || undefined,
 		});
 		if (data.length === 0) {
-			showMsg.warning("暂无可导出的用户数据");
+			message.warning("暂无可导出的用户数据");
 			return;
 		}
 		exportUsersToJson(data);
-		showMsg.success("导出成功");
+		message.success("导出成功");
 	};
 
 	const handleImport = () => {
-		showMsg.info("导入功能待对接后端");
+		message.info("导入功能待对接后端");
 	};
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {

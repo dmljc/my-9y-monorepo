@@ -60,7 +60,7 @@ function StatCardView({ card }: { card: StatCard }) {
 }
 
 const WarningList = () => {
-	const { message: showMsg } = App.useApp();
+	const { message } = App.useApp();
 	const navigate = useNavigate();
 
 	const [dateRange, setDateRange] = useState<[string, string] | null>(null);
@@ -93,7 +93,7 @@ const WarningList = () => {
 			setPageSize(result.pageSize);
 			setStats(result.stats);
 		} catch {
-			showMsg.error("加载告警列表失败");
+			message.error("加载告警列表失败");
 		} finally {
 			setLoading(false);
 		}
@@ -128,10 +128,10 @@ const WarningList = () => {
 		setProcessingId(record.id);
 		try {
 			await processWarning(record.id);
-			showMsg.success("已标记为已解决");
+			message.success("已标记为已解决");
 			loadData(pageNum, pageSize);
 		} catch {
-			showMsg.error("操作失败");
+			message.error("操作失败");
 		} finally {
 			setProcessingId(null);
 		}
@@ -146,7 +146,7 @@ const WarningList = () => {
 			render: (_: unknown, __: WarningItem, index: number) =>
 				(pageNum - 1) * pageSize + index + 1,
 		},
-        {
+		{
 			title: "名称",
 			dataIndex: "name",
 			key: "name",

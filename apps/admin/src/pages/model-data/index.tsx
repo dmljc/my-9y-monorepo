@@ -6,7 +6,7 @@ import styles from "./index.module.css";
 import { toListParams } from "./utils";
 
 const ModelData = () => {
-	const { message: showMsg, modal: confirmModal } = App.useApp();
+	const { message, modal } = App.useApp();
 	const [draftDeviceName, setDraftDeviceName] = useState("");
 	const [appliedDeviceName, setAppliedDeviceName] = useState("");
 	const [tableLoading, setTableLoading] = useState(false);
@@ -26,12 +26,12 @@ const ModelData = () => {
 				setPageNum(result.pageNum);
 				setPageSize(result.pageSize);
 			} catch {
-				showMsg.error("加载物模型数据失败");
+				message.error("加载物模型数据失败");
 			} finally {
 				setTableLoading(false);
 			}
 		},
-		[appliedDeviceName, showMsg],
+		[appliedDeviceName, message],
 	);
 
 	const initRef = useRef(false);
@@ -61,18 +61,18 @@ const ModelData = () => {
 		setSyncing(true);
 		try {
 			await sync();
-			showMsg.success("同步成功");
+			message.success("同步成功");
 			await loadData(pageNum, pageSize);
 		} catch {
-			showMsg.error("同步失败");
+			message.error("同步失败");
 		} finally {
 			setSyncing(false);
 		}
-	}, [loadData, pageNum, pageSize, showMsg]);
+	}, [loadData, pageNum, pageSize, message]);
 
 	const handleDelete = useCallback(
 		(record: ModelDataRecord) => {
-			confirmModal.confirm({
+			modal.confirm({
 				title: "确认删除",
 				content: `确定要删除物模型数据「${record.modelName} / ${record.pointName}」吗？`,
 				okText: "删除",
@@ -80,12 +80,12 @@ const ModelData = () => {
 				cancelText: "取消",
 				onOk: async () => {
 					await remove(record.id);
-					showMsg.success("删除成功");
+					message.success("删除成功");
 					await loadData(pageNum, pageSize);
 				},
 			});
 		},
-		[confirmModal, loadData, pageNum, pageSize, showMsg],
+		[modal, loadData, pageNum, pageSize, message],
 	);
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {

@@ -16,7 +16,7 @@ import {
 const { RangePicker } = DatePicker;
 
 const HistoricalData = () => {
-	const { message: showMsg } = App.useApp();
+	const { message } = App.useApp();
 	const [searchParams] = useSearchParams();
 	const [draftFilter, setDraftFilter] = useState<DeviceFilter>(() =>
 		parseFilterFromSearch(searchParams.toString()),
@@ -40,12 +40,12 @@ const HistoricalData = () => {
 				setPageNum(result.pageNum);
 				setPageSize(result.pageSize);
 			} catch {
-				showMsg.error("加载历史数据失败");
+				message.error("加载历史数据失败");
 			} finally {
 				setTableLoading(false);
 			}
 		},
-		[appliedFilter, showMsg],
+		[appliedFilter, message],
 	);
 
 	const initRef = useRef(false);
