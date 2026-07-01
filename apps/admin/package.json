@@ -10,7 +10,6 @@
 	},
 	"dependencies": {
 		"@ant-design/icons": "catalog:",
-		"@cc/image-annotation": "workspace:*",
 		"antd": "catalog:",
 		"axios": "catalog:",
 		"dayjs": "catalog:",

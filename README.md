@@ -10,7 +10,6 @@
 ```
 apps/admin                 # 管理后台
 apps/dashboard             # 可视化大屏
-packages/image-annotation  # 图片标注组件库
 utils/http-client          # axios 封装，@utils/http-client
 .cursor/rules/             # Cursor 规则（admin 页面约定）
 ```
@@ -23,12 +22,11 @@ utils/http-client          # axios 封装，@utils/http-client
 pnpm install
 pnpm admin:dev
 pnpm dashboard:dev
-pnpm annotation:dev
 ```
 
 | 脚本 | 作用 |
 |------|------|
-| `pnpm admin:build` / `dashboard:build` / `annotation:build` | 各子包生产构建 |
+| `pnpm admin:build` / `dashboard:build` | 各子包生产构建 |
 | `pnpm lint` / `lint:fix` | 全仓库 Biome 检查 / 自动修复 |
 | `pnpm commit` | 交互式提交（cz-git） |
 | `pnpm ncu` | 检查可升级依赖（不改动文件） |
@@ -42,12 +40,10 @@ pnpm annotation:dev
 |----|------|------|
 | **admin** | 1111 | 路由：`/login`、`/digital-twin`、`/data-management/*`；dev 下 `/api` 代理 `localhost:3000` |
 | **dashboard** | 2222 | 大屏；API 代理同 admin |
-| **@cc/image-annotation** | 5173 | 矩形/多边形标注；admin 通过 `workspace:*` 依赖 |
 | **http-client** | — | Token、解包、401；见各 app `vite.config.ts` 别名 |
 
 - admin 编码约定：[.cursor/rules/admin-frontend.mdc](.cursor/rules/admin-frontend.mdc)
 - admin 页面示例：`apps/admin/src/pages/Login/`
-- 标注包文档：[packages/image-annotation/README.md](packages/image-annotation/README.md)
 
 ## 根目录配置文件
 
@@ -64,7 +60,7 @@ pnpm annotation:dev
 | [`.gitattributes`](.gitattributes) | `* text=auto`，统一文本换行，减少 Win/Mac/Linux 混用 diff 噪音 |
 | [`.cursor/rules/admin-frontend.mdc`](.cursor/rules/admin-frontend.mdc) | Cursor 编辑 `apps/admin` 时的组件、样式、Ant Design 约定 |
 
-**提交 scope**（与 commitlint 一致）：`apps/admin` · `apps/dashboard` · `packages/image-annotation` · `utils/http-client` · `global` · `global/config`
+**提交 scope**（与 commitlint 一致）：`apps/admin` · `apps/dashboard` · `utils/http-client` · `global` · `global/config`
 
 ## 子应用配置
 

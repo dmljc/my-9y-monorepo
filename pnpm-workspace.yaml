@@ -13,7 +13,7 @@
 # 工作区包路径（glob）；匹配到的目录需含 package.json
 packages:
   - "apps/*" # 应用：admin 管理后台、dashboard 大屏等
-  - "packages/*" # 可复用包：如 @cc/image-annotation
+  - "packages/*" # 可复用包
   - "utils/*" # 共享工具：如 @utils/http-client
 
 # 依赖版本目录（catalog）：全仓库统一版本源

@@ -5,19 +5,23 @@
 const SCOPES = [
 	{
 		name: "apps/admin",
-		description: "后台管理（React 19 + Vite + Ant Design）",
+		description: "后台管理系统",
 	},
 	{
 		name: "apps/dashboard",
 		description: "可视化大屏",
 	},
+    {
+        name: 'apps/ipad',
+        description: 'iPad 应用',
+    },
+    {   
+        name: 'packages',
+        description: '共享包',
+    },
 	{
 		name: "utils/http-client",
-		description: "共享 HTTP 客户端（axios 封装）",
-	},
-	{
-		name: "packages/image-annotation",
-		description: "workspace 共享包（packages/image-annotation）",
+		description: "Axios 封装",
 	},
 	{
 		name: "global",
