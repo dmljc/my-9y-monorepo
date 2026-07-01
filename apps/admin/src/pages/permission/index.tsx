@@ -4,7 +4,7 @@ import {
 	UserOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
-import { Menu, Typography } from "antd";
+import { Menu } from "antd";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -17,7 +17,6 @@ interface PermissionMenuItem {
 	label: string;
 	path: string;
 	icon: ReactNode;
-	description: string;
 }
 
 const PERMISSION_MENUS: PermissionMenuItem[] = [
@@ -26,21 +25,18 @@ const PERMISSION_MENUS: PermissionMenuItem[] = [
 		label: "角色管理",
 		path: "/permission/role",
 		icon: <TeamOutlined />,
-		description: "维护角色信息与角色授权范围。",
 	},
 	{
 		key: "user",
 		label: "用户管理",
 		path: "/permission/user",
 		icon: <UserOutlined />,
-		description: "维护平台用户、账号状态与角色归属。",
 	},
 	{
 		key: "organization",
 		label: "组织管理",
 		path: "/permission/organization",
 		icon: <ApartmentOutlined />,
-		description: "维护组织架构、上下级关系与组织基础信息。",
 	},
 ];
 
@@ -51,7 +47,7 @@ function getActiveMenu(pathname: string): PermissionMenuItem {
 	);
 }
 
-/** 侧边栏布局，子路由通过 Outlet 渲染内容 */
+/** 角色权限模块布局：侧边栏 + 子路由内容 */
 const Permission = () => {
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
@@ -89,23 +85,6 @@ const Permission = () => {
 			<section className={styles.content}>
 				<Outlet />
 			</section>
-		</div>
-	);
-};
-
-/** 子路由内容面板，根据当前路径展示对应菜单项的标题和描述 */
-export const PermissionContent = () => {
-	const { pathname } = useLocation();
-	const activeMenu = getActiveMenu(pathname);
-
-	return (
-		<div className={styles.panel}>
-			<Typography.Title level={4} className={styles.title}>
-				{activeMenu.label}
-			</Typography.Title>
-			<Typography.Paragraph className={styles.description}>
-				{activeMenu.description}
-			</Typography.Paragraph>
 		</div>
 	);
 };

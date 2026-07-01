@@ -18,10 +18,10 @@ const HistoricalData = lazy(() => import("@/pages/historical-data"));
 const ModelData = lazy(() => import("@/pages/model-data"));
 const ReverseControl = lazy(() => import("@/pages/reverse-control"));
 const Permission = lazy(() => import("@/pages/permission"));
-const PermissionContent = lazy(() =>
-	import("@/pages/permission").then((m) => ({
-		default: m.PermissionContent,
-	})),
+const PermissionRole = lazy(() => import("@/pages/permission-role"));
+const PermissionUser = lazy(() => import("@/pages/permission-user"));
+const PermissionOrganization = lazy(
+	() => import("@/pages/permission-organization"),
 );
 const NotFound = lazy(() => import("@/components/NotFound"));
 const Forbidden = lazy(() => import("@/components/Forbidden"));
@@ -108,11 +108,11 @@ const routes: RouteObject[] = [
 									/>
 								),
 							},
-							{ path: "role", element: <PermissionContent /> },
-							{ path: "user", element: <PermissionContent /> },
+							{ path: "role", element: <PermissionRole /> },
+							{ path: "user", element: <PermissionUser /> },
 							{
 								path: "organization",
-								element: <PermissionContent />,
+								element: <PermissionOrganization />,
 							},
 						],
 					},
