@@ -34,13 +34,7 @@ const CreateModal = ({
 		if (!open) return;
 
 		if (editingRecord) {
-			form.setFieldsValue({
-				name: editingRecord.name,
-				code: editingRecord.code,
-				parentName: editingRecord.parentName,
-				leader: editingRecord.leader,
-				sortOrder: editingRecord.sortOrder,
-			});
+			form.setFieldsValue(editingRecord);
 			return;
 		}
 

@@ -205,7 +205,7 @@ const PermissionRole = () => {
 						icon={<PlusOutlined />}
 						onClick={openAdd}
 					>
-						添加角色
+						新增角色
 					</Button>
 				</header>
 

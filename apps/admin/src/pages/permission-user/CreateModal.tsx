@@ -1,19 +1,23 @@
-import { Form, Input, Modal, Select } from "antd";
+import { Checkbox, Form, Input, Modal, Select } from "antd";
 import { useEffect, useState } from "react";
+import { getAllUsers } from "./api";
 import type { User, UserFormValues } from "./utils";
 import {
-	EMAIL_MAX_LENGTH,
 	isDuplicateUsername,
-	PHONE_MAX_LENGTH,
-	REAL_NAME_MAX_LENGTH,
-	USER_STATUS_OPTIONS,
+	NAME_MAX_LENGTH,
+	NAME_PATTERN,
+	ORGANIZATION_OPTIONS,
+	PASSWORD_MAX_LENGTH,
+	PASSWORD_PATTERN,
+	ROLE_OPTIONS,
+	recordToFormValues,
 	USERNAME_MAX_LENGTH,
+	USERNAME_PATTERN,
 } from "./utils";
 
 interface CreateModalProps {
 	open: boolean;
 	editingRecord: User | null;
-	existingUsers: User[];
 	onCancel: () => void;
 	onOk: (values: UserFormValues) => void;
 }
@@ -21,7 +25,6 @@ interface CreateModalProps {
 const CreateModal = ({
 	open,
 	editingRecord,
-	existingUsers,
 	onCancel,
 	onOk,
 }: CreateModalProps) => {
@@ -33,20 +36,12 @@ const CreateModal = ({
 		if (!open) return;
 
 		if (editingRecord) {
-			form.setFieldsValue({
-				username: editingRecord.username,
-				realName: editingRecord.realName,
-				roleName: editingRecord.roleName,
-				phone: editingRecord.phone,
-				email: editingRecord.email,
-				status: editingRecord.status,
-			});
+			form.setFieldsValue(recordToFormValues(editingRecord));
 			return;
 		}
 
 		form.resetFields();
-		form.setFieldsValue({ status: "enabled" });
-	}, [open, editingRecord, form]);
+	}, [open, editingRecord]);
 
 	const handleOk = async () => {
 		try {
@@ -80,28 +75,32 @@ const CreateModal = ({
 			>
 				<Form.Item
 					name="username"
-					label="用户名"
+					label="用户账号"
 					rules={[
 						{
 							required: true,
 							whitespace: true,
-							message: "请输入用户名",
+							message: "请输入用户账号",
 						},
 						{
 							max: USERNAME_MAX_LENGTH,
 							message: `最多输入${USERNAME_MAX_LENGTH}个字符`,
 						},
 						{
+							pattern: USERNAME_PATTERN,
+							message: "仅支持字母、数字和 @",
+						},
+						{
 							validator: (_, value: string) => {
 								if (
 									isDuplicateUsername(
-										existingUsers,
+										getAllUsers(),
 										value,
 										editingRecord?.id,
 									)
 								) {
 									return Promise.reject(
-										new Error("用户名已存在"),
+										new Error("用户账号已存在"),
 									);
 								}
 								return Promise.resolve();
@@ -110,84 +109,89 @@ const CreateModal = ({
 					]}
 				>
 					<Input
-						placeholder="请输入用户名"
+						placeholder="请输入用户账号"
 						maxLength={USERNAME_MAX_LENGTH}
 						showCount
+						disabled={isEdit}
 					/>
 				</Form.Item>
 
 				<Form.Item
-					name="realName"
-					label="真实姓名"
+					name="name"
+					label="用户姓名"
 					rules={[
 						{
 							required: true,
 							whitespace: true,
-							message: "请输入真实姓名",
+							message: "请输入用户姓名",
 						},
 						{
-							max: REAL_NAME_MAX_LENGTH,
-							message: `最多输入${REAL_NAME_MAX_LENGTH}个字符`,
+							pattern: NAME_PATTERN,
+							message: `请输入 1-${NAME_MAX_LENGTH} 个汉字`,
 						},
 					]}
 				>
 					<Input
-						placeholder="请输入真实姓名"
-						maxLength={REAL_NAME_MAX_LENGTH}
+						placeholder="请输入用户姓名"
+						maxLength={NAME_MAX_LENGTH}
 						showCount
 					/>
 				</Form.Item>
 
 				<Form.Item
-					name="roleName"
-					label="所属角色"
-					rules={[{ required: true, message: "请输入所属角色" }]}
-				>
-					<Input placeholder="请输入所属角色" />
-				</Form.Item>
-
-				<Form.Item
-					name="phone"
-					label="手机号"
+					name="password"
+					label="密码"
 					rules={[
+						{ required: !isEdit, message: "请输入密码" },
 						{
-							max: PHONE_MAX_LENGTH,
-							message: `最多输入${PHONE_MAX_LENGTH}个字符`,
+							max: PASSWORD_MAX_LENGTH,
+							message: `最多输入${PASSWORD_MAX_LENGTH}个字符`,
+						},
+						{
+							validator: (_, value: string) => {
+								if (!value) return Promise.resolve();
+								if (!PASSWORD_PATTERN.test(value)) {
+									return Promise.reject(
+										new Error(
+											"仅支持字母、数字及常见符号 !@#$%^&*._-",
+										),
+									);
+								}
+								return Promise.resolve();
+							},
 						},
 					]}
 				>
-					<Input
-						placeholder="请输入手机号"
-						maxLength={PHONE_MAX_LENGTH}
+					<Input.Password
+						placeholder={isEdit ? "不修改请留空" : "请输入密码"}
+						maxLength={PASSWORD_MAX_LENGTH}
 					/>
 				</Form.Item>
 
 				<Form.Item
-					name="email"
-					label="邮箱"
-					rules={[
-						{ type: "email", message: "请输入正确的邮箱格式" },
-						{
-							max: EMAIL_MAX_LENGTH,
-							message: `最多输入${EMAIL_MAX_LENGTH}个字符`,
-						},
-					]}
-				>
-					<Input
-						placeholder="请输入邮箱"
-						maxLength={EMAIL_MAX_LENGTH}
-					/>
-				</Form.Item>
-
-				<Form.Item
-					name="status"
-					label="状态"
-					rules={[{ required: true, message: "请选择状态" }]}
+					name="organizationId"
+					label="所属组织"
+					rules={[{ required: true, message: "请选择组织" }]}
 				>
 					<Select
-						placeholder="请选择状态"
-						options={[...USER_STATUS_OPTIONS]}
+						placeholder="请选择组织"
+						options={[...ORGANIZATION_OPTIONS]}
 					/>
+				</Form.Item>
+
+				<Form.Item
+					name="roleIds"
+					label="角色分配"
+					rules={[
+						{
+							required: true,
+							type: "array",
+							min: 1,
+							message: "请至少选择一个角色",
+						},
+					]}
+				>
+					<Checkbox.Group options={[...ROLE_OPTIONS]} />
 				</Form.Item>
 			</Form>
 		</Modal>

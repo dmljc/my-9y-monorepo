@@ -16,6 +16,80 @@ alwaysApply: false
 - 业务逻辑保持精简，复杂逻辑抽 hooks/utils。
 - 使用 **Ant Design** 默认主题即可；无明确需求时不要加 `ConfigProvider theme` 覆盖色板。
 
+### 事件处理函数命名
+
+**做什么**：组件内响应用户交互、UI 事件的函数统一用 **`handle` + 动作** 命名（camelCase）。
+
+**为什么**：与 `handleDelete`、`handleSearch` 等现有写法一致，见名知意为事件回调，避免 `openAdd`、`openEdit` 等偏 UI 实现细节或语义不清的命名。
+
+**✅ 推荐**
+
+```tsx
+const handleAdd = () => {
+  setEditingRecord(null);
+  setModalOpen(true);
+};
+
+const handleEdit = (record: User) => {
+  setEditingRecord(record);
+  setModalOpen(true);
+};
+
+<Button onClick={handleAdd}>新增用户</Button>
+<Button onClick={() => handleEdit(record)}>编辑</Button>
+```
+
+**❌ 避免**
+
+```tsx
+const openAdd = () => { /* ... */ };
+const openEdit = (record: User) => { /* ... */ };
+
+<Button onClick={openAdd}>新增用户</Button>
+```
+
+**边界**：`loadData`、`fetchXxx` 等数据加载/请求函数不必加 `handle`；传给子组件的 props 仍可用 `onOk`、`onCancel` 等 `on*` 命名。
+
+### useCallback / useMemo
+
+**做什么**：没有可测量的性能问题时，**不要**为普通事件处理、数据加载、表单提交等 routine 逻辑提前包 `useCallback` / `useMemo`。
+
+**为什么**：Memo 本身有成本（依赖比较、闭包维护），还会增加依赖数组的心智负担；多数列表页、表单页默认渲染频率下收益可忽略，反而降低可读性。
+
+**✅ 推荐**
+
+```tsx
+const loadData = async (p: number, ps: number) => {
+  setLoading(true);
+  try {
+    const result = await list({ pageNum: p, pageSize: ps });
+    setDataSource(result.list);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleSearch = () => {
+  setPageNum(1);
+  loadData(1, pageSize);
+};
+```
+
+**❌ 避免**（无明确性能依据时）
+
+```tsx
+const loadData = useCallback(async (p: number, ps: number) => {
+  // ...
+}, [username, name, showMsg]);
+
+const menuItems = useMemo(
+  () => MENUS.map((item) => ({ key: item.key, label: item.label })),
+  [],
+);
+```
+
+**何时才用**：子组件已用 `memo` 且 profilter 证实 props 引用变化导致多余渲染；Context value 等确需稳定引用；昂贵计算（大列表派生、复杂图表数据）且依赖明确。其余情况优先写普通函数/变量。
+
 ## Ant Design
 
 - API、语义以[官方文档](https://ant.design/docs/react/llms-cn)为准，勿臆造 props。
@@ -57,6 +131,142 @@ alwaysApply: false
 ```
 
 **边界**：多条 `rules`、长字符串、复杂 JSX 子树、超过可读宽度的 props 仍允许多行；Prettier 强制换行时以 Prettier 为准。
+
+### Table columns 列宽
+
+**做什么**：`columns` 配置中，**仅「序号」列**设置 `width: 72`；其余数据列、操作列**不写 `width`**，由表格自适应分配宽度。
+
+**为什么**：序号列内容固定、宽度可预期；其余列交给 Table 弹性布局，避免硬编码宽度导致窄屏溢出或宽屏留白，也减少各页重复调列宽。
+
+**✅ 推荐**
+
+```tsx
+const columns: ColumnsType<User> = [
+  {
+    title: "序号",
+    key: "index",
+    width: 72,
+    align: "center",
+    render: (_, __, index) => (pageNum - 1) * pageSize + index + 1,
+  },
+  { title: "用户账号", dataIndex: "username", key: "username", ellipsis: true },
+  { title: "用户姓名", dataIndex: "realName", key: "realName", ellipsis: true },
+  {
+    title: "操作",
+    key: "actions",
+    fixed: "right",
+    render: (_, record) => (/* ... */),
+  },
+];
+```
+
+**❌ 避免**
+
+```tsx
+{ title: "用户账号", dataIndex: "username", width: 120 },
+{ title: "操作", key: "actions", width: 150, fixed: "right" },
+```
+
+**边界**：序号列保持 `align: "center"`；需横向滚动时可在 Table 上设 `scroll.x`，不必靠给每列加 `width` 撑开。
+
+### Form.useForm 与 useEffect 依赖
+
+**做什么**：`Form.useForm()` 返回的 **form 实例不要** 写入 `useEffect` / `useCallback` 等的依赖数组。
+
+**为什么**：该实例在组件整个生命周期内引用稳定，不会随渲染变化；放进 deps 没有实际触发意义，只会干扰阅读，也容易让人误以为需要与其它状态一起「同步监听」。
+
+**✅ 推荐**
+
+```tsx
+const [form] = Form.useForm<FormValues>();
+
+useEffect(() => {
+  if (!open) return;
+  if (editingRecord) {
+    form.setFieldsValue(editingRecord);
+    return;
+  }
+  form.resetFields();
+}, [open, editingRecord]);
+```
+
+**❌ 避免**
+
+```tsx
+useEffect(() => {
+  if (!open) return;
+  form.resetFields();
+}, [open, form]);
+```
+
+**边界**：effect 内用到的是 **会变的 props/state**（如 `open`、`editingRecord`）才放进 deps；`form` 在 effect 里直接调用即可。
+
+### setFieldsValue 编辑回显
+
+**做什么**：弹窗编辑回显时，直接将整个 `editingRecord` 传入 `form.setFieldsValue(editingRecord)`，**不要**逐个字段手动列举。
+
+**为什么**：Ant Design 的 `setFieldsValue` 自动忽略未注册为 `Form.Item` 的属性（如 `id`、`createdAt` 等），多余字段不会产生副作用。逐个字段列举会增加维护负担——每新增一个表单项，需在两个地方同步更新（`Form.Item` 和 `setFieldsValue`）。
+
+**✅ 推荐**
+
+```tsx
+useEffect(() => {
+  if (!open) return;
+  if (editingRecord) {
+    form.setFieldsValue(editingRecord);
+    return;
+  }
+  form.resetFields();
+}, [open, editingRecord]);
+```
+
+**❌ 避免**
+
+```tsx
+useEffect(() => {
+  if (!open) return;
+  if (editingRecord) {
+    form.setFieldsValue({
+      username: editingRecord.username,
+      realName: editingRecord.realName,
+      organizationId: editingRecord.organizationId,
+      roleIds: editingRecord.roleIds,
+    });
+    return;
+  }
+  form.resetFields();
+}, [open, editingRecord]);
+```
+
+**边界**：仅当 `editingRecord` 中某些字段的值需在回显前做**转换/格式化**（如日期对象转字符串、数组 join）时，才值得手动拆开 `setFieldsValue({ field: transform(record.field), ... })`；若字段名与 `Form.Item` 的 `name` 一一对应且值类型一致，直接传整个 record。
+
+### 异步 / fire-and-forget 调用
+
+**做什么**：调用 Promise 或「无需 await 返回值」的函数时，直接写函数调用，**不要**加 `void` 前缀。
+
+**为什么**：`void fn()` 仅用于刻意忽略 Promise 的 ESLint 规则（如 `@typescript-eslint/no-floating-promises`）；本仓库不采用该写法，前缀 `void` 增加噪音且无额外语义。
+
+**✅ 推荐**
+
+```tsx
+loadData(1, pageSize, filters);
+
+useEffect(() => {
+  loadData(pageNum, pageSize);
+}, []);
+```
+
+**❌ 避免**
+
+```tsx
+void loadData(1, pageSize, filters);
+
+useEffect(() => {
+  void loadData(pageNum, pageSize);
+}, []);
+```
+
+**边界**：需要显式丢弃表达式值的其他场景（如 `void 0`）与本约定无关；若函数返回值会被使用，仍按正常方式 `await` 或赋值。
 
 ## 样式（默认）
 

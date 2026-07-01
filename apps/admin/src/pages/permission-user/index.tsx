@@ -1,12 +1,16 @@
-import { PlusOutlined } from "@ant-design/icons";
-import { App, Button, Empty, Input, Table, Tag } from "antd";
+import {
+	DownloadOutlined,
+	PlusOutlined,
+	UploadOutlined,
+} from "@ant-design/icons";
+import { App, Button, Empty, Input, Table, Upload } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { create, list, remove, update } from "./api";
+import { useEffect, useRef, useState } from "react";
+import { create, exportUsers, list, remove, update } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
-import type { User, UserFormValues, UserStatus } from "./utils";
-import { USER_STATUS_COLOR, USER_STATUS_LABEL } from "./utils";
+import type { User, UserFormValues, UserListFilters } from "./utils";
+import { exportUsersToJson } from "./utils";
 
 const PermissionUser = () => {
 	const { message: showMsg, modal: confirmModal } = App.useApp();
@@ -14,56 +18,66 @@ const PermissionUser = () => {
 	const [dataSource, setDataSource] = useState<User[]>([]);
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingRecord, setEditingRecord] = useState<User | null>(null);
+	const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
-	const [draftUsername, setDraftUsername] = useState("");
-	const [appliedUsername, setAppliedUsername] = useState("");
+	const [username, setUsername] = useState("");
+	const [name, setName] = useState("");
+	const initRef = useRef(false);
 
-	const loadData = useCallback(
-		async (p: number, ps: number, username = appliedUsername) => {
-			setLoading(true);
-			try {
-				const result = await list({
-					pageNum: p,
-					pageSize: ps,
-					username,
-				});
-				setDataSource(result.list);
-				setTotal(result.total);
-				setPageNum(result.pageNum);
-				setPageSize(result.pageSize);
-			} catch {
-				showMsg.error("加载用户列表失败");
-			} finally {
-				setLoading(false);
-			}
-		},
-		[appliedUsername, showMsg],
-	);
-
-	const handleSearch = () => {
-		const nextUsername = draftUsername.trim();
-		setAppliedUsername(nextUsername);
-		setPageNum(1);
-		void loadData(1, pageSize, nextUsername);
+	const loadData = async (
+		p: number,
+		ps: number,
+		filters?: UserListFilters,
+	) => {
+		setLoading(true);
+		try {
+			const result = await list({
+				pageNum: p,
+				pageSize: ps,
+				...(filters ?? {
+					username: username.trim() || undefined,
+					name: name.trim() || undefined,
+				}),
+			});
+			setDataSource(result.list);
+			setTotal(result.total);
+			setPageNum(result.pageNum);
+			setPageSize(result.pageSize);
+			setSelectedRowKeys([]);
+		} catch {
+			showMsg.error("加载用户列表失败");
+		} finally {
+			setLoading(false);
+		}
 	};
 
-	const initRef = useRef(false);
+	const handleSearch = () => {
+		setPageNum(1);
+		loadData(1, pageSize);
+	};
+
+	const handleReset = () => {
+		setUsername("");
+		setName("");
+		setPageNum(1);
+		loadData(1, pageSize, {});
+	};
+
 	useEffect(() => {
 		if (!initRef.current) {
 			initRef.current = true;
-			void loadData(pageNum, pageSize);
+			loadData(pageNum, pageSize);
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	const openAdd = () => {
+	const handleAdd = () => {
 		setEditingRecord(null);
 		setModalOpen(true);
 	};
 
-	const openEdit = (record: User) => {
+	const handleEdit = (record: User) => {
 		setEditingRecord(record);
 		setModalOpen(true);
 	};
@@ -71,10 +85,10 @@ const PermissionUser = () => {
 	const handleModalSubmit = async (values: UserFormValues) => {
 		if (editingRecord) {
 			await update(editingRecord.id, values);
-			showMsg.success("更新成功");
+			showMsg.success("保存成功");
 		} else {
 			await create(values);
-			showMsg.success("创建成功");
+			showMsg.success("添加成功");
 		}
 		await loadData(pageNum, pageSize);
 	};
@@ -82,7 +96,7 @@ const PermissionUser = () => {
 	const handleDelete = (record: User) => {
 		confirmModal.confirm({
 			title: "确认删除",
-			content: `确定要删除用户「${record.realName}」吗？`,
+			content: `确定要删除用户「${record.name}」吗？`,
 			okText: "删除",
 			okButtonProps: { danger: true },
 			cancelText: "取消",
@@ -94,8 +108,25 @@ const PermissionUser = () => {
 		});
 	};
 
+	const handleExport = () => {
+		const data = exportUsers({
+			username: username.trim() || undefined,
+			name: name.trim() || undefined,
+		});
+		if (data.length === 0) {
+			showMsg.warning("暂无可导出的用户数据");
+			return;
+		}
+		exportUsersToJson(data);
+		showMsg.success("导出成功");
+	};
+
+	const handleImport = () => {
+		showMsg.info("导入功能待对接后端");
+	};
+
 	const handleTableChange = (pagination: TablePaginationConfig) => {
-		void loadData(pagination.current ?? 1, pagination.pageSize ?? 10);
+		loadData(pagination.current ?? 1, pagination.pageSize ?? 10);
 	};
 
 	const columns: ColumnsType<User> = [
@@ -108,62 +139,39 @@ const PermissionUser = () => {
 				(pageNum - 1) * pageSize + index + 1,
 		},
 		{
-			title: "用户名",
+			title: "用户账号",
 			dataIndex: "username",
 			key: "username",
 			ellipsis: true,
 		},
 		{
-			title: "真实姓名",
-			dataIndex: "realName",
-			key: "realName",
+			title: "用户姓名",
+			dataIndex: "name",
+			key: "name",
 			ellipsis: true,
 		},
 		{
-			title: "所属角色",
-			dataIndex: "roleName",
-			key: "roleName",
+			title: "所属组织",
+			dataIndex: "organizationName",
+			key: "organizationName",
 			ellipsis: true,
 		},
 		{
-			title: "手机号",
-			dataIndex: "phone",
-			key: "phone",
-		},
-		{
-			title: "邮箱",
-			dataIndex: "email",
-			key: "email",
+			title: "角色",
+			dataIndex: "roleNames",
+			key: "roleNames",
 			ellipsis: true,
-		},
-		{
-			title: "状态",
-			dataIndex: "status",
-			key: "status",
-			width: 80,
-			render: (status: UserStatus) => (
-				<Tag color={USER_STATUS_COLOR[status]}>
-					{USER_STATUS_LABEL[status]}
-				</Tag>
-			),
-		},
-		{
-			title: "创建时间",
-			dataIndex: "createdAt",
-			key: "createdAt",
-			width: 180,
 		},
 		{
 			title: "操作",
 			key: "actions",
 			fixed: "right",
-			width: 150,
 			render: (_: unknown, record: User) => (
 				<div className={styles.actions}>
 					<Button
 						type="link"
 						size="small"
-						onClick={() => openEdit(record)}
+						onClick={() => handleEdit(record)}
 					>
 						编辑
 					</Button>
@@ -184,28 +192,55 @@ const PermissionUser = () => {
 			<section className={styles.panel}>
 				<header className={styles.panelHeader}>
 					<div className={styles.filterBar}>
-						<span className={styles.filterLabel}>用户名</span>
+						<span className={styles.filterLabel}>用户账号</span>
 						<Input
 							className={styles.searchInput}
-							placeholder="请输入用户名"
-							value={draftUsername}
+							placeholder="请输入用户账号"
+							value={username}
 							allowClear
 							onChange={(event) =>
-								setDraftUsername(event.target.value)
+								setUsername(event.target.value)
 							}
+							onPressEnter={handleSearch}
+						/>
+						<span className={styles.filterLabel}>用户姓名</span>
+						<Input
+							className={styles.searchInput}
+							placeholder="请输入用户姓名"
+							value={name}
+							allowClear
+							onChange={(event) => setName(event.target.value)}
 							onPressEnter={handleSearch}
 						/>
 						<Button type="primary" onClick={handleSearch}>
 							查询
 						</Button>
+						<Button onClick={handleReset}>重置</Button>
 					</div>
-					<Button
-						type="primary"
-						icon={<PlusOutlined />}
-						onClick={openAdd}
-					>
-						新增用户
-					</Button>
+					<div className={styles.panelActions}>
+						<Button
+							type="primary"
+							icon={<PlusOutlined />}
+							onClick={handleAdd}
+						>
+							新增用户
+						</Button>
+						<Upload
+							showUploadList={false}
+							beforeUpload={() => {
+								handleImport();
+								return false;
+							}}
+						>
+							<Button icon={<UploadOutlined />}>导入</Button>
+						</Upload>
+						<Button
+							icon={<DownloadOutlined />}
+							onClick={handleExport}
+						>
+							导出
+						</Button>
+					</div>
 				</header>
 
 				<div className={styles.tableWrap}>
@@ -216,7 +251,11 @@ const PermissionUser = () => {
 						dataSource={dataSource}
 						rowKey="id"
 						loading={loading}
-						scroll={{ x: 1100 }}
+						rowSelection={{
+							selectedRowKeys,
+							onChange: (keys) =>
+								setSelectedRowKeys(keys as string[]),
+						}}
 						locale={{ emptyText: <Empty description="暂无用户" /> }}
 						pagination={{
 							current: pageNum,
@@ -234,7 +273,6 @@ const PermissionUser = () => {
 			<CreateModal
 				open={modalOpen}
 				editingRecord={editingRecord}
-				existingUsers={dataSource}
 				onCancel={() => setModalOpen(false)}
 				onOk={handleModalSubmit}
 			/>
