@@ -4,12 +4,9 @@ export type TopMenuKey =
 	| "statistics"
 	| "warning"
 	| "device"
-	| "task"
 	| "historicalData"
 	| "modelData"
-	| "controlPanel"
 	| "reverseControl"
-	| "system"
 	| "permission";
 
 export interface TopMenuItem {
@@ -35,16 +32,9 @@ export const TOP_MENUS: TopMenuItem[] = [
 		path: "/device",
 		defaultPath: "/device/inspection-ledger",
 	},
-	// { key: "task", label: "任务管理", path: "/task" },
 	{ key: "historicalData", label: "历史数据", path: "/historical-data" },
 	{ key: "modelData", label: "物模型数据", path: "/model-data" },
-	// { key: "controlPanel", label: "控制面板", path: "/control-panel" },
 	{ key: "reverseControl", label: "设备反控", path: "/reverse-control" },
-	{
-		key: "system",
-		label: "系统集成",
-		path: "/system",
-	},
 	{
 		key: "permission",
 		label: "角色权限",

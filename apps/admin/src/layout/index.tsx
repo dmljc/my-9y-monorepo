@@ -1,12 +1,9 @@
 import {
-	ApiOutlined,
-	AppstoreOutlined,
 	BarChartOutlined,
 	BellOutlined,
 	ClusterOutlined,
 	ControlOutlined,
 	DatabaseOutlined,
-	FolderOutlined,
 	FundViewOutlined,
 	SafetyOutlined,
 	ToolOutlined,
@@ -31,12 +28,9 @@ const TOP_MENU_ICONS: Record<TopMenuKey, ReactNode> = {
 	statistics: <BarChartOutlined />,
 	warning: <BellOutlined />,
 	device: <ToolOutlined />,
-	task: <FolderOutlined />,
 	historicalData: <DatabaseOutlined />,
 	modelData: <ClusterOutlined />,
-	controlPanel: <AppstoreOutlined />,
 	reverseControl: <ControlOutlined />,
-	system: <ApiOutlined />,
 	permission: <SafetyOutlined />,
 };
 
