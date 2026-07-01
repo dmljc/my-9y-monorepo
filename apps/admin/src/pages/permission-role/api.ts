@@ -1,5 +1,9 @@
 import type { Role, RoleFormValues } from "./utils";
-import { generateMockRoles } from "./utils";
+import {
+	generateMockRoles,
+	isSystemRole,
+	normalizePermissionIds,
+} from "./utils";
 
 // mock 内存存储
 const rolesStore: Role[] = generateMockRoles();
@@ -43,22 +47,35 @@ export function create(values: RoleFormValues): Promise<Role> {
 	// return request.post("/api/permission/role", values);
 	const record: Role = {
 		id: `role-${Date.now()}`,
+		code: `role_${Date.now()}`,
 		...values,
+		userCount: 0,
+		hasAllPermissions: false,
+		permissionCount: 0,
+		permissionIds: [],
 		createdAt: new Date().toISOString().replace("T", " ").slice(0, 19),
 	};
 	rolesStore.unshift(record);
 	return Promise.resolve(record);
 }
 
-/** 更新角色 */
-export function update(
+/** 更新角色权限 */
+export function updatePermissions(
 	id: string,
-	values: Partial<RoleFormValues>,
+	permissionIds: string[],
 ): Promise<Role> {
-	// return request.put(`/api/permission/role/${id}`, values);
+	// return request.put(`/api/permission/role/${id}/permissions`, { permissionIds });
 	const index = findIndex(id);
 	if (index === -1) return Promise.reject(new Error("角色不存在"));
-	rolesStore[index] = { ...rolesStore[index], ...values };
+	if (isSystemRole(rolesStore[index])) {
+		return Promise.reject(new Error("系统角色不可分配权限"));
+	}
+	const normalizedIds = normalizePermissionIds(permissionIds);
+	rolesStore[index] = {
+		...rolesStore[index],
+		permissionIds: normalizedIds,
+		permissionCount: normalizedIds.length,
+	};
 	return Promise.resolve(rolesStore[index]);
 }
 
@@ -67,6 +84,9 @@ export function remove(id: string): Promise<void> {
 	// return request.delete(`/api/permission/role/${id}`);
 	const index = findIndex(id);
 	if (index === -1) return Promise.reject(new Error("角色不存在"));
+	if (isSystemRole(rolesStore[index])) {
+		return Promise.reject(new Error("系统角色不可删除"));
+	}
 	rolesStore.splice(index, 1);
 	return Promise.resolve();
 }

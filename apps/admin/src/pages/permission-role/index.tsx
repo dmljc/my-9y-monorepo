@@ -2,17 +2,24 @@ import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { create, list, remove, update } from "./api";
+import { create, list, remove, updatePermissions } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
+import PermissionAssignModal from "./PermissionAssignModal";
 import type { Role, RoleFormValues } from "./utils";
+import {
+	formatPermissionCount,
+	formatRoleCreatedAt,
+	isSystemRole,
+} from "./utils";
 
 const PermissionRole = () => {
 	const { message: showMsg, modal: confirmModal } = App.useApp();
 	const [loading, setLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<Role[]>([]);
-	const [modalOpen, setModalOpen] = useState(false);
-	const [editingRecord, setEditingRecord] = useState<Role | null>(null);
+	const [createModalOpen, setCreateModalOpen] = useState(false);
+	const [assignModalOpen, setAssignModalOpen] = useState(false);
+	const [assigningRecord, setAssigningRecord] = useState<Role | null>(null);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
@@ -44,6 +51,13 @@ const PermissionRole = () => {
 		void loadData(1, pageSize, nextName);
 	};
 
+	const handleReset = () => {
+		setDraftName("");
+		setAppliedName("");
+		setPageNum(1);
+		void loadData(1, pageSize, "");
+	};
+
 	const initRef = useRef(false);
 	useEffect(() => {
 		if (!initRef.current) {
@@ -54,23 +68,23 @@ const PermissionRole = () => {
 	}, []);
 
 	const openAdd = () => {
-		setEditingRecord(null);
-		setModalOpen(true);
+		setCreateModalOpen(true);
 	};
 
-	const openEdit = (record: Role) => {
-		setEditingRecord(record);
-		setModalOpen(true);
+	const openAssign = (record: Role) => {
+		setAssigningRecord(record);
+		setAssignModalOpen(true);
 	};
 
-	const handleModalSubmit = async (values: RoleFormValues) => {
-		if (editingRecord) {
-			await update(editingRecord.id, values);
-			showMsg.success("更新成功");
-		} else {
-			await create(values);
-			showMsg.success("创建成功");
-		}
+	const handleCreate = async (values: RoleFormValues) => {
+		await create(values);
+		showMsg.success("添加成功");
+		await loadData(pageNum, pageSize);
+	};
+
+	const handleAssignPermissions = async (permissionIds: string[]) => {
+		if (!assigningRecord) return;
+		await updatePermissions(assigningRecord.id, permissionIds);
 		await loadData(pageNum, pageSize);
 	};
 
@@ -82,9 +96,13 @@ const PermissionRole = () => {
 			okButtonProps: { danger: true },
 			cancelText: "取消",
 			onOk: async () => {
-				await remove(record.id);
-				showMsg.success("删除成功");
-				await loadData(pageNum, pageSize);
+				try {
+					await remove(record.id);
+					showMsg.success("删除成功");
+					await loadData(pageNum, pageSize);
+				} catch {
+					showMsg.error("系统角色不可删除");
+				}
 			},
 		});
 	};
@@ -103,52 +121,61 @@ const PermissionRole = () => {
 				(pageNum - 1) * pageSize + index + 1,
 		},
 		{
-			title: "角色名称",
+			title: "名称",
 			dataIndex: "name",
 			key: "name",
 			ellipsis: true,
 		},
 		{
-			title: "角色编码",
-			dataIndex: "code",
-			key: "code",
-			ellipsis: true,
-		},
-		{
-			title: "描述",
+			title: "角色描述",
 			dataIndex: "description",
 			key: "description",
 			ellipsis: true,
 		},
 		{
+			title: "关联用户",
+			dataIndex: "userCount",
+			key: "userCount",
+			align: "center",
+		},
+		{
+			title: "权限数量",
+			key: "permissionCount",
+			align: "center",
+			render: (_: unknown, record: Role) => formatPermissionCount(record),
+		},
+		{
 			title: "创建时间",
-			dataIndex: "createdAt",
 			key: "createdAt",
-			width: 180,
+			render: (_: unknown, record: Role) => formatRoleCreatedAt(record),
 		},
 		{
 			title: "操作",
 			key: "actions",
 			fixed: "right",
-			width: 150,
-			render: (_: unknown, record: Role) => (
-				<div className={styles.actions}>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => openEdit(record)}
-					>
-						编辑
-					</Button>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleDelete(record)}
-					>
-						删除
-					</Button>
-				</div>
-			),
+			render: (_: unknown, record: Role) => {
+				if (isSystemRole(record)) {
+					return "-";
+				}
+				return (
+					<div className={styles.actions}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => openAssign(record)}
+						>
+							权限分配
+						</Button>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleDelete(record)}
+						>
+							删除
+						</Button>
+					</div>
+				);
+			},
 		},
 	];
 
@@ -171,13 +198,14 @@ const PermissionRole = () => {
 						<Button type="primary" onClick={handleSearch}>
 							查询
 						</Button>
+						<Button onClick={handleReset}>重置</Button>
 					</div>
 					<Button
 						type="primary"
 						icon={<PlusOutlined />}
 						onClick={openAdd}
 					>
-						新增角色
+						添加角色
 					</Button>
 				</header>
 
@@ -189,7 +217,7 @@ const PermissionRole = () => {
 						dataSource={dataSource}
 						rowKey="id"
 						loading={loading}
-						scroll={{ x: 900 }}
+						scroll={{ x: 1000 }}
 						locale={{ emptyText: <Empty description="暂无角色" /> }}
 						pagination={{
 							current: pageNum,
@@ -205,11 +233,20 @@ const PermissionRole = () => {
 			</section>
 
 			<CreateModal
-				open={modalOpen}
-				editingRecord={editingRecord}
+				open={createModalOpen}
 				existingRoles={dataSource}
-				onCancel={() => setModalOpen(false)}
-				onOk={handleModalSubmit}
+				onCancel={() => setCreateModalOpen(false)}
+				onOk={handleCreate}
+			/>
+
+			<PermissionAssignModal
+				open={assignModalOpen}
+				role={assigningRecord}
+				onCancel={() => {
+					setAssignModalOpen(false);
+					setAssigningRecord(null);
+				}}
+				onOk={handleAssignPermissions}
 			/>
 		</div>
 	);
