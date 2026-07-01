@@ -183,14 +183,12 @@ const PermissionOrganization = () => {
 
 			<Table
 				size="middle"
-				className={styles.table}
 				columns={columns}
 				dataSource={dataSource}
 				rowKey="id"
 				loading={loading}
 				pagination={false}
-				defaultExpandAllRows
-				scroll={{ x: 640 }}
+				expandable={{ defaultExpandAllRows: true }}
 				locale={{ emptyText: <Empty description="暂无组织" /> }}
 			/>
 

@@ -110,7 +110,7 @@ const menuItems = useMemo(
     </div>
   </div>
 
-  <Table columns={columns} dataSource={dataSource} scroll={{ x: 640 }} />
+  <Table columns={columns} dataSource={dataSource} />
 
   <CreateModal open={modalOpen} onCancel={() => setModalOpen(false)} onOk={handleModalSubmit} />
 </div>
@@ -155,15 +155,43 @@ const menuItems = useMemo(
 | 根容器 + 内层 `panel`/`section` | 样式合并到组件同名根类（如 `.permissionOrganization`） |
 | `header` + `filterBar` | 单层 `.toolbar`，筛选项直接作 flex 子项 |
 | 左右分栏再套 `filterBar` | 同一 flex 行，操作区 `.panelActions` 设 `margin-left: auto` |
-| 表格外层 `tableWrap` | Table 设 `scroll={{ x: … }}`，由组件内部处理横向滚动 |
+| 表格外层 `tableWrap` | 列少、无固定列需求时直接 `<Table />`；确需横向滚动再设 `scroll.x` |
 
-**边界**：弹窗（`<CreateModal />`）与表格并列挂在根容器下即可（Modal 会 portal 到 body）；**仍需保留**有明确职责的分组（如 `.panelActions` 将操作按钮作为一组靠右）；多区块页面（左树右表、上下两块独立卡片）可保留额外容器；不要为了扁平而牺牲响应式换行或无障碍语义。
+**边界**：弹窗（`<CreateModal />`）与表格并列挂在根容器下即可（Modal 会 portal 到 body）；**仍需保留**有明确职责的分组（如 `.panelActions` 将操作按钮作为一组靠右）；多区块页面（左树右表、上下两块独立卡片）可保留额外容器；工具栏用 `flex-wrap` 自然换行即可，不必为此单独写 `@media`。
 
 ## Ant Design
 
 - API、语义以[官方文档](https://ant.design/docs/react/llms-cn)为准，勿臆造 props。
 - 外网开发时可联网检索，或使用 Cursor @Docs / MCP；无需在仓库内维护 `docs/` 副本。
-- 写样式、`:global(.ant-*)` 覆盖时参考组件语义说明（如 https://ant.design/llms-semantic-cn.md）。
+- 写样式时参考组件语义说明（如 https://ant.design/llms-semantic-cn.md）；非必需勿用 `:global(.ant-*)` 覆盖默认样式（见「样式」章节）。
+
+### 禁用已弃用 API
+
+**做什么**：使用 Ant Design 组件时，只写**当前版本文档中的有效 props / 配置**；若 TypeScript 提示 `@deprecated` 或编辑器标灰，须改用官方给出的替代写法后再合入。
+
+**为什么**：弃用 API 虽可能仍能用，但后续大版本会移除，且 TS 会持续告警；迁移到现行 API 与官方行为一致，减少隐性兼容问题。
+
+**✅ 推荐**
+
+```tsx
+<Table
+  columns={columns}
+  dataSource={dataSource}
+  expandable={{ defaultExpandAllRows: true }}
+/>
+```
+
+**❌ 避免**
+
+```tsx
+<Table
+  columns={columns}
+  dataSource={dataSource}
+  defaultExpandAllRows
+/>
+```
+
+**边界**：新增或修改代码时主动规避弃用项；不确定时查[官方文档](https://ant.design/docs/react/llms-cn)或组件 TS 类型上的 `@deprecated` 说明；同类迁移（如 Table 的 `expandedRowRender` → `expandable.expandedRowRender`）按文档嵌套到对应配置对象，不要继续平铺在组件根 props 上。
 
 ### App.useApp 解构命名
 
@@ -267,7 +295,27 @@ const columns: ColumnsType<User> = [
 { title: "操作", key: "actions", width: 150, fixed: "right" },
 ```
 
-**边界**：序号列保持 `align: "center"`；需横向滚动时可在 Table 上设 `scroll.x`，不必靠给每列加 `width` 撑开。
+**边界**：序号列保持 `align: "center"`；列特别多、使用 `fixed` 列或设计明确要求最小表格宽度时，才在 Table 上设 `scroll.x`（见下节），不必靠给每列加 `width` 撑开。
+
+### Table scroll
+
+**做什么**：Table **默认不写** `scroll`；仅当产品或布局**明确要求**横向/纵向滚动（列多需横滑、需固定表头区域高度等）时，才按需设 `scroll={{ x: … }}` 或 `scroll={{ y: … }}`。
+
+**为什么**：无需求时加 `scroll` 会改变 Table 内部布局（overflow 容器、与 `fixed` 列联动），列少的列表页交给自适应即可；不应为去掉 `tableWrap` 而习惯性补上 `scroll.x`。
+
+**✅ 推荐**
+
+```tsx
+<Table columns={columns} dataSource={dataSource} rowKey="id" />
+```
+
+**❌ 避免**（无明确需求时）
+
+```tsx
+<Table columns={columns} dataSource={dataSource} scroll={{ x: 640 }} />
+```
+
+**边界**：与「Table columns 列宽」配合——未设 `scroll` 时数据列不写 `width`；确需 `scroll.x` 时再按文档取值（列宽之和、`max-content` 等），不要复制粘贴固定 magic number。
 
 ### Form.useForm 与 useEffect 依赖
 
@@ -447,14 +495,78 @@ useEffect(() => {
 ```
 pages/Login/
   index.tsx
-  index.module.css   # 布局、间距、:global(.ant-*) 覆盖、响应式
+  index.module.css   # 布局、间距；必要时 :global(.ant-*) 或 @media
 ```
 
 - `index.tsx` 中：`import styles from "./index.module.css"`，用 `className={styles.xxx}`。
 - **最外层根类名与组件名一致**（组件 `Login` → `.login` / `styles.login`，`DigitalTwin` → `.digitalTwin`）；不要用泛名 `page`。
-- 覆盖 Ant Design 内部类名时用 `:global(.ant-input)` 等，避免全局裸 CSS。
 - **仅一两处简单布局**（如容器 `height: 100%`、`overflow: hidden`、`display: flex`）用内联 `style` 即可；**不必**为此单独建 `index.module.css`。
 - 页面业务复杂（如嵌入第三方编辑器）≠ 必须用 CSS Modules；以 **admin 侧自定义样式量** 为准：无多类名、无 `:global(.ant-*)`、无响应式时，优先内联，不要整页塞进 `style.ts`。
+
+### 不覆盖 Ant Design 默认样式
+
+**做什么**：CSS Modules 中**默认不要**用 `:global(.ant-*)` 强行改 Table、Form、Input 等 Ant Design 组件的内置样式；优先用组件 **props**（如 `size`、`variant`）与默认主题；仅当产品或设计**明确要求**且 props / token 无法满足时，再在页面模块内**局部**覆盖。
+
+**为什么**：项目约定使用 Ant Design 默认主题；各列表页重复写表头背景、hover 色等会导致风格碎片化，升级 ant 时内部类名也可能变化，维护成本高。
+
+**✅ 推荐**
+
+```tsx
+<Table columns={columns} dataSource={dataSource} size="middle" />
+```
+
+**❌ 避免**（无明确需求时）
+
+```css
+.table :global(.ant-table-thead > tr > th) {
+  background: #f2f5f8;
+}
+
+.table :global(.ant-table-tbody > tr.ant-table-row:hover > td) {
+  background: #e6f4ff;
+}
+```
+
+**边界**：确须覆盖时，选择器挂在页面根类名下（如 `.permissionOrganization :global(...)`），避免全局裸 CSS；全站统一视觉应在 layout / `ConfigProvider` token 层集中处理，不在各 CRUD 页复制粘贴；无 `:global(.ant-*)` 时可不为 Table 单独挂仅用于覆盖的 `className`。
+
+### 不写响应式 @media
+
+**做什么**：admin 列表/表单页 CSS Modules 中**默认不要**写 `@media` 做移动端/窄屏适配；仅当产品或设计**明确要求**该页在特定断点下有不同布局时，才添加媒体查询。
+
+**为什么**：admin 后台主要面向桌面端宽屏；各页复制 `@media (max-width: 640px)` 增加维护成本且易不一致。工具栏等简单布局用 `flex-wrap`、`gap` 即可自然换行，不必再套断点样式。
+
+**✅ 推荐**
+
+```css
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.panelActions {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+```
+
+**❌ 避免**（无明确需求时）
+
+```css
+@media (max-width: 640px) {
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .searchInput {
+    width: 100%;
+  }
+}
+```
+
+**边界**：移动端专属页面、设计稿标注断点行为、或 layout 层统一断点变量除外；确需响应式时优先在 layout 集中定义，单页避免自创 magic number 断点；与「列表页 DOM 扁平化」不冲突——保留 `flex-wrap` 即可，不必为换行单独写 `@media`。
 
 ## 样式（例外）
 

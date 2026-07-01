@@ -36,38 +36,8 @@
 	margin-left: auto;
 }
 
-.table :global(.ant-table-thead > tr > th) {
-	background: #f2f5f8;
-	color: #333;
-	font-weight: 500;
-}
-
-.table :global(.ant-table-tbody > tr.ant-table-row:hover > td) {
-	background: #e6f4ff;
-}
-
-.table :global(.ant-table-pagination) {
-	margin-bottom: 0;
-}
-
 .actions {
 	display: flex;
 	align-items: center;
 	gap: 4px;
-}
-
-@media (max-width: 640px) {
-	.toolbar {
-		align-items: flex-start;
-		flex-direction: column;
-	}
-
-	.searchInput {
-		width: 100%;
-	}
-
-	.panelActions {
-		margin-left: 0;
-		width: 100%;
-	}
 }
