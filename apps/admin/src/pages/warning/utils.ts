@@ -60,7 +60,7 @@ export interface StatCardAssets {
 // ---------------------------------------------------------------------------
 
 /** 本地测试数据（接入 API 后移除） */
-export const MOCK_WARNINGS: WarningItem[] = mockData;
+export const MOCK_WARNINGS: WarningItem[] = mockData as WarningItem[];
 
 export const TYPE_LABEL: Record<WarningType, string> = {
 	room: "房间",

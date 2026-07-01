@@ -62,11 +62,10 @@ export function getTopMenuByPath(pathname: string): TopMenuKey {
 
 export function getDefaultPathForTop(topKey: TopMenuKey): string {
 	const menu = TOP_MENUS.find((item) => item.key === topKey);
-	return (
-		menu?.defaultPath ??
-		menu?.path ??
-		TOP_MENUS.find((item) => item.key === DEFAULT_TOP_MENU_KEY)?.path
-	);
+	const fallback =
+		TOP_MENUS.find((item) => item.key === DEFAULT_TOP_MENU_KEY)?.path ??
+		"/warning/list";
+	return menu?.defaultPath ?? menu?.path ?? fallback;
 }
 
 export function getPageLabel(pathname: string): string {

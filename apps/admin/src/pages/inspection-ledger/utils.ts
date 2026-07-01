@@ -50,7 +50,8 @@ export const DEFAULT_DEVICE_FORM_VALUES: Pick<
 export const TWIN_FIELD_LABEL_COL = { span: 8 } as const;
 export const TWIN_FIELD_WRAPPER_COL = { span: 16 } as const;
 
-export const MOCK_DEVICES: Omit<InspectionDevice, "status">[] = mockData;
+export const MOCK_DEVICES: Omit<InspectionDevice, "status">[] =
+	mockData as Omit<InspectionDevice, "status">[];
 
 /** 文本字段最大长度校验规则 */
 export function maxLengthRule(max: number) {

@@ -52,7 +52,7 @@ export const RELATION_OPTIONS = [
 export const JOIN_OPERATOR_OPTIONS = [
 	{ label: "and", value: "and" },
 	{ label: "or", value: "or" },
-] as const;
+];
 
 /** 新增条件默认值（不设空字符串，Select 才能显示 placeholder） */
 export const DEFAULT_CONDITION = {
