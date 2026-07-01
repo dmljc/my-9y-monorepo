@@ -546,6 +546,89 @@ pages/Login/
 - **仅一两处简单布局**（如容器 `height: 100%`、`overflow: hidden`、`display: flex`）用内联 `style` 即可；**不必**为此单独建 `index.module.css`。
 - 页面业务复杂（如嵌入第三方编辑器）≠ 必须用 CSS Modules；以 **admin 侧自定义样式量** 为准：无多类名、无 `:global(.ant-*)`、无响应式时，优先内联，不要整页塞进 `style.ts`。
 
+### 页面边距
+
+**做什么**：admin 列表/多区块页统一两套间距——**模块间 24px**、**搜索区上下 16px**；layout 与子模块 layout 在对应层级集中定义，页面 CSS 只写与本页结构相关的部分，勿自创 magic number。
+
+**为什么**：警告管理、点检台账、统计分析等页已按设计稿对齐；全站统一数值可避免各页 padding/gap 不一致，也便于 AI 与人工按同一套规则改新页。
+
+**数值约定**
+
+| 场景 | 数值 | 实现位置 |
+|------|------|----------|
+| 主内容区四边留白 | 24px | `apps/admin/src/layout/index.module.css` → `.content { padding: 24px }` |
+| 侧栏与右侧内容区间距 | 24px | 子模块 layout（如 `warning/layout.module.css`）→ `.content { padding-left: 24px }` |
+| 页面内独立模块之间（白卡片、图表区等） | 24px | 页面根容器 `display: flex; flex-direction: column; gap: 24px` |
+| 搜索/筛选区与上下模块的垂直间距 | 16px | 见下方两种结构 |
+| 白底卡片内边距 | 24px | `.panel` / `.listPanel` / `.page` 等 `padding: 24px` |
+| 卡片内搜索区与表格之间 | 16px | `.toolbar` / `.panelHeader` / `.filterBar` → `margin-bottom: 16px` |
+
+**结构 A：多区块（搜索在灰底、模块各自白卡片）**
+
+适用于警告管理、点检台账、统计分析等：统计卡片 + 独立搜索行 + 表格卡片，或筛选 + 图表卡片。
+
+```tsx
+<div className={styles.warningList}>
+  <div className={styles.topPanel}>{/* 统计卡片 */}</div>
+  <div className={styles.filterBar}>{/* 筛选 */}</div>
+  <div className={styles.listPanel}><Table /></div>
+</div>
+```
+
+```css
+.warningList {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.filterBar {
+  flex: none;
+  margin-block: -8px; /* 父级 gap 24px 下，搜索区上下视觉间距为 16px */
+}
+```
+
+**结构 B：单面板（搜索与表格同处一张白卡片）**
+
+适用于多数 CRUD 列表：工具栏 + 表格在同一 `.panel` / 根容器内（见「列表页 DOM 扁平化」）。
+
+```css
+.permissionOrganization {
+  padding: 24px;
+  background: #fff;
+}
+
+.toolbar {
+  margin-bottom: 16px;
+}
+```
+
+若仍使用 `.panelHeader` + `.filterBar` 嵌套，**搜索区与表格间距**仍用 `.panelHeader { margin-bottom: 16px }` 或 `.filterBar { margin-bottom: 16px }`，与结构 A 的 16px 语义一致。
+
+**✅ 推荐**
+
+- 新页先判断属于结构 A 还是 B，再选用上表对应写法。
+- 多区块页根容器统一 `gap: 24px`；搜索在灰底时用 `margin-block: -8px` 得到 16px，**不要**再单独写 `margin: 16px 0` 与 `gap` 叠加导致间距偏大。
+- 侧栏 layout 只负责 `padding-left: 24px`，不与主 layout 的 `padding: 24px` 重复定义四边。
+
+**❌ 避免**
+
+```css
+.content {
+  padding: 24px 32px 24px; /* 左右不一致 */
+}
+
+.pageRoot {
+  gap: 16px; /* 模块间距应 24px */
+}
+
+.filterBar {
+  margin-bottom: 24px; /* 搜索区与下方模块应 16px（结构 B） */
+}
+```
+
+**边界**：`Login`、`Dashboard` 等全屏独立页不适用本规范；结构 A 中 `.filterBar` 内部 flex 子项间距仍可用 `gap: 12px` / `24px`，与「模块间 24px / 搜索上下 16px」不是同一层级；图表区卡片之间（如 `statistics` 的 `.chartGrid`、`.bottomCharts`）按**模块间 24px** 处理。
+
 ### 不覆盖 Ant Design 默认样式
 
 **做什么**：CSS Modules 中**默认不要**用 `:global(.ant-*)` 强行改 Table、Form、Input 等 Ant Design 组件的内置样式；优先用组件 **props**（如 `size`、`variant`）与默认主题；仅当产品或设计**明确要求**且 props / token 无法满足时，再在页面模块内**局部**覆盖。

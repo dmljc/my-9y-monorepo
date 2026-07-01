@@ -53,7 +53,7 @@
 .topMenu:global(.ant-menu-horizontal) > :global(.ant-menu-item-selected::after),
 .topMenu:global(.ant-menu-horizontal) > :global(.ant-menu-item:hover::after),
 .topMenu:global(.ant-menu-horizontal) > :global(.ant-menu-item-active::after) {
-	display: none !important;
+	display: none;
 }
 
 .topMenu :global(.ant-menu-item:hover) {
@@ -63,6 +63,6 @@
 
 .content {
 	overflow: auto;
-	padding: 24px 32px 24px;
+	padding: 24px;
 	background: #f0f4f8;
 }
