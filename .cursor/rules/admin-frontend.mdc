@@ -226,7 +226,7 @@ export const writeRememberMe = (values: LoginParams) => { /* ... */ };
 
 ### 页面 api.ts 接口函数
 
-**做什么**：页面目录下的 `api.ts` 只做 **HTTP 薄封装**——`import { request } from "@/utils/request"`，一行 `return request.get/post/put/delete(...)`；请求/响应类型放同目录 `interface.ts`；业务校验、错误提示、状态更新留在页面或 hooks。
+**做什么**：页面目录下的 `api.ts` 只做 **HTTP 薄封装**——`import { request } from "@/utils"`，一行 `return request.get/post/put/delete(...)`；请求/响应类型放同目录 `interface.ts`；业务校验、错误提示、状态更新留在页面或 hooks。
 
 **为什么**：接口层与 UI 层职责分离；`api.ts` 保持统一形态后便于批量对接后端、替换 mock，也避免在接口文件里散落 `if (code !== 200)` 等业务逻辑。
 
@@ -243,7 +243,7 @@ pages/Login/
 **✅ 推荐**
 
 ```ts
-import { request } from "@/utils/request";
+import { request } from "@/utils";
 import type { LoginParams } from "./interface";
 
 export const login = (data: LoginParams): Promise<any> => {
@@ -252,7 +252,7 @@ export const login = (data: LoginParams): Promise<any> => {
 ```
 
 ```ts
-import { request } from "@/utils/request";
+import { request } from "@/utils";
 import type { CreateUser, ListParams, UpdateUser } from "./interface";
 
 export const list = (data: ListParams): Promise<any> => {
@@ -280,7 +280,7 @@ export const remove = (id: number): Promise<any> => {
 
 | 部分 | 要求 |
 |------|------|
-| 导入 | `request` 统一来自 `@/utils/request` |
+| 导入 | `request` 统一来自 `@/utils` |
 | 类型 | 从 `./interface` 引入；不在 `api.ts` 内定义业务类型 |
 | 函数形态 | `export const xxx = (data): Promise<any> => { return request.xxx(...); }` |
 | 命名 | 与语义一致：`list`、`create`、`update`、`detail`、`remove`、`login` 等 |

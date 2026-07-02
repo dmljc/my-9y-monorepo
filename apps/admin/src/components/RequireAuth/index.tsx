@@ -2,7 +2,7 @@ import { Flex, Spin } from "antd";
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/user";
-import { clearToken, getToken } from "@/utils/request";
+import { clearToken, getToken } from "@/utils";
 
 /**
  * 受保护路由守卫：无 token 时重定向至登录页；有 token 时拉取用户信息。

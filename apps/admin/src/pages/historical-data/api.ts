@@ -1,4 +1,4 @@
-// import { request } from "@/utils/request";
+// import { request } from "@/utils";
 
 /** 设备分类数据类型 */
 export interface DeviceCategory {

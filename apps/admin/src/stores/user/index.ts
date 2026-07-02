@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { clearToken, setToken } from "@/utils/request";
+import { clearToken, setToken } from "@/utils";
 import { getInfo, login as loginApi } from "./api";
 import type { LoginParams, UserInfo } from "./interface";
 

@@ -3,7 +3,7 @@ import type { MenuProps } from "antd";
 import { Avatar, Button, Dropdown, Space, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/user";
-import { clearToken } from "@/utils/request";
+import { clearToken } from "@/utils";
 
 const userMenuItems: MenuProps["items"] = [
 	{
