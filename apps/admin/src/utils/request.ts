@@ -1,3 +1,5 @@
+import { createHttpClient } from "@utils/http-client";
+
 /**
  * 读取已保存的 access token。
  *
@@ -27,3 +29,25 @@ export const setToken = (token: string | undefined) => {
 export const clearToken = () => {
 	localStorage.removeItem("token");
 };
+
+/**
+ * 创建 HTTP 客户端实例。
+ *
+ *  @returns {HttpClient} - HTTP 客户端实例。
+ *
+ * @example
+ * ```ts
+ * const users = await request.get<User[]>("/user/list");
+ * console.log(users);
+ * ```
+ */
+export const request = createHttpClient({
+	baseURL: import.meta.env.VITE_API_BASE_URL,
+	getToken: () => getToken(),
+	onUnauthorized: () => {
+		clearToken();
+		if (!window.location.pathname.startsWith("/login")) {
+			window.location.href = "/login";
+		}
+	},
+});

@@ -150,7 +150,7 @@ const [submitting, setSubmitting] = useState(false);
 
 ### get / set 工具函数命名
 
-**做什么**：`utils.ts`、`services/` 等模块中，对**读取 / 写入**某一持久化或缓存数据（如 localStorage、sessionStorage、内存单例）的成对工具函数，优先命名为 **`getXxx`** + **`setXxx`**；**不要**用 `loadXxx` / `saveXxx`、`readXxx` / `writeXxx`、`fetchXxx` / `storeXxx` 等别名表达同类语义。
+**做什么**：`utils.ts`、`utils/` 等模块中，对**读取 / 写入**某一持久化或缓存数据（如 localStorage、sessionStorage、内存单例）的成对工具函数，优先命名为 **`getXxx`** + **`setXxx`**；**不要**用 `loadXxx` / `saveXxx`、`readXxx` / `writeXxx`、`fetchXxx` / `storeXxx` 等别名表达同类语义。
 
 **为什么**：`get` / `set` 与 React state（`setLoading`）、鉴权层（`getToken` / `setToken`）命名一致，一眼可知是同步读写本地数据；`load` / `save` 易与异步远程加载（`loadData`）或文件持久化混淆；`credentials` 等泛名易与 token 登录态混淆。
 
@@ -226,7 +226,7 @@ export const writeRememberMe = (values: LoginParams) => { /* ... */ };
 
 ### 页面 api.ts 接口函数
 
-**做什么**：页面目录下的 `api.ts` 只做 **HTTP 薄封装**——`import { request } from "@/services/request"`，一行 `return request.get/post/put/delete(...)`；请求/响应类型放同目录 `interface.ts`；业务校验、错误提示、状态更新留在页面或 hooks。
+**做什么**：页面目录下的 `api.ts` 只做 **HTTP 薄封装**——`import { request } from "@/utils/request"`，一行 `return request.get/post/put/delete(...)`；请求/响应类型放同目录 `interface.ts`；业务校验、错误提示、状态更新留在页面或 hooks。
 
 **为什么**：接口层与 UI 层职责分离；`api.ts` 保持统一形态后便于批量对接后端、替换 mock，也避免在接口文件里散落 `if (code !== 200)` 等业务逻辑。
 
@@ -243,7 +243,7 @@ pages/Login/
 **✅ 推荐**
 
 ```ts
-import { request } from "@/services/request";
+import { request } from "@/utils/request";
 import type { LoginParams } from "./interface";
 
 export const login = (data: LoginParams): Promise<any> => {
@@ -252,7 +252,7 @@ export const login = (data: LoginParams): Promise<any> => {
 ```
 
 ```ts
-import { request } from "@/services/request";
+import { request } from "@/utils/request";
 import type { CreateUser, ListParams, UpdateUser } from "./interface";
 
 export const list = (data: ListParams): Promise<any> => {
@@ -280,7 +280,7 @@ export const remove = (id: number): Promise<any> => {
 
 | 部分 | 要求 |
 |------|------|
-| 导入 | `request` 统一来自 `@/services/request` |
+| 导入 | `request` 统一来自 `@/utils/request` |
 | 类型 | 从 `./interface` 引入；不在 `api.ts` 内定义业务类型 |
 | 函数形态 | `export const xxx = (data): Promise<any> => { return request.xxx(...); }` |
 | 命名 | 与语义一致：`list`、`create`、`update`、`detail`、`remove`、`login` 等 |

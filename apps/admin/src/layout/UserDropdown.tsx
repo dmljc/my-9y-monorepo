@@ -2,9 +2,8 @@ import { LogoutOutlined, UserOutlined } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Avatar, Button, Dropdown, Space, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
-import { clearToken } from "@/services/auth";
-
-const USER_NAME = "ProUser";
+import { useUserStore } from "@/stores/user";
+import { clearToken } from "@/utils/request";
 
 const userMenuItems: MenuProps["items"] = [
 	{
@@ -16,10 +15,14 @@ const userMenuItems: MenuProps["items"] = [
 
 const UserDropdown = () => {
 	const navigate = useNavigate();
+	const user = useUserStore((state) => state.user);
+	const clearUser = useUserStore((state) => state.clearUser);
+	const displayName = user?.nickName || user?.userName || "用户";
 
 	const onMenuClick: MenuProps["onClick"] = ({ key }) => {
 		if (key === "logout") {
 			clearToken();
+			clearUser();
 			navigate("/login");
 		}
 	};
@@ -34,7 +37,7 @@ const UserDropdown = () => {
 				<Button type="text">
 					<Space>
 						<Avatar size="small" icon={<UserOutlined />} />
-						<Typography.Text>{USER_NAME}</Typography.Text>
+						<Typography.Text>{displayName}</Typography.Text>
 					</Space>
 				</Button>
 			</Dropdown>

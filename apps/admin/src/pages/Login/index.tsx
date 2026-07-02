@@ -1,20 +1,20 @@
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { App, Button, Checkbox, Form, Input, Typography } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import loginHero from "@/assets/login/login-hero.webp";
 import { getDefaultPathForTop } from "@/layout/menuConfig";
-import { setToken } from "@/services/auth";
-import { login } from "./api";
+import { useUserStore } from "@/stores/user";
 import styles from "./index.module.css";
-import type { LoginParams } from "./interface";
+import type { LoginFormValues } from "./interface";
 import { getRememberMe, setRememberMe } from "./utils";
 
 const Login = () => {
 	const navigate = useNavigate();
 	const { message } = App.useApp();
-	const [form] = Form.useForm<LoginParams>();
-	const [loading, setLoading] = useState(false);
+	const [form] = Form.useForm<LoginFormValues>();
+	const login = useUserStore((state) => state.login);
+	const loading = useUserStore((state) => state.loading);
 
 	useEffect(() => {
 		const saved = getRememberMe();
@@ -23,25 +23,18 @@ const Login = () => {
 		}
 	}, []);
 
-	const onFinish = async (values: LoginParams) => {
-		setLoading(true);
+	const onFinish = async (values: LoginFormValues) => {
 		try {
 			const { username, password } = values;
-			const data = await login({
-				username,
-				password,
-			});
-			if (data.code !== 200) {
+			const ok = await login({ username, password });
+			if (!ok) {
 				message.error("登录失败");
 				return;
 			}
-			setToken(data.token);
 			setRememberMe(values);
 			navigate(getDefaultPathForTop("warning"));
 		} catch {
 			message.error("登录失败");
-		} finally {
-			setLoading(false);
 		}
 	};
 
@@ -63,7 +56,7 @@ const Login = () => {
 					请使用您的账号登录系统
 				</Typography.Text>
 
-				<Form<LoginParams>
+				<Form<LoginFormValues>
 					form={form}
 					className={styles.form}
 					layout="vertical"

@@ -1,4 +1,4 @@
-// import { request } from "@/services/request";
+// import { request } from "@/utils/request";
 
 /** 物模型数据记录 */
 export interface ModelDataRecord {

@@ -1,17 +1,8 @@
 /**
- * 登录请求参数。
+ * 登录表单字段。
  */
-export interface LoginParams {
+export interface LoginFormValues {
 	username: string;
 	password: string;
 	remember?: boolean;
-}
-
-/**
- * 登录接口响应。
- */
-export interface LoginResponse {
-	code: number;
-	msg?: string;
-	token?: string;
 }

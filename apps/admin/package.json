@@ -16,7 +16,8 @@
 		"echarts": "catalog:",
 		"react": "catalog:",
 		"react-dom": "catalog:",
-		"react-router-dom": "catalog:"
+		"react-router-dom": "catalog:",
+		"zustand": "^5.0.14"
 	},
 	"devDependencies": {
 		"@types/react": "catalog:",
