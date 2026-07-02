@@ -157,7 +157,7 @@ const [submitting, setSubmitting] = useState(false);
 **✅ 推荐**
 
 ```ts
-const LOGIN_REMEMBER_ME_KEY = "login_remember_me";
+const REMEMBER_ME_KEY = "login_remember_me";
 
 export const getRememberMe = (): Partial<LoginParams> | null => {
   /* 从 localStorage 读取「记住我」表单数据 */
@@ -192,7 +192,7 @@ export const writeRememberMe = (values: LoginParams) => { /* ... */ };
 |------|------|
 | 读取 | `get` + 业务名（如 `getRememberMe`、`getToken`） |
 | 写入 | `set` + 同一业务名（如 `setRememberMe`、`setToken`） |
-| 存储键 | 常量单独定义，语义与函数一致（如 `LOGIN_REMEMBER_ME_KEY = "login_remember_me"`） |
+| 存储键 | 常量单独定义，语义与函数一致（如 `REMEMBER_ME_KEY = "login_remember_me"`） |
 | 职责 | 只做读写与必要解析，不做 UI 提示、路由跳转等业务副作用 |
 
 **边界**：**异步拉取远端列表/详情**仍用 `loadData`、`fetchXxx`、`list`（见 `api.ts`），不用 `getXxx`；**仅清除**可用 `clearXxx`（如 `clearToken`），不必强行 `setXxx(null)`；同一模块内多种独立存储项可拆为 `getFoo` / `setFoo`、`getBar` / `setBar`；`setXxx` 若同时包含「写入 + 按条件删除」仍用一个 `setXxx` 表达（如 `setRememberMe` 根据 `remember` 分支）。

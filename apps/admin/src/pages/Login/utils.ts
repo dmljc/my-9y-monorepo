@@ -3,7 +3,7 @@ import type { LoginParams } from "./interface";
 /**
  * localStorage 中「记住我」表单数据的存储键。
  */
-const LOGIN_REMEMBER_ME_KEY = "login_remember_me";
+const REMEMBER_ME_KEY = "remember_me";
 
 /**
  * 读取 localStorage 中「记住我」表单数据，供登录页回显。
@@ -12,7 +12,7 @@ const LOGIN_REMEMBER_ME_KEY = "login_remember_me";
  */
 export const getRememberMe = (): Partial<LoginParams> | null => {
 	try {
-		const raw = localStorage.getItem(LOGIN_REMEMBER_ME_KEY);
+		const raw = localStorage.getItem(REMEMBER_ME_KEY);
 		if (!raw) return null;
 
 		const saved = JSON.parse(raw) as Pick<
@@ -43,9 +43,9 @@ export const setRememberMe = (values: LoginParams) => {
 			username: values.username,
 			password: values.password,
 		});
-		localStorage.setItem(LOGIN_REMEMBER_ME_KEY, data);
+		localStorage.setItem(REMEMBER_ME_KEY, data);
 		return;
 	}
 
-	localStorage.removeItem(LOGIN_REMEMBER_ME_KEY);
+	localStorage.removeItem(REMEMBER_ME_KEY);
 };
