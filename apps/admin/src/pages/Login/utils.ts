@@ -1,29 +1,22 @@
-/**
- * 登录表单字段。
- */
-export interface LoginFormValues {
-	username: string;
-	password: string;
-	remember?: boolean;
-}
+import type { LoginParams } from "./interface";
 
 /**
- * localStorage 中「记住我」凭证的存储键。
+ * localStorage 中「记住我」表单数据的存储键。
  */
-const LOGIN_CREDENTIALS_KEY = "admin_login_credentials";
+const LOGIN_REMEMBER_ME_KEY = "login_remember_me";
 
 /**
- * 读取 localStorage 中已保存的登录凭证，供表单回显。
+ * 读取 localStorage 中「记住我」表单数据，供登录页回显。
  *
- * @returns {Partial<LoginFormValues> | null} - 含 username、password 且 remember 为 true 的表单片段；无数据、缺少用户名或解析失败时返回 null。
+ * @returns {Partial<LoginParams> | null} - 含 username、password 且 remember 为 true 的表单片段；无数据、缺少用户名或解析失败时返回 null。
  */
-export const loadSavedCredentials = (): Partial<LoginFormValues> | null => {
+export const getRememberMe = (): Partial<LoginParams> | null => {
 	try {
-		const raw = localStorage.getItem(LOGIN_CREDENTIALS_KEY);
+		const raw = localStorage.getItem(LOGIN_REMEMBER_ME_KEY);
 		if (!raw) return null;
 
 		const saved = JSON.parse(raw) as Pick<
-			LoginFormValues,
+			LoginParams,
 			"username" | "password"
 		>;
 		if (!saved.username) return null;
@@ -39,22 +32,20 @@ export const loadSavedCredentials = (): Partial<LoginFormValues> | null => {
 };
 
 /**
- * 根据「记住我」勾选状态，持久化或清除 localStorage 中的登录凭证。
+ * 根据「记住我」勾选状态，持久化或清除 localStorage 中的表单数据。
  *
- * @param {LoginFormValues} - 登录表单值；remember 为 true 时写入 username、password，否则清除已存凭证。
+ * @param {LoginParams} - 登录表单值；remember 为 true 时写入 username、password，否则清除已存数据。
  * @returns {void} - 无返回值。
  */
-export const saveCredentials = (values: LoginFormValues) => {
+export const setRememberMe = (values: LoginParams) => {
 	if (values.remember) {
-		localStorage.setItem(
-			LOGIN_CREDENTIALS_KEY,
-			JSON.stringify({
-				username: values.username,
-				password: values.password,
-			}),
-		);
+		const data = JSON.stringify({
+			username: values.username,
+			password: values.password,
+		});
+		localStorage.setItem(LOGIN_REMEMBER_ME_KEY, data);
 		return;
 	}
 
-	localStorage.removeItem(LOGIN_CREDENTIALS_KEY);
+	localStorage.removeItem(LOGIN_REMEMBER_ME_KEY);
 };

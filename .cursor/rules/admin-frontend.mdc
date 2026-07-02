@@ -105,6 +105,98 @@ const menuItems = useMemo(
 
 **何时才用**：子组件已用 `memo` 且 profilter 证实 props 引用变化导致多余渲染；Context value 等确需稳定引用；昂贵计算（大列表派生、复杂图表数据）且依赖明确。其余情况优先写普通函数/变量。
 
+### loading 状态命名
+
+**做什么**：表示异步进行中、用于绑定 Ant Design `loading` / `confirmLoading` / `spinning` 等 prop 的 state，统一命名为 **`loading`** + **`setLoading`**；**不要**用 `submitting`、`isSubmitting`、`pending`、`saving` 等别名。
+
+**为什么**：与 Ant Design 组件 prop 名一致；`<Button loading={loading} />`、`<Modal confirmLoading={loading} />`、`<Spin spinning={loading} />` 变量与 prop 同名，扫读时无需在 `submitting` ↔ `loading` 之间做 mental mapping；列表页数据加载已普遍使用 `loading`，表单提交、弹窗确认等场景保持同一命名。
+
+**✅ 推荐**
+
+```tsx
+const [loading, setLoading] = useState(false);
+
+const onFinish = async (values: LoginFormValues) => {
+  setLoading(true);
+  try {
+    await login(values);
+    message.success("登录成功");
+  } catch {
+    message.error("登录失败");
+  } finally {
+    setLoading(false);
+  }
+};
+
+<Button type="primary" htmlType="submit" loading={loading}>
+  登录
+</Button>
+```
+
+```tsx
+<Modal open={open} confirmLoading={loading} onOk={handleOk} />
+```
+
+**❌ 避免**
+
+```tsx
+const [submitting, setSubmitting] = useState(false);
+
+<Button loading={submitting}>登录</Button>
+<Modal confirmLoading={submitting} />
+```
+
+**边界**：同一组件内**并行**多种互斥 loading（如「保存」与「删除」同时进行）时，可拆为 `saveLoading` / `deleteLoading`；Table 数据区 loading 仍用 `loading`；与 Ant Design 无对应 prop 的纯业务状态（如 `uploading` 且只驱动自定义 UI）可按语义命名，但优先评估能否合并为 `loading`。
+
+### get / set 工具函数命名
+
+**做什么**：`utils.ts`、`services/` 等模块中，对**读取 / 写入**某一持久化或缓存数据（如 localStorage、sessionStorage、内存单例）的成对工具函数，优先命名为 **`getXxx`** + **`setXxx`**；**不要**用 `loadXxx` / `saveXxx`、`readXxx` / `writeXxx`、`fetchXxx` / `storeXxx` 等别名表达同类语义。
+
+**为什么**：`get` / `set` 与 React state（`setLoading`）、鉴权层（`getToken` / `setToken`）命名一致，一眼可知是同步读写本地数据；`load` / `save` 易与异步远程加载（`loadData`）或文件持久化混淆；`credentials` 等泛名易与 token 登录态混淆。
+
+**✅ 推荐**
+
+```ts
+const LOGIN_REMEMBER_ME_KEY = "login_remember_me";
+
+export const getRememberMe = (): Partial<LoginParams> | null => {
+  /* 从 localStorage 读取「记住我」表单数据 */
+};
+
+export const setRememberMe = (values: LoginParams) => {
+  /* remember 为 true 时写入，否则清除 */
+};
+```
+
+```ts
+export const getToken = (): string | null => localStorage.getItem(AUTH_TOKEN_KEY);
+
+export const setToken = (token: string) => {
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+};
+```
+
+**❌ 避免**
+
+```ts
+export const loadSavedCredentials = () => { /* ... */ };
+export const saveCredentials = (values: LoginParams) => { /* ... */ };
+
+export const readRememberMe = () => { /* ... */ };
+export const writeRememberMe = (values: LoginParams) => { /* ... */ };
+```
+
+**写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 读取 | `get` + 业务名（如 `getRememberMe`、`getToken`） |
+| 写入 | `set` + 同一业务名（如 `setRememberMe`、`setToken`） |
+| 存储键 | 常量单独定义，语义与函数一致（如 `LOGIN_REMEMBER_ME_KEY = "login_remember_me"`） |
+| 职责 | 只做读写与必要解析，不做 UI 提示、路由跳转等业务副作用 |
+
+**边界**：**异步拉取远端列表/详情**仍用 `loadData`、`fetchXxx`、`list`（见 `api.ts`），不用 `getXxx`；**仅清除**可用 `clearXxx`（如 `clearToken`），不必强行 `setXxx(null)`；同一模块内多种独立存储项可拆为 `getFoo` / `setFoo`、`getBar` / `setBar`；`setXxx` 若同时包含「写入 + 按条件删除」仍用一个 `setXxx` 表达（如 `setRememberMe` 根据 `remember` 分支）。
+
 ### 页面 utils 中文 JSDoc
 
 **做什么**：页面目录下的 `utils.ts`、`types.ts`、`formRules.ts`、`interface.ts` 等非组件文件中，**导出的类型、常量、函数**以及**模块内私有常量、工具函数**，均须用 **中文 JSDoc 多行注释**；函数按下方模板补充 **`@param`**、**`@returns`**，类型与常量仅写摘要段。`api.ts` 中的薄封装接口函数可省略 JSDoc（见「页面 api.ts 接口函数」）。

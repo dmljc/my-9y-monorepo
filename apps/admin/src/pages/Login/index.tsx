@@ -7,27 +7,24 @@ import { getDefaultPathForTop } from "@/layout/menuConfig";
 import { setToken } from "@/services/auth";
 import { login } from "./api";
 import styles from "./index.module.css";
-import {
-	type LoginFormValues,
-	loadSavedCredentials,
-	saveCredentials,
-} from "./utils";
+import type { LoginParams } from "./interface";
+import { getRememberMe, setRememberMe } from "./utils";
 
 const Login = () => {
 	const navigate = useNavigate();
 	const { message } = App.useApp();
-	const [form] = Form.useForm<LoginFormValues>();
-	const [submitting, setSubmitting] = useState(false);
+	const [form] = Form.useForm<LoginParams>();
+	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		const saved = loadSavedCredentials();
+		const saved = getRememberMe();
 		if (saved) {
 			form.setFieldsValue(saved);
 		}
 	}, []);
 
-	const onFinish = async (values: LoginFormValues) => {
-		setSubmitting(true);
+	const onFinish = async (values: LoginParams) => {
+		setLoading(true);
 		try {
 			const { username, password } = values;
 			const data = await login({
@@ -39,12 +36,12 @@ const Login = () => {
 				return;
 			}
 			setToken(data.token);
-			saveCredentials(values);
+			setRememberMe(values);
 			navigate(getDefaultPathForTop("warning"));
 		} catch {
 			message.error("登录失败");
 		} finally {
-			setSubmitting(false);
+			setLoading(false);
 		}
 	};
 
@@ -66,7 +63,7 @@ const Login = () => {
 					请使用您的账号登录系统
 				</Typography.Text>
 
-				<Form<LoginFormValues>
+				<Form<LoginParams>
 					form={form}
 					className={styles.form}
 					layout="vertical"
@@ -113,7 +110,7 @@ const Login = () => {
 							type="primary"
 							htmlType="submit"
 							block
-							loading={submitting}
+							loading={loading}
 							className={styles.submit}
 						>
 							登录

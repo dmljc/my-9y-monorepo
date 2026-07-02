@@ -87,14 +87,14 @@
 	font-size: 16px;
 }
 
-.input :global(.ant-input:hover),
-.input :global(.ant-input:focus),
-.input :global(.ant-input:focus-within) {
+.input :global(.ant-input):hover,
+.input :global(.ant-input):focus,
+.input :global(.ant-input):focus-within {
 	background: transparent;
 }
 
-.input :global(.ant-input::placeholder),
-.input :global(input::placeholder) {
+.input :global(.ant-input)::placeholder,
+.input :global(input)::placeholder {
 	color: #ccc;
 }
 

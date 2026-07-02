@@ -35,6 +35,9 @@
 		}
 	},
 	"css": {
+		"parser": {
+			"cssModules": true
+		},
 		"formatter": {
 			"enabled": true
 		},
