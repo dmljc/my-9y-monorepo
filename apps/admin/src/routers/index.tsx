@@ -1,6 +1,6 @@
-/* eslint-disable react-refresh/only-export-components */
 import { lazy } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
+import RequireAuth from "@/components/RequireAuth";
 import RouteError from "@/components/RouteError";
 import { getDefaultPathForTop } from "@/layout/menuConfig";
 
@@ -32,91 +32,8 @@ const routes: RouteObject[] = [
 		errorElement: <RouteError />,
 		children: [
 			{
-				path: "/",
-				element: (
-					<Navigate to={getDefaultPathForTop("warning")} replace />
-				),
-			},
-			{
 				path: "/login",
 				element: <Login />,
-			},
-			{
-				path: "/dashboard",
-				element: <Dashboard />,
-			},
-			{
-				element: <Layout />,
-				children: [
-					{ path: "/statistics", element: <Statistics /> },
-					{
-						path: "/warning",
-						element: <Warning />,
-						children: [
-							{
-								index: true,
-								element: (
-									<Navigate
-										to={getDefaultPathForTop(
-											"warning",
-										).replace("/warning/", "")}
-										replace
-									/>
-								),
-							},
-							{ path: "list", element: <WarningList /> },
-							{ path: "rules", element: <WarningRules /> },
-							{ path: "levels", element: <WarningLevels /> },
-						],
-					},
-					{
-						path: "/device",
-						element: <Device />,
-						children: [
-							{
-								index: true,
-								element: (
-									<Navigate
-										to={getDefaultPathForTop(
-											"device",
-										).replace("/device/", "")}
-										replace
-									/>
-								),
-							},
-							{
-								path: "inspection-ledger",
-								element: <InspectionLedger />,
-							},
-						],
-					},
-					{ path: "/historical-data", element: <HistoricalData /> },
-					{ path: "/model-data", element: <ModelData /> },
-					{ path: "/reverse-control", element: <ReverseControl /> },
-					{
-						path: "/permission",
-						element: <Permission />,
-						children: [
-							{
-								index: true,
-								element: (
-									<Navigate
-										to={getDefaultPathForTop(
-											"permission",
-										).replace("/permission/", "")}
-										replace
-									/>
-								),
-							},
-							{ path: "role", element: <PermissionRole /> },
-							{ path: "user", element: <PermissionUser /> },
-							{
-								path: "organization",
-								element: <PermissionOrganization />,
-							},
-						],
-					},
-				],
 			},
 			{
 				path: "/403",
@@ -127,8 +44,117 @@ const routes: RouteObject[] = [
 				element: <ServerError />,
 			},
 			{
-				path: "*",
-				element: <NotFound />,
+				element: <RequireAuth />,
+				children: [
+					{
+						path: "/",
+						element: (
+							<Navigate
+								to={getDefaultPathForTop("warning")}
+								replace
+							/>
+						),
+					},
+					{
+						path: "/dashboard",
+						element: <Dashboard />,
+					},
+					{
+						element: <Layout />,
+						children: [
+							{ path: "/statistics", element: <Statistics /> },
+							{
+								path: "/warning",
+								element: <Warning />,
+								children: [
+									{
+										index: true,
+										element: (
+											<Navigate
+												to={getDefaultPathForTop(
+													"warning",
+												).replace("/warning/", "")}
+												replace
+											/>
+										),
+									},
+									{ path: "list", element: <WarningList /> },
+									{
+										path: "rules",
+										element: <WarningRules />,
+									},
+									{
+										path: "levels",
+										element: <WarningLevels />,
+									},
+								],
+							},
+							{
+								path: "/device",
+								element: <Device />,
+								children: [
+									{
+										index: true,
+										element: (
+											<Navigate
+												to={getDefaultPathForTop(
+													"device",
+												).replace("/device/", "")}
+												replace
+											/>
+										),
+									},
+									{
+										path: "inspection-ledger",
+										element: <InspectionLedger />,
+									},
+								],
+							},
+							{
+								path: "/historical-data",
+								element: <HistoricalData />,
+							},
+							{ path: "/model-data", element: <ModelData /> },
+							{
+								path: "/reverse-control",
+								element: <ReverseControl />,
+							},
+							{
+								path: "/permission",
+								element: <Permission />,
+								children: [
+									{
+										index: true,
+										element: (
+											<Navigate
+												to={getDefaultPathForTop(
+													"permission",
+												).replace("/permission/", "")}
+												replace
+											/>
+										),
+									},
+									{
+										path: "role",
+										element: <PermissionRole />,
+									},
+									{
+										path: "user",
+										element: <PermissionUser />,
+									},
+									{
+										path: "organization",
+										element: <PermissionOrganization />,
+									},
+								],
+							},
+						],
+					},
+					{
+						path: "*",
+						element: <NotFound />,
+					},
+				],
 			},
 		],
 	},

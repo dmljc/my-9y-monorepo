@@ -1,9 +1,11 @@
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { Button, Checkbox, Form, Input, Typography } from "antd";
-import { useEffect } from "react";
+import { App, Button, Checkbox, Form, Input, Typography } from "antd";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import loginHero from "@/assets/login/login-hero.webp";
 import { getDefaultPathForTop } from "@/layout/menuConfig";
+import { setToken } from "@/services/auth";
+import { login } from "./api";
 import styles from "./index.module.css";
 import {
 	type LoginFormValues,
@@ -13,7 +15,9 @@ import {
 
 const Login = () => {
 	const navigate = useNavigate();
+	const { message } = App.useApp();
 	const [form] = Form.useForm<LoginFormValues>();
+	const [submitting, setSubmitting] = useState(false);
 
 	useEffect(() => {
 		const saved = loadSavedCredentials();
@@ -22,9 +26,26 @@ const Login = () => {
 		}
 	}, []);
 
-	const onFinish = (values: LoginFormValues) => {
-		saveCredentials(values);
-		navigate(getDefaultPathForTop("warning"));
+	const onFinish = async (values: LoginFormValues) => {
+		setSubmitting(true);
+		try {
+			const { username, password } = values;
+			const data = await login({
+				username,
+				password,
+			});
+			if (data.code !== 200) {
+				message.error("登录失败");
+				return;
+			}
+			setToken(data.token);
+			saveCredentials(values);
+			navigate(getDefaultPathForTop("warning"));
+		} catch {
+			message.error("登录失败");
+		} finally {
+			setSubmitting(false);
+		}
 	};
 
 	return (
@@ -92,6 +113,7 @@ const Login = () => {
 							type="primary"
 							htmlType="submit"
 							block
+							loading={submitting}
 							className={styles.submit}
 						>
 							登录

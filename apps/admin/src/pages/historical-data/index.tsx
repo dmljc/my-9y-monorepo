@@ -54,7 +54,6 @@ const HistoricalData = () => {
 			initRef.current = true;
 			void loadData(pageNum, pageSize, appliedFilter);
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	const handleSearch = () => {

@@ -107,7 +107,6 @@ const WarningList = () => {
 			initRef.current = true;
 			loadData(1, pageSize);
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	const handleSearch = () => {

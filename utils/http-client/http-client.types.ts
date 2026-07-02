@@ -49,16 +49,12 @@ export interface HttpClient extends AxiosInstance {
 	/** 原始 axios 实例，不走业务解包（如下载 blob、读取响应头） */
 	raw: AxiosInstance;
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	get(url: string, config?: AxiosRequestConfig): Promise<any>;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	post(
 		url: string,
 		data?: unknown,
 		config?: AxiosRequestConfig,
 	): Promise<any>;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	put(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<any>;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	delete(url: string, config?: AxiosRequestConfig): Promise<any>;
 }

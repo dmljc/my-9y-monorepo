@@ -2,6 +2,7 @@ import { LogoutOutlined, UserOutlined } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Avatar, Button, Dropdown, Space, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
+import { clearToken } from "@/services/auth";
 
 const USER_NAME = "ProUser";
 
@@ -18,6 +19,7 @@ const UserDropdown = () => {
 
 	const onMenuClick: MenuProps["onClick"] = ({ key }) => {
 		if (key === "logout") {
+			clearToken();
 			navigate("/login");
 		}
 	};

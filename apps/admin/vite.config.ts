@@ -14,9 +14,8 @@ export default defineConfig({
 		port: 1111,
 		proxy: {
 			"/api": {
-				target: "http://localhost:3000",
+				target: "http://115111ob8gw23.vicp.fun:48041",
 				changeOrigin: true,
-				rewrite: (path: string) => path.replace(/^\/api/, ""),
 			},
 		},
 		cors: true,

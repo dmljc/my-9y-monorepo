@@ -107,7 +107,7 @@ const menuItems = useMemo(
 
 ### 页面 utils 中文 JSDoc
 
-**做什么**：页面目录下的 `utils.ts`、`types.ts`、`formRules.ts`、`api.ts` 等非组件文件中，**导出的类型、常量、函数**以及**模块内私有常量、工具函数**，均须用 **中文 JSDoc 多行注释**；函数按下方模板补充 **`@param`**、**`@returns`**，类型与常量仅写摘要段。
+**做什么**：页面目录下的 `utils.ts`、`types.ts`、`formRules.ts`、`interface.ts` 等非组件文件中，**导出的类型、常量、函数**以及**模块内私有常量、工具函数**，均须用 **中文 JSDoc 多行注释**；函数按下方模板补充 **`@param`**、**`@returns`**，类型与常量仅写摘要段。`api.ts` 中的薄封装接口函数可省略 JSDoc（见「页面 api.ts 接口函数」）。
 
 **为什么**：utils 常被页面、弹窗、hooks 多处引用；统一 `@param {类型} - 说明`、`@returns {类型} - 说明` 格式便于 IDE 悬停阅读，并明确参数与返回值的业务语义。
 
@@ -131,6 +131,89 @@ const menuItems = useMemo(
 | `@param` | `@param {类型} - 说明。`；类型后直接接 `-`，不写参数名；多参数各占一行 |
 | `@returns` | `@returns {类型} - 说明。`；与 `@param` 同样用 `-` 分隔类型与说明 |
 | 类型 / 常量 | 仅写摘要段；无参函数省略 `@param` |
+
+### 页面 api.ts 接口函数
+
+**做什么**：页面目录下的 `api.ts` 只做 **HTTP 薄封装**——`import { request } from "@/services/request"`，一行 `return request.get/post/put/delete(...)`；请求/响应类型放同目录 `interface.ts`；业务校验、错误提示、状态更新留在页面或 hooks。
+
+**为什么**：接口层与 UI 层职责分离；`api.ts` 保持统一形态后便于批量对接后端、替换 mock，也避免在接口文件里散落 `if (code !== 200)` 等业务逻辑。
+
+**目录结构**
+
+```
+pages/Login/
+  api.ts          # 仅 HTTP 调用
+  interface.ts    # 请求/响应类型（中文 JSDoc）
+  index.tsx
+  utils.ts
+```
+
+**✅ 推荐**
+
+```ts
+import { request } from "@/services/request";
+import type { LoginParams } from "./interface";
+
+export const login = (data: LoginParams): Promise<any> => {
+  return request.post("/login", data);
+};
+```
+
+```ts
+import { request } from "@/services/request";
+import type { CreateUser, ListParams, UpdateUser } from "./interface";
+
+export const list = (data: ListParams): Promise<any> => {
+  return request.get("/user/list", { params: data });
+};
+
+export const create = (data: CreateUser): Promise<any> => {
+  return request.post("/user/create", data);
+};
+
+export const update = (data: UpdateUser): Promise<any> => {
+  return request.put("/user/update", data);
+};
+
+export const detail = (id: number): Promise<any> => {
+  return request.get(`/user/${id}`);
+};
+
+export const remove = (id: number): Promise<any> => {
+    return request.delete(`/user/delete/${id}`);
+};
+```
+
+**写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 导入 | `request` 统一来自 `@/services/request` |
+| 类型 | 从 `./interface` 引入；不在 `api.ts` 内定义业务类型 |
+| 函数形态 | `export const xxx = (data): Promise<any> => { return request.xxx(...); }` |
+| 命名 | 与语义一致：`list`、`create`、`update`、`detail`、`remove`、`login` 等 |
+| 路径 | 写相对业务路径（如 `/login`、`/user/list`），**不要**重复拼 `VITE_API_BASE_URL` 或 `/api` 前缀 |
+| GET 查询 | 筛选/分页参数用 `{ params: data }` |
+| 返回值 | 暂用 `Promise<any>`；后续可按接口补具体响应类型 |
+
+**❌ 避免**
+
+```ts
+// 在 api.ts 内定义类型
+export interface LoginParams { /* ... */ }
+
+// 在 api.ts 内做业务判断
+export const login = async (data: LoginParams) => {
+  const body = await request.post("/login", data);
+  if (body.code !== 200) throw new Error("登录失败");
+  return body.token;
+};
+
+// 路径重复拼接 baseURL
+return request.post("/api/login", data);
+```
+
+**边界**：mock 阶段可在 `api.ts` 暂留 `Promise.resolve(...)`，接入真实接口后整段替换为 `request` 调用；下载 blob、读响应头等特殊场景可用 `request.raw`；`interface.ts` 中的类型仍须中文 JSDoc。
 
 ### 列表页 DOM 扁平化
 
@@ -205,7 +288,7 @@ const menuItems = useMemo(
 
 - API、语义以[官方文档](https://ant.design/docs/react/llms-cn)为准，勿臆造 props。
 - 外网开发时可联网检索，或使用 Cursor @Docs / MCP；无需在仓库内维护 `docs/` 副本。
-- 写样式时参考组件语义说明（如 https://ant.design/llms-semantic-cn.md）；非必需勿用 `:global(.ant-*)` 覆盖默认样式（见「样式」章节）。
+- 写样式时参考组件语义说明（如 <https://ant.design/llms-semantic-cn.md）；非必需勿用> `:global(.ant-*)` 覆盖默认样式（见「样式」章节）。
 
 ### 禁用已弃用 API
 
@@ -538,6 +621,8 @@ useEffect(() => {
 pages/Login/
   index.tsx
   index.module.css   # 布局、间距；必要时 :global(.ant-*) 或 @media
+  api.ts             # HTTP 薄封装（见「页面 api.ts 接口函数」）
+  interface.ts       # 请求/响应类型
   utils.ts           # 类型、常量、工具函数（中文 JSDoc，见「页面 utils 中文 JSDoc」）
 ```
 
