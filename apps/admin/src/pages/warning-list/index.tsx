@@ -5,8 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import cardBlueCircleImg from "@/assets/warning/card-blue-circle.png";
 import cardGreenCircleImg from "@/assets/warning/card-green-circle.png";
-import statUnprocessedImg from "@/assets/warning/stat-unprocessed.png";
-import statWarningCountImg from "@/assets/warning/stat-warning-count.png";
+import cardOrangeCircleImg from "@/assets/warning/card-orange-circle.png";
+import statSolvedTodayImg from "@/assets/warning/stat-solved-today.png";
+import statTotalTodayImg from "@/assets/warning/stat-total-today.png";
+import statUnsolvedTodayImg from "@/assets/warning/stat-unsolved-today.png";
 import { list, processWarning, toListParams } from "@/pages/warning/api";
 import {
 	buildStatCards,
@@ -14,7 +16,6 @@ import {
 	getMockStats,
 	LEVEL_COLOR,
 	LEVEL_LABEL,
-	STATUS_COLOR,
 	STATUS_LABEL,
 	STATUS_OPTIONS,
 	type StatCard,
@@ -28,11 +29,12 @@ import styles from "./index.module.css";
 const { RangePicker } = DatePicker;
 
 const STAT_CARD_ASSETS = {
-	totalTodayImg: statWarningCountImg,
-	solvedTodayImg: statWarningCountImg,
-	unsolvedTodayImg: statUnprocessedImg,
+	totalTodayImg: statTotalTodayImg,
+	solvedTodayImg: statSolvedTodayImg,
+	unsolvedTodayImg: statUnsolvedTodayImg,
 	blueCircleBg: cardBlueCircleImg,
 	greenCircleBg: cardGreenCircleImg,
+	orangeCircleBg: cardOrangeCircleImg,
 } as const;
 
 const STAT_CARD_TONE_CLASS = {
@@ -187,9 +189,15 @@ const WarningList = () => {
 			dataIndex: "status",
 			key: "status",
 			render: (itemStatus: WarningItem["status"]) => (
-				<Tag color={STATUS_COLOR[itemStatus]}>
+				<span
+					className={
+						itemStatus === "processed"
+							? styles.statusProcessed
+							: styles.statusUnprocessed
+					}
+				>
 					{STATUS_LABEL[itemStatus]}
-				</Tag>
+				</span>
 			),
 		},
 		{
@@ -275,7 +283,6 @@ const WarningList = () => {
 					dataSource={dataSource}
 					rowKey="id"
 					loading={loading}
-					// scroll={{ x: 1200 }}
 					pagination={{
 						current: pageNum,
 						pageSize,

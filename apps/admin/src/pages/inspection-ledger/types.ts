@@ -39,7 +39,7 @@ export interface StatCard {
 	value: number;
 	image: string;
 	background: string;
-	tone: "blue" | "green" | "orange";
+	tone: "blue" | "purple" | "orange";
 	valueColor?: string;
 }
 
@@ -49,7 +49,8 @@ export interface StatCardAssets {
 	expiringImg: string;
 	overdueImg: string;
 	blueCircleBg: string;
-	greenCircleBg: string;
+	purpleCircleBg: string;
+	orangeCircleBg: string;
 }
 
 /** 新增/编辑设备表单值 */

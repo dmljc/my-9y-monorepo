@@ -42,6 +42,7 @@ export interface StatCard {
 	title: string;
 	value: number;
 	image: string;
+	/** 卡片右侧圆形装饰背景 */
 	background: string;
 	tone: "blue" | "green" | "orange";
 }
@@ -53,6 +54,7 @@ export interface StatCardAssets {
 	unsolvedTodayImg: string;
 	blueCircleBg: string;
 	greenCircleBg: string;
+	orangeCircleBg: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -139,7 +141,7 @@ export function buildStatCards(
 			title: "今日已解决",
 			value: stats.solvedToday,
 			image: assets.solvedTodayImg,
-			background: assets.blueCircleBg,
+			background: assets.greenCircleBg,
 			tone: "green",
 		},
 		{
@@ -147,7 +149,7 @@ export function buildStatCards(
 			title: "今日未解决",
 			value: stats.unsolvedToday,
 			image: assets.unsolvedTodayImg,
-			background: assets.greenCircleBg,
+			background: assets.orangeCircleBg,
 			tone: "orange",
 		},
 	];

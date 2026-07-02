@@ -8,9 +8,8 @@
 
 .topPanel {
 	flex: none;
-	background: #fff;
-	padding: 16px 20px;
-	border-radius: 4px;
+	padding: 0;
+	background: transparent;
 }
 
 .summaryCards {
@@ -23,12 +22,20 @@
 	position: relative;
 	min-width: 0;
 	height: 148px;
-	padding: 28px 4% 0 8%;
+	padding: 24px 0 0 20px;
 	border-radius: 4px;
 	overflow: hidden;
+	background-color: #fff;
+	box-shadow: 0 1px 4px rgba(15, 35, 52, 0.06);
 	background-repeat: no-repeat;
-	background-position: center;
-	background-size: cover;
+	background-position: right -24px center;
+	background-size: auto 118%;
+}
+
+.summaryCardBlue,
+.summaryCardGreen,
+.summaryCardOrange {
+	background-color: #fff;
 }
 
 .summaryCardTitle {
@@ -72,12 +79,12 @@
 
 .summaryCardIllustration {
 	position: absolute;
-	top: 20px;
-	right: 0;
-	width: 42%;
-	max-width: 200px;
-	height: 72px;
+	top: 34px;
+	right: 40px;
+	height: calc(100% - 48px);
+	width: auto;
 	object-fit: contain;
+	object-position: right center;
 	pointer-events: none;
 	-webkit-user-select: none;
 	user-select: none;
@@ -121,6 +128,18 @@
 	color: #86909c;
 	font-size: 14px;
 	white-space: nowrap;
+}
+
+.statusUnprocessed {
+	color: #f5222d;
+	font-size: 14px;
+	line-height: 22px;
+}
+
+.statusProcessed {
+	color: #52c41a;
+	font-size: 14px;
+	line-height: 22px;
 }
 
 .actions {

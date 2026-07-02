@@ -1,10 +1,12 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { Button, Input, Select, Table } from "antd";
 import { useMemo } from "react";
-import cardBlueCircleImg from "@/assets/warning/card-blue-circle.png";
-import cardGreenCircleImg from "@/assets/warning/card-green-circle.png";
-import statUnprocessedImg from "@/assets/warning/stat-unprocessed.png";
-import statWarningCountImg from "@/assets/warning/stat-warning-count.png";
+import cardBlueCircleImg from "@/assets/inspection-ledger/card-blue-circle.png";
+import cardOrangeCircleImg from "@/assets/inspection-ledger/card-orange-circle.png";
+import cardPurpleCircleImg from "@/assets/inspection-ledger/card-purple-circle.png";
+import statExpiringImg from "@/assets/inspection-ledger/stat-expiring.png";
+import statOverdueImg from "@/assets/inspection-ledger/stat-overdue.png";
+import statTotalImg from "@/assets/inspection-ledger/stat-total.png";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import { buildDeviceTableColumns } from "./tableColumns";
@@ -12,17 +14,24 @@ import type { StatCard } from "./types";
 import { useDeviceLedger } from "./useDeviceLedger";
 import { FACTORY_OPTIONS } from "./utils";
 
+const STAT_CARD_GRADIENT = {
+	blue: "linear-gradient(90deg, #e6f3ff 0%, #c9e3ff 100%)",
+	purple: "linear-gradient(90deg, #f8f6ff 0%, #e7e0ff 100%)",
+	orange: "linear-gradient(90deg, #fff5e1 0%, #ffdec1 100%)",
+} as const;
+
 const STAT_CARD_ASSETS = {
-	totalImg: statWarningCountImg,
-	expiringImg: statUnprocessedImg,
-	overdueImg: statUnprocessedImg,
+	totalImg: statTotalImg,
+	expiringImg: statExpiringImg,
+	overdueImg: statOverdueImg,
 	blueCircleBg: cardBlueCircleImg,
-	greenCircleBg: cardGreenCircleImg,
+	purpleCircleBg: cardPurpleCircleImg,
+	orangeCircleBg: cardOrangeCircleImg,
 } as const;
 
 const STAT_CARD_TONE_CLASS = {
 	blue: styles.summaryCardBlue,
-	green: styles.summaryCardGreen,
+	purple: styles.summaryCardPurple,
 	orange: styles.summaryCardOrange,
 } as const;
 
@@ -30,7 +39,9 @@ function StatCardView({ card }: { card: StatCard }) {
 	return (
 		<div
 			className={`${styles.summaryCard} ${STAT_CARD_TONE_CLASS[card.tone]}`}
-			style={{ backgroundImage: `url(${card.background})` }}
+			style={{
+				backgroundImage: `url(${card.background}), ${STAT_CARD_GRADIENT[card.tone]}`,
+			}}
 		>
 			<div className={styles.summaryCardTitle}>{card.title}</div>
 			<div
@@ -39,12 +50,14 @@ function StatCardView({ card }: { card: StatCard }) {
 			>
 				{card.value}
 			</div>
-			<img
-				className={styles.summaryCardIllustration}
-				src={card.image}
-				alt=""
-				draggable={false}
-			/>
+			<div className={styles.summaryCardDecoration}>
+				<img
+					className={styles.summaryCardIllustration}
+					src={card.image}
+					alt=""
+					draggable={false}
+				/>
+			</div>
 		</div>
 	);
 }
