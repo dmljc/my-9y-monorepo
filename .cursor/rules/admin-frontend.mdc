@@ -169,10 +169,10 @@ export const setRememberMe = (values: LoginParams) => {
 ```
 
 ```ts
-export const getToken = (): string | null => localStorage.getItem(AUTH_TOKEN_KEY);
+export const getToken = (): string | null => localStorage.getItem("token");
 
 export const setToken = (token: string) => {
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  localStorage.setItem("token", token);
 };
 ```
 
