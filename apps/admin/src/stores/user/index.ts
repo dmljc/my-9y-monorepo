@@ -52,6 +52,8 @@ export const useUserStore = create<UserState>((set, get) => ({
 			clearToken();
 			set(defaultUserState);
 			return false;
+		} finally {
+			set({ loading: false });
 		}
 	},
 	/**
@@ -71,12 +73,13 @@ export const useUserStore = create<UserState>((set, get) => ({
 				user: data.user,
 				permissions: data.permissions ?? [],
 				roles: data.roles ?? [],
-				loading: false,
 			});
 			return true;
 		} catch {
 			set(defaultUserState);
 			return false;
+		} finally {
+			set({ loading: false });
 		}
 	},
 	/**
