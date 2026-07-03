@@ -33,6 +33,12 @@ const ReverseControl = () => {
 		setPageNum(1);
 	};
 
+	const handleReset = () => {
+		setDraftDeviceName("");
+		setAppliedDeviceName("");
+		setPageNum(1);
+	};
+
 	const openAdd = () => {
 		setEditingRecord(null);
 		setModalOpen(true);
@@ -193,6 +199,7 @@ const ReverseControl = () => {
 						<Button type="primary" onClick={handleSearch}>
 							查询
 						</Button>
+						<Button onClick={handleReset}>重置</Button>
 					</div>
 					<Button
 						type="primary"

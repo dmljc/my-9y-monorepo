@@ -127,6 +127,59 @@ const handleOk = async () => { /* ... */ };
 
 **边界**：删除确认框 `content` 仍写具体对象（如 `确定要删除用户「${name}」吗？`），与按钮简短文案不冲突；Modal `okText: "删除"` 等确认类文案见「Modal / confirm 按钮文案」；后端 `permName` 源头统一后，前端 `formatActionTitle` 仍保留以兼容历史数据。
 
+### 搜索区查询与重置
+
+**做什么**：列表页、统计页等带筛选条件的**搜索区**，须**成对**提供 **查询**（`type="primary"`）与 **重置** 按钮；处理函数命名为 **`handleSearch`**、**`handleReset`**。有「草稿 / 生效」两态筛选时（`draftFilter` / `appliedFilter` 或 `draftXxx` / `appliedXxx`），**查询**只把草稿同步为生效条件并触发加载/刷新；**重置**须清空草稿、恢复默认生效条件，并重置分页后重新加载（或刷新图表）。
+
+**为什么**：仅提供「查询」时用户无法一键回到默认列表/图表，体验不完整；查询与重置配套也是各 CRUD 页已形成的统一模式。
+
+**写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 按钮顺序 | 筛选项 → **查询** → **重置** →（可选）导出 / 新增等操作 |
+| 查询 | `handleSearch`：trim 文本类输入；更新 `applied*`；`setPageNum(1)` 后 `loadData` |
+| 重置 | `handleReset`：清空 `draft*`、恢复默认 `applied*`（或空串）；`setPageNum(1)` 后 `loadData` |
+| 默认值 | 时间范围等放 `utils.ts` 的 `DEFAULT_FILTER` 等常量，重置时复用 |
+| 回车 | 文本 `Input` 可 `onPressEnter={handleSearch}`；重置仍靠按钮 |
+
+**✅ 推荐**
+
+```tsx
+const [draftName, setDraftName] = useState("");
+const [appliedName, setAppliedName] = useState("");
+
+const handleSearch = () => {
+  const nextName = draftName.trim();
+  setAppliedName(nextName);
+  setPageNum(1);
+  loadData(1, pageSize, nextName);
+};
+
+const handleReset = () => {
+  setDraftName("");
+  setAppliedName("");
+  setPageNum(1);
+  loadData(1, pageSize, "");
+};
+
+<Input value={draftName} onChange={(e) => setDraftName(e.target.value)} onPressEnter={handleSearch} />
+<Button type="primary" onClick={handleSearch}>查询</Button>
+<Button onClick={handleReset}>重置</Button>
+```
+
+**❌ 避免**
+
+```tsx
+// 只有查询、没有重置
+<Button type="primary" onClick={handleSearch}>查询</Button>
+
+// 重置只清输入框，不刷新列表/图表
+const handleReset = () => setDraftName("");
+```
+
+**边界**：**无筛选条件**的纯列表（如 `warning-levels`）不必强行加搜索区；布局侧栏（`permission/`、`device/`）不适用；统计页用 `draftFilter` / `appliedFilter` 时，重置须同时恢复两者为 `DEFAULT_FILTER`；导出、新增等与筛选无关的按钮放在查询/重置之后（常用 `margin-left: auto` 靠右）。**参考实现**：`permission-role/`、`historical-data/`、`warning-list/`。
+
 ### useCallback / useMemo
 
 **做什么**：没有可测量的性能问题时，**不要**为普通事件处理、数据加载、表单提交等 routine 逻辑提前包 `useCallback` / `useMemo`。

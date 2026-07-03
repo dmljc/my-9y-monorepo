@@ -57,6 +57,13 @@ const WarningRules = () => {
 		void loadData(1, pageSize, nextRuleName);
 	};
 
+	const handleReset = () => {
+		setDraftRuleName("");
+		setAppliedRuleName("");
+		setPageNum(1);
+		loadData(1, pageSize, "");
+	};
+
 	const initRef = useRef(false);
 	useEffect(() => {
 		if (!initRef.current) {
@@ -237,6 +244,7 @@ const WarningRules = () => {
 						<Button type="primary" onClick={handleSearch}>
 							查询
 						</Button>
+						<Button onClick={handleReset}>重置</Button>
 					</div>
 					<Button
 						type="primary"

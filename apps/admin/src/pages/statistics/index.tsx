@@ -41,6 +41,11 @@ const Statistics = () => {
 
 	const handleSearch = () => setAppliedFilter({ ...draftFilter });
 
+	const handleReset = () => {
+		setDraftFilter(DEFAULT_FILTER);
+		setAppliedFilter(DEFAULT_FILTER);
+	};
+
 	return (
 		<div className={styles.statistics}>
 			<section className={styles.filterBar}>
@@ -61,6 +66,7 @@ const Statistics = () => {
 				<Button type="primary" onClick={handleSearch}>
 					查询
 				</Button>
+				<Button onClick={handleReset}>重置</Button>
 			</section>
 
 			<section className={styles.chartGrid}>
