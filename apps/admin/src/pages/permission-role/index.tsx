@@ -2,6 +2,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
+import AssignModal from "./AssignModal";
 import {
 	create as createRole,
 	list as fetchRoleList,
@@ -12,9 +13,8 @@ import {
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import type { RoleListQuery, RoleListResponse, SysRole } from "./interface";
-import PermissionAssignModal from "./PermissionAssignModal";
 import type { RoleFormValues } from "./utils";
-import { formatPermissionCount, normalizePermissionIds } from "./utils";
+import { formatPermissionCount } from "./utils";
 
 const PermissionRole = () => {
 	const { message, modal } = App.useApp();
@@ -41,16 +41,9 @@ const PermissionRole = () => {
 				pageSize: ps,
 				roleName: name || undefined,
 			};
-			const data: RoleListResponse | SysRole[] =
-				await fetchRoleList(query);
-			if (Array.isArray(data)) {
-				setDataSource(data);
-				setTotal(data.length);
-			} else {
-				const rows = data.rows ?? data.list ?? [];
-				setDataSource(rows);
-				setTotal(data.total ?? rows.length);
-			}
+			const data: RoleListResponse = await fetchRoleList(query);
+			setDataSource(data.list);
+			setTotal(data.total ?? 0);
 			setPageNum(p);
 			setPageSize(ps);
 		} finally {
@@ -95,36 +88,31 @@ const PermissionRole = () => {
 	};
 
 	const handleModalSubmit = async (values: RoleFormValues) => {
-		try {
-			if (editingRecord?.roleId !== undefined) {
-				await updateRole({
-					roleId: editingRecord.roleId,
-					roleName: values.roleName,
-					remark: values.remark,
-					roleKey: editingRecord.roleKey,
-				});
-				message.success("保存成功");
-			} else {
-				await createRole({
-					roleName: values.roleName,
-					remark: values.remark,
-				});
-				message.success("添加成功");
-			}
-			await loadData(pageNum, pageSize);
-		} catch {
-			throw new Error("submit failed");
+		if (editingRecord?.roleId !== undefined) {
+			await updateRole({
+				roleId: editingRecord.roleId,
+				roleName: values.roleName.trim(),
+				remark: values.remark.trim(),
+				roleKey: editingRecord.roleKey,
+			});
+			message.success("保存成功");
+		} else {
+			await createRole({
+				roleName: values.roleName.trim(),
+				remark: values.remark.trim(),
+			});
+			message.success("添加成功");
 		}
+		await loadData(pageNum, pageSize);
 	};
 
-	const handleAssignPermissions = async (permissionIds: string[]) => {
+	const handleAssignPermissions = async (menuIds: number[]) => {
 		if (assigningRecord?.roleId === undefined) return;
-		const menuIds = normalizePermissionIds(permissionIds)
-			.map(Number)
-			.filter((id) => !Number.isNaN(id));
-		await updateRolePermissions(String(assigningRecord.roleId), {
+		await updateRolePermissions({
+			roleId: assigningRecord.roleId,
 			menuIds,
 		});
+		message.success("权限分配成功");
 		await loadData(pageNum, pageSize);
 	};
 
@@ -274,7 +262,7 @@ const PermissionRole = () => {
 				onOk={handleModalSubmit}
 			/>
 
-			<PermissionAssignModal
+			<AssignModal
 				open={assignModalOpen}
 				role={assigningRecord}
 				onCancel={() => {

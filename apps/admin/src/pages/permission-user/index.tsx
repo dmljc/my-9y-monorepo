@@ -87,18 +87,14 @@ const PermissionUser = () => {
 	};
 
 	const handleModalSubmit = async (values: UserFormValues) => {
-		try {
-			if (editingRecord) {
-				await update(editingRecord.id, values);
-				message.success("保存成功");
-			} else {
-				await create(values);
-				message.success("添加成功");
-			}
-			await loadData(pageNum, pageSize);
-		} catch {
-			throw new Error("submit failed");
+		if (editingRecord) {
+			await update(editingRecord.id, values);
+			message.success("保存成功");
+		} else {
+			await create(values);
+			message.success("添加成功");
 		}
+		await loadData(pageNum, pageSize);
 	};
 
 	const handleDelete = (record: User) => {

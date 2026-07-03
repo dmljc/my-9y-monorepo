@@ -9,12 +9,8 @@ export const list = (data: RoleListQuery): Promise<any> => {
 	return request.get("/system/role/list", { params: data });
 };
 
-export const detail = (id: string): Promise<any> => {
-	return request.get(`/system/role/${id}`);
-};
-
-export const getRoleMenuTreeselect = (id: string): Promise<any> => {
-	return request.get(`/system/menu/roleMenuTreeselect/${id}`);
+export const getAssignDetail = (id: string): Promise<any> => {
+	return request.get(`/system/role/permissionDetail/${id}`);
 };
 
 export const create = (data: SysRole): Promise<any> => {
@@ -26,10 +22,9 @@ export const update = (data: SysRole): Promise<any> => {
 };
 
 export const updatePermissions = (
-	id: string,
 	data: RolePermissionPayload,
 ): Promise<any> => {
-	return update({ roleId: Number(id), menuIds: data.menuIds });
+	return request.put("/system/role/permission", data);
 };
 
 export const remove = (id: string): Promise<any> => {

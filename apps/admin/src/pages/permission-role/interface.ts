@@ -22,22 +22,49 @@ export interface RoleListQuery {
 	roleName?: string;
 }
 
-/** 角色列表响应（兼容 rows / list） */
+/** 角色列表响应 */
 export interface RoleListResponse {
 	total: number;
-	rows?: SysRole[];
-	list?: SysRole[];
+	list: SysRole[];
 }
 
-/** 角色菜单树响应（权限分配回显） */
-export interface RoleMenuTreeselectResponse {
+/** 角色权限明细项（按钮级） */
+export interface RolePermissionItem {
+	menuId?: number;
+	permName?: string;
+	perms?: string;
+	checked?: boolean;
+}
+
+/** 角色权限子模块（页面级） */
+export interface RolePermissionSubModule {
+	subModuleId?: number;
+	subModuleName?: string;
+	orderNum?: number;
+	checked?: boolean;
+	permissions?: RolePermissionItem[];
+}
+
+/** 角色权限模块 */
+export interface RolePermissionModule {
+	moduleId?: number;
+	moduleName?: string;
+	orderNum?: number;
+	checked?: boolean;
+	subModules?: RolePermissionSubModule[];
+	directPermissions?: RolePermissionItem[] | null;
+}
+
+/** 角色权限分配详情响应 */
+export interface RolePermissionDetailResponse {
 	code?: number;
-	menus?: unknown[];
-	checkedKeys?: (number | string)[];
+	totalAssigned?: number;
+	modules?: RolePermissionModule[];
 }
 
-/** 更新角色权限请求体（menuIds 提交至 PUT /system/role） */
+/** 更新角色权限请求体 */
 export interface RolePermissionPayload {
+	roleId: number;
 	menuIds: number[];
 }
 
