@@ -1,18 +1,19 @@
 import { App, Checkbox, Modal, Table, Tabs } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useState } from "react";
-import type { PermissionAction, PermissionTableRow, Role } from "./utils";
+import { getRoleMenuTreeselect } from "./api";
+import type { RoleMenuTreeselectResponse, SysRole } from "./interface";
+import type { PermissionAction, PermissionTableRow } from "./utils";
 import {
 	buildPermissionTableRows,
 	getPageActionKeys,
-	getRoleCheckedMenuIds,
 	normalizePermissionIds,
 	TABLET_PERMISSION_MODULES,
 } from "./utils";
 
 interface PermissionAssignModalProps {
 	open: boolean;
-	role: Role | null;
+	role: SysRole | null;
 	onCancel: () => void;
 	onOk: (permissionIds: string[]) => Promise<void>;
 }
@@ -36,9 +37,19 @@ const PermissionAssignModal = ({
 	const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
 
 	useEffect(() => {
-		if (!open || !role) return;
+		if (!open || role?.roleId === undefined) return;
 
-		getRoleCheckedMenuIds(role.id).then(setCheckedKeys);
+		const loadCheckedKeys = async () => {
+			const res: RoleMenuTreeselectResponse = await getRoleMenuTreeselect(
+				String(role.roleId),
+			);
+			if (res?.code !== undefined && res.code !== 200) {
+				throw new Error("加载角色权限失败");
+			}
+			setCheckedKeys((res.checkedKeys ?? []).map(String));
+		};
+
+		loadCheckedKeys();
 	}, [open, role]);
 
 	const isPageChecked = (pageKey: string) => checkedKeys.includes(pageKey);
@@ -166,7 +177,7 @@ const PermissionAssignModal = ({
 
 	return (
 		<Modal
-			title={`权限分配 - ${role?.name ?? ""}`}
+			title={`权限分配 - ${role?.roleName ?? ""}`}
 			open={open}
 			onOk={onOk}
 			onCancel={onCancel}

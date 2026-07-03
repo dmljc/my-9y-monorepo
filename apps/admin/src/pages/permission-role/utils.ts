@@ -1,18 +1,4 @@
-import dayjs from "dayjs";
-import {
-	create as createRoleApi,
-	detail as fetchRoleDetailApi,
-	list as fetchRoleListApi,
-	getRoleMenuTreeselect as fetchRoleMenuTreeselectApi,
-	remove as removeRoleApi,
-	update as updateRoleApi,
-	updatePermissions as updateRolePermissionsApi,
-} from "./api";
-import type {
-	RoleListQuery,
-	RoleMenuTreeselectResponse,
-	SysRole,
-} from "./interface";
+import type { SysRole } from "./interface";
 
 /** 按钮级权限 */
 export interface PermissionAction {
@@ -45,21 +31,10 @@ export interface PermissionTableRow {
 	actions: PermissionAction[];
 }
 
-export interface Role {
-	id: string;
-	name: string;
-	code: string;
-	description: string;
-	userCount: number;
-	hasAllPermissions: boolean;
-	permissionCount: number;
-	permissionIds: string[];
-	createdAt: string;
-}
-
+/** 新增/编辑角色表单值 */
 export interface RoleFormValues {
-	name: string;
-	description: string;
+	roleName: string;
+	remark: string;
 }
 
 /** 超级管理员角色编码（与后端 roleKey 一致） */
@@ -302,21 +277,6 @@ export const TABLET_PERMISSION_MODULES: PermissionModule[] = [
 	},
 ];
 
-/** 角色列表查询参数（页面层） */
-export interface RoleListParams {
-	pageNum: number;
-	pageSize: number;
-	name?: string;
-}
-
-/** 角色列表结果（页面层） */
-export interface RoleListResult {
-	list: Role[];
-	total: number;
-	pageNum: number;
-	pageSize: number;
-}
-
 /**
  * 从权限模块树收集全部权限 key。
  *
@@ -410,195 +370,16 @@ export function getAllAssignablePermissionIds(): string[] {
 }
 
 /**
- * 前端列表参数 → 后端查询参数。
- *
- * @param {RoleListParams} - 前端列表查询参数。
- * @returns {RoleListQuery} - 后端查询参数。
- */
-function toRoleListQuery(params: RoleListParams): RoleListQuery {
-	const { pageNum, pageSize, name } = params;
-	return {
-		pageNum,
-		pageSize,
-		roleName: name?.trim() || undefined,
-	};
-}
-
-/**
- * 从角色列表接口响应中解析 rows 与 total。
- *
- * @param {unknown} - 角色列表接口原始响应。
- * @returns {{ rows: SysRole[]; total: number }} - 列表数据与总数。
- */
-function parseRoleListResponse(data: unknown): {
-	rows: SysRole[];
-	total: number;
-} {
-	if (Array.isArray(data)) {
-		return { rows: data as SysRole[], total: data.length };
-	}
-	if (!data || typeof data !== "object") {
-		return { rows: [], total: 0 };
-	}
-
-	const record = data as Record<string, unknown>;
-
-	if (Array.isArray(record.rows)) {
-		return {
-			rows: record.rows as SysRole[],
-			total:
-				typeof record.total === "number"
-					? record.total
-					: record.rows.length,
-		};
-	}
-
-	if (Array.isArray(record.list)) {
-		return {
-			rows: record.list as SysRole[],
-			total:
-				typeof record.total === "number"
-					? record.total
-					: record.list.length,
-		};
-	}
-
-	if (Array.isArray(record.data)) {
-		return {
-			rows: record.data as SysRole[],
-			total:
-				typeof record.total === "number"
-					? record.total
-					: record.data.length,
-		};
-	}
-
-	if (
-		record.data &&
-		typeof record.data === "object" &&
-		!Array.isArray(record.data)
-	) {
-		return parseRoleListResponse(record.data);
-	}
-
-	return { rows: [], total: 0 };
-}
-
-/**
- * 判断后端角色是否为超级管理员。
- *
- * @param {SysRole} - 后端角色实体。
- * @returns {boolean} - 是否为超级管理员。
- */
-function isAdminRole(sysRole: SysRole): boolean {
-	return sysRole.admin === true || sysRole.roleKey === SUPER_ADMIN_ROLE_CODE;
-}
-
-/**
- * 后端角色实体 → 前端列表行数据。
- *
- * @param {SysRole} - 后端角色实体。
- * @param {string[]} - 权限 ID 列表（详情接口补充）。
- * @returns {Role} - 前端角色数据。
- */
-function sysRoleToRole(sysRole: SysRole, permissionIds: string[] = []): Role {
-	const menuIds = (sysRole.menuIds ?? []).map(String);
-	const resolvedPermissionIds =
-		permissionIds.length > 0 ? permissionIds : menuIds;
-	const admin = isAdminRole(sysRole);
-
-	return {
-		id: String(sysRole.roleId ?? ""),
-		name: sysRole.roleName ?? "",
-		code: sysRole.roleKey ?? "",
-		description: sysRole.remark ?? "",
-		userCount: sysRole.userCount ?? 0,
-		hasAllPermissions: admin,
-		permissionCount: admin
-			? 0
-			: resolvedPermissionIds.length > 0
-				? resolvedPermissionIds.length
-				: (sysRole.menuCount ?? 0),
-		permissionIds: resolvedPermissionIds,
-		createdAt: sysRole.createTime ?? "",
-	};
-}
-
-/**
- * 角色记录 → 表单初始值（编辑回填）。
- *
- * @param {Role} - 角色列表行数据。
- * @returns {RoleFormValues} - 表单初始值。
- */
-export function recordToFormValues(record: Role): RoleFormValues {
-	return {
-		name: record.name,
-		description: record.description,
-	};
-}
-
-/**
- * 表单值 → 后端角色提交体。
- *
- * @param {RoleFormValues} - 新增/编辑角色表单值。
- * @param {string} - 编辑时的角色 ID，新增时省略。
- * @param {string} - 编辑时的角色编码（roleKey），新增时省略。
- * @returns {SysRole} - 后端角色提交体。
- */
-function formValuesToSysRole(
-	values: RoleFormValues,
-	roleId?: string,
-	roleKey?: string,
-): SysRole {
-	const payload: SysRole = {
-		roleName: values.name.trim(),
-		remark: values.description?.trim(),
-	};
-
-	if (roleId) {
-		payload.roleId = Number(roleId);
-	}
-	if (roleKey) {
-		payload.roleKey = roleKey;
-	}
-
-	return payload;
-}
-
-/**
- * 判断是否为系统内置角色。
- *
- * @param {Role} - 前端角色数据。
- * @returns {boolean} - 是否为系统内置角色。
- */
-export function isSystemRole(role: Role): boolean {
-	return role.hasAllPermissions || role.code === SUPER_ADMIN_ROLE_CODE;
-}
-
-/**
- * 格式化角色创建时间。
- *
- * @param {Role} - 前端角色数据。
- * @returns {string} - 格式化后的创建时间。
- */
-export function formatRoleCreatedAt(role: Role): string {
-	if (isSystemRole(role) || !role.createdAt) {
-		return "-";
-	}
-	return dayjs(role.createdAt).format("YYYY-MM-DD");
-}
-
-/**
  * 格式化权限数量展示文案。
  *
- * @param {Role} - 前端角色数据。
+ * @param {SysRole} - 后端角色实体。
  * @returns {string} - 权限数量展示文案。
  */
-export function formatPermissionCount(role: Role): string {
-	if (role.hasAllPermissions) {
+export function formatPermissionCount(role: SysRole): string {
+	if (role.admin || role.roleKey === SUPER_ADMIN_ROLE_CODE) {
 		return "所有";
 	}
-	return String(role.permissionCount);
+	return String(role.menuCount ?? 0);
 }
 
 /**
@@ -615,116 +396,19 @@ export function normalizePermissionIds(checkedKeys: string[]): string[] {
 /**
  * 判断角色名称是否重复。
  *
- * @param {Role[]} - 已有角色列表。
+ * @param {SysRole[]} - 已有角色列表。
  * @param {string} - 待校验的角色名称。
- * @param {string} - 编辑时排除的角色 ID。
+ * @param {number} - 编辑时排除的角色 ID。
  * @returns {boolean} - 是否重复。
  */
 export function isDuplicateRoleName(
-	roles: Role[],
+	roles: SysRole[],
 	name: string,
-	excludeId?: string,
+	excludeId?: number,
 ): boolean {
 	return roles.some(
-		(item) => item.name === name && (!excludeId || item.id !== excludeId),
+		(item) =>
+			item.roleName === name &&
+			(excludeId === undefined || item.roleId !== excludeId),
 	);
-}
-
-/**
- * 获取角色列表（分页）。
- *
- * @param {RoleListParams} - 列表查询参数。
- * @returns {Promise<RoleListResult>} - 分页列表结果。
- */
-export async function list(params: RoleListParams): Promise<RoleListResult> {
-	const { pageNum, pageSize } = params;
-	const data = await fetchRoleListApi(toRoleListQuery(params));
-	const { rows, total } = parseRoleListResponse(data);
-
-	return {
-		list: rows.map((row) => sysRoleToRole(row)),
-		total,
-		pageNum,
-		pageSize,
-	};
-}
-
-/**
- * 获取角色已分配的菜单 ID（权限分配回显）。
- *
- * @param {string} - 角色 ID。
- * @returns {string[]} - 已勾选的菜单 ID 列表。
- */
-export async function getRoleCheckedMenuIds(id: string): Promise<string[]> {
-	const res: RoleMenuTreeselectResponse =
-		await fetchRoleMenuTreeselectApi(id);
-	if (res?.code !== undefined && res.code !== 200) {
-		throw new Error("加载角色权限失败");
-	}
-	return (res.checkedKeys ?? []).map(String);
-}
-
-/**
- * 获取角色详情（权限分配回显）。
- *
- * @param {string} - 角色 ID。
- * @returns {Promise<Role>} - 角色详情。
- */
-export async function detail(id: string): Promise<Role> {
-	const sysRole: SysRole = await fetchRoleDetailApi(id);
-	const permissionIds = await getRoleCheckedMenuIds(id);
-	return sysRoleToRole(sysRole, permissionIds);
-}
-
-/**
- * 创建角色。
- *
- * @param {RoleFormValues} - 角色表单值。
- * @returns {Promise<void>} - 无返回值。
- */
-export async function create(values: RoleFormValues): Promise<void> {
-	await createRoleApi(formValuesToSysRole(values));
-}
-
-/**
- * 更新角色。
- *
- * @param {string} - 角色 ID。
- * @param {RoleFormValues} - 编辑表单值。
- * @param {string} - 角色编码（roleKey），编辑时传入以保留后端字段。
- * @returns {Promise<void>} - 无返回值。
- */
-export async function update(
-	id: string,
-	values: RoleFormValues,
-	roleKey?: string,
-): Promise<void> {
-	await updateRoleApi(formValuesToSysRole(values, id, roleKey));
-}
-
-/**
- * 更新角色权限。
- *
- * @param {string} - 角色 ID。
- * @param {string[]} - 权限 ID 列表。
- * @returns {Promise<void>} - 无返回值。
- */
-export async function updatePermissions(
-	id: string,
-	permissionIds: string[],
-): Promise<void> {
-	const normalized = normalizePermissionIds(permissionIds);
-	const menuIds = normalized.map(Number).filter((id) => !Number.isNaN(id));
-
-	await updateRolePermissionsApi(id, { menuIds });
-}
-
-/**
- * 删除角色。
- *
- * @param {string} - 角色 ID。
- * @returns {Promise<void>} - 无返回值。
- */
-export async function remove(id: string): Promise<void> {
-	await removeRoleApi(id);
 }

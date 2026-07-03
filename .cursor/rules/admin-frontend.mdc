@@ -249,6 +249,14 @@ pages/permission-user/
   index.tsx
   CreateModal.tsx
 
+pages/permission-role/   # utils 无 api import，权限树 mock + 表格纯函数
+  api.ts
+  interface.ts
+  utils.ts        # buildPermissionTableRows、normalizePermissionIds 等
+  index.tsx
+  CreateModal.tsx
+  PermissionAssignModal.tsx
+
 pages/permission-organization/   # utils 无 api import，CRUD 在 index 调 api
   api.ts
   interface.ts
@@ -434,7 +442,7 @@ const data = await fetchUserListApi(...);
 setDataSource(data.rows.map(sysUserToUser)); // 应抽到 utils.list
 ```
 
-**边界**：下载 blob、读响应头等特殊场景可用 `request.raw`；`interface.ts` 中的类型仍须中文 JSDoc；简单页（如 Login、直出分页列表）页面直接 import `./api`，**不必**为统一结构强行建 `utils.ts`；`utils.ts` **默认不** `import ./api`（见上节「utils 再包一层与 api 同名」反例）；多接口 list 编排可例外，但勿 export 与 api 同名的 `create`/`list`/`update`/`remove`。**参考实现**：`apps/admin/src/stores/user/api.ts`（最简）、`apps/admin/src/pages/historical-data/`（无 utils）、`apps/admin/src/pages/permission-organization/`（utils 无 api、CRUD 在 index）、`apps/admin/src/pages/permission-user/`、`permission-role/`（含复杂 list 编排）。
+**边界**：下载 blob、读响应头等特殊场景可用 `request.raw`；`interface.ts` 中的类型仍须中文 JSDoc；简单页（如 Login、直出分页列表）页面直接 import `./api`，**不必**为统一结构强行建 `utils.ts`；`utils.ts` **默认不** `import ./api`（见上节「utils 再包一层与 api 同名」反例）；多接口 list 编排可例外，但勿 export 与 api 同名的 `create`/`list`/`update`/`remove`。**参考实现**：`apps/admin/src/stores/user/api.ts`（最简）、`apps/admin/src/pages/historical-data/`（无 utils）、`apps/admin/src/pages/permission-organization/`、`permission-role/`（utils 无 api、CRUD 在 index）、`apps/admin/src/pages/permission-user/`（含复杂 list 编排）。
 
 ### 接入真实接口后移除 mock
 
@@ -582,7 +590,7 @@ return { list: (data.list ?? []).map(snapshotToRecord) };
 
 **边界**：仅在以下场景才做字段转换——**查询/提交**参数与后端命名不一致（在 `loadData` / `create` / `update` 内 **inline** trim、类型转换，见「列表 utils：非必需不抽离」）；**多接口聚合**或列表行缺少展示必填字段且后端短期无法补齐；**权限/角色**等需关联补全（仍优先让 list 接口本身带齐字段）。**不要**为简单提交单独抽 `formValuesToSysXxx`；**不要**为占位展示写 `?? "-"`、**不要用其它字段顶替**（如列绑 `modelId` 却读 `thingId`、用 `thingId` 填 `modelName`）；接口未返回该字段时单元格留空即可，交给 Table 默认渲染或列级 `render`。
 
-**参考实现**：表格直出 `apps/admin/src/pages/historical-data/`；含行转换 `apps/admin/src/pages/permission-role/`。
+**参考实现**：表格直出 `apps/admin/src/pages/historical-data/`、`permission-role/`；含行转换 `apps/admin/src/pages/permission-user/`。
 
 ### 列表 utils：非必需不抽离
 
@@ -684,7 +692,7 @@ export function toListParams(pageNum: number, pageSize: number, filter: DeviceFi
 }
 ```
 
-**边界**：需要复杂 list 编排时页面 `import { fetchXxxListResult } from "./utils"`，**CRUD 仍** `import ./api`；与「列表数据直出接口字段」配合，表格不重命名后端字段；加载列表用 `try/finally` 关 `loading`，勿写空 `catch {}`（见「HTTP 全局错误提示」）。**参考实现**：`apps/admin/src/pages/historical-data/`（无 `utils.ts`）；`apps/admin/src/pages/permission-organization/`（utils 无 api）；`apps/admin/src/pages/permission-user/`、`permission-role/`（含复杂 list 编排）。
+**边界**：需要复杂 list 编排时页面 `import { fetchXxxListResult } from "./utils"`，**CRUD 仍** `import ./api`；与「列表数据直出接口字段」配合，表格不重命名后端字段；加载列表用 `try/finally` 关 `loading`，勿写空 `catch {}`（见「HTTP 全局错误提示」）。**参考实现**：`apps/admin/src/pages/historical-data/`（无 `utils.ts`）；`apps/admin/src/pages/permission-organization/`、`permission-role/`（utils 无 api）；`apps/admin/src/pages/permission-user/`（含复杂 list 编排）。
 
 ### 列表页 DOM 扁平化
 

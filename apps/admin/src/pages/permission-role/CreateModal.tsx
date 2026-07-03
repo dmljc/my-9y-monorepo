@@ -1,19 +1,19 @@
 import { Form, Input, Modal } from "antd";
 import { useEffect, useState } from "react";
-import type { Role, RoleFormValues } from "./utils";
+import type { SysRole } from "./interface";
+import type { RoleFormValues } from "./utils";
 import {
 	isDuplicateRoleName,
 	ROLE_DESCRIPTION_MAX_LENGTH,
 	ROLE_NAME_MAX_LENGTH,
-	recordToFormValues,
 } from "./utils";
 
 const { TextArea } = Input;
 
 interface CreateModalProps {
 	open: boolean;
-	editingRecord: Role | null;
-	existingRoles: Role[];
+	editingRecord: SysRole | null;
+	existingRoles: SysRole[];
 	onCancel: () => void;
 	onOk: (values: RoleFormValues) => Promise<void>;
 }
@@ -33,7 +33,7 @@ const CreateModal = ({
 		if (!open) return;
 
 		if (editingRecord) {
-			form.setFieldsValue(recordToFormValues(editingRecord));
+			form.setFieldsValue(editingRecord);
 			return;
 		}
 
@@ -71,7 +71,7 @@ const CreateModal = ({
 				preserve={false}
 			>
 				<Form.Item
-					name="name"
+					name="roleName"
 					label="角色名称"
 					rules={[
 						{
@@ -89,7 +89,7 @@ const CreateModal = ({
 									isDuplicateRoleName(
 										existingRoles,
 										value,
-										editingRecord?.id,
+										editingRecord?.roleId,
 									)
 								) {
 									return Promise.reject(
@@ -109,7 +109,7 @@ const CreateModal = ({
 				</Form.Item>
 
 				<Form.Item
-					name="description"
+					name="remark"
 					label="角色描述"
 					rules={[
 						{
