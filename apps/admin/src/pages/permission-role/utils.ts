@@ -55,7 +55,7 @@ export const ROLE_PERMISSION_MODULES: PermissionModule[] = [
 			{
 				key: "dashboard",
 				title: "大屏",
-				actions: [{ key: "dashboard:view", title: "查看大屏" }],
+				actions: [],
 			},
 		],
 	},

@@ -59,9 +59,23 @@ const CreateModal = ({
 		init();
 	}, [open, editingRecord]);
 
-	const handlePasswordFocus = () => {
+	const handlePasswordKeyDown = (
+		event: React.KeyboardEvent<HTMLInputElement>,
+	) => {
 		if (!isEdit) return;
-		if (form.getFieldValue("password") === EDIT_PASSWORD_PLACEHOLDER) {
+		if (form.getFieldValue("password") !== EDIT_PASSWORD_PLACEHOLDER) {
+			return;
+		}
+		if (event.key === "Backspace" || event.key === "Delete") {
+			form.setFieldValue("password", "");
+			return;
+		}
+		if (
+			event.key.length === 1 &&
+			!event.ctrlKey &&
+			!event.metaKey &&
+			!event.altKey
+		) {
 			form.setFieldValue("password", "");
 		}
 	};
@@ -186,11 +200,11 @@ const CreateModal = ({
 						},
 					]}
 				>
-					<Input.Password
+					<Input
 						placeholder={isEdit ? "请输入新密码" : "请输入密码"}
 						maxLength={PASSWORD_MAX_LENGTH}
 						allowClear
-						onFocus={handlePasswordFocus}
+						onKeyDown={handlePasswordKeyDown}
 						onClear={handlePasswordClear}
 					/>
 				</Form.Item>
