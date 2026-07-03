@@ -38,16 +38,7 @@ const PermissionAssignModal = ({
 	useEffect(() => {
 		if (!open || !role) return;
 
-		const loadCheckedKeys = async () => {
-			try {
-				const menuIds = await getRoleCheckedMenuIds(role.id);
-				setCheckedKeys(menuIds);
-			} catch {
-				message.error("加载角色权限失败");
-			}
-		};
-
-		loadCheckedKeys();
+		getRoleCheckedMenuIds(role.id).then(setCheckedKeys);
 	}, [open, role]);
 
 	const isPageChecked = (pageKey: string) => checkedKeys.includes(pageKey);
@@ -124,7 +115,6 @@ const PermissionAssignModal = ({
 			message.success("权限分配成功");
 			onCancel();
 		} catch {
-			message.error("权限分配失败");
 		} finally {
 			setLoading(false);
 		}

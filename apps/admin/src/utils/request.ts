@@ -1,4 +1,10 @@
 import { createHttpClient } from "@utils/http-client";
+import type { MessageInstance } from "antd/es/message/interface";
+
+/** 供 main.tsx 注入 App.useApp().message，供 onError 弹出错误提示。 */
+export const requestMessageApi: { current: MessageInstance | null } = {
+	current: null,
+};
 
 /**
  * 读取已保存的 access token。
@@ -50,4 +56,6 @@ export const request = createHttpClient({
 			window.location.href = "/login";
 		}
 	},
+	onError: (error) =>
+		requestMessageApi.current?.error(error.message || "请求失败"),
 });

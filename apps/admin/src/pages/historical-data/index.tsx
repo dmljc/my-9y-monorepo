@@ -40,7 +40,6 @@ const HistoricalData = () => {
 				setPageNum(result.pageNum);
 				setPageSize(result.pageSize);
 			} catch {
-				message.error("加载历史数据失败");
 			} finally {
 				setTableLoading(false);
 			}

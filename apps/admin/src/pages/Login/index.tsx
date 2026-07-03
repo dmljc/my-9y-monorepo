@@ -1,5 +1,5 @@
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { App, Button, Checkbox, Form, Input, Typography } from "antd";
+import { Button, Checkbox, Form, Input, Typography } from "antd";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import loginHero from "@/assets/login/login-hero.webp";
@@ -11,7 +11,6 @@ import { getRememberMe, setRememberMe } from "./utils";
 
 const Login = () => {
 	const navigate = useNavigate();
-	const { message } = App.useApp();
 	const [form] = Form.useForm<LoginFormValues>();
 	const login = useUserStore((state) => state.login);
 	const loading = useUserStore((state) => state.loading);
@@ -24,18 +23,12 @@ const Login = () => {
 	}, []);
 
 	const onFinish = async (values: LoginFormValues) => {
-		try {
-			const { username, password } = values;
-			const ok = await login({ username, password });
-			if (!ok) {
-				message.error("登录失败");
-				return;
-			}
-			setRememberMe(values);
-			navigate(getDefaultPathForTop("warning"));
-		} catch {
-			message.error("登录失败");
-		}
+		const { username, password } = values;
+		const ok = await login({ username, password });
+		if (!ok) return;
+
+		setRememberMe(values);
+		navigate(getDefaultPathForTop("warning"));
 	};
 
 	return (

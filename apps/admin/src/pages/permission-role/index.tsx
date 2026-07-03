@@ -40,8 +40,6 @@ const PermissionRole = () => {
 			setTotal(result.total);
 			setPageNum(result.pageNum);
 			setPageSize(result.pageSize);
-		} catch {
-			message.error("加载角色列表失败");
 		} finally {
 			setLoading(false);
 		}
@@ -94,7 +92,6 @@ const PermissionRole = () => {
 			}
 			await loadData(pageNum, pageSize);
 		} catch {
-			message.error(editingRecord ? "保存失败" : "添加失败");
 			throw new Error("submit failed");
 		}
 	};
@@ -112,13 +109,9 @@ const PermissionRole = () => {
 			okText: "删除",
 			okButtonProps: { danger: true },
 			onOk: async () => {
-				try {
-					await remove(record.id);
-					message.success("删除成功");
-					await loadData(pageNum, pageSize);
-				} catch {
-					message.error("删除失败");
-				}
+				await remove(record.id);
+				message.success("删除成功");
+				await loadData(pageNum, pageSize);
 			},
 		});
 	};

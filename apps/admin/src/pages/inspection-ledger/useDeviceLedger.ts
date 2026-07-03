@@ -77,7 +77,6 @@ export const useDeviceLedger = ({ statCardAssets }: UseDeviceLedgerOptions) => {
 				setStats(result.stats);
 				setAllDevices(getAllDevices());
 			} catch {
-				message.error("加载点检台账失败");
 			} finally {
 				setLoading(false);
 			}
@@ -152,7 +151,6 @@ export const useDeviceLedger = ({ statCardAssets }: UseDeviceLedgerOptions) => {
 				message.success("点检完成");
 				await loadData(pageNum, pageSize);
 			} catch {
-				message.error("点检失败");
 			} finally {
 				setInspectingId(null);
 			}

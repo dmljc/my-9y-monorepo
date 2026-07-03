@@ -36,8 +36,6 @@ const PermissionOrganization = () => {
 				filters ?? { name: orgName.trim() || undefined },
 			);
 			setDataSource(result);
-		} catch {
-			message.error("加载组织列表失败");
 		} finally {
 			setLoading(false);
 		}
@@ -80,7 +78,6 @@ const PermissionOrganization = () => {
 			}
 			await loadData();
 		} catch {
-			message.error("操作失败");
 			throw new Error("submit failed");
 		}
 	};
@@ -92,31 +89,23 @@ const PermissionOrganization = () => {
 			okText: "删除",
 			okButtonProps: { danger: true },
 			onOk: async () => {
-				try {
-					await remove(record.id);
-					message.success("删除成功");
-					await loadData();
-				} catch {
-					message.error("删除失败");
-				}
+				await remove(record.id);
+				message.success("删除成功");
+				await loadData();
 			},
 		});
 	};
 
 	const handleExport = async () => {
-		try {
-			const data = await exportOrgs({
-				name: orgName.trim() || undefined,
-			});
-			if (data.length === 0) {
-				message.warning("暂无可导出的组织数据");
-				return;
-			}
-			exportOrgsToJson(data);
-			message.success("导出成功");
-		} catch {
-			message.error("导出失败");
+		const data = await exportOrgs({
+			name: orgName.trim() || undefined,
+		});
+		if (data.length === 0) {
+			message.warning("暂无可导出的组织数据");
+			return;
 		}
+		exportOrgsToJson(data);
+		message.success("导出成功");
 	};
 
 	const handleImport = () => {

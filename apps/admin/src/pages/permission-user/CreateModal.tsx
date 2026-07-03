@@ -1,4 +1,4 @@
-import { App, Checkbox, Form, Input, Modal, TreeSelect } from "antd";
+import { Checkbox, Form, Input, Modal, TreeSelect } from "antd";
 import { useEffect, useState } from "react";
 import type { DeptTreeNode } from "./interface";
 import type { SelectOption, User, UserFormValues } from "./utils";
@@ -27,7 +27,6 @@ const CreateModal = ({
 	onCancel,
 	onOk,
 }: CreateModalProps) => {
-	const { message } = App.useApp();
 	const [form] = Form.useForm<UserFormValues>();
 	const [loading, setLoading] = useState(false);
 	const [deptTree, setDeptTree] = useState<DeptTreeNode[]>([]);
@@ -38,23 +37,19 @@ const CreateModal = ({
 		if (!open) return;
 
 		const init = async () => {
-			try {
-				const [tree, roles] = await Promise.all([
-					getDeptTree(),
-					getRoleOptions(),
-				]);
-				setDeptTree(tree);
-				setRoleOptions(roles);
+			const [tree, roles] = await Promise.all([
+				getDeptTree(),
+				getRoleOptions(),
+			]);
+			setDeptTree(tree);
+			setRoleOptions(roles);
 
-				if (editingRecord) {
-					form.setFieldsValue(recordToFormValues(editingRecord));
-					return;
-				}
-
-				form.resetFields();
-			} catch {
-				message.error("加载表单数据失败");
+			if (editingRecord) {
+				form.setFieldsValue(recordToFormValues(editingRecord));
+				return;
 			}
+
+			form.resetFields();
 		};
 
 		init();

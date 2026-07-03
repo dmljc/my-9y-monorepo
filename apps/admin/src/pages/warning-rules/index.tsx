@@ -43,7 +43,6 @@ const WarningRules = () => {
 				setPageNum(result.pageNum);
 				setPageSize(result.pageSize);
 			} catch {
-				message.error("加载报警规则失败");
 			} finally {
 				setLoading(false);
 			}
@@ -97,7 +96,6 @@ const WarningRules = () => {
 			message.success(enabled ? "已启用" : "已停用");
 			await loadData(pageNum, pageSize);
 		} catch {
-			message.error("状态更新失败");
 		} finally {
 			setTogglingId(null);
 		}

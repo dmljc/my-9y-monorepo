@@ -95,7 +95,6 @@ const WarningList = () => {
 			setPageSize(result.pageSize);
 			setStats(result.stats);
 		} catch {
-			message.error("加载告警列表失败");
 		} finally {
 			setLoading(false);
 		}
@@ -132,7 +131,6 @@ const WarningList = () => {
 			message.success("已标记为已解决");
 			loadData(pageNum, pageSize);
 		} catch {
-			message.error("操作失败");
 		} finally {
 			setProcessingId(null);
 		}

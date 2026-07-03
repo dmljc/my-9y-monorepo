@@ -226,7 +226,7 @@ export const writeRememberMe = (values: LoginParams) => { /* ... */ };
 
 ### 页面 api.ts 接口函数
 
-**做什么**：页面目录下的 `api.ts` 只做 **HTTP 薄封装**——`import { request } from "@/utils"`，一行 `return request.get/post/put/delete(...)`；请求/响应类型放同目录 `interface.ts`；**数据转换、多接口编排、业务校验**放 `utils.ts`；错误提示、状态更新留在页面或 hooks。
+**做什么**：页面目录下的 `api.ts` 只做 **HTTP 薄封装**——`import { request } from "@/utils"`，一行 `return request.get/post/put/delete(...)`；请求/响应类型放同目录 `interface.ts`；**数据转换、多接口编排、业务校验**放 `utils.ts`；**成功提示**、状态更新留在页面或 hooks；**失败提示**由 `request` 全局 `onError` 统一处理。
 
 **为什么**：接口层与 UI 层职责分离；`api.ts` 保持统一形态后便于批量对接后端、替换 mock，也避免在接口文件里散落 `if (code !== 200)`、字段映射等业务逻辑。
 
@@ -437,6 +437,62 @@ export function list(params: RoleListParams): Promise<RoleListResult> {
 5. 原先依赖 mock 详情的交互（如权限分配回显）改为调 `detail` 等真实接口。
 
 **边界**：全项目联调前、接口尚未就绪的页面，mock 可暂留于 `utils.ts`，但 `api.ts` 不应提前写死错误路径；**一旦本模块任一接口切到 `request`，该接口链路须完整迁移，不得半 mock 半真实**。参考 `apps/admin/src/pages/permission-role/`。
+
+### 列表数据直出接口字段
+
+**做什么**：列表页表格展示时，若后端 list 响应字段已满足展示需求，**直接**将 `interface.ts` 中的实体赋给 `dataSource`，`columns` 的 `dataIndex` 与后端字段名对齐；**不要**在 `utils.ts` 中再写 `snapshotToXxx`、`resolveXxx` 等逐字段映射，也不要为表格单独定义一套重命名后的前端行类型（如 `propertyName` → `pointName`）。
+
+**为什么**：多余转换层与后端字段脱节，接口变更时要在映射函数与页面两处维护；列表「读接口、赋给表格」即可表达，无需中间态。
+
+**✅ 推荐**
+
+```ts
+// utils.ts
+export async function list(params: ModelDataListParams): Promise<ModelDataListResult> {
+  const data: DeviceDataListResponse = await fetchDeviceDataListApi({ ... });
+  return {
+    list: data.list ?? [],
+    total: data.total ?? 0,
+    pageNum: data.pageNum ?? params.pageNum,
+    pageSize: data.pageSize ?? params.pageSize,
+  };
+}
+```
+
+```tsx
+// index.tsx — dataIndex 对齐 interface.ts
+import type { DeviceDataSnapshot } from "./interface";
+
+const [dataSource, setDataSource] = useState<DeviceDataSnapshot[]>([]);
+
+const columns: ColumnsType<DeviceDataSnapshot> = [
+  { title: "点位名称", dataIndex: "propertyName", key: "propertyName", ellipsis: true },
+  { title: "类型", dataIndex: "dataType", key: "dataType", ellipsis: true },
+];
+```
+
+**❌ 避免**
+
+```tsx
+// 列标题是「物模型 ID」，却用其它后端字段顶替
+{ title: "物模型ID", dataIndex: "thingId", key: "thingId" }
+```
+
+```ts
+function snapshotToRecord(row: DeviceDataSnapshot) {
+  return {
+    pointName: row.propertyName ?? "-",
+    type: row.dataType ?? "-",
+    modelId: row.modelId ?? row.thingId ?? "-",
+  };
+}
+
+return { list: (data.list ?? []).map(snapshotToRecord) };
+```
+
+**边界**：仅在以下场景才做字段转换——**查询/提交**参数与后端命名不一致（如筛选区文案「点位名称」对应查询参 `propertyName`，在 `list()` 入参层映射即可）；**表单**提交需 `formValuesToSysXxx`；**多接口聚合**或列表行缺少展示必填字段且后端短期无法补齐；**权限/角色**等需关联补全（仍优先让 list 接口本身带齐字段）。**不要**为占位展示写 `?? "-"`、**不要用其它字段顶替**（如列绑 `modelId` 却读 `thingId`、用 `thingId` 填 `modelName`）；接口未返回该字段时单元格留空即可，交给 Table 默认渲染或列级 `render`。
+
+**参考实现**：`apps/admin/src/pages/model-data/`。
 
 ### 列表页 DOM 扁平化
 
@@ -819,41 +875,52 @@ modal.confirm({
 
 **边界**：产品明确要求非默认文案（如「提交审核」「我知道了」）时可配置 `okText` / `cancelText`；删除类确认保留 `okText: "删除"` + `okButtonProps={{ danger: true }}` 即可，不必写 `cancelText`。
 
-### 接口 catch 错误提示
+### HTTP 全局错误提示
 
-**做什么**：页面里 `try/catch` 包裹接口调用后，在 `catch` 中用**固定、简短的中文文案**提示用户（如 `message.error("操作失败")`），**不要**解析并展示 `error.message`。
+**做什么**：接口失败（业务 `code !== 200`、HTTP 4xx/5xx 等）的错误 toast 由 `@/utils/request` 的 **`onError`** 统一弹出（`error.message`，来自后端 `message`/`msg` 或网络层兜底文案）；页面 `catch` **不再**写 `message.error(...)`。
 
-**为什么**：接口/ mock 抛出的 `Error.message` 偏开发语义（如「组织不存在」），直接暴露给用户不稳定也不统一；列表页操作失败用固定提示即可，具体原因由后端日志或后续统一错误处理承担。
+**为什么**：避免每页重复固定文案、与后端返回不一致、以及同一错误弹两次；401 仅走 `onUnauthorized` 跳转登录，不弹 toast。
+
+**实现要点**
+
+| 位置 | 职责 |
+|---|---|
+| `utils/http-client` | 拦截响应，失败时 `reject Error` 并调用 `onError`（401 除外） |
+| `utils/request.ts` | `onError` 弹出错误；导出 `requestMessageApi` 供入口注入 message |
+| `main.tsx` | `<AntApp>` 内挂载桥接组件，本地 `setMessageApi` 写入 `requestMessageApi.current` |
 
 **✅ 推荐**
 
 ```tsx
 try {
+  const result = await list(params);
+  setDataSource(result.list);
+} finally {
+  setLoading(false);
+}
+
+try {
   await update(id, values);
   message.success("保存成功");
   loadData();
 } catch {
-  message.error("操作失败");
-}
-
-try {
-  await remove(record.id);
-  message.success("删除成功");
-  loadData();
-} catch {
-  message.error("删除失败");
+  throw new Error("submit failed"); // 阻止 Modal 关闭；勿再 message.error
 }
 ```
 
 **❌ 避免**
 
 ```tsx
+} catch {
+  message.error("加载失败"); // 与全局 onError 重复
+}
+
 } catch (error) {
   message.error(error instanceof Error ? error.message : "操作失败");
 }
 ```
 
-**边界**：`catch` 中无需声明未使用的 `error` 参数；不同操作可用不同固定文案（「加载失败」「删除失败」）；若接入全局请求拦截器统一 toast，页面内仍保持简短固定提示，不重复解析异常对象。
+**边界**：**成功提示**（`message.success` / `message.warning` / `message.info`）仍在页面写；**表单校验失败**不经过 request，由 Form 规则处理；**勿写空 `catch {}` 吞错误**——全局 `onError` 已弹 toast，仅需 `try/finally` 关 loading，或提交失败 `catch { throw ... }` 阻止弹窗关闭；非 request 的本地错误（如纯前端校验）可按需 `message.error`。
 
 ### 异步 / fire-and-forget 调用
 

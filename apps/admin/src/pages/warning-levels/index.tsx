@@ -29,7 +29,6 @@ const WarningLevels = () => {
 				setPageNum(result.pageNum);
 				setPageSize(result.pageSize);
 			} catch {
-				message.error("加载报警等级失败");
 			} finally {
 				setLoading(false);
 			}

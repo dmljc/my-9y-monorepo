@@ -52,8 +52,6 @@ const PermissionUser = () => {
 			setPageNum(result.pageNum);
 			setPageSize(result.pageSize);
 			setSelectedRowKeys([]);
-		} catch {
-			message.error("加载用户列表失败");
 		} finally {
 			setLoading(false);
 		}
@@ -99,7 +97,6 @@ const PermissionUser = () => {
 			}
 			await loadData(pageNum, pageSize);
 		} catch {
-			message.error(editingRecord ? "保存失败" : "添加失败");
 			throw new Error("submit failed");
 		}
 	};
@@ -111,13 +108,9 @@ const PermissionUser = () => {
 			okText: "删除",
 			okButtonProps: { danger: true },
 			onOk: async () => {
-				try {
-					await remove(record.id);
-					message.success("删除成功");
-					await loadData(pageNum, pageSize);
-				} catch {
-					message.error("删除失败");
-				}
+				await remove(record.id);
+				message.success("删除成功");
+				await loadData(pageNum, pageSize);
 			},
 		});
 	};
@@ -135,8 +128,6 @@ const PermissionUser = () => {
 			}
 			exportUsersToJson(data);
 			message.success("导出成功");
-		} catch {
-			message.error("导出失败");
 		} finally {
 			setLoading(false);
 		}
