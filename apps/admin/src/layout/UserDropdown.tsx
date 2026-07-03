@@ -34,7 +34,15 @@ const UserDropdown = () => {
 				placement="bottomRight"
 				trigger={["click"]}
 			>
-				<Button type="text">
+				<Button
+					type="text"
+					style={{
+						display: "inline-flex",
+						alignItems: "center",
+						height: 46,
+						paddingInline: 12,
+					}}
+				>
 					<Space>
 						<Avatar size="small" icon={<UserOutlined />} />
 						<Typography.Text>{displayName}</Typography.Text>
