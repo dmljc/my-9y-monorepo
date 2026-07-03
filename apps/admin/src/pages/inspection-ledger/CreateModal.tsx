@@ -124,7 +124,7 @@ const CreateModal = ({
 
 	return (
 		<Modal
-			title={isEdit ? "编辑设备" : "新增设备"}
+			title={isEdit ? "编辑" : "新增"}
 			open={open}
 			onOk={handleOk}
 			onCancel={onCancel}

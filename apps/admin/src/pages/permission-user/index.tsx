@@ -92,7 +92,7 @@ const PermissionUser = () => {
 			message.success("保存成功");
 		} else {
 			await create(values);
-			message.success("添加成功");
+			message.success("新增成功");
 		}
 		await loadData(pageNum, pageSize);
 	};
@@ -231,7 +231,7 @@ const PermissionUser = () => {
 							icon={<PlusOutlined />}
 							onClick={handleAdd}
 						>
-							新增用户
+							新增
 						</Button>
 						<Upload
 							showUploadList={false}

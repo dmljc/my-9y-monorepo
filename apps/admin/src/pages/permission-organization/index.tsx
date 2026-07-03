@@ -83,7 +83,7 @@ const PermissionOrganization = () => {
 			message.success("保存成功");
 		} else {
 			await createDept(values);
-			message.success("添加成功");
+			message.success("新增成功");
 		}
 		await loadData();
 	};
@@ -181,7 +181,7 @@ const PermissionOrganization = () => {
 						icon={<PlusOutlined />}
 						onClick={handleAdd}
 					>
-						添加组织
+						新增
 					</Button>
 					<Upload
 						showUploadList={false}

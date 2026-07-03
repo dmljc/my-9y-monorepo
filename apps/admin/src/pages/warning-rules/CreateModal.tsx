@@ -91,7 +91,7 @@ const CreateModal = ({
 
 	return (
 		<Modal
-			title={isEdit ? "编辑规则" : "新增规则"}
+			title={isEdit ? "编辑" : "新增"}
 			open={open}
 			onOk={handleOk}
 			onCancel={onCancel}

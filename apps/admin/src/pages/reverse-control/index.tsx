@@ -199,7 +199,7 @@ const ReverseControl = () => {
 						icon={<PlusOutlined />}
 						onClick={openAdd}
 					>
-						新增反控规则
+						新增
 					</Button>
 				</header>
 

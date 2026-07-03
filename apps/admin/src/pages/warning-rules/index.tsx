@@ -243,7 +243,7 @@ const WarningRules = () => {
 						icon={<PlusOutlined />}
 						onClick={openAdd}
 					>
-						新增规则
+						新增
 					</Button>
 				</header>
 

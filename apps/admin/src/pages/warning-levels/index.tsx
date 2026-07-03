@@ -151,7 +151,7 @@ const WarningLevels = () => {
 						icon={<PlusOutlined />}
 						onClick={openAdd}
 					>
-						新增等级
+						新增
 					</Button>
 				</header>
 

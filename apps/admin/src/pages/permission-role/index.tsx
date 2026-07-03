@@ -101,7 +101,7 @@ const PermissionRole = () => {
 				roleName: values.roleName.trim(),
 				remark: values.remark?.trim() ?? "",
 			});
-			message.success("添加成功");
+			message.success("新增成功");
 		}
 		await loadData(pageNum, pageSize);
 	};
@@ -228,7 +228,7 @@ const PermissionRole = () => {
 						icon={<PlusOutlined />}
 						onClick={handleAdd}
 					>
-						新增角色
+						新增
 					</Button>
 				</div>
 			</div>

@@ -53,7 +53,7 @@ const CreateModal = ({
 
 	return (
 		<Modal
-			title={isEdit ? "编辑等级" : "新增等级"}
+			title={isEdit ? "编辑" : "新增"}
 			open={open}
 			onOk={handleOk}
 			onCancel={onCancel}

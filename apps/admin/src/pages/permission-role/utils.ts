@@ -23,6 +23,32 @@ export interface RoleFormValues {
 	remark: string;
 }
 
+/**
+ * 将按钮权限名称规范为简短动词（通用 CRUD 不与页面列重复宾语）。
+ *
+ * @param {string} - 后端 permName。
+ * @returns {string} - 展示用按钮文案。
+ */
+export function formatActionTitle(permName: string): string {
+	if (
+		permName.startsWith("新增") ||
+		permName.startsWith("添加") ||
+		permName.startsWith("创建")
+	) {
+		return "新增";
+	}
+	if (permName.startsWith("编辑") && permName.length > 2) {
+		return "编辑";
+	}
+	if (permName.startsWith("删除") && permName.length > 2) {
+		return "删除";
+	}
+	if (permName.startsWith("导出") && permName.length > 2) {
+		return "导出";
+	}
+	return permName;
+}
+
 /** 超级管理员角色编码（与后端 roleKey 一致） */
 export const SUPER_ADMIN_ROLE_CODE = "admin";
 
@@ -79,7 +105,7 @@ export function buildAssignRows(
 					)
 					.map((permission) => ({
 						key: String(permission.menuId),
-						title: permission.permName ?? "",
+						title: formatActionTitle(permission.permName ?? ""),
 					})),
 			});
 		});

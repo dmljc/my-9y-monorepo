@@ -31,7 +31,7 @@ const handleAdd = () => {
   setModalOpen(true);
 };
 
-<Button onClick={handleAdd}>新增用户</Button>
+<Button onClick={handleAdd}>新增</Button>
 
 // Form：函数名与 prop 同名
 const onFinish = (values: LoginFormValues) => {
@@ -64,6 +64,68 @@ const handleOk = async () => { /* ... */ };
 ```
 
 **边界**：`loadData`、`fetchXxx` 等数据加载不必加 `handle` 或 `on`；传给**业务子组件**的 props 若约定为 `onOk` / `onCancel`，父组件侧重写 `handleModalSubmit` 再传入亦可（见 CreateModal 用法）；仅当回调**直接**写在 Ant Design 组件（Form、Modal、Table 的 `onChange` 等）上时，优先 `onXxx` 与 prop 对齐。
+
+### 按钮文案（CRUD）
+
+**做什么**：列表页工具栏、表格操作列、CreateModal 标题、权限分配弹窗中的**通用 CRUD** 按钮，统一用**简短动词**——**新增**、**编辑**、**删除**；**不要**写「新增用户」「编辑角色」「删除规则」等「动词 + 宾语」形式。页面/模块上下文已由页面标题、表格数据或权限分配表格的「页面权限」列提供，按钮不必重复宾语。
+
+**为什么**：同一页面内混用「编辑」与「编辑用户」会增加扫读成本；权限分配弹窗与业务页按钮文案一致后，配置权限时更易对应实际按钮。
+
+**通用 CRUD 文案**
+
+| 场景 | 推荐 | 避免 |
+|------|------|------|
+| 工具栏主按钮 | `新增` | `新增用户`、`添加组织`、`新增反控规则` |
+| 表格操作列 | `编辑`、`删除` | `编辑用户`、`删除角色` |
+| CreateModal 标题 | `新增` / `编辑` | `新增用户` / `编辑组织` |
+| 新增成功提示 | `message.success("新增成功")` | `添加成功` |
+| 创建类动词 | 统一 `新增` | `添加`、`创建` |
+
+**非 CRUD 保留完整语义**
+
+以下**不是**通用增删改，须保留完整、可区分的名称，**不要**缩短为「新增 / 编辑 / 删除」：
+
+| 类型 | 示例 |
+|------|------|
+| 业务流程 | `执行点检`、`权限分配` |
+| 数据操作 | `导出`、`同步` |
+| 其它独立动作 | 按业务语义命名，如 `启用`、`停用` |
+
+**权限分配弹窗**
+
+后端 `permName` 可能仍为「编辑用户」等旧文案；展示层用 `formatActionTitle`（见 `permission-role/utils.ts`）规范为简短动词，**不要**在 AssignModal 内 inline 映射。
+
+**✅ 推荐**
+
+```tsx
+// 工具栏 — 页面上下文已明确是用户管理
+<Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新增</Button>
+
+// 表格操作列
+<Button type="link" size="small" onClick={() => handleEdit(record)}>编辑</Button>
+<Button type="link" size="small" onClick={() => handleDelete(record)}>删除</Button>
+
+// CreateModal
+<Modal title={isEdit ? "编辑" : "新增"} open={open} onOk={onOk} onCancel={onCancel}>
+
+// 特殊动作 — 保留完整名称
+<Button type="link" onClick={() => handleAssign(record)}>权限分配</Button>
+<Button type="link" onClick={() => handleExport()}>导出</Button>
+```
+
+**❌ 避免**
+
+```tsx
+<Button onClick={handleAdd}>新增用户</Button>
+<Button onClick={handleAdd}>添加组织</Button>
+
+<Modal title={isEdit ? "编辑角色" : "新增角色"} />
+
+// 不要把特殊动作缩短成 CRUD
+<Button>新增</Button>  {/* ❌ 语义应为「权限分配」 */}
+```
+
+**边界**：删除确认框 `content` 仍写具体对象（如 `确定要删除用户「${name}」吗？`），与按钮简短文案不冲突；Modal `okText: "删除"` 等确认类文案见「Modal / confirm 按钮文案」；后端 `permName` 源头统一后，前端 `formatActionTitle` 仍保留以兼容历史数据。
 
 ### useCallback / useMemo
 
@@ -835,7 +897,7 @@ export function toListParams(pageNum: number, pageSize: number, filter: DeviceFi
     <Button type="primary" onClick={handleSearch}>查询</Button>
     <Button onClick={handleReset}>重置</Button>
     <div className={styles.panelActions}>
-      <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加组织</Button>
+      <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新增</Button>
     </div>
   </div>
 

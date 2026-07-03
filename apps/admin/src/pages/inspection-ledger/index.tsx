@@ -160,7 +160,7 @@ const InspectionLedger = () => {
 					onClick={openAdd}
 					style={{ marginLeft: "auto" }}
 				>
-					新增设备
+					新增
 				</Button>
 			</div>
 

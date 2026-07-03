@@ -90,7 +90,7 @@ const CreateRuleModal = ({
 
 	return (
 		<Modal
-			title={isEdit ? "编辑反控规则" : "创建反控规则"}
+			title={isEdit ? "编辑" : "新增"}
 			open={open}
 			onOk={handleOk}
 			onCancel={onCancel}
