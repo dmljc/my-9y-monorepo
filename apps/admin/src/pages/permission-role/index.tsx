@@ -92,14 +92,14 @@ const PermissionRole = () => {
 			await updateRole({
 				roleId: editingRecord.roleId,
 				roleName: values.roleName.trim(),
-				remark: values.remark.trim(),
+				remark: values.remark?.trim() ?? "",
 				roleKey: editingRecord.roleKey,
 			});
 			message.success("保存成功");
 		} else {
 			await createRole({
 				roleName: values.roleName.trim(),
-				remark: values.remark.trim(),
+				remark: values.remark?.trim() ?? "",
 			});
 			message.success("添加成功");
 		}

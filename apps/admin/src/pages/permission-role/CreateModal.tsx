@@ -47,7 +47,7 @@ const CreateModal = ({
 			await onOkProp(values);
 			onCancel();
 		} catch {
-			// 表单校验失败或提交失败
+			// 表单校验失败或接口失败；接口 toast 已由全局 onError 弹出
 		} finally {
 			setLoading(false);
 		}
