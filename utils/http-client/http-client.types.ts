@@ -1,7 +1,8 @@
 import type { AxiosInstance, AxiosRequestConfig } from "axios";
 
 /**
- * 后端统一响应结构（约定：code === successCode 表示成功）
+ * 后端统一响应结构（约定：code === successCode 表示成功）。
+ * 兼容 `message` 与 RuoYi 的 `msg` 字段。
  */
 export interface ApiResponse<T = unknown> {
 	/** 业务状态码，200 表示成功 */
@@ -9,7 +10,9 @@ export interface ApiResponse<T = unknown> {
 	/** 实际业务数据 */
 	data: T;
 	/** 提示信息，失败时用于展示或 reject */
-	message: string;
+	message?: string;
+	/** RuoYi 风格提示信息（与 message 二选一） */
+	msg?: string;
 }
 
 /** createHttpClient 配置项 */

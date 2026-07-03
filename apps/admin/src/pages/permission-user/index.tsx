@@ -6,11 +6,17 @@ import {
 import { App, Button, Empty, Input, Table, Upload } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
-import { create, exportUsers, list, remove, update } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import type { User, UserFormValues, UserListFilters } from "./utils";
-import { exportUsersToJson } from "./utils";
+import {
+	create,
+	exportUsers,
+	exportUsersToJson,
+	list,
+	remove,
+	update,
+} from "./utils";
 
 const PermissionUser = () => {
 	const { message, modal } = App.useApp();
@@ -83,14 +89,19 @@ const PermissionUser = () => {
 	};
 
 	const handleModalSubmit = async (values: UserFormValues) => {
-		if (editingRecord) {
-			await update(editingRecord.id, values);
-			message.success("保存成功");
-		} else {
-			await create(values);
-			message.success("添加成功");
+		try {
+			if (editingRecord) {
+				await update(editingRecord.id, values);
+				message.success("保存成功");
+			} else {
+				await create(values);
+				message.success("添加成功");
+			}
+			await loadData(pageNum, pageSize);
+		} catch {
+			message.error(editingRecord ? "保存失败" : "添加失败");
+			throw new Error("submit failed");
 		}
-		await loadData(pageNum, pageSize);
 	};
 
 	const handleDelete = (record: User) => {
@@ -99,26 +110,36 @@ const PermissionUser = () => {
 			content: `确定要删除用户「${record.name}」吗？`,
 			okText: "删除",
 			okButtonProps: { danger: true },
-			cancelText: "取消",
 			onOk: async () => {
-				await remove(record.id);
-				message.success("删除成功");
-				await loadData(pageNum, pageSize);
+				try {
+					await remove(record.id);
+					message.success("删除成功");
+					await loadData(pageNum, pageSize);
+				} catch {
+					message.error("删除失败");
+				}
 			},
 		});
 	};
 
-	const handleExport = () => {
-		const data = exportUsers({
-			username: username.trim() || undefined,
-			name: name.trim() || undefined,
-		});
-		if (data.length === 0) {
-			message.warning("暂无可导出的用户数据");
-			return;
+	const handleExport = async () => {
+		setLoading(true);
+		try {
+			const data = await exportUsers({
+				username: username.trim() || undefined,
+				name: name.trim() || undefined,
+			});
+			if (data.length === 0) {
+				message.warning("暂无可导出的用户数据");
+				return;
+			}
+			exportUsersToJson(data);
+			message.success("导出成功");
+		} catch {
+			message.error("导出失败");
+		} finally {
+			setLoading(false);
 		}
-		exportUsersToJson(data);
-		message.success("导出成功");
 	};
 
 	const handleImport = () => {

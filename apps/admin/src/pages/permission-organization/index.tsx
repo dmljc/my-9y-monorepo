@@ -6,11 +6,17 @@ import {
 import { App, Button, Empty, Input, Table, Upload } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
-import { create, exportOrgs, list, remove, update } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import type { OrgFormValues, OrgListFilters, OrgTreeNode } from "./utils";
-import { exportOrgsToJson } from "./utils";
+import {
+	create,
+	exportOrgs,
+	exportOrgsToJson,
+	list,
+	remove,
+	update,
+} from "./utils";
 
 const PermissionOrganization = () => {
 	const { message, modal } = App.useApp();
@@ -72,9 +78,10 @@ const PermissionOrganization = () => {
 				await create(values);
 				message.success("添加成功");
 			}
-			loadData();
+			await loadData();
 		} catch {
 			message.error("操作失败");
+			throw new Error("submit failed");
 		}
 	};
 
@@ -88,7 +95,7 @@ const PermissionOrganization = () => {
 				try {
 					await remove(record.id);
 					message.success("删除成功");
-					loadData();
+					await loadData();
 				} catch {
 					message.error("删除失败");
 				}
@@ -96,14 +103,20 @@ const PermissionOrganization = () => {
 		});
 	};
 
-	const handleExport = () => {
-		const data = exportOrgs({ name: orgName.trim() || undefined });
-		if (data.length === 0) {
-			message.warning("暂无可导出的组织数据");
-			return;
+	const handleExport = async () => {
+		try {
+			const data = await exportOrgs({
+				name: orgName.trim() || undefined,
+			});
+			if (data.length === 0) {
+				message.warning("暂无可导出的组织数据");
+				return;
+			}
+			exportOrgsToJson(data);
+			message.success("导出成功");
+		} catch {
+			message.error("导出失败");
 		}
-		exportOrgsToJson(data);
-		message.success("导出成功");
 	};
 
 	const handleImport = () => {
@@ -115,6 +128,12 @@ const PermissionOrganization = () => {
 			title: "组织名称",
 			dataIndex: "name",
 			key: "name",
+			ellipsis: true,
+		},
+		{
+			title: "描述",
+			dataIndex: "description",
+			key: "description",
 			ellipsis: true,
 		},
 		{
@@ -143,7 +162,7 @@ const PermissionOrganization = () => {
 	];
 
 	return (
-		<div className={styles.page}>
+		<div className={styles.permissionOrganization}>
 			<div className={styles.toolbar}>
 				<span className={styles.filterLabel}>组织名称</span>
 				<Input

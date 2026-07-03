@@ -226,21 +226,58 @@ export const writeRememberMe = (values: LoginParams) => { /* ... */ };
 
 ### 页面 api.ts 接口函数
 
-**做什么**：页面目录下的 `api.ts` 只做 **HTTP 薄封装**——`import { request } from "@/utils"`，一行 `return request.get/post/put/delete(...)`；请求/响应类型放同目录 `interface.ts`；业务校验、错误提示、状态更新留在页面或 hooks。
+**做什么**：页面目录下的 `api.ts` 只做 **HTTP 薄封装**——`import { request } from "@/utils"`，一行 `return request.get/post/put/delete(...)`；请求/响应类型放同目录 `interface.ts`；**数据转换、多接口编排、业务校验**放 `utils.ts`；错误提示、状态更新留在页面或 hooks。
 
-**为什么**：接口层与 UI 层职责分离；`api.ts` 保持统一形态后便于批量对接后端、替换 mock，也避免在接口文件里散落 `if (code !== 200)` 等业务逻辑。
+**为什么**：接口层与 UI 层职责分离；`api.ts` 保持统一形态后便于批量对接后端、替换 mock，也避免在接口文件里散落 `if (code !== 200)`、字段映射等业务逻辑。
+
+**分层职责**
+
+| 文件 | 职责 |
+|------|------|
+| `interface.ts` | 后端请求/响应类型（中文 JSDoc） |
+| `api.ts` | 仅 HTTP 调用，参数/返回值对齐后端形态 |
+| `utils.ts` | 前端展示类型、纯转换函数；必要时 **import `./api` 做编排**（参数映射、响应转换、多接口聚合） |
+| `index.tsx` / 子组件 | 调用 `utils` 编排函数或直接 `api`（简单页）；UI 状态与 `message` 提示 |
 
 **目录结构**
 
 ```
-pages/Login/
-  api.ts          # 仅 HTTP 调用
-  interface.ts    # 请求/响应类型（中文 JSDoc）
+pages/permission-user/
+  api.ts          # 仅 HTTP 调用（参考 stores/user/api.ts）
+  interface.ts    # 后端请求/响应类型（中文 JSDoc）
+  utils.ts        # 前端类型、转换函数、接口编排
   index.tsx
-  utils.ts
+  CreateModal.tsx
 ```
 
-**✅ 推荐**
+**✅ 推荐 — api.ts（纯 HTTP 薄封装）**
+
+参考 `apps/admin/src/stores/user/api.ts`、`apps/admin/src/pages/permission-user/api.ts`：
+
+```ts
+import { request } from "@/utils";
+import type { SysUser, UserListQuery } from "./interface";
+
+export const list = (data: UserListQuery): Promise<any> => {
+  return request.get("/system/user/list", { params: data });
+};
+
+export const detail = (id: string): Promise<any> => {
+  return request.get(`/system/user/${id}`);
+};
+
+export const create = (data: SysUser): Promise<any> => {
+  return request.post("/system/user", data);
+};
+
+export const update = (data: SysUser): Promise<any> => {
+  return request.put("/system/user", data);
+};
+
+export const remove = (id: string): Promise<any> => {
+  return request.delete(`/system/user/${id}`);
+};
+```
 
 ```ts
 import { request } from "@/utils";
@@ -251,42 +288,62 @@ export const login = (data: LoginParams): Promise<any> => {
 };
 ```
 
+**✅ 推荐 — utils.ts 接口编排（复杂页）**
+
+当页面需要前后端字段映射、多接口聚合、响应校验时，在 `utils.ts` 内 **import `./api`** 封装同名业务函数；页面从 `./utils` 导入，**不要**从 `./api` 导入编排后的函数：
+
 ```ts
-import { request } from "@/utils";
-import type { CreateUser, ListParams, UpdateUser } from "./interface";
+// utils.ts
+import { list as fetchUserListApi } from "./api";
+import type { UserListQuery, UserListResponse } from "./interface";
 
-export const list = (data: ListParams): Promise<any> => {
-  return request.get("/user/list", { params: data });
-};
+/** 前端列表参数 → 后端查询参数 */
+function toUserListQuery(params: UserListParams): UserListQuery {
+  const { pageNum, pageSize, username, name } = params;
+  return { pageNum, pageSize, userName: username, nickName: name };
+}
 
-export const create = (data: CreateUser): Promise<any> => {
-  return request.post("/user/create", data);
-};
+/** 获取用户列表（分页） */
+export async function list(params: UserListParams): Promise<UserListResult> {
+  const data: UserListResponse = await fetchUserListApi(toUserListQuery(params));
+  // ... 数据转换、角色补充等
+  return { list, total, pageNum, pageSize };
+}
+```
 
-export const update = (data: UpdateUser): Promise<any> => {
-  return request.put("/user/update", data);
-};
-
-export const detail = (id: number): Promise<any> => {
-  return request.get(`/user/${id}`);
-};
-
-export const remove = (id: number): Promise<any> => {
-    return request.delete(`/user/delete/${id}`);
-};
+```tsx
+// index.tsx — 从 utils 导入编排后的业务函数
+import { create, list, remove, update } from "./utils";
 ```
 
 **写法要点**
 
 | 部分 | 要求 |
 |------|------|
-| 导入 | `request` 统一来自 `@/utils` |
-| 类型 | 从 `./interface` 引入；不在 `api.ts` 内定义业务类型 |
+| 导入 | `request` 统一来自 `@/utils`；`api.ts` 类型从 `./interface` 引入 |
 | 函数形态 | `export const xxx = (data): Promise<any> => { return request.xxx(...); }` |
 | 命名 | 与语义一致：`list`、`create`、`update`、`detail`、`remove`、`login` 等 |
-| 路径 | 写相对业务路径（如 `/login`、`/user/list`），**不要**重复拼 `VITE_API_BASE_URL` 或 `/api` 前缀 |
+| 路径 | 写相对业务路径（如 `/login`、`/system/user/list`），**不要**重复拼 `VITE_API_BASE_URL` 或 `/api` 前缀 |
 | GET 查询 | 筛选/分页参数用 `{ params: data }` |
-| 返回值 | 暂用 `Promise<any>`；后续可按接口补具体响应类型 |
+| 返回值 | 薄封装暂用 `Promise<any>`；**不要**在 `request.get<T>()` 上写泛型（`HttpClient` 不支持，见下节） |
+| 类型标注 | 编排层对 `await request.xxx()` 的结果用变量显式类型：`const data: UserListResponse = await fetchUserListApi(...)` |
+| 编排位置 | 参数映射、实体转换、多接口聚合、`assertAjaxOk` 等放 `utils.ts`，不放 `api.ts` |
+| 页面导入 | 有编排时页面 import `./utils`；`api.ts` 仅被 `utils.ts` 引用，或简单页直接引用 |
+
+**request 类型约定**
+
+`@utils/http-client` 的 `HttpClient.get/post/put/delete` 签名固定为 `Promise<any>`，**不支持** `request.get<ResponseType>(...)` 泛型。类型安全由两层保证：
+
+1. **api.ts**：函数返回值写 `Promise<any>`（或具体类型，但不靠 request 泛型）
+2. **utils.ts / 页面**：对 `await request.xxx()` 的结果做显式类型标注
+
+```ts
+// ❌ TS2558: Expected 0 type arguments, but got 1
+const data = await request.get<UserListResponse>("/system/user/list", { params });
+
+// ✅
+const data: UserListResponse = await request.get("/system/user/list", { params });
+```
 
 **❌ 避免**
 
@@ -294,18 +351,92 @@ export const remove = (id: number): Promise<any> => {
 // 在 api.ts 内定义类型
 export interface LoginParams { /* ... */ }
 
-// 在 api.ts 内做业务判断
+// 在 api.ts 内做业务判断或数据转换
 export const login = async (data: LoginParams) => {
   const body = await request.post("/login", data);
   if (body.code !== 200) throw new Error("登录失败");
   return body.token;
 };
 
+// request 泛型（HttpClient 不支持）
+return request.get<UserListResponse>("/system/user/list", { params: data });
+
 // 路径重复拼接 baseURL
 return request.post("/api/login", data);
+
+// 页面绕过 utils 直接调用需编排的 api 并散落转换逻辑
+const data = await fetchUserListApi(...);
+setDataSource(data.rows.map(sysUserToUser)); // 应抽到 utils.list
 ```
 
-**边界**：mock 阶段可在 `api.ts` 暂留 `Promise.resolve(...)`，接入真实接口后整段替换为 `request` 调用；下载 blob、读响应头等特殊场景可用 `request.raw`；`interface.ts` 中的类型仍须中文 JSDoc。
+**边界**：下载 blob、读响应头等特殊场景可用 `request.raw`；`interface.ts` 中的类型仍须中文 JSDoc；简单页（如 Login）无编排需求时，页面可直接 import `./api`；复杂 CRUD 页优先 `utils` 编排 + 页面 import `./utils`。**参考实现**：`apps/admin/src/stores/user/api.ts`（最简）、`apps/admin/src/pages/permission-user/`、`apps/admin/src/pages/permission-role/`（含 utils 编排）。
+
+### 接入真实接口后移除 mock
+
+**做什么**：页面模块的 `api.ts` 已改为 `request.get/post/put/delete` 调用真实接口后，**同一模块内**须同步清理与之对应的临时测试数据，**不要**让 mock 与真实请求并存。
+
+**为什么**：`api.ts` 走真实 HTTP 而 `utils.ts` 仍保留内存 store、`generateMockXxx`、`Promise.resolve` 假数据时，页面行为与后端脱节，联调时难以发现字段映射错误，也易误改 mock 而非编排层。
+
+**须移除（示例）**
+
+| 类型 | 示例 |
+|------|------|
+| 内存 store | `const rolesStore: Role[] = [...]` |
+| mock 生成函数 | `generateMockRoles()`、`generateMockUsers()` |
+| 假 Promise 编排 | `return Promise.resolve({ list: filtered.slice(...) })` |
+| 注释占位 | `// 对接后端后改为：await fetchXxxApi(...)` 且仍走 mock 的实现 |
+| 仅供 mock 使用的私有工具 | `findRoleIndex` 等只服务内存 store 的函数 |
+
+**须保留（边界）**
+
+- **尚无后端接口**的静态配置（如权限树 `ROLE_PERMISSION_MODULES`），可暂留并标注「对接 xx 接口后替换」；一旦对应接口可用，同样按本规则迁移到 `api.ts` + `utils.ts` 编排。
+- **纯前端**的类型、格式化、校验、常量（如 `SUPER_ADMIN_ROLE_CODE`、`normalizePermissionIds`）不属于 mock，无需删除。
+
+**✅ 推荐 — 接入后的 utils.ts 编排**
+
+```ts
+import { list as fetchRoleListApi } from "./api";
+import type { RoleListQuery, RoleListResponse } from "./interface";
+
+function toRoleListQuery(params: RoleListParams): RoleListQuery {
+  const { pageNum, pageSize, name } = params;
+  return { pageNum, pageSize, roleName: name?.trim() || undefined };
+}
+
+export async function list(params: RoleListParams): Promise<RoleListResult> {
+  const { pageNum, pageSize } = params;
+  const data: RoleListResponse = await fetchRoleListApi(toRoleListQuery(params));
+  return {
+    list: (data.rows ?? []).map(sysRoleToRole),
+    total: data.total ?? 0,
+    pageNum,
+    pageSize,
+  };
+}
+```
+
+**❌ 避免 — api 已接真实接口，utils 仍走 mock**
+
+```ts
+// api.ts 已是 request.get("/system/role/list", ...)
+
+const rolesStore: Role[] = generateMockRoles();
+
+export function list(params: RoleListParams): Promise<RoleListResult> {
+  // 对接后端后改为：await fetchRoleListApi(...)
+  return Promise.resolve({ list: rolesStore.slice(...), ... });
+}
+```
+
+**迁移检查清单**
+
+1. `api.ts` 中对应接口均已改为 `request` 调用（无 `Promise.resolve` 假数据）。
+2. `utils.ts` 编排函数 `import ./api`，做参数映射与响应转换。
+3. 删除本模块内的 `generateMockXxx`、内存 store、mock 专用 helper。
+4. 页面与子组件只从 `./utils`（或简单页 `./api`）导入，不直接依赖已删除的 mock。
+5. 原先依赖 mock 详情的交互（如权限分配回显）改为调 `detail` 等真实接口。
+
+**边界**：全项目联调前、接口尚未就绪的页面，mock 可暂留于 `utils.ts`，但 `api.ts` 不应提前写死错误路径；**一旦本模块任一接口切到 `request`，该接口链路须完整迁移，不得半 mock 半真实**。参考 `apps/admin/src/pages/permission-role/`。
 
 ### 列表页 DOM 扁平化
 
@@ -604,6 +735,53 @@ useEffect(() => {
 ```
 
 **边界**：仅当 `editingRecord` 中某些字段的值需在回显前做**转换/格式化**（如日期对象转字符串、数组 join）时，才值得手动拆开 `setFieldsValue({ field: transform(record.field), ... })`；若字段名与 `Form.Item` 的 `name` 一一对应且值类型一致，直接传整个 record。
+
+### 编辑弹窗不回显详情接口
+
+**做什么**：列表页点击「编辑」打开弹窗时，**不要**再调 `detail` / `getById` 等详情接口；表单回显直接从表格当前行 `editingRecord` 取值，经 `recordToFormValues`（字段映射）后 `setFieldsValue`。
+
+**为什么**：列表接口已包含编辑所需字段，再请求详情只会增加延迟、Network 开销和失败点，无额外收益。
+
+**✅ 推荐**
+
+```tsx
+// index.tsx
+const handleEdit = (record: User) => {
+  setEditingRecord(record);
+  setModalOpen(true);
+};
+
+// CreateModal.tsx
+useEffect(() => {
+  if (!open) return;
+
+  const loadMeta = async () => {
+    const [tree, roles] = await Promise.all([getDeptTree(), getRoleOptions()]);
+    setDeptTree(tree);
+    setRoleOptions(roles);
+  };
+
+  loadMeta();
+
+  if (editingRecord) {
+    form.setFieldsValue(recordToFormValues(editingRecord));
+    return;
+  }
+
+  form.resetFields();
+}, [open, editingRecord]);
+```
+
+**❌ 避免**
+
+```tsx
+if (editingRecord) {
+  const record = await detail(editingRecord.id);
+  form.setFieldsValue(recordToFormValues(record));
+}
+```
+
+**边界**：列表行**缺少**编辑必填字段（复杂嵌套、富文本等）时，才在打开弹窗时调详情；权限分配等非标准编辑弹窗，若列表不含完整业务字段（如 `permissionIds`），可单独调专用接口；弹窗 open 时仍可并行拉取**元数据**（组织树、角色选项等下拉数据源），但**主表单回显字段**不调详情。
 
 ### Modal / confirm 按钮文案
 

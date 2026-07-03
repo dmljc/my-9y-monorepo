@@ -1,8 +1,14 @@
-import { App, Modal, Tree } from "antd";
-import type { DataNode } from "antd/es/tree";
-import { useEffect, useMemo, useState } from "react";
-import type { Role } from "./utils";
-import { ROLE_PERMISSION_TREE } from "./utils";
+import { App, Checkbox, Modal, Table, Tabs } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import { useEffect, useState } from "react";
+import type { PermissionAction, PermissionTableRow, Role } from "./utils";
+import {
+	buildPermissionTableRows,
+	getPageActionKeys,
+	getRoleCheckedMenuIds,
+	normalizePermissionIds,
+	TABLET_PERMISSION_MODULES,
+} from "./utils";
 
 interface PermissionAssignModalProps {
 	open: boolean;
@@ -11,36 +17,110 @@ interface PermissionAssignModalProps {
 	onOk: (permissionIds: string[]) => Promise<void>;
 }
 
-function toTreeData(nodes: typeof ROLE_PERMISSION_TREE): DataNode[] {
-	return nodes.map((node) => ({
-		key: node.key,
-		title: node.title,
-		children: node.children ? toTreeData(node.children) : undefined,
-	}));
+interface AssignableRow {
+	pageKey: string;
+	actions: PermissionAction[];
 }
+
+const ADMIN_TABLE_ROWS = buildPermissionTableRows();
+const TABLET_TABLE_ROWS = buildPermissionTableRows(TABLET_PERMISSION_MODULES);
 
 const PermissionAssignModal = ({
 	open,
 	role,
 	onCancel,
-	onOk,
+	onOk: onOkProp,
 }: PermissionAssignModalProps) => {
 	const { message } = App.useApp();
 	const [loading, setLoading] = useState(false);
 	const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
 
-	const treeData = useMemo(() => toTreeData(ROLE_PERMISSION_TREE), []);
-
 	useEffect(() => {
 		if (!open || !role) return;
-		setCheckedKeys(role.permissionIds);
+
+		const loadCheckedKeys = async () => {
+			try {
+				const menuIds = await getRoleCheckedMenuIds(role.id);
+				setCheckedKeys(menuIds);
+			} catch {
+				message.error("加载角色权限失败");
+			}
+		};
+
+		loadCheckedKeys();
 	}, [open, role]);
 
-	const handleOk = async () => {
+	const isPageChecked = (pageKey: string) => checkedKeys.includes(pageKey);
+
+	const updateCheckedKeys = (updater: (keys: Set<string>) => void) => {
+		setCheckedKeys((prev) => {
+			const next = new Set(prev);
+			updater(next);
+			return [...next];
+		});
+	};
+
+	const handlePageChange = (record: AssignableRow, checked: boolean) => {
+		updateCheckedKeys((keys) => {
+			if (checked) {
+				keys.add(record.pageKey);
+				return;
+			}
+
+			keys.delete(record.pageKey);
+			for (const actionKey of getPageActionKeys(record.pageKey)) {
+				keys.delete(actionKey);
+			}
+		});
+	};
+
+	const handleActionChange = (
+		record: AssignableRow,
+		actionKey: string,
+		checked: boolean,
+	) => {
+		updateCheckedKeys((keys) => {
+			if (checked) {
+				keys.add(record.pageKey);
+				keys.add(actionKey);
+				return;
+			}
+			keys.delete(actionKey);
+		});
+	};
+
+	const renderActionGroup = (record: AssignableRow) => {
+		const pageChecked = isPageChecked(record.pageKey);
+
+		return (
+			<div
+				style={{ display: "flex", flexWrap: "wrap", gap: "16px 24px" }}
+			>
+				{record.actions.map((action) => (
+					<Checkbox
+						key={action.key}
+						checked={checkedKeys.includes(action.key)}
+						disabled={!pageChecked}
+						onChange={(event) =>
+							handleActionChange(
+								record,
+								action.key,
+								event.target.checked,
+							)
+						}
+					>
+						{action.title}
+					</Checkbox>
+				))}
+			</div>
+		);
+	};
+
+	const onOk = async () => {
 		if (!role) return;
 		setLoading(true);
 		try {
-			await onOk(checkedKeys);
+			await onOkProp(normalizePermissionIds(checkedKeys));
 			message.success("权限分配成功");
 			onCancel();
 		} catch {
@@ -50,26 +130,73 @@ const PermissionAssignModal = ({
 		}
 	};
 
+	const columns: ColumnsType<PermissionTableRow> = [
+		{
+			title: "功能模块",
+			dataIndex: "moduleTitle",
+			key: "moduleTitle",
+			onCell: (record) => ({
+				rowSpan: record.moduleRowSpan,
+			}),
+		},
+		{
+			title: "页面权限",
+			key: "page",
+			render: (_: unknown, record) => {
+				const checked = isPageChecked(record.pageKey);
+				return (
+					<Checkbox
+						checked={checked}
+						onChange={(event) =>
+							handlePageChange(record, event.target.checked)
+						}
+					>
+						{record.pageTitle}
+					</Checkbox>
+				);
+			},
+		},
+		{
+			title: "按钮权限",
+			key: "actions",
+			render: (_: unknown, record) => renderActionGroup(record),
+		},
+	];
+
+	const renderPermissionTable = (rows: PermissionTableRow[]) => (
+		<Table
+			size="small"
+			columns={columns}
+			dataSource={rows}
+			rowKey="rowKey"
+			pagination={false}
+			bordered
+		/>
+	);
+
 	return (
 		<Modal
 			title={`权限分配 - ${role?.name ?? ""}`}
 			open={open}
-			onOk={handleOk}
+			onOk={onOk}
 			onCancel={onCancel}
 			confirmLoading={loading}
 			destroyOnHidden
-			width={560}
+			width={920}
 		>
-			<Tree
-				checkable
-				defaultExpandAll
-				treeData={treeData}
-				checkedKeys={checkedKeys}
-				onCheck={(keys) => {
-					setCheckedKeys(
-						Array.isArray(keys) ? (keys as string[]) : keys.checked,
-					);
-				}}
+			<Tabs
+				items={[
+					{
+						key: "admin",
+						label: "后台管理",
+						children: renderPermissionTable(ADMIN_TABLE_ROWS),
+					},
+					{
+						key: "tablet",
+						label: "平板端",
+						children: renderPermissionTable(TABLET_TABLE_ROWS),
+					},
+				]}
 			/>
 		</Modal>
 	);

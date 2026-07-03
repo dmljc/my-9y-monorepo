@@ -3,6 +3,36 @@ import { clearToken, setToken } from "@/utils";
 import { getInfo, login as loginApi } from "./api";
 import type { LoginParams, UserInfo } from "./interface";
 
+/** localStorage 中缓存用户信息的键名。 */
+const USER_CACHE_KEY = "user_cache";
+
+/** 缓存中的用户数据结构。 */
+interface UserCache {
+	user: UserInfo;
+	permissions: string[];
+	roles: string[];
+}
+
+/** 从 localStorage 读取缓存的用户信息。 */
+const getUserCache = (): UserCache | null => {
+	try {
+		const raw = localStorage.getItem(USER_CACHE_KEY);
+		return raw ? (JSON.parse(raw) as UserCache) : null;
+	} catch {
+		return null;
+	}
+};
+
+/** 将用户信息写入 localStorage 缓存。 */
+const setUserCache = (cache: UserCache): void => {
+	localStorage.setItem(USER_CACHE_KEY, JSON.stringify(cache));
+};
+
+/** 清除 localStorage 中的用户缓存。 */
+const clearUserCache = (): void => {
+	localStorage.removeItem(USER_CACHE_KEY);
+};
+
 /**
  * 用户 store 状态与操作方法。
  */
@@ -13,6 +43,7 @@ interface UserState {
 	loading: boolean;
 	login: (params: LoginParams) => Promise<boolean>;
 	fetchUserInfo: () => Promise<boolean>;
+	restoreUser: () => boolean;
 	clearUser: () => void;
 }
 
@@ -57,7 +88,7 @@ export const useUserStore = create<UserState>((set, get) => ({
 		}
 	},
 	/**
-	 * 根据当前 token 拉取用户信息、权限与角色。
+	 * 根据当前 token 拉取用户信息、权限与角色，成功后写入 localStorage 缓存。
 	 *
 	 * @returns {boolean} - 获取成功时返回 true，否则 false。
 	 */
@@ -69,6 +100,11 @@ export const useUserStore = create<UserState>((set, get) => ({
 				set(defaultUserState);
 				return false;
 			}
+			setUserCache({
+				user: data.user,
+				permissions: data.permissions ?? [],
+				roles: data.roles ?? [],
+			});
 			set({
 				user: data.user,
 				permissions: data.permissions ?? [],
@@ -83,11 +119,27 @@ export const useUserStore = create<UserState>((set, get) => ({
 		}
 	},
 	/**
-	 * 清空用户信息、权限、角色与 loading 状态。
+	 * 从 localStorage 缓存恢复用户信息（不发起网络请求）。
+	 *
+	 * @returns {boolean} - 缓存存在且恢复成功时返回 true。
+	 */
+	restoreUser: () => {
+		const cached = getUserCache();
+		if (!cached) return false;
+		set({
+			user: cached.user,
+			permissions: cached.permissions,
+			roles: cached.roles,
+		});
+		return true;
+	},
+	/**
+	 * 清空用户信息、权限、角色、loading 状态与本地缓存。
 	 *
 	 * @returns {void} - 无返回值。
 	 */
 	clearUser: () => {
+		clearUserCache();
 		set(defaultUserState);
 	},
 }));

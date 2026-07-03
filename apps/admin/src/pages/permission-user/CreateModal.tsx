@@ -1,15 +1,14 @@
-import { Checkbox, Form, Input, Modal, Select } from "antd";
+import { App, Checkbox, Form, Input, Modal, TreeSelect } from "antd";
 import { useEffect, useState } from "react";
-import { getAllUsers } from "./api";
-import type { User, UserFormValues } from "./utils";
+import type { DeptTreeNode } from "./interface";
+import type { SelectOption, User, UserFormValues } from "./utils";
 import {
-	isDuplicateUsername,
+	getDeptTree,
+	getRoleOptions,
 	NAME_MAX_LENGTH,
-	NAME_PATTERN,
-	ORGANIZATION_OPTIONS,
+	// NAME_PATTERN,
 	PASSWORD_MAX_LENGTH,
 	PASSWORD_PATTERN,
-	ROLE_OPTIONS,
 	recordToFormValues,
 	USERNAME_MAX_LENGTH,
 	USERNAME_PATTERN,
@@ -19,7 +18,7 @@ interface CreateModalProps {
 	open: boolean;
 	editingRecord: User | null;
 	onCancel: () => void;
-	onOk: (values: UserFormValues) => void;
+	onOk: (values: UserFormValues) => Promise<void>;
 }
 
 const CreateModal = ({
@@ -28,29 +27,47 @@ const CreateModal = ({
 	onCancel,
 	onOk,
 }: CreateModalProps) => {
+	const { message } = App.useApp();
 	const [form] = Form.useForm<UserFormValues>();
 	const [loading, setLoading] = useState(false);
+	const [deptTree, setDeptTree] = useState<DeptTreeNode[]>([]);
+	const [roleOptions, setRoleOptions] = useState<SelectOption[]>([]);
 	const isEdit = editingRecord !== null;
 
 	useEffect(() => {
 		if (!open) return;
 
-		if (editingRecord) {
-			form.setFieldsValue(recordToFormValues(editingRecord));
-			return;
-		}
+		const init = async () => {
+			try {
+				const [tree, roles] = await Promise.all([
+					getDeptTree(),
+					getRoleOptions(),
+				]);
+				setDeptTree(tree);
+				setRoleOptions(roles);
 
-		form.resetFields();
+				if (editingRecord) {
+					form.setFieldsValue(recordToFormValues(editingRecord));
+					return;
+				}
+
+				form.resetFields();
+			} catch {
+				message.error("加载表单数据失败");
+			}
+		};
+
+		init();
 	}, [open, editingRecord]);
 
 	const handleOk = async () => {
 		try {
 			const values = await form.validateFields();
 			setLoading(true);
-			onOk(values);
+			await onOk(values);
 			onCancel();
 		} catch {
-			// 表单校验失败
+			// 表单校验失败或提交失败
 		} finally {
 			setLoading(false);
 		}
@@ -88,23 +105,7 @@ const CreateModal = ({
 						},
 						{
 							pattern: USERNAME_PATTERN,
-							message: "仅支持字母、数字和 @",
-						},
-						{
-							validator: (_, value: string) => {
-								if (
-									isDuplicateUsername(
-										getAllUsers(),
-										value,
-										editingRecord?.id,
-									)
-								) {
-									return Promise.reject(
-										new Error("用户账号已存在"),
-									);
-								}
-								return Promise.resolve();
-							},
+							message: "可以包含大小写字母、数字、@",
 						},
 					]}
 				>
@@ -112,7 +113,6 @@ const CreateModal = ({
 						placeholder="请输入用户账号"
 						maxLength={USERNAME_MAX_LENGTH}
 						showCount
-						disabled={isEdit}
 					/>
 				</Form.Item>
 
@@ -126,8 +126,8 @@ const CreateModal = ({
 							message: "请输入用户姓名",
 						},
 						{
-							pattern: NAME_PATTERN,
-							message: `请输入 1-${NAME_MAX_LENGTH} 个汉字`,
+							max: NAME_MAX_LENGTH,
+							message: `最多输入${NAME_MAX_LENGTH}个字符`,
 						},
 					]}
 				>
@@ -162,8 +162,8 @@ const CreateModal = ({
 						},
 					]}
 				>
-					<Input.Password
-						placeholder={isEdit ? "不修改请留空" : "请输入密码"}
+					<Input
+						placeholder="请输入密码"
 						maxLength={PASSWORD_MAX_LENGTH}
 					/>
 				</Form.Item>
@@ -173,9 +173,15 @@ const CreateModal = ({
 					label="所属组织"
 					rules={[{ required: true, message: "请选择组织" }]}
 				>
-					<Select
+					<TreeSelect
 						placeholder="请选择组织"
-						options={[...ORGANIZATION_OPTIONS]}
+						treeData={deptTree}
+						fieldNames={{
+							label: "label",
+							value: "id",
+							children: "children",
+						}}
+						treeDefaultExpandAll
 					/>
 				</Form.Item>
 
@@ -191,7 +197,7 @@ const CreateModal = ({
 						},
 					]}
 				>
-					<Checkbox.Group options={[...ROLE_OPTIONS]} />
+					<Checkbox.Group options={roleOptions} />
 				</Form.Item>
 			</Form>
 		</Modal>

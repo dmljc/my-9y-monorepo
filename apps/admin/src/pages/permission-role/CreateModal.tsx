@@ -5,39 +5,49 @@ import {
 	isDuplicateRoleName,
 	ROLE_DESCRIPTION_MAX_LENGTH,
 	ROLE_NAME_MAX_LENGTH,
+	recordToFormValues,
 } from "./utils";
 
 const { TextArea } = Input;
 
 interface CreateModalProps {
 	open: boolean;
+	editingRecord: Role | null;
 	existingRoles: Role[];
 	onCancel: () => void;
-	onOk: (values: RoleFormValues) => void;
+	onOk: (values: RoleFormValues) => Promise<void>;
 }
 
 const CreateModal = ({
 	open,
+	editingRecord,
 	existingRoles,
 	onCancel,
-	onOk,
+	onOk: onOkProp,
 }: CreateModalProps) => {
 	const [form] = Form.useForm<RoleFormValues>();
 	const [loading, setLoading] = useState(false);
+	const isEdit = editingRecord !== null;
 
 	useEffect(() => {
 		if (!open) return;
-		form.resetFields();
-	}, [open, form]);
 
-	const handleOk = async () => {
+		if (editingRecord) {
+			form.setFieldsValue(recordToFormValues(editingRecord));
+			return;
+		}
+
+		form.resetFields();
+	}, [open, editingRecord]);
+
+	const onOk = async () => {
 		try {
 			const values = await form.validateFields();
 			setLoading(true);
-			onOk(values);
+			await onOkProp(values);
 			onCancel();
 		} catch {
-			// 表单校验失败
+			// 表单校验失败或提交失败
 		} finally {
 			setLoading(false);
 		}
@@ -45,9 +55,9 @@ const CreateModal = ({
 
 	return (
 		<Modal
-			title="添加角色"
+			title={isEdit ? "编辑角色" : "新增角色"}
 			open={open}
-			onOk={handleOk}
+			onOk={onOk}
 			onCancel={onCancel}
 			confirmLoading={loading}
 			destroyOnHidden
@@ -75,7 +85,13 @@ const CreateModal = ({
 						},
 						{
 							validator: (_, value: string) => {
-								if (isDuplicateRoleName(existingRoles, value)) {
+								if (
+									isDuplicateRoleName(
+										existingRoles,
+										value,
+										editingRecord?.id,
+									)
+								) {
 									return Promise.reject(
 										new Error("角色名称已存在"),
 									);

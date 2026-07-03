@@ -3,7 +3,7 @@
  *
  * 约定：
  * - 请求：自动注入 token、语言头
- * - 响应：解包 { code, data, message }，成功返回 data，失败 reject Error
+ * - 响应：解包 { code, data, message | msg }，成功返回 data，失败 reject Error
  * - 401：触发 onUnauthorized，便于应用层处理登出
  */
 import axios, { type AxiosError } from "axios";
@@ -17,24 +17,83 @@ const DEFAULT_TIMEOUT = 30_000;
 const DEFAULT_LANG_HEADER = "x-custom-lang";
 const DEFAULT_SUCCESS_CODE = 200;
 
-/** 判断响应体是否符合 ApiResponse 结构 */
-function isApiResponse(value: unknown): value is ApiResponse {
-	return (
-		typeof value === "object" &&
-		value !== null &&
-		"code" in value &&
-		"data" in value &&
-		"message" in value
+/** 标准 envelope 除 code/data 外允许的元字段 */
+const ENVELOPE_META_KEYS = new Set(["code", "data", "message", "msg"]);
+
+/** 判断是否为带 code 的业务响应体（兼容 code 为数字或数字字符串） */
+function getBusinessCode(body: Record<string, unknown>): number | null {
+	const raw = body.code;
+	if (typeof raw === "number") return raw;
+	if (typeof raw === "string" && raw.trim() !== "") {
+		const parsed = Number(raw);
+		return Number.isNaN(parsed) ? null : parsed;
+	}
+	return null;
+}
+
+function isBusinessEnvelope(value: unknown): value is Record<string, unknown> {
+	if (typeof value !== "object" || value === null || !("code" in value)) {
+		return false;
+	}
+	return getBusinessCode(value) !== null;
+}
+
+/** 是否为仅含 code/message(msg) 的成功响应（如 { code: 200 }） */
+function isCodeOnlySuccessEnvelope(body: Record<string, unknown>): boolean {
+	if ("data" in body) return false;
+	return Object.keys(body).every((key) =>
+		["code", "message", "msg"].includes(key),
 	);
+}
+
+/** 是否为仅含 code/data/message(msg) 的标准 envelope，可安全解包 data */
+function isStandardDataEnvelope(body: Record<string, unknown>): boolean {
+	if (!("data" in body)) return false;
+	return Object.keys(body).every((key) => ENVELOPE_META_KEYS.has(key));
+}
+
+/** 读取业务提示文案，兼容 message 与 msg */
+function getBusinessMessage(body: Record<string, unknown>): string {
+	const message = body.message ?? body.msg;
+	return typeof message === "string" ? message : "";
 }
 
 /** 从 HTTP 错误或业务响应中提取可读错误信息 */
 function getErrorMessage(error: AxiosError<ApiResponse>): string {
 	const data = error.response?.data;
-	if (isApiResponse(data) && data.message) {
-		return data.message;
+	if (isBusinessEnvelope(data)) {
+		const message = getBusinessMessage(data);
+		if (message) return message;
 	}
 	return error.message || "网络异常，请稍后重试";
+}
+
+/**
+ * 处理业务响应体：成功时解包 data 或原样返回；失败时 reject。
+ */
+function unwrapBusinessBody(
+	body: unknown,
+	successCode: number,
+	onError?: (error: Error) => void,
+): unknown {
+	if (!isBusinessEnvelope(body)) {
+		return body;
+	}
+
+	const code = getBusinessCode(body);
+	if (code === successCode) {
+		if (isStandardDataEnvelope(body)) {
+			return body.data;
+		}
+		if (isCodeOnlySuccessEnvelope(body)) {
+			return undefined;
+		}
+		return body;
+	}
+
+	const err = new Error(getBusinessMessage(body) || "请求失败");
+	onError?.(err);
+	throw err;
 }
 
 /**
@@ -47,7 +106,7 @@ function getErrorMessage(error: AxiosError<ApiResponse>): string {
  *   getToken: () => localStorage.getItem("token"),
  *   onUnauthorized: () => location.href = "/login",
  * });
- * const users = await request.get<User[]>("/user/list");
+ * const users = await request.get("/user/list");
  * ```
  */
 export function createHttpClient(options: HttpClientOptions): HttpClient {
@@ -92,20 +151,11 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
 				return response;
 			}
 
-			const body = response.data;
-			// 非标准结构（如第三方接口）原样返回
-			if (!isApiResponse(body)) {
-				return body;
-			}
-
-			if (body.code === successCode) {
-				return body.data;
-			}
-
-			// 业务失败：code 非成功值
-			const err = new Error(body.message || "请求失败");
-			onError?.(err);
-			return Promise.reject(err);
+			return unwrapBusinessBody(
+				response.data,
+				successCode,
+				onError,
+			) as typeof response.data;
 		},
 		(error: AxiosError<ApiResponse>) => {
 			const isUnauthorized = error.response?.status === 401;

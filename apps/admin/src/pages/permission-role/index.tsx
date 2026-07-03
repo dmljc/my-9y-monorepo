@@ -1,16 +1,20 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { create, list, remove, updatePermissions } from "./api";
+import { useEffect, useRef, useState } from "react";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import PermissionAssignModal from "./PermissionAssignModal";
 import type { Role, RoleFormValues } from "./utils";
 import {
+	create,
 	formatPermissionCount,
 	formatRoleCreatedAt,
 	isSystemRole,
+	list,
+	remove,
+	update,
+	updatePermissions,
 } from "./utils";
 
 const PermissionRole = () => {
@@ -18,6 +22,7 @@ const PermissionRole = () => {
 	const [loading, setLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<Role[]>([]);
 	const [createModalOpen, setCreateModalOpen] = useState(false);
+	const [editingRecord, setEditingRecord] = useState<Role | null>(null);
 	const [assignModalOpen, setAssignModalOpen] = useState(false);
 	const [assigningRecord, setAssigningRecord] = useState<Role | null>(null);
 	const [total, setTotal] = useState(0);
@@ -25,60 +30,73 @@ const PermissionRole = () => {
 	const [pageSize, setPageSize] = useState(10);
 	const [draftName, setDraftName] = useState("");
 	const [appliedName, setAppliedName] = useState("");
+	const initRef = useRef(false);
 
-	const loadData = useCallback(
-		async (p: number, ps: number, name = appliedName) => {
-			setLoading(true);
-			try {
-				const result = await list({ pageNum: p, pageSize: ps, name });
-				setDataSource(result.list);
-				setTotal(result.total);
-				setPageNum(result.pageNum);
-				setPageSize(result.pageSize);
-			} catch {
-				message.error("加载角色列表失败");
-			} finally {
-				setLoading(false);
-			}
-		},
-		[appliedName, message],
-	);
+	const loadData = async (p: number, ps: number, name = appliedName) => {
+		setLoading(true);
+		try {
+			const result = await list({ pageNum: p, pageSize: ps, name });
+			setDataSource(result.list);
+			setTotal(result.total);
+			setPageNum(result.pageNum);
+			setPageSize(result.pageSize);
+		} catch {
+			message.error("加载角色列表失败");
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	const handleSearch = () => {
 		const nextName = draftName.trim();
 		setAppliedName(nextName);
 		setPageNum(1);
-		void loadData(1, pageSize, nextName);
+		loadData(1, pageSize, nextName);
 	};
 
 	const handleReset = () => {
 		setDraftName("");
 		setAppliedName("");
 		setPageNum(1);
-		void loadData(1, pageSize, "");
+		loadData(1, pageSize, "");
 	};
 
-	const initRef = useRef(false);
 	useEffect(() => {
 		if (!initRef.current) {
 			initRef.current = true;
-			void loadData(pageNum, pageSize);
+			loadData(pageNum, pageSize);
 		}
 	}, []);
 
-	const openAdd = () => {
+	const handleAdd = () => {
+		setEditingRecord(null);
 		setCreateModalOpen(true);
 	};
 
-	const openAssign = (record: Role) => {
+	const handleEdit = (record: Role) => {
+		setEditingRecord(record);
+		setCreateModalOpen(true);
+	};
+
+	const handleAssign = (record: Role) => {
 		setAssigningRecord(record);
 		setAssignModalOpen(true);
 	};
 
-	const handleCreate = async (values: RoleFormValues) => {
-		await create(values);
-		message.success("添加成功");
-		await loadData(pageNum, pageSize);
+	const handleModalSubmit = async (values: RoleFormValues) => {
+		try {
+			if (editingRecord) {
+				await update(editingRecord.id, values, editingRecord.code);
+				message.success("保存成功");
+			} else {
+				await create(values);
+				message.success("添加成功");
+			}
+			await loadData(pageNum, pageSize);
+		} catch {
+			message.error(editingRecord ? "保存失败" : "添加失败");
+			throw new Error("submit failed");
+		}
 	};
 
 	const handleAssignPermissions = async (permissionIds: string[]) => {
@@ -93,21 +111,20 @@ const PermissionRole = () => {
 			content: `确定要删除角色「${record.name}」吗？`,
 			okText: "删除",
 			okButtonProps: { danger: true },
-			cancelText: "取消",
 			onOk: async () => {
 				try {
 					await remove(record.id);
 					message.success("删除成功");
 					await loadData(pageNum, pageSize);
 				} catch {
-					message.error("系统角色不可删除");
+					message.error("删除失败");
 				}
 			},
 		});
 	};
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {
-		void loadData(pagination.current ?? 1, pagination.pageSize ?? 10);
+		loadData(pagination.current ?? 1, pagination.pageSize ?? 10);
 	};
 
 	const columns: ColumnsType<Role> = [
@@ -161,7 +178,14 @@ const PermissionRole = () => {
 						<Button
 							type="link"
 							size="small"
-							onClick={() => openAssign(record)}
+							onClick={() => handleEdit(record)}
+						>
+							编辑
+						</Button>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleAssign(record)}
 						>
 							权限分配
 						</Button>
@@ -179,63 +203,59 @@ const PermissionRole = () => {
 	];
 
 	return (
-		<div className={styles.page}>
-			<section className={styles.panel}>
-				<header className={styles.panelHeader}>
-					<div className={styles.filterBar}>
-						<span className={styles.filterLabel}>角色名称</span>
-						<Input
-							className={styles.searchInput}
-							placeholder="请输入角色名称"
-							value={draftName}
-							allowClear
-							onChange={(event) =>
-								setDraftName(event.target.value)
-							}
-							onPressEnter={handleSearch}
-						/>
-						<Button type="primary" onClick={handleSearch}>
-							查询
-						</Button>
-						<Button onClick={handleReset}>重置</Button>
-					</div>
+		<div className={styles.permissionRole}>
+			<div className={styles.toolbar}>
+				<span className={styles.filterLabel}>角色名称</span>
+				<Input
+					className={styles.searchInput}
+					placeholder="请输入角色名称"
+					value={draftName}
+					allowClear
+					onChange={(event) => setDraftName(event.target.value)}
+					onPressEnter={handleSearch}
+				/>
+				<Button type="primary" onClick={handleSearch}>
+					查询
+				</Button>
+				<Button onClick={handleReset}>重置</Button>
+				<div className={styles.panelActions}>
 					<Button
 						type="primary"
 						icon={<PlusOutlined />}
-						onClick={openAdd}
+						onClick={handleAdd}
 					>
 						新增角色
 					</Button>
-				</header>
-
-				<div className={styles.tableWrap}>
-					<Table
-						size="small"
-						className={styles.table}
-						columns={columns}
-						dataSource={dataSource}
-						rowKey="id"
-						loading={loading}
-						scroll={{ x: 1000 }}
-						locale={{ emptyText: <Empty description="暂无角色" /> }}
-						pagination={{
-							current: pageNum,
-							pageSize,
-							total,
-							showSizeChanger: true,
-							showQuickJumper: true,
-							showTotal: (count) => `共 ${count} 条`,
-						}}
-						onChange={handleTableChange}
-					/>
 				</div>
-			</section>
+			</div>
+
+			<Table
+				size="small"
+				columns={columns}
+				dataSource={dataSource}
+				rowKey="id"
+				loading={loading}
+				locale={{ emptyText: <Empty description="暂无角色" /> }}
+				pagination={{
+					current: pageNum,
+					pageSize,
+					total,
+					showSizeChanger: true,
+					showQuickJumper: true,
+					showTotal: (count) => `共 ${count} 条`,
+				}}
+				onChange={handleTableChange}
+			/>
 
 			<CreateModal
 				open={createModalOpen}
+				editingRecord={editingRecord}
 				existingRoles={dataSource}
-				onCancel={() => setCreateModalOpen(false)}
-				onOk={handleCreate}
+				onCancel={() => {
+					setCreateModalOpen(false);
+					setEditingRecord(null);
+				}}
+				onOk={handleModalSubmit}
 			/>
 
 			<PermissionAssignModal

@@ -1,8 +1,8 @@
 import { Form, Input, Modal, Select } from "antd";
 import { useEffect, useState } from "react";
-import { getAllOrgs } from "./api";
-import type { Organization, OrgFormValues } from "./utils";
+import type { OrgFormValues, OrgTreeNode } from "./utils";
 import {
+	getAllOrgs,
 	getParentOptions,
 	isDuplicateOrgName,
 	ORG_DESCRIPTION_MAX_LENGTH,
@@ -15,16 +15,16 @@ const { TextArea } = Input;
 
 interface CreateModalProps {
 	open: boolean;
-	editingRecord: Organization | null;
+	editingRecord: OrgTreeNode | null;
 	onCancel: () => void;
-	onOk: (values: OrgFormValues) => void;
+	onOk: (values: OrgFormValues) => Promise<void>;
 }
 
 const CreateModal = ({
 	open,
 	editingRecord,
 	onCancel,
-	onOk,
+	onOk: onOkProp,
 }: CreateModalProps) => {
 	const [form] = Form.useForm<OrgFormValues>();
 	const [loading, setLoading] = useState(false);
@@ -43,14 +43,14 @@ const CreateModal = ({
 		form.setFieldsValue({ parentId: TOP_PARENT_VALUE });
 	}, [open, editingRecord]);
 
-	const handleOk = async () => {
+	const onOk = async () => {
 		try {
 			const values = await form.validateFields();
 			setLoading(true);
-			onOk(values);
+			await onOkProp(values);
 			onCancel();
 		} catch {
-			// 表单校验失败
+			// 表单校验失败或提交失败
 		} finally {
 			setLoading(false);
 		}
@@ -60,7 +60,7 @@ const CreateModal = ({
 		<Modal
 			title={isEdit ? "编辑组织" : "新增组织"}
 			open={open}
-			onOk={handleOk}
+			onOk={onOk}
 			onCancel={onCancel}
 			confirmLoading={loading}
 			destroyOnHidden
@@ -114,7 +114,18 @@ const CreateModal = ({
 				<Form.Item
 					name="parentId"
 					label="上级组织"
-					rules={[{ required: true, message: "请选择上级组织" }]}
+					rules={[
+						{
+							validator: (_, value: string | undefined) => {
+								if (value === undefined || value === null) {
+									return Promise.reject(
+										new Error("请选择上级组织"),
+									);
+								}
+								return Promise.resolve();
+							},
+						},
+					]}
 				>
 					<Select
 						placeholder="请选择上级组织"

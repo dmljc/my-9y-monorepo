@@ -13,6 +13,7 @@ const RequireAuth = () => {
 	const user = useUserStore((state) => state.user);
 	const loading = useUserStore((state) => state.loading);
 	const fetchUserInfo = useUserStore((state) => state.fetchUserInfo);
+	const restoreUser = useUserStore((state) => state.restoreUser);
 	const clearUser = useUserStore((state) => state.clearUser);
 	const [ready, setReady] = useState(false);
 
@@ -23,6 +24,11 @@ const RequireAuth = () => {
 				return;
 			}
 			if (user) {
+				setReady(true);
+				return;
+			}
+			// 优先从 localStorage 缓存恢复，避免重复请求 getInfo
+			if (restoreUser()) {
 				setReady(true);
 				return;
 			}
