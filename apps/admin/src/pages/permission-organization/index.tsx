@@ -6,16 +6,22 @@ import {
 import { App, Button, Empty, Input, Table, Upload } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
+import {
+	create as createDept,
+	list as fetchDeptList,
+	remove as removeDept,
+	update as updateDept,
+} from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
-import type { OrgFormValues, OrgListFilters, OrgTreeNode } from "./utils";
+import type { SysDept } from "./interface";
+import type { OrgFormValues, OrgTreeNode } from "./utils";
 import {
-	create,
-	exportOrgs,
+	buildOrgTree,
 	exportOrgsToJson,
-	list,
-	remove,
-	update,
+	filterOrgTree,
+	getAllOrgs,
+	setFlatOrgsCache,
 } from "./utils";
 
 const PermissionOrganization = () => {
@@ -26,28 +32,32 @@ const PermissionOrganization = () => {
 	const [editingRecord, setEditingRecord] = useState<OrgTreeNode | null>(
 		null,
 	);
-	const [orgName, setOrgName] = useState("");
+	const [deptName, setDeptName] = useState("");
+	const [searchKeyword, setSearchKeyword] = useState("");
 	const initRef = useRef(false);
 
-	const loadData = async (filters?: OrgListFilters) => {
+	const loadData = async (keyword = searchKeyword) => {
 		setLoading(true);
 		try {
-			const result = await list(
-				filters ?? { name: orgName.trim() || undefined },
-			);
-			setDataSource(result);
+			const data: SysDept[] = await fetchDeptList();
+			const depts = data ?? [];
+			setFlatOrgsCache(depts);
+			setDataSource(filterOrgTree(buildOrgTree(depts), keyword));
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	const handleSearch = () => {
-		loadData({ name: orgName.trim() || undefined });
+		const keyword = deptName.trim();
+		setSearchKeyword(keyword);
+		loadData(keyword);
 	};
 
 	const handleReset = () => {
-		setOrgName("");
-		loadData({});
+		setDeptName("");
+		setSearchKeyword("");
+		loadData("");
 	};
 
 	useEffect(() => {
@@ -68,43 +78,42 @@ const PermissionOrganization = () => {
 	};
 
 	const handleModalSubmit = async (values: OrgFormValues) => {
-		try {
-			if (editingRecord) {
-				await update(editingRecord.id, values);
-				message.success("保存成功");
-			} else {
-				await create(values);
-				message.success("添加成功");
-			}
-			await loadData();
-		} catch {
-			throw new Error("submit failed");
+		if (editingRecord?.deptId !== undefined) {
+			await updateDept({ ...values, deptId: editingRecord.deptId });
+			message.success("保存成功");
+		} else {
+			await createDept(values);
+			message.success("添加成功");
 		}
+		await loadData();
 	};
 
 	const handleDelete = (record: OrgTreeNode) => {
 		modal.confirm({
 			title: "确认删除",
-			content: `确定要删除组织「${record.name}」吗？`,
+			content: `确定要删除组织「${record.deptName}」吗？`,
 			okText: "删除",
 			okButtonProps: { danger: true },
 			onOk: async () => {
-				await remove(record.id);
+				if (record.deptId === undefined) return;
+				await removeDept(String(record.deptId));
 				message.success("删除成功");
 				await loadData();
 			},
 		});
 	};
 
-	const handleExport = async () => {
-		const data = await exportOrgs({
-			name: orgName.trim() || undefined,
-		});
-		if (data.length === 0) {
+	const handleExport = () => {
+		const depts = searchKeyword
+			? getAllOrgs().filter((dept) =>
+					dept.deptName?.includes(searchKeyword),
+				)
+			: getAllOrgs();
+		if (depts.length === 0) {
 			message.warning("暂无可导出的组织数据");
 			return;
 		}
-		exportOrgsToJson(data);
+		exportOrgsToJson(depts);
 		message.success("导出成功");
 	};
 
@@ -115,14 +124,14 @@ const PermissionOrganization = () => {
 	const columns: ColumnsType<OrgTreeNode> = [
 		{
 			title: "组织名称",
-			dataIndex: "name",
-			key: "name",
+			dataIndex: "deptName",
+			key: "deptName",
 			ellipsis: true,
 		},
 		{
 			title: "描述",
-			dataIndex: "description",
-			key: "description",
+			dataIndex: "remark",
+			key: "remark",
 			ellipsis: true,
 		},
 		{
@@ -157,9 +166,9 @@ const PermissionOrganization = () => {
 				<Input
 					className={styles.searchInput}
 					placeholder="请输入组织名称"
-					value={orgName}
+					value={deptName}
 					allowClear
-					onChange={(event) => setOrgName(event.target.value)}
+					onChange={(event) => setDeptName(event.target.value)}
 					onPressEnter={handleSearch}
 				/>
 				<Button type="primary" onClick={handleSearch}>
@@ -193,7 +202,7 @@ const PermissionOrganization = () => {
 				size="small"
 				columns={columns}
 				dataSource={dataSource}
-				rowKey="id"
+				rowKey="deptId"
 				loading={loading}
 				pagination={false}
 				expandable={{ defaultExpandAllRows: true }}

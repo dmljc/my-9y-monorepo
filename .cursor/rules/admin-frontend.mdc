@@ -226,7 +226,7 @@ export const writeRememberMe = (values: LoginParams) => { /* ... */ };
 
 ### 页面 api.ts 接口函数
 
-**做什么**：页面目录下的 `api.ts` 只做 **HTTP 薄封装**——`import { request } from "@/utils"`，一行 `return request.get/post/put/delete(...)`；请求/响应类型放同目录 `interface.ts`；**数据转换、多接口编排、业务校验**放 `utils.ts`；**成功提示**、状态更新留在页面或 hooks；**失败提示**由 `request` 全局 `onError` 统一处理。
+**做什么**：页面目录下的 `api.ts` 只做 **HTTP 薄封装**——`import { request } from "@/utils"`，一行 `return request.get/post/put/delete(...)`；请求/响应类型放同目录 `interface.ts`；**HTTP 调用由页面直接 import `./api`**，在 `loadData`、`handleModalSubmit` 等调用处 inline 组装参数（trim 等）；`utils.ts` 只放**不发起请求**的纯函数（树形转换、客户端筛选、表单选项、校验等）；**成功提示**、状态更新留在页面或 hooks；**失败提示**由 `request` 全局 `onError` 统一处理。
 
 **为什么**：接口层与 UI 层职责分离；`api.ts` 保持统一形态后便于批量对接后端、替换 mock，也避免在接口文件里散落 `if (code !== 200)`、字段映射等业务逻辑。
 
@@ -236,18 +236,31 @@ export const writeRememberMe = (values: LoginParams) => { /* ... */ };
 |------|------|
 | `interface.ts` | 后端请求/响应类型（中文 JSDoc） |
 | `api.ts` | 仅 HTTP 调用，参数/返回值对齐后端形态 |
-| `utils.ts` | 前端展示类型、纯转换函数；必要时 **import `./api` 做编排**（参数映射、响应转换、多接口聚合） |
-| `index.tsx` / 子组件 | 调用 `utils` 编排函数或直接 `api`（简单页）；UI 状态与 `message` 提示 |
+| `utils.ts` | 类型、常量、**纯函数**（树形组装、客户端筛选、表单校验等）；**不** `import ./api`、**不** export 与 api 同名的 CRUD |
+| `index.tsx` / 子组件 | `import ./api` 调 HTTP；`import ./utils` 调纯函数；UI 状态与 `message` 提示 |
 
 **目录结构**
 
 ```
 pages/permission-user/
-  api.ts          # 仅 HTTP 调用（参考 stores/user/api.ts）
+  api.ts          # 仅 HTTP 调用
   interface.ts    # 后端请求/响应类型（中文 JSDoc）
-  utils.ts        # 前端类型、转换函数、接口编排
+  utils.ts        # 有编排/复用时才需要（见「列表 utils：非必需不抽离」）
   index.tsx
   CreateModal.tsx
+
+pages/permission-organization/   # utils 无 api import，CRUD 在 index 调 api
+  api.ts
+  interface.ts
+  utils.ts        # 仅 buildOrgTree、filterOrgTree 等纯函数
+  index.tsx
+  CreateModal.tsx
+
+pages/historical-data/   # 简单列表示例：可无 utils.ts
+  api.ts
+  interface.ts
+  index.tsx
+  index.module.css
 ```
 
 **✅ 推荐 — api.ts（纯 HTTP 薄封装）**
@@ -288,32 +301,84 @@ export const login = (data: LoginParams): Promise<any> => {
 };
 ```
 
-**✅ 推荐 — utils.ts 接口编排（复杂页）**
+**✅ 推荐 — 页面调 api + utils 纯函数**
 
-当页面需要前后端字段映射、多接口聚合、响应校验时，在 `utils.ts` 内 **import `./api`** 封装同名业务函数；页面从 `./utils` 导入，**不要**从 `./api` 导入编排后的函数：
+HTTP 只在 `api.ts`；页面 import `./api` 发起请求，响应用 `./utils` 纯函数处理（或 inline trim 后直传 api）：
+
+```tsx
+// index.tsx
+import { create, list as fetchDeptList, remove, update } from "./api";
+import { buildOrgTree, filterOrgTree, setFlatOrgsCache } from "./utils";
+
+const loadData = async () => {
+  setLoading(true);
+  try {
+    const data: SysDept[] = await fetchDeptList();
+    const depts = data ?? [];
+    setFlatOrgsCache(depts);
+    setDataSource(filterOrgTree(buildOrgTree(depts), keyword));
+  } finally {
+    setLoading(false);
+  }
+};
+
+await create({
+  deptName: values.deptName.trim(),
+  parentId: values.parentId,
+  remark: values.remark.trim(),
+});
+```
 
 ```ts
-// utils.ts
+// utils.ts — 无 import ./api
+export function buildOrgTree(depts: SysDept[]): OrgTreeNode[] { /* ... */ }
+```
+
+**✅ 推荐 — utils.ts 复杂编排（多接口 / 行级转换）**
+
+仅当单页内逻辑**明显复杂**且需在 utils 集中时，才 `import ./api`；export 的函数名**不要**与 `api.ts` 的 `list` / `create` / `update` / `remove` 同名，应表达编排语义（如 `fetchUserListResult`），或页面仍直接调 api、utils 只 export 纯转换 `sysUserToUser`：
+
+```ts
+// utils.ts — permission-user / permission-role 等（多接口、行转换）
 import { list as fetchUserListApi } from "./api";
-import type { UserListQuery, UserListResponse } from "./interface";
 
-/** 前端列表参数 → 后端查询参数 */
-function toUserListQuery(params: UserListParams): UserListQuery {
-  const { pageNum, pageSize, username, name } = params;
-  return { pageNum, pageSize, userName: username, nickName: name };
-}
-
-/** 获取用户列表（分页） */
-export async function list(params: UserListParams): Promise<UserListResult> {
+export async function fetchUserListResult(params: UserListParams): Promise<UserListResult> {
   const data: UserListResponse = await fetchUserListApi(toUserListQuery(params));
-  // ... 数据转换、角色补充等
-  return { list, total, pageNum, pageSize };
+  // 行转换、角色补全等多步逻辑
+  return { list, total, pageNum: params.pageNum, pageSize: params.pageSize };
 }
 ```
 
 ```tsx
-// index.tsx — 从 utils 导入编排后的业务函数
-import { create, list, remove, update } from "./utils";
+// index.tsx — CRUD 仍 import ./api；复杂 list 编排 import ./utils
+import { create, remove, update } from "./api";
+import { fetchUserListResult } from "./utils";
+```
+
+**❌ 避免 — utils 再包一层与 api 同名的 HTTP**
+
+```ts
+// utils.ts
+import { create as createDeptApi, list as fetchDeptListApi } from "./api";
+
+async function fetchFlatOrgs() {
+  const data = await fetchDeptListApi();
+  return data ?? [];
+}
+
+export async function create(values: OrgFormValues) {
+  await createDeptApi({ deptName: values.deptName.trim(), ... });
+}
+
+export async function list() {
+  const depts = await fetchFlatOrgs();
+  return buildOrgTree(depts);
+}
+```
+
+```tsx
+// index.tsx
+import { create, list, remove, update } from "./utils"; // ❌ HTTP 被藏在 utils
 ```
 
 **写法要点**
@@ -327,8 +392,8 @@ import { create, list, remove, update } from "./utils";
 | GET 查询 | 筛选/分页参数用 `{ params: data }` |
 | 返回值 | 薄封装暂用 `Promise<any>`；**不要**在 `request.get<T>()` 上写泛型（`HttpClient` 不支持，见下节） |
 | 类型标注 | 编排层对 `await request.xxx()` 的结果用变量显式类型：`const data: UserListResponse = await fetchUserListApi(...)` |
-| 编排位置 | 参数映射、实体转换、多接口聚合、`assertAjaxOk` 等放 `utils.ts`，不放 `api.ts` |
-| 页面导入 | 有编排时页面 import `./utils`；`api.ts` 仅被 `utils.ts` 引用，或简单页直接引用 |
+| 编排位置 | 多接口聚合、行级 `.map` 转换等**纯数据处理**可放 `utils.ts`；**单接口 CRUD 与 list 请求**在页面 `import ./api` 调用，不在 utils 再 export 同名函数 |
+| 页面导入 | **CRUD / list 请求** import `./api`；**树形/筛选/校验** import `./utils`；复杂 list 编排 import `./utils` 的非同名函数（见上节） |
 
 **request 类型约定**
 
@@ -369,7 +434,7 @@ const data = await fetchUserListApi(...);
 setDataSource(data.rows.map(sysUserToUser)); // 应抽到 utils.list
 ```
 
-**边界**：下载 blob、读响应头等特殊场景可用 `request.raw`；`interface.ts` 中的类型仍须中文 JSDoc；简单页（如 Login）无编排需求时，页面可直接 import `./api`；复杂 CRUD 页优先 `utils` 编排 + 页面 import `./utils`。**参考实现**：`apps/admin/src/stores/user/api.ts`（最简）、`apps/admin/src/pages/permission-user/`、`apps/admin/src/pages/permission-role/`（含 utils 编排）。
+**边界**：下载 blob、读响应头等特殊场景可用 `request.raw`；`interface.ts` 中的类型仍须中文 JSDoc；简单页（如 Login、直出分页列表）页面直接 import `./api`，**不必**为统一结构强行建 `utils.ts`；`utils.ts` **默认不** `import ./api`（见上节「utils 再包一层与 api 同名」反例）；多接口 list 编排可例外，但勿 export 与 api 同名的 `create`/`list`/`update`/`remove`。**参考实现**：`apps/admin/src/stores/user/api.ts`（最简）、`apps/admin/src/pages/historical-data/`（无 utils）、`apps/admin/src/pages/permission-organization/`（utils 无 api、CRUD 在 index）、`apps/admin/src/pages/permission-user/`、`permission-role/`（含复杂 list 编排）。
 
 ### 接入真实接口后移除 mock
 
@@ -446,29 +511,54 @@ export function list(params: RoleListParams): Promise<RoleListResult> {
 
 **✅ 推荐**
 
-```ts
-// utils.ts
-export async function list(params: ModelDataListParams): Promise<ModelDataListResult> {
-  const data: DeviceDataListResponse = await fetchDeviceDataListApi({ ... });
-  return {
-    list: data.list ?? [],
-    total: data.total ?? 0,
-    pageNum: data.pageNum ?? params.pageNum,
-    pageSize: data.pageSize ?? params.pageSize,
-  };
-}
-```
-
 ```tsx
-// index.tsx — dataIndex 对齐 interface.ts
-import type { DeviceDataSnapshot } from "./interface";
+// index.tsx — 直出接口分页与实体，查询参数 inline 组装
+import { list } from "./api";
+import type { DeviceDataListQuery, DeviceDataListResponse, DeviceDataSnapshot } from "./interface";
 
-const [dataSource, setDataSource] = useState<DeviceDataSnapshot[]>([]);
+const loadData = async (p: number, ps: number, filter: DeviceFilter) => {
+  setLoading(true);
+  try {
+    const query: DeviceDataListQuery = {
+      pageNum: p,
+      pageSize: ps,
+      modelName: filter.modelName.trim() || undefined,
+      propertyName: filter.propertyName.trim() || undefined,
+    };
+    if (filter.dateRange) {
+      query.params = {
+        beginDataTime: filter.dateRange[0],
+        endDataTime: filter.dateRange[1],
+      };
+    }
+    const data: DeviceDataListResponse = await list(query);
+    setDataSource(data.list);
+    setTotal(data.total);
+    setPageNum(data.pageNum);
+    setPageSize(data.pageSize);
+  } finally {
+    setLoading(false);
+  }
+};
 
 const columns: ColumnsType<DeviceDataSnapshot> = [
   { title: "点位名称", dataIndex: "propertyName", key: "propertyName", ellipsis: true },
   { title: "类型", dataIndex: "dataType", key: "dataType", ellipsis: true },
 ];
+```
+
+**需 utils.list 编排时**（行级转换、多接口聚合等）：
+
+```ts
+export async function list(params: RoleListParams): Promise<RoleListResult> {
+  const data: RoleListResponse = await fetchRoleListApi(toRoleListQuery(params));
+  return {
+    list: (data.rows ?? []).map(sysRoleToRole),
+    total: data.total ?? 0,
+    pageNum: params.pageNum,
+    pageSize: params.pageSize,
+  };
+}
 ```
 
 **❌ 避免**
@@ -490,9 +580,111 @@ function snapshotToRecord(row: DeviceDataSnapshot) {
 return { list: (data.list ?? []).map(snapshotToRecord) };
 ```
 
-**边界**：仅在以下场景才做字段转换——**查询/提交**参数与后端命名不一致（如筛选区文案「点位名称」对应查询参 `propertyName`，在 `list()` 入参层映射即可）；**表单**提交需 `formValuesToSysXxx`；**多接口聚合**或列表行缺少展示必填字段且后端短期无法补齐；**权限/角色**等需关联补全（仍优先让 list 接口本身带齐字段）。**不要**为占位展示写 `?? "-"`、**不要用其它字段顶替**（如列绑 `modelId` 却读 `thingId`、用 `thingId` 填 `modelName`）；接口未返回该字段时单元格留空即可，交给 Table 默认渲染或列级 `render`。
+**边界**：仅在以下场景才做字段转换——**查询/提交**参数与后端命名不一致（在 `loadData` / `create` / `update` 内 **inline** trim、类型转换，见「列表 utils：非必需不抽离」）；**多接口聚合**或列表行缺少展示必填字段且后端短期无法补齐；**权限/角色**等需关联补全（仍优先让 list 接口本身带齐字段）。**不要**为简单提交单独抽 `formValuesToSysXxx`；**不要**为占位展示写 `?? "-"`、**不要用其它字段顶替**（如列绑 `modelId` 却读 `thingId`、用 `thingId` 填 `modelName`）；接口未返回该字段时单元格留空即可，交给 Table 默认渲染或列级 `render`。
 
-**参考实现**：`apps/admin/src/pages/model-data/`。
+**参考实现**：表格直出 `apps/admin/src/pages/historical-data/`；含行转换 `apps/admin/src/pages/permission-role/`。
+
+### 列表 utils：非必需不抽离
+
+**做什么**：列表页对接 `api.list` 时，**非必需**不要在 `utils.ts` 抽函数专门处理查询参数与返回值；默认在页面内 **inline**——`loadData` 里组装 query、`await list(query)` 后直接 `setDataSource(data.list)` / `setTotal(data.total)` 等；URL 预填、trim、时间范围 `params.beginDataTime` 等也写在调用处（如 `useState` 初始化）。仅当逻辑**多处复用**、**明显复杂**或存在**真实编排**（行转换、多接口、表单映射）时，才建 `utils.ts` 并导出 `list`、`toListParams` 等。
+
+**为什么**：后端经 `request` 解包后多为固定分页 `{ list, total, pageNum, pageSize }`，再包一层 `utils.list` 做字段透传或 `??` 兜底没有业务价值，却多引入 `XxxListParams` / `XxxListResult` 与文件跳转；`toListParams`、`parseFilterFromSearch` 等同理——只服务本页、十来行逻辑时，抽离降低就近可读性，也不应为了「每页都有 utils.ts」而强行存在。
+
+**何时不必抽**
+
+| 对象 | 不必抽离（inline 即可） |
+|------|-------------------------|
+| `utils.list` | 响应已是固定分页，无 `.map` 行转换、无多接口聚合 |
+| `toListParams` / 查询组装 | 仅本页 `loadData` 内 trim、拼 `DeviceDataListQuery` |
+| `formValuesToSysXxx` / 提交体组装 | 仅 trim 等简单转换，在页面 `handleModalSubmit` 内 inline 后调 `api.create` / `api.update` |
+| `utils` 内 `create`/`list`/`update`/`remove` | 与 `api.ts` 同名的 HTTP 包装，应删；页面直接 import `./api` |
+| `parseFilterFromSearch` 等 | 仅本页 `useState(() => …)` 解析 URL 查询串 |
+| `utils.ts` 文件 | 上述均可 inline，且无其它编排 |
+
+**何时值得抽**
+
+| 对象 | 值得抽离到 `utils.ts` |
+|------|----------------------|
+| `utils.list` | `rows`↔`list` 兼容、`.map` 行转换、多接口补全、同模块 delete/sync 等编排 |
+| `toXxxQuery` / `toListParams` | 弹窗、子组件、多入口复用同一套查询映射 |
+| 其它纯函数 | 跨页面共享，或单函数逻辑复杂、需单测 |
+
+**✅ 推荐 — 简单列表（可无 utils.ts）**
+
+```tsx
+// index.tsx
+import { list } from "./api";
+import type { DeviceDataListQuery, DeviceDataListResponse } from "./interface";
+
+const loadData = async (p: number, ps: number, filter: DeviceFilter) => {
+  setLoading(true);
+  try {
+    const query: DeviceDataListQuery = {
+      pageNum: p,
+      pageSize: ps,
+      modelName: filter.modelName.trim() || undefined,
+      propertyName: filter.propertyName.trim() || undefined,
+    };
+    if (filter.dateRange) {
+      query.params = {
+        beginDataTime: filter.dateRange[0],
+        endDataTime: filter.dateRange[1],
+      };
+    }
+    const data: DeviceDataListResponse = await list(query);
+    setDataSource(data.list);
+    setTotal(data.total);
+    setPageNum(data.pageNum);
+    setPageSize(data.pageSize);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const [draftFilter, setDraftFilter] = useState<DeviceFilter>(() => {
+  const params = new URLSearchParams(searchParams.toString());
+  const startTime = params.get("startTime");
+  const endTime = params.get("endTime");
+  return {
+    modelName: params.get("name") ?? "",
+    propertyName: "",
+    dateRange: startTime && endTime ? [startTime, endTime] : null,
+  };
+});
+```
+
+**✅ 推荐 — 复杂列表（保留 utils 编排）**
+
+```ts
+// utils.ts — permission-user / permission-role 等
+export async function list(params: UserListParams): Promise<UserListResult> {
+  const data: UserListResponse = await fetchUserListApi(toUserListQuery(params));
+  // 行转换、角色补全、客户端过滤等真实逻辑
+  return { list, total, pageNum: params.pageNum, pageSize: params.pageSize };
+}
+```
+
+**❌ 避免**
+
+```ts
+// 无行转换，仅透传固定分页
+export async function list(params: XxxListParams): Promise<XxxListResult> {
+  const data = await fetchListApi(buildQuery(params));
+  return {
+    list: data.list ?? [],
+    total: data.total ?? 0,
+    pageNum: data.pageNum ?? params.pageNum,
+    pageSize: data.pageSize ?? params.pageSize,
+  };
+}
+
+// 仅 trim / 拼 query，却单独 export
+export function toListParams(pageNum: number, pageSize: number, filter: DeviceFilter) {
+  return { pageNum, pageSize, modelName: filter.modelName.trim() || undefined };
+}
+```
+
+**边界**：需要复杂 list 编排时页面 `import { fetchXxxListResult } from "./utils"`，**CRUD 仍** `import ./api`；与「列表数据直出接口字段」配合，表格不重命名后端字段；加载列表用 `try/finally` 关 `loading`，勿写空 `catch {}`（见「HTTP 全局错误提示」）。**参考实现**：`apps/admin/src/pages/historical-data/`（无 `utils.ts`）；`apps/admin/src/pages/permission-organization/`（utils 无 api）；`apps/admin/src/pages/permission-user/`、`permission-role/`（含复杂 list 编排）。
 
 ### 列表页 DOM 扁平化
 
@@ -960,7 +1152,7 @@ pages/Login/
   index.module.css   # 布局、间距；必要时 :global(.ant-*) 或 @media
   api.ts             # HTTP 薄封装（见「页面 api.ts 接口函数」）
   interface.ts       # 请求/响应类型
-  utils.ts           # 类型、常量、工具函数（中文 JSDoc，见「页面 utils 中文 JSDoc」）
+  utils.ts           # 可选；有真实编排/复用时才建（见「列表 utils：非必需不抽离」）
 ```
 
 - `index.tsx` 中：`import styles from "./index.module.css"`，用 `className={styles.xxx}`。

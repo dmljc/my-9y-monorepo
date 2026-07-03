@@ -7,7 +7,6 @@ import {
 	isDuplicateOrgName,
 	ORG_DESCRIPTION_MAX_LENGTH,
 	ORG_NAME_MAX_LENGTH,
-	recordToFormValues,
 	TOP_PARENT_VALUE,
 } from "./utils";
 
@@ -29,13 +28,16 @@ const CreateModal = ({
 	const [form] = Form.useForm<OrgFormValues>();
 	const [loading, setLoading] = useState(false);
 	const isEdit = editingRecord !== null;
-	const parentOptions = getParentOptions(getAllOrgs(), editingRecord?.id);
+	const parentOptions = getParentOptions(getAllOrgs(), editingRecord?.deptId);
 
 	useEffect(() => {
 		if (!open) return;
 
 		if (editingRecord) {
-			form.setFieldsValue(recordToFormValues(editingRecord));
+			form.setFieldsValue({
+				...editingRecord,
+				parentId: editingRecord.parentId ?? TOP_PARENT_VALUE,
+			});
 			return;
 		}
 
@@ -74,7 +76,7 @@ const CreateModal = ({
 				preserve={false}
 			>
 				<Form.Item
-					name="name"
+					name="deptName"
 					label="组织名称"
 					rules={[
 						{
@@ -92,7 +94,7 @@ const CreateModal = ({
 									isDuplicateOrgName(
 										getAllOrgs(),
 										value,
-										editingRecord?.id,
+										editingRecord?.deptId,
 									)
 								) {
 									return Promise.reject(
@@ -116,7 +118,7 @@ const CreateModal = ({
 					label="上级组织"
 					rules={[
 						{
-							validator: (_, value: string | undefined) => {
+							validator: (_, value: number | undefined) => {
 								if (value === undefined || value === null) {
 									return Promise.reject(
 										new Error("请选择上级组织"),
@@ -134,7 +136,7 @@ const CreateModal = ({
 				</Form.Item>
 
 				<Form.Item
-					name="description"
+					name="remark"
 					label="组织描述"
 					rules={[
 						{

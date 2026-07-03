@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { DeptTreeNode } from "./interface";
 import type { SelectOption, User, UserFormValues } from "./utils";
 import {
+	EDIT_PASSWORD_PLACEHOLDER,
 	getDeptTree,
 	getRoleOptions,
 	NAME_MAX_LENGTH,
@@ -45,7 +46,10 @@ const CreateModal = ({
 			setRoleOptions(roles);
 
 			if (editingRecord) {
-				form.setFieldsValue(recordToFormValues(editingRecord));
+				form.setFieldsValue({
+					...recordToFormValues(editingRecord),
+					password: EDIT_PASSWORD_PLACEHOLDER,
+				});
 				return;
 			}
 
@@ -55,11 +59,30 @@ const CreateModal = ({
 		init();
 	}, [open, editingRecord]);
 
+	const handlePasswordFocus = () => {
+		if (!isEdit) return;
+		if (form.getFieldValue("password") === EDIT_PASSWORD_PLACEHOLDER) {
+			form.setFieldValue("password", "");
+		}
+	};
+
+	const handlePasswordClear = () => {
+		form.setFieldValue("password", "");
+	};
+
 	const handleOk = async () => {
 		try {
 			const values = await form.validateFields();
 			setLoading(true);
-			await onOk(values);
+			const payload: UserFormValues = { ...values };
+			if (
+				isEdit &&
+				(!payload.password?.trim() ||
+					payload.password === EDIT_PASSWORD_PLACEHOLDER)
+			) {
+				delete payload.password;
+			}
+			await onOk(payload);
 			onCancel();
 		} catch {
 			// 表单校验失败或提交失败
@@ -144,7 +167,13 @@ const CreateModal = ({
 						},
 						{
 							validator: (_, value: string) => {
-								if (!value) return Promise.resolve();
+								if (
+									!value ||
+									(isEdit &&
+										value === EDIT_PASSWORD_PLACEHOLDER)
+								) {
+									return Promise.resolve();
+								}
 								if (!PASSWORD_PATTERN.test(value)) {
 									return Promise.reject(
 										new Error(
@@ -157,9 +186,12 @@ const CreateModal = ({
 						},
 					]}
 				>
-					<Input
-						placeholder="请输入密码"
+					<Input.Password
+						placeholder={isEdit ? "请输入新密码" : "请输入密码"}
 						maxLength={PASSWORD_MAX_LENGTH}
+						allowClear
+						onFocus={handlePasswordFocus}
+						onClear={handlePasswordClear}
 					/>
 				</Form.Item>
 

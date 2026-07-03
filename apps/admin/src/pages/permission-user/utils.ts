@@ -95,6 +95,9 @@ export const NAME_PATTERN = /^[\u4e00-\u9fa5A-Za-z0-9]{1,30}$/;
 /** 密码：字母、数字及常见符号 */
 export const PASSWORD_PATTERN = /^[A-Za-z0-9!@#$%^&*._-]+$/;
 
+/** 编辑用户时密码框占位符，表示保留原密码。 */
+export const EDIT_PASSWORD_PLACEHOLDER = "************";
+
 // ---------------------------------------------------------------------------
 // 数据转换与工具函数
 // ---------------------------------------------------------------------------
@@ -623,7 +626,10 @@ export async function update(
 		id,
 	);
 
-	if (!values.password) {
+	if (
+		!values.password?.trim() ||
+		values.password === EDIT_PASSWORD_PLACEHOLDER
+	) {
 		delete payload.password;
 	}
 

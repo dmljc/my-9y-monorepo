@@ -1,26 +1,19 @@
 .historicalData {
-	min-height: calc(100vh - 120px);
-}
-
-.panel {
-	min-height: calc(100vh - 120px);
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	width: 100%;
 	padding: 24px;
 	border-radius: 4px;
 	background: #fff;
 }
 
-.filterBar {
+.toolbar {
 	display: flex;
 	align-items: center;
-	gap: 16px;
 	flex-wrap: wrap;
+	gap: 12px;
 	margin-bottom: 16px;
-}
-
-.filterItem {
-	display: flex;
-	align-items: center;
-	gap: 8px;
 }
 
 .filterLabel {
@@ -31,64 +24,10 @@
 	white-space: nowrap;
 }
 
-.modelNameInput {
-	width: 200px;
-}
-
-.filterSelect {
-	width: 140px;
+.searchInput {
+	width: 220px;
 }
 
 .filterRange {
-	width: 260px;
-}
-
-.filterActions {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	margin-left: auto;
-}
-
-.tableWrap {
-	width: 100%;
-	overflow-x: auto;
-}
-
-.historicalDataTable {
-	min-width: 920px;
-}
-
-.historicalDataTable :global(.ant-table-thead > tr > th) {
-	background: #f2f5f8;
-	color: #333;
-	font-weight: 500;
-}
-
-.historicalDataTable :global(.ant-table-tbody > tr.ant-table-row:hover > td) {
-	background: #e6f4ff;
-}
-
-.historicalDataTable :global(.ant-table-pagination) {
-	margin-bottom: 0;
-}
-
-@media (max-width: 1100px) {
-	.filterActions {
-		margin-left: 0;
-		width: 100%;
-	}
-}
-
-@media (max-width: 640px) {
-	.filterItem {
-		width: 100%;
-	}
-
-	.modelNameInput,
-	.filterSelect,
-	.filterRange {
-		width: 100%;
-		flex: 1;
-	}
+	width: 350px;
 }
