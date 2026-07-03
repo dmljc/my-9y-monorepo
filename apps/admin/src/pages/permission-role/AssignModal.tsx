@@ -52,14 +52,12 @@ const AssignModal = ({
 				const res: RolePermissionDetailResponse = await getAssignDetail(
 					String(role.roleId),
 				);
-				if (res?.code !== undefined && res.code !== 200) {
-					throw new Error("加载角色权限失败");
-				}
 				const modules = res.modules ?? [];
 				setAdminTableRows(buildAssignRows(modules));
 				setCheckedKeys(extractCheckedKeys(modules));
 				setHiddenMenuIdsByPage(hiddenIdsByPage(modules));
 			} catch {
+				// 加载失败时清空，避免展示过期权限；toast 由全局 onError 弹出
 				setAdminTableRows([]);
 				setCheckedKeys([]);
 				setHiddenMenuIdsByPage({});
@@ -152,8 +150,8 @@ const AssignModal = ({
 
 	const onOk = async () => {
 		if (!role) return;
-		setLoading(true);
 		try {
+			setLoading(true);
 			const menuIds = collectMenuIds(
 				checkedKeys,
 				adminTableRows,
