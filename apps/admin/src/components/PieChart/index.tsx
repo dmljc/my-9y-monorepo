@@ -4,6 +4,7 @@ import { LegendComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { useMemo } from "react";
+import { useEchartsInit } from "../hooks/useEchartsInit";
 import styles from "./PieChart.module.css";
 
 echarts.use([
