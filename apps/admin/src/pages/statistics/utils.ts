@@ -1,5 +1,6 @@
 import dayjs, { type Dayjs } from "dayjs";
-import type { BarChartYAxisConfig, PieChartItem } from "@/components";
+import type { BarChartYAxisConfig } from "@/components/BarChart";
+import type { PieChartItem } from "@/components/PieChart";
 
 // ---------------------------------------------------------------------------
 // 类型

@@ -57,6 +57,14 @@
 	flex-direction: column;
 }
 
+.chartFallback {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 200px;
+}
+
 .chartCardLarge {
 	flex: 1.15;
 }

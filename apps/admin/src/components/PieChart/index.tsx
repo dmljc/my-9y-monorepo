@@ -1,7 +1,17 @@
 import type { EChartsOption, LegendComponentOption } from "echarts";
+import { PieChart as PieChartSeries } from "echarts/charts";
+import { LegendComponent, TooltipComponent } from "echarts/components";
+import * as echarts from "echarts/core";
+import { CanvasRenderer } from "echarts/renderers";
 import { useMemo } from "react";
-import { useEcharts } from "../hooks/useEcharts";
 import styles from "./PieChart.module.css";
+
+echarts.use([
+	PieChartSeries,
+	LegendComponent,
+	TooltipComponent,
+	CanvasRenderer,
+]);
 
 export interface PieChartItem {
 	name: string;

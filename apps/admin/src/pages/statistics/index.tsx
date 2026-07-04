@@ -1,8 +1,6 @@
-import { Button, DatePicker } from "antd";
+import { Button, DatePicker, Spin } from "antd";
 import type { Dayjs } from "dayjs";
-import type { ReactNode } from "react";
-import { useState } from "react";
-import { BarChart, PieChart } from "@/components";
+import { lazy, type ReactNode, Suspense, useState } from "react";
 import styles from "./index.module.css";
 import {
 	BAR_Y_AXIS,
@@ -10,6 +8,9 @@ import {
 	DEFAULT_FILTER,
 	type FilterState,
 } from "./utils";
+
+const BarChart = lazy(() => import("@/components/BarChart"));
+const PieChart = lazy(() => import("@/components/PieChart"));
 
 const { RangePicker } = DatePicker;
 
@@ -19,13 +20,21 @@ interface ChartCardProps {
 	children: ReactNode;
 }
 
+const ChartFallback = () => (
+	<div className={styles.chartFallback}>
+		<Spin />
+	</div>
+);
+
 // 图表卡片组件
 const ChartCard = ({ title, className, children }: ChartCardProps) => (
 	<div className={`${styles.chartCard} ${className ?? ""}`}>
 		<header className={styles.chartHeader}>
 			<div className={styles.chartTitle}>{title}</div>
 		</header>
-		<div className={styles.chartBody}>{children}</div>
+		<div className={styles.chartBody}>
+			<Suspense fallback={<ChartFallback />}>{children}</Suspense>
+		</div>
 	</div>
 );
 

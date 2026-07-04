@@ -1,24 +1,14 @@
 import type { EChartsOption } from "echarts";
-import { BarChart, LineChart, PieChart } from "echarts/charts";
-import {
-	GridComponent,
-	LegendComponent,
-	TooltipComponent,
-} from "echarts/components";
 import * as echarts from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
 import { useEffect, useRef } from "react";
 
-echarts.use([
-	BarChart,
-	LineChart,
-	PieChart,
-	GridComponent,
-	TooltipComponent,
-	LegendComponent,
-	CanvasRenderer,
-]);
-
+/**
+ * 基于已注册的 ECharts 模块初始化图表。
+ * 图表类型与组件须由调用方在模块顶层 `echarts.use([...])` 注册，便于按图表按需拆包。
+ *
+ * @param {EChartsOption} - ECharts 配置项。
+ * @returns {React.RefObject<HTMLDivElement | null>} - 挂载图表的容器 ref。
+ */
 export function useEcharts(option: EChartsOption) {
 	const chartRef = useRef<HTMLDivElement | null>(null);
 

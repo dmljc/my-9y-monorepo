@@ -1,6 +1,12 @@
 import type { EChartsOption } from "echarts";
+import { BarChart as BarChartSeries } from "echarts/charts";
+import { GridComponent, TooltipComponent } from "echarts/components";
+import * as echarts from "echarts/core";
+import { CanvasRenderer } from "echarts/renderers";
 import { useEcharts } from "../hooks/useEcharts";
 import styles from "./BarChart.module.css";
+
+echarts.use([BarChartSeries, GridComponent, TooltipComponent, CanvasRenderer]);
 
 /** Y 轴刻度配置 */
 export interface BarChartYAxisConfig {
