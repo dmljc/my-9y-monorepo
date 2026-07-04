@@ -1,101 +1,118 @@
+// biome-ignore-all format: compact Item
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import {
-	Button,
-	Col,
-	Form,
-	Input,
-	InputNumber,
-	Modal,
-	Radio,
-	Row,
-	Select,
-	Switch,
-} from "antd";
+import { Button, Col, Form, Input, InputNumber, Modal, Radio, Row, Select, Switch } from "antd";
 import { useEffect, useState } from "react";
+import { getControllable, getModels } from "./api";
 import styles from "./index.module.css";
-import type { ReverseControlRule, RuleFormValues } from "./types";
-import {
-	ACTION_DELAY_MAX,
-	ACTION_DELAY_MIN,
-	DEFAULT_ACTION,
-	DEFAULT_CONDITION,
-	DEVICE_OPTIONS,
-	deriveConditionRelation,
-	// isDuplicateRuleName,
-	JOIN_OPERATOR_OPTIONS,
-	normalizeConditionsForForm,
-	OPERATOR_OPTIONS,
-	POINT_OPTIONS,
-	RULE_DESCRIPTION_MAX_LENGTH,
-	RULE_NAME_MAX_LENGTH,
-} from "./utils";
+import type {
+	ControllableProperty,
+	DeviceModelsResponse,
+	IiotControlRule,
+} from "./interface";
+import type { RuleFormValues, SelectOption } from "./types";
+import * as utils from "./utils";
 
-interface CreateRuleModalProps {
+const Item = Form.Item;
+
+interface CreateModalProps {
 	open: boolean;
-	editingRecord: ReverseControlRule | null;
-	existingRules: ReverseControlRule[];
+	editingRecord: IiotControlRule | null;
 	onCancel: () => void;
-	onOk: (values: RuleFormValues) => void;
+	onOk: (values: RuleFormValues) => Promise<void>;
 }
 
-const CreateRuleModal = ({
+const CreateModal = ({
 	open,
 	editingRecord,
-	// existingRules,
 	onCancel,
-	onOk,
-}: CreateRuleModalProps) => {
+	onOk: onOkProp,
+}: CreateModalProps) => {
 	const [form] = Form.useForm<RuleFormValues>();
 	const [loading, setLoading] = useState(false);
+	const [modelOptions, setModelOptions] = useState<SelectOption[]>([]);
+	const [propertyOptionsMap, setPropertyOptionsMap] = useState<Record<string, SelectOption[]>>({});
 	const isEdit = editingRecord !== null;
 
-	useEffect(() => {
-		if (!open) return;
+	const loadPropertyOptions = async (modelId: string) => {
+		if (!modelId) return;
+		const data: ControllableProperty[] = await getControllable(modelId);
+		setPropertyOptionsMap((prev) => ({
+			...prev,
+			[modelId]: utils.toPropertyOptions(data ?? []),
+		}));
+	};
+
+	const initModal = async () => {
+		const modelsData: DeviceModelsResponse = await getModels();
+		const options = utils.toModelOptions(modelsData?.models ?? []);
+		setModelOptions(options);
+
 		if (editingRecord) {
-			form.setFieldsValue({
-				name: editingRecord.name,
-				description: editingRecord.description,
-				enabled: editingRecord.enabled,
-				conditions: normalizeConditionsForForm(
-					editingRecord.conditions,
-					editingRecord.conditionRelation,
+			const formValues = utils.toFormValues(editingRecord);
+			form.setFieldsValue(formValues);
+			const modelIds = [
+				...new Set(
+					[
+						...(formValues.conditions ?? []).map(
+							(item) => item.modelId,
+						),
+						...(formValues.actions ?? []).map(
+							(item) => item.modelId,
+						),
+					].filter(Boolean) as string[],
 				),
-				actions: editingRecord.actions,
-			});
+			];
+			await Promise.all(
+				modelIds.map((modelId) => loadPropertyOptions(modelId)),
+			);
 			return;
 		}
 
 		form.resetFields();
 		form.setFieldsValue({
 			enabled: true,
-			conditions: [{ ...DEFAULT_CONDITION }],
-			actions: [{ ...DEFAULT_ACTION }],
+			conditions: [{ ...utils.DEFAULT_CONDITION }],
+			actions: [{ ...utils.DEFAULT_ACTION }],
 		});
+	};
+
+	useEffect(() => {
+		if (!open) {
+			setPropertyOptionsMap({});
+			return;
+		}
+
+		initModal();
 	}, [open, editingRecord]);
 
-	const handleOk = async () => {
+	const clearPropertyFields = (listName: "conditions" | "actions", fieldName: number) => {
+		form.setFieldValue([listName, fieldName, "propertyId"], undefined);
+		form.setFieldValue([listName, fieldName, "propertyName"], undefined);
+	};
+
+	const onOk = async () => {
 		try {
 			const values = await form.validateFields();
 			if (!values.conditions?.length || !values.actions?.length) return;
 			setLoading(true);
-			onOk({
-				...values,
-				conditionRelation: deriveConditionRelation(values.conditions),
-			});
+			await onOkProp(values);
 			onCancel();
 		} finally {
 			setLoading(false);
 		}
 	};
 
+	const getPropertyOptions = (modelId?: string, propertyId?: string, propertyName?: string) => {
+		if (!modelId) return [];
+		return utils.mergeOption(propertyOptionsMap[modelId] ?? [], propertyId, propertyName);
+	};
+
 	return (
 		<Modal
 			title={isEdit ? "编辑" : "新增"}
 			open={open}
-			onOk={handleOk}
+			onOk={onOk}
 			onCancel={onCancel}
-			okText="保存"
-			cancelText="取消"
 			confirmLoading={loading}
 			destroyOnHidden
 			width={920}
@@ -103,343 +120,249 @@ const CreateRuleModal = ({
 			<Form form={form} preserve={false} className={styles.ruleForm}>
 				<Row gutter={24}>
 					<Col span={12}>
-						<Form.Item
-							name="name"
+						<Item
+							name="ruleName"
 							label="反控规则名称"
 							rules={[
-								{ required: true, message: "请输入规则名称" },
-								{
-									max: RULE_NAME_MAX_LENGTH,
-									message: `最多输入${RULE_NAME_MAX_LENGTH}个汉字`,
-								},
-							]}
-						>
+								{ required: true, whitespace: true, message: "请输入规则名称" },
+								{ max: 12, message: "最多输入12个汉字" }
+							]}>
 							<Input
 								placeholder="请输入规则名称"
-								maxLength={RULE_NAME_MAX_LENGTH}
+								maxLength={12}
 								showCount
 							/>
-						</Form.Item>
+						</Item>
 					</Col>
 					<Col span={12}>
-						<Form.Item
+						<Item
 							name="description"
 							label="反控规则描述"
 							rules={[
-								{ required: true, message: "请输入规则描述" },
-								{
-									max: RULE_DESCRIPTION_MAX_LENGTH,
-									message: `最多输入${RULE_DESCRIPTION_MAX_LENGTH}个汉字`,
-								},
-							]}
-						>
+								{ required: true, whitespace: true, message: "请输入规则描述" },
+								{ max: 18, message: "最多输入18个汉字" }
+							]}>
 							<Input
 								placeholder="请输入规则描述"
-								maxLength={RULE_DESCRIPTION_MAX_LENGTH}
+								maxLength={18}
 								showCount
 							/>
-						</Form.Item>
+						</Item>
 					</Col>
 				</Row>
 
-				<Row gutter={24}>
-					<Col span={24}>
-						<div className={styles.sectionLabel}>触发条件</div>
-					</Col>
-				</Row>
+				<div className={styles.sectionLabel}>触发条件</div>
 
-				<Row gutter={24}>
-					<Col span={24}>
-						<Form.List name="conditions">
-							{(fields, { add, remove }) => (
-								<div className={styles.ruleSection}>
-									{fields.map((field, index) => (
-										<div key={field.key}>
-											{index > 0 && (
-												<div
-													className={
-														styles.conditionJoin
-													}
-												>
-													<Form.Item
-														name={[
-															field.name,
-															"joinOperator",
-														]}
-														initialValue="and"
-														rules={[
-															{
-																required: true,
-																message:
-																	"请选择条件关系",
-															},
-														]}
+				<Form.List name="conditions">
+					{(fields, { add, remove }) => (
+						<div className={styles.ruleSection}>
+							{fields.map((field, index) => (
+								<div key={field.key}>
+									{index > 0 && (
+										<div className={styles.conditionJoin}>
+											<Item
+												name={[field.name, "joinOperator"]}
+												initialValue="and"
+												rules={[{ required: true, message: "请选择条件关系" }]}
+											>
+												<Radio.Group className={styles.joinRadioGroup} options={utils.JOIN_OPTIONS} />
+											</Item>
+										</div>
+									)}
+									<div className={styles.ruleRow}>
+										<div className={styles.rowTitle}>条件{index + 1}</div>
+										<Item
+											name={[field.name, "modelId"]}
+											rules={[{ required: true, message: "请选择设备" }]}
+										>
+											<Select
+												showSearch={{ optionFilterProp: "label" }}
+												placeholder="请选择设备"
+												options={modelOptions}
+												onChange={(value) => {
+													loadPropertyOptions(value);
+													clearPropertyFields("conditions", field.name);
+												}}
+											/>
+										</Item>
+										<Item
+											noStyle
+											shouldUpdate={(prev, next) =>
+												prev.conditions?.[field.name]?.modelId !==
+												next.conditions?.[field.name]?.modelId
+											}
+										>
+											{() => {
+												const modelId = form.getFieldValue(["conditions", field.name, "modelId"]);
+												const propertyId = form.getFieldValue(["conditions", field.name, "propertyId"]);
+												const propertyName = form.getFieldValue(["conditions", field.name, "propertyName"]);
+												const propertyOptions = getPropertyOptions(modelId, propertyId, propertyName);
+												return (
+													<Item
+														name={[field.name, "propertyId"]}
+														rules={[{ required: true, message: "请选择点位名称" }]}
 													>
-														<Radio.Group
-															className={
-																styles.joinRadioGroup
-															}
-															options={
-																JOIN_OPERATOR_OPTIONS
+														<Select
+															placeholder="请选择点位名称"
+															options={propertyOptions}
+															onFocus={() => modelId && loadPropertyOptions(modelId)}
+															onChange={(value) =>
+																form.setFieldValue(
+																	["conditions", field.name, "propertyName"],
+																	propertyOptions.find((item) => item.value === value)?.label ?? "",
+																)
 															}
 														/>
-													</Form.Item>
-												</div>
-											)}
-											<div className={styles.ruleRow}>
-												<div
-													className={styles.rowTitle}
-												>
-													条件{index + 1}
-												</div>
-												<Form.Item
-													name={[
-														field.name,
-														"deviceName",
-													]}
-													rules={[
-														{
-															required: true,
-															message:
-																"请选择设备",
-														},
-													]}
-												>
-													<Select
-														showSearch={{
-															optionFilterProp:
-																"label",
-														}}
-														placeholder="请选择设备"
-														options={DEVICE_OPTIONS}
-													/>
-												</Form.Item>
-												<Form.Item
-													name={[
-														field.name,
-														"pointName",
-													]}
-													rules={[
-														{
-															required: true,
-															message:
-																"请选择点位名称",
-														},
-													]}
+													</Item>
+												);
+											}}
+										</Item>
+										<Item name={[field.name, "propertyName"]} hidden>
+											<Input />
+										</Item>
+										<Item
+											name={[field.name, "operator"]}
+											rules={[{ required: true, message: "请选择判断关系" }]}
+										>
+											<Select options={utils.OPERATOR_OPTIONS} />
+										</Item>
+										<Item
+											name={[field.name, "thresholdValue"]}
+											rules={[{ required: true, message: "请输入数值" }]}
+										>
+											<InputNumber placeholder="请输入数值" />
+										</Item>
+										<Button
+											type="text"
+											danger
+											icon={<DeleteOutlined />}
+											disabled={fields.length === 1}
+											onClick={() => remove(field.name)}
+										/>
+									</div>
+								</div>
+							))}
+							<Button
+								block
+								type="dashed"
+								icon={<PlusOutlined />}
+								onClick={() => add({ ...utils.DEFAULT_CONDITION, joinOperator: "and" })}
+							>
+								添加条件
+							</Button>
+						</div>
+					)}
+				</Form.List>
+
+				<div className={styles.sectionLabel}>执行动作</div>
+
+				<Form.List name="actions">
+					{(fields, { add, remove }) => (
+						<div className={styles.ruleSection}>
+							{fields.map((field, index) => (
+								<div key={field.key} className={styles.actionRow}>
+									<div className={styles.rowTitle}>动作{index + 1}</div>
+									<Item
+										name={[field.name, "modelId"]}
+										rules={[{ required: true, message: "请选择设备" }]}
+									>
+										<Select
+											showSearch={{ optionFilterProp: "label" }}
+											placeholder="请选择设备"
+											options={modelOptions}
+											onChange={(value) => {
+												loadPropertyOptions(value);
+												clearPropertyFields("actions", field.name);
+											}}
+										/>
+									</Item>
+									<Item
+										noStyle
+										shouldUpdate={(prev, next) =>
+											prev.actions?.[field.name]?.modelId !==
+											next.actions?.[field.name]?.modelId
+										}
+									>
+										{() => {
+											const modelId = form.getFieldValue(["actions", field.name, "modelId"]);
+											const propertyId = form.getFieldValue(["actions", field.name, "propertyId"]);
+											const propertyName = form.getFieldValue(["actions", field.name, "propertyName"]);
+											const propertyOptions = getPropertyOptions(modelId, propertyId, propertyName);
+											return (
+												<Item
+													name={[field.name, "propertyId"]}
+													rules={[{ required: true, message: "请选择点位名称" }]}
 												>
 													<Select
 														placeholder="请选择点位名称"
-														options={POINT_OPTIONS}
-													/>
-												</Form.Item>
-												<Form.Item
-													name={[
-														field.name,
-														"operator",
-													]}
-													rules={[
-														{
-															required: true,
-															message:
-																"请选择判断关系",
-														},
-													]}
-												>
-													<Select
-														options={
-															OPERATOR_OPTIONS
+														options={propertyOptions}
+														onFocus={() => modelId && loadPropertyOptions(modelId)}
+														onChange={(value) =>
+															form.setFieldValue(
+																["actions", field.name, "propertyName"],
+																propertyOptions.find((item) => item.value === value)?.label ?? "",
+															)
 														}
 													/>
-												</Form.Item>
-												<Form.Item
-													name={[field.name, "value"]}
-													rules={[
-														{
-															required: true,
-															message:
-																"请输入数值",
-														},
-													]}
-												>
-													<InputNumber placeholder="请输入数值" />
-												</Form.Item>
-												<Button
-													type="text"
-													danger
-													icon={<DeleteOutlined />}
-													disabled={
-														fields.length === 1
-													}
-													onClick={() =>
-														remove(field.name)
-													}
-												/>
-											</div>
-										</div>
-									))}
-									<Button
-										block
-										type="dashed"
-										icon={<PlusOutlined />}
-										onClick={() =>
-											add({
-												...DEFAULT_CONDITION,
-												joinOperator: "and",
-											})
-										}
+												</Item>
+											);
+										}}
+									</Item>
+									<Item name={[field.name, "propertyName"]} hidden>
+										<Input />
+									</Item>
+									<Item
+										name={[field.name, "delaySeconds"]}
+										rules={[
+											{ required: true, message: "请输入延迟" },
+											{
+												type: "number" as const,
+												min: 0,
+												max: 99.9,
+												message: "范围 0-99.9"
+											}
+										]}>
+										<InputNumber
+											placeholder="延迟(s)"
+											min={0}
+											max={99.9}
+											step={0.1}
+											precision={1}
+										/>
+									</Item>
+									<Item
+										name={[field.name, "actionValue"]}
+										rules={[{ required: true, message: "请输入数值" }]}
 									>
-										添加条件
-									</Button>
-								</div>
-							)}
-						</Form.List>
-					</Col>
-				</Row>
-
-				<Row gutter={24}>
-					<Col span={24}>
-						<div className={styles.sectionLabel}>执行动作</div>
-					</Col>
-				</Row>
-
-				<Row gutter={24}>
-					<Col span={24}>
-						<Form.List name="actions">
-							{(fields, { add, remove }) => (
-								<div className={styles.ruleSection}>
-									{fields.map((field, index) => (
-										<div
-											key={field.key}
-											className={styles.actionRow}
-										>
-											<div className={styles.rowTitle}>
-												动作{index + 1}
-											</div>
-											<Form.Item
-												name={[
-													field.name,
-													"deviceName",
-												]}
-												rules={[
-													{
-														required: true,
-														message: "请选择设备",
-													},
-												]}
-											>
-												<Select
-													showSearch={{
-														optionFilterProp:
-															"label",
-													}}
-													placeholder="请选择设备"
-													options={DEVICE_OPTIONS}
-												/>
-											</Form.Item>
-											<Form.Item
-												name={[field.name, "pointName"]}
-												rules={[
-													{
-														required: true,
-														message:
-															"请选择点位名称",
-													},
-												]}
-											>
-												<Select
-													placeholder="请选择点位名称"
-													options={POINT_OPTIONS}
-												/>
-											</Form.Item>
-											<Form.Item
-												name={[field.name, "delay"]}
-												rules={[
-													{
-														required: true,
-														message: "请输入延迟",
-													},
-													{
-														type: "number",
-														min: ACTION_DELAY_MIN,
-														max: ACTION_DELAY_MAX,
-														message: `范围 ${ACTION_DELAY_MIN}-${ACTION_DELAY_MAX}`,
-													},
-												]}
-											>
-												<InputNumber
-													placeholder="延迟(s)"
-													min={ACTION_DELAY_MIN}
-													max={ACTION_DELAY_MAX}
-													step={0.1}
-													precision={1}
-												/>
-											</Form.Item>
-											<Form.Item
-												name={[
-													field.name,
-													"targetValue",
-												]}
-												rules={[
-													{
-														required: true,
-														message: "请输入数值",
-													},
-												]}
-											>
-												<InputNumber placeholder="执行数值" />
-											</Form.Item>
-											<Button
-												type="text"
-												danger
-												icon={<DeleteOutlined />}
-												disabled={fields.length === 1}
-												onClick={() =>
-													remove(field.name)
-												}
-											/>
-										</div>
-									))}
+										<InputNumber placeholder="执行数值" />
+									</Item>
 									<Button
-										block
-										type="dashed"
-										icon={<PlusOutlined />}
-										onClick={() =>
-											add({ ...DEFAULT_ACTION })
-										}
-									>
-										添加动作
-									</Button>
+										type="text"
+										danger
+										icon={<DeleteOutlined />}
+										disabled={fields.length === 1}
+										onClick={() => remove(field.name)}
+									/>
 								</div>
-							)}
-						</Form.List>
-					</Col>
-				</Row>
+							))}
+							<Button
+								block
+								type="dashed"
+								icon={<PlusOutlined />}
+								onClick={() => add({ ...utils.DEFAULT_ACTION })}
+							>
+								添加动作
+							</Button>
+						</div>
+					)}
+				</Form.List>
 
-				<Row gutter={24}>
-					<Col span={8}>
-						<Form.Item
-							name="enabled"
-							label="启用"
-							valuePropName="checked"
-						>
-							<Switch
-								checkedChildren="启用"
-								unCheckedChildren="停用"
-							/>
-						</Form.Item>
-					</Col>
-				</Row>
+				<Item name="enabled" label="启用" valuePropName="checked">
+					<Switch checkedChildren="启用" unCheckedChildren="停用" />
+				</Item>
 			</Form>
 		</Modal>
 	);
 };
 
-export default CreateRuleModal;
-export type {
-	ConditionRelation,
-	ReverseControlRule,
-	RuleAction,
-	RuleCondition,
-	RuleFormValues,
-} from "./types";
-export type { CreateRuleModalProps };
+export default CreateModal;

@@ -1,38 +1,17 @@
-import mockData from "./mockData.json";
+import type {
+	ControllableProperty,
+	DeviceModelItem,
+	IiotControlCondition,
+	IiotControlRule,
+} from "./interface";
 import type {
 	ConditionJoinOperator,
 	ConditionRelation,
-	ReverseControlRule,
-	RuleAction,
-	RuleCondition,
+	RuleActionFormItem,
+	RuleConditionFormItem,
+	RuleFormValues,
+	SelectOption,
 } from "./types";
-
-// ---------------------------------------------------------------------------
-// 常量
-// ---------------------------------------------------------------------------
-
-export const MOCK_RULES: ReverseControlRule[] =
-	mockData as ReverseControlRule[];
-
-/** 设备下拉选项 */
-export const DEVICE_OPTIONS = [
-	"温湿度传感器",
-	"空调",
-	"阀门",
-	"排水泵1",
-	"排水泵2",
-	"风机",
-].map((value) => ({ label: value, value }));
-
-/** 点位下拉选项 */
-export const POINT_OPTIONS = [
-	"环境温度",
-	"环境湿度",
-	"开关状态",
-	"目标温度",
-	"运行频率",
-	"阀门开度",
-].map((value) => ({ label: value, value }));
 
 /** 判断运算符下拉选项 */
 export const OPERATOR_OPTIONS = [">", ">=", "=", "<=", "<", "!="].map(
@@ -42,155 +21,302 @@ export const OPERATOR_OPTIONS = [">", ">=", "=", "<=", "<", "!="].map(
 	}),
 );
 
-/** 条件关系下拉选项 */
-export const RELATION_OPTIONS = [
-	{ label: "满足以下全部条件", value: "all" },
-	{ label: "满足以下任一条件", value: "any" },
-];
-
 /** 相邻条件之间的 and / or 单选项 */
-export const JOIN_OPERATOR_OPTIONS = [
+export const JOIN_OPTIONS = [
 	{ label: "and", value: "and" },
 	{ label: "or", value: "or" },
 ];
 
-/** 新增条件默认值（不设空字符串，Select 才能显示 placeholder） */
+/** 新增条件默认值 */
 export const DEFAULT_CONDITION = {
 	operator: ">",
-	value: 0,
-} satisfies Partial<RuleCondition> & Pick<RuleCondition, "operator" | "value">;
+	thresholdValue: 0,
+} satisfies Partial<RuleConditionFormItem>;
 
 /** 新增动作默认值 */
 export const DEFAULT_ACTION = {
-	delay: 0,
-	targetValue: 0,
-} satisfies Partial<RuleAction> & Pick<RuleAction, "delay" | "targetValue">;
+	delaySeconds: 0,
+	actionValue: 0,
+} satisfies Partial<RuleActionFormItem>;
 
-/** 规则名称最大长度（汉字） */
-export const RULE_NAME_MAX_LENGTH = 12;
+/** 后端启用状态值 */
+export const STATUS_ENABLED = "0";
 
-/** 规则描述最大长度（汉字） */
-export const RULE_DESCRIPTION_MAX_LENGTH = 18;
-
-/** 动作延迟范围 */
-export const ACTION_DELAY_MIN = 0;
-export const ACTION_DELAY_MAX = 99.9;
-
-// ---------------------------------------------------------------------------
-// 工具函数
-// ---------------------------------------------------------------------------
+/** 后端停用状态值 */
+export const STATUS_DISABLED = "1";
 
 /**
- * 获取规则的主设备名称
- * 优先取第一个条件的设备名，其次第一个动作的设备名，兜底返回 "未配置设备"
+ * 判断规则是否启用。
+ *
+ * @param {string | undefined} - 后端 status 字段。
+ * @returns {boolean} - 是否启用。
  */
-export function getPrimaryDeviceName(rule: ReverseControlRule): string {
-	return (
-		rule.conditions[0]?.deviceName ||
-		rule.actions[0]?.deviceName ||
-		"未配置设备"
-	);
+export function isEnabled(status?: string): boolean {
+	return status === STATUS_ENABLED;
 }
 
 /**
- * 获取某条条件与上一条件的连接关系
+ * 将启用布尔值转为后端 status。
+ *
+ * @param {boolean} - 是否启用。
+ * @returns {string} - 后端 status 值。
  */
-export function getConditionJoinOperator(
-	condition: RuleCondition,
+export function toStatus(enabled: boolean): string {
+	return enabled ? STATUS_ENABLED : STATUS_DISABLED;
+}
+
+/**
+ * 将后端 conditionLogic 转为表单 conditionRelation。
+ *
+ * @param {string | undefined} - 后端 conditionLogic。
+ * @returns {ConditionRelation} - 表单 conditionRelation。
+ */
+export function toRelation(conditionLogic?: string): ConditionRelation {
+	return conditionLogic === "OR" ? "any" : "all";
+}
+
+/**
+ * 将表单 conditionRelation 转为后端 conditionLogic。
+ *
+ * @param {ConditionRelation} - 表单 conditionRelation。
+ * @returns {string} - 后端 conditionLogic。
+ */
+export function toLogic(relation: ConditionRelation): string {
+	return relation === "any" ? "OR" : "AND";
+}
+
+/**
+ * 获取某条条件与上一条件的连接关系。
+ *
+ * @param {RuleConditionFormItem} - 当前条件。
+ * @param {ConditionRelation} - 规则级默认关系。
+ * @returns {ConditionJoinOperator} - 连接运算符。
+ */
+export function getJoinOp(
+	condition: RuleConditionFormItem,
 	fallback: ConditionRelation = "all",
 ): ConditionJoinOperator {
 	return condition.joinOperator ?? (fallback === "all" ? "and" : "or");
 }
 
-/** 根据各条件的连接关系推导规则级 conditionRelation */
-export function deriveConditionRelation(
-	conditions: RuleCondition[],
+/**
+ * 根据各条件的连接关系推导规则级 conditionRelation。
+ *
+ * @param {RuleConditionFormItem[]} - 条件列表。
+ * @returns {ConditionRelation} - 规则级关系。
+ */
+export function deriveRelation(
+	conditions: RuleConditionFormItem[],
 ): ConditionRelation {
-	const joins = conditions
-		.slice(1)
-		.map((condition) => getConditionJoinOperator(condition));
+	const joins = conditions.slice(1).map((condition) => getJoinOp(condition));
 	if (joins.length === 0) return "all";
 	if (joins.every((join) => join === "and")) return "all";
 	if (joins.every((join) => join === "or")) return "any";
 	return "any";
 }
 
-/** 编辑时将规则条件标准化为表单值（补齐 joinOperator） */
-export function normalizeConditionsForForm(
-	conditions: RuleCondition[],
+/**
+ * 编辑时将规则条件标准化为表单值。
+ *
+ * @param {IiotControlCondition[]} - 后端条件列表。
+ * @param {ConditionRelation} - 规则级关系。
+ * @returns {RuleConditionFormItem[]} - 表单条件列表。
+ */
+export function normalizeConditions(
+	conditions: IiotControlCondition[],
 	conditionRelation: ConditionRelation,
-): RuleCondition[] {
+): RuleConditionFormItem[] {
 	return conditions.map((item, index) => ({
-		...item,
+		modelId: item.modelId,
+		propertyId: item.propertyId,
+		propertyName: item.propertyName,
+		operator: item.operator,
+		thresholdValue:
+			item.thresholdValue !== undefined && item.thresholdValue !== ""
+				? Number(item.thresholdValue)
+				: undefined,
 		joinOperator:
 			index === 0
 				? undefined
-				: (item.joinOperator ??
-					(conditionRelation === "all" ? "and" : "or")),
+				: conditionRelation === "all"
+					? "and"
+					: "or",
 	}));
 }
 
 /**
- * 将反控规则的条件与动作拼接为可读的摘要文本
- * 示例：全部满足：温湿度传感器/环境温度 > 30 且 ...；执行：空调/开关状态=1，...
+ * 将后端规则转为表单初始值。
+ *
+ * @param {IiotControlRule} - 后端规则实体。
+ * @returns {RuleFormValues} - 表单值。
  */
-export function createConditionSummary(rule: ReverseControlRule): string {
-	const joins = rule.conditions
-		.slice(1)
-		.map((condition) =>
-			getConditionJoinOperator(condition, rule.conditionRelation),
-		);
-	const hasMixedJoins = new Set(joins).size > 1;
-	const relationText = hasMixedJoins
-		? "混合条件"
-		: rule.conditionRelation === "all"
-			? "全部满足"
-			: "任一满足";
-	const conditionText = rule.conditions
+export function toFormValues(rule: IiotControlRule): RuleFormValues {
+	const conditionRelation = toRelation(rule.conditionLogic);
+	return {
+		ruleName: rule.ruleName ?? "",
+		description: rule.description ?? "",
+		enabled: isEnabled(rule.status),
+		conditionRelation,
+		conditions: normalizeConditions(
+			rule.conditions ?? [],
+			conditionRelation,
+		),
+		actions: (rule.actions ?? []).map((action) => ({
+			modelId: action.modelId,
+			propertyId: action.propertyId,
+			propertyName: action.propertyName,
+			delaySeconds: action.delaySeconds ?? 0,
+			actionValue:
+				action.actionValue !== undefined && action.actionValue !== ""
+					? Number(action.actionValue)
+					: 0,
+		})),
+	};
+}
+
+/**
+ * 将表单值转为后端提交体。
+ *
+ * @param {RuleFormValues} - 表单值。
+ * @param {number | undefined} - 编辑时的规则 id。
+ * @returns {IiotControlRule} - 后端实体。
+ */
+export function toRule(values: RuleFormValues, id?: number): IiotControlRule {
+	const conditionRelation = deriveRelation(values.conditions);
+	return {
+		id,
+		ruleName: values.ruleName.trim(),
+		description: values.description.trim(),
+		conditionLogic: toLogic(conditionRelation),
+		status: toStatus(values.enabled),
+		conditions: values.conditions.map((item) => ({
+			modelId: item.modelId,
+			thingId: item.modelId,
+			propertyId: item.propertyId,
+			propertyName: item.propertyName,
+			operator: item.operator,
+			thresholdValue:
+				item.thresholdValue !== undefined
+					? String(item.thresholdValue)
+					: undefined,
+		})),
+		actions: values.actions.map((item) => ({
+			modelId: item.modelId,
+			thingId: item.modelId,
+			propertyId: item.propertyId,
+			propertyName: item.propertyName,
+			delaySeconds: item.delaySeconds,
+			actionValue:
+				item.actionValue !== undefined
+					? String(item.actionValue)
+					: undefined,
+		})),
+	};
+}
+
+/**
+ * 将物模型列表转为设备下拉选项。
+ *
+ * @param {DeviceModelItem[]} - 物模型列表。
+ * @returns {SelectOption[]} - 下拉选项。
+ */
+export function toModelOptions(models: DeviceModelItem[]): SelectOption[] {
+	return models.map((item) => ({
+		label: item.model_name,
+		value: item.model_id,
+	}));
+}
+
+/**
+ * 将可控属性列表转为点位下拉选项。
+ *
+ * @param {ControllableProperty[]} - 可控属性列表。
+ * @returns {SelectOption[]} - 下拉选项。
+ */
+export function toPropertyOptions(
+	properties: ControllableProperty[],
+): SelectOption[] {
+	return properties.map((item) => ({
+		label: item.propertyName,
+		value: item.propertyId,
+	}));
+}
+
+/**
+ * 合并当前选中项与接口选项，避免编辑回显时 label 缺失。
+ *
+ * @param {SelectOption[]} - 接口返回选项。
+ * @param {string | undefined} - 当前选中 value。
+ * @param {string | undefined} - 当前展示 label。
+ * @returns {SelectOption[]} - 合并后的选项。
+ */
+export function mergeOption(
+	options: SelectOption[],
+	value?: string,
+	label?: string,
+): SelectOption[] {
+	if (!value) return options;
+	if (options.some((item) => item.value === value)) return options;
+	if (!label) return options;
+	return [{ label, value }, ...options];
+}
+
+/**
+ * 根据 modelId 解析展示名称。
+ *
+ * @param {string | undefined} - 物模型 id。
+ * @param {SelectOption[]} - 设备选项。
+ * @returns {string | undefined} - 展示名称。
+ */
+export function modelLabel(
+	modelId: string | undefined,
+	modelOptions: SelectOption[],
+): string | undefined {
+	return modelOptions.find((item) => item.value === modelId)?.label;
+}
+
+/**
+ * 获取规则关联的主设备名称（用于展示）。
+ *
+ * @param {IiotControlRule} - 规则实体。
+ * @param {SelectOption[]} - 设备选项。
+ * @returns {string} - 主设备名称。
+ */
+export function primaryModelLabel(
+	rule: IiotControlRule,
+	modelOptions: SelectOption[],
+): string {
+	const modelId = rule.conditions?.[0]?.modelId ?? rule.actions?.[0]?.modelId;
+	return (
+		modelLabel(modelId, modelOptions) ??
+		rule.conditions?.[0]?.propertyName ??
+		"未配置设备"
+	);
+}
+
+/**
+ * 将反控规则的条件与动作拼接为可读摘要。
+ *
+ * @param {IiotControlRule} - 规则实体。
+ * @returns {string} - 摘要文本。
+ */
+export function ruleSummary(rule: IiotControlRule): string {
+	const relation = toRelation(rule.conditionLogic);
+	const relationText = relation === "all" ? "全部满足" : "任一满足";
+	const conditionText = (rule.conditions ?? [])
 		.map((condition, index) => {
-			const expr = `${condition.deviceName}/${condition.pointName} ${condition.operator} ${condition.value}`;
+			const expr = `${condition.propertyName ?? condition.propertyId} ${condition.operator} ${condition.thresholdValue ?? ""}`;
 			if (index === 0) return expr;
-			const join = getConditionJoinOperator(
-				condition,
-				rule.conditionRelation,
-			);
-			return `${join === "and" ? " 且 " : " 或 "}${expr}`;
+			const join = relation === "all" ? " 且 " : " 或 ";
+			return `${join}${expr}`;
 		})
 		.join("");
-	const actionText = rule.actions
+	const actionText = (rule.actions ?? [])
 		.map(
 			(action) =>
-				`${action.deviceName}/${action.pointName} 延迟${action.delay}s 执行=${action.targetValue}`,
+				`${action.propertyName ?? action.propertyId} 延迟${action.delaySeconds ?? 0}s 执行=${action.actionValue ?? ""}`,
 		)
 		.join("，");
 
 	return `${relationText}：${conditionText || "未配置条件"}；执行：${actionText || "未配置动作"}`;
-}
-
-/** 校验规则名称是否重复 */
-export function isDuplicateRuleName(
-	rules: ReverseControlRule[],
-	name: string,
-	excludeId?: string,
-): boolean {
-	const trimmed = name.trim();
-	if (!trimmed) return false;
-	return rules.some((rule) => rule.name === trimmed && rule.id !== excludeId);
-}
-
-/** 根据规则名称或设备名称过滤规则列表 */
-export function filterRules(
-	rules: ReverseControlRule[],
-	deviceName: string,
-): ReverseControlRule[] {
-	if (!deviceName) return rules;
-	return rules.filter(
-		(rule) =>
-			rule.name.includes(deviceName) ||
-			getPrimaryDeviceName(rule).includes(deviceName) ||
-			rule.conditions.some((item) =>
-				item.deviceName.includes(deviceName),
-			) ||
-			rule.actions.some((item) => item.deviceName.includes(deviceName)),
-	);
 }

@@ -1,140 +1,156 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Input, Switch, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
-import { useMemo, useState } from "react";
-import CreateRuleModal from "./CreateModal";
+import { useEffect, useRef, useState } from "react";
+import { changeStatus, create, list, remove, update } from "./api";
+import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
-import type { ReverseControlRule, RuleFormValues } from "./types";
-import { filterRules, MOCK_RULES } from "./utils";
+import type { ControlRuleListResponse, IiotControlRule } from "./interface";
+import type { RuleFormValues } from "./types";
+import { isEnabled, toRule, toStatus } from "./utils";
 
 const ReverseControl = () => {
 	const { message, modal } = App.useApp();
-	const [rules, setRules] = useState<ReverseControlRule[]>(MOCK_RULES);
-	const [deviceName, setDeviceName] = useState("");
+	const [loading, setLoading] = useState(false);
+	const [dataSource, setDataSource] = useState<IiotControlRule[]>([]);
+	const [ruleName, setRuleName] = useState("");
 	const [searchKeyword, setSearchKeyword] = useState("");
 	const [modalOpen, setModalOpen] = useState(false);
-	const [editingRecord, setEditingRecord] =
-		useState<ReverseControlRule | null>(null);
+	const [editingRecord, setEditingRecord] = useState<IiotControlRule | null>(
+		null,
+	);
+	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
+	const [togglingId, setTogglingId] = useState<number | null>(null);
+	const initRef = useRef(false);
 
-	const filteredRules = useMemo(
-		() => filterRules(rules, searchKeyword),
-		[searchKeyword, rules],
-	);
-
-	const pagedRules = useMemo(() => {
-		const start = (pageNum - 1) * pageSize;
-		return filteredRules.slice(start, start + pageSize);
-	}, [filteredRules, pageNum, pageSize]);
+	const loadData = async (p: number, ps: number, keyword = searchKeyword) => {
+		setLoading(true);
+		try {
+			const data: ControlRuleListResponse = await list({
+				pageNum: p,
+				pageSize: ps,
+				ruleName: keyword.trim() || undefined,
+			});
+			setDataSource(data.list ?? []);
+			setTotal(data.total ?? 0);
+			setPageNum(data.pageNum ?? p);
+			setPageSize(data.pageSize ?? ps);
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	const handleSearch = () => {
-		setSearchKeyword(deviceName.trim());
+		const keyword = ruleName.trim();
+		setSearchKeyword(keyword);
 		setPageNum(1);
+		loadData(1, pageSize, keyword);
 	};
 
 	const handleReset = () => {
-		setDeviceName("");
+		setRuleName("");
 		setSearchKeyword("");
 		setPageNum(1);
+		loadData(1, pageSize, "");
 	};
 
-	const openAdd = () => {
+	useEffect(() => {
+		if (!initRef.current) {
+			initRef.current = true;
+			loadData(pageNum, pageSize);
+		}
+	}, []);
+
+	const handleAdd = () => {
 		setEditingRecord(null);
 		setModalOpen(true);
 	};
 
-	const openEdit = (record: ReverseControlRule) => {
+	const handleEdit = (record: IiotControlRule) => {
 		setEditingRecord(record);
 		setModalOpen(true);
 	};
 
-	const handleModalOk = (values: RuleFormValues) => {
-		if (editingRecord) {
-			setRules((prev) =>
-				prev.map((rule) =>
-					rule.id === editingRecord.id
-						? {
-								...rule,
-								name: values.name,
-								description: values.description,
-								conditionRelation: values.conditionRelation,
-								conditions: values.conditions,
-								actions: values.actions,
-								enabled: values.enabled,
-							}
-						: rule,
+	const handleModalSubmit = async (values: RuleFormValues) => {
+		if (editingRecord?.id !== undefined) {
+			await update(toRule(values, editingRecord.id));
+			message.success("编辑成功");
+		} else {
+			await create(toRule(values));
+			message.success("新增成功");
+		}
+		await loadData(pageNum, pageSize);
+	};
+
+	const handleEnabledChange = async (
+		record: IiotControlRule,
+		enabled: boolean,
+	) => {
+		if (record.id === undefined) return;
+		setTogglingId(record.id);
+		try {
+			await changeStatus({
+				id: record.id,
+				status: toStatus(enabled),
+			});
+			setDataSource((prev) =>
+				prev.map((item) =>
+					item.id === record.id
+						? { ...item, status: toStatus(enabled) }
+						: item,
 				),
 			);
-			message.success("更新成功");
-		} else {
-			setRules((prev) => [
-				{
-					id: String(Date.now()),
-					name: values.name,
-					description: values.description,
-					conditionRelation: values.conditionRelation,
-					conditions: values.conditions,
-					actions: values.actions,
-					triggerCount: 0,
-					enabled: values.enabled,
-				},
-				...prev,
-			]);
-			message.success("新增成功");
+			message.success(enabled ? "已启用" : "已停用");
+		} finally {
+			setTogglingId(null);
 		}
 	};
 
-	const handleEnabledChange = (
-		record: ReverseControlRule,
-		enabled: boolean,
-	) => {
-		setRules((prev) =>
-			prev.map((rule) =>
-				rule.id === record.id ? { ...rule, enabled } : rule,
-			),
-		);
-		message.success(enabled ? "已启用" : "已停用");
-	};
-
-	const handleDelete = (record: ReverseControlRule) => {
+	const handleDelete = (record: IiotControlRule) => {
 		modal.confirm({
 			title: "确认删除",
-			content: `确定要删除反控规则「${record.name}」吗？`,
+			content: `确定要删除反控规则「${record.ruleName}」吗？`,
+			okText: "删除",
 			okButtonProps: { danger: true },
 			onOk: async () => {
-				setRules((prev) =>
-					prev.filter((rule) => rule.id !== record.id),
-				);
+				if (record.id === undefined) return;
+				await remove(String(record.id));
 				message.success("删除成功");
+				await loadData(pageNum, pageSize);
 			},
 		});
 	};
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {
-		setPageNum(pagination.current ?? 1);
-		setPageSize(pagination.pageSize ?? 10);
+		const nextPage = pagination.current ?? 1;
+		const nextSize = pagination.pageSize ?? pageSize;
+		setPageNum(nextPage);
+		setPageSize(nextSize);
+		loadData(nextPage, nextSize);
 	};
 
-	const columns: ColumnsType<ReverseControlRule> = [
+	const columns: ColumnsType<IiotControlRule> = [
 		{
 			title: "序号",
 			key: "index",
 			width: 72,
 			align: "center",
-			render: (_: unknown, __: ReverseControlRule, index: number) =>
+			render: (_: unknown, __: IiotControlRule, index: number) =>
 				(pageNum - 1) * pageSize + index + 1,
 		},
 		{
 			title: "反控规则名称",
-			dataIndex: "name",
-			key: "name",
+			dataIndex: "ruleName",
+			key: "ruleName",
+			ellipsis: true,
 		},
 		{
 			title: "规则描述",
+			dataIndex: "description",
 			key: "description",
 			ellipsis: true,
-			render: (_: unknown, record) => record.description,
 		},
 		{
 			title: "累计触发",
@@ -144,13 +160,13 @@ const ReverseControl = () => {
 		},
 		{
 			title: "启停用",
-			dataIndex: "enabled",
 			key: "enabled",
 			align: "center",
-			render: (enabled: boolean, record) => (
+			render: (_: unknown, record) => (
 				<Switch
 					size="small"
-					checked={enabled}
+					checked={isEnabled(record.status)}
+					loading={togglingId === record.id}
 					onChange={(checked) => handleEnabledChange(record, checked)}
 				/>
 			),
@@ -164,7 +180,7 @@ const ReverseControl = () => {
 					<Button
 						type="link"
 						size="small"
-						onClick={() => openEdit(record)}
+						onClick={() => handleEdit(record)}
 					>
 						编辑
 					</Button>
@@ -182,63 +198,56 @@ const ReverseControl = () => {
 
 	return (
 		<div className={styles.reverseControl}>
-			<section className={styles.panel}>
-				<header className={styles.panelHeader}>
-					<div className={styles.filterBar}>
-						<span className={styles.filterLabel}>设备名称</span>
-						<Input
-							className={styles.searchInput}
-							placeholder="请输入设备名称"
-							value={deviceName}
-							allowClear
-							onChange={(event) =>
-								setDeviceName(event.target.value)
-							}
-							onPressEnter={handleSearch}
-						/>
-						<Button type="primary" onClick={handleSearch}>
-							查询
-						</Button>
-						<Button onClick={handleReset}>重置</Button>
-					</div>
+			<div className={styles.toolbar}>
+				<span className={styles.filterLabel}>反控规则名称</span>
+				<Input
+					className={styles.searchInput}
+					placeholder="请输入规则名称"
+					value={ruleName}
+					allowClear
+					onChange={(event) => setRuleName(event.target.value)}
+					onPressEnter={handleSearch}
+				/>
+				<Button type="primary" onClick={handleSearch}>
+					查询
+				</Button>
+				<Button onClick={handleReset}>重置</Button>
+				<div className={styles.panelActions}>
 					<Button
 						type="primary"
 						icon={<PlusOutlined />}
-						onClick={openAdd}
+						onClick={handleAdd}
 					>
 						新增
 					</Button>
-				</header>
-
-				<div className={styles.tableWrap}>
-					<Table
-						size="small"
-						className={styles.ruleTable}
-						columns={columns}
-						dataSource={pagedRules}
-						rowKey="id"
-						locale={{
-							emptyText: <Empty description="暂无反控规则" />,
-						}}
-						pagination={{
-							current: pageNum,
-							pageSize,
-							total: filteredRules.length,
-							showSizeChanger: true,
-							showQuickJumper: true,
-							showTotal: (count: number) => `共 ${count} 条`,
-						}}
-						onChange={handleTableChange}
-					/>
 				</div>
-			</section>
+			</div>
 
-			<CreateRuleModal
+			<Table
+				size="small"
+				loading={loading}
+				columns={columns}
+				dataSource={dataSource}
+				rowKey="id"
+				locale={{
+					emptyText: <Empty description="暂无反控规则" />,
+				}}
+				pagination={{
+					current: pageNum,
+					pageSize,
+					total,
+					showSizeChanger: true,
+					showQuickJumper: true,
+					showTotal: (count: number) => `共 ${count} 条`,
+				}}
+				onChange={handleTableChange}
+			/>
+
+			<CreateModal
 				open={modalOpen}
 				editingRecord={editingRecord}
-				existingRules={rules}
 				onCancel={() => setModalOpen(false)}
-				onOk={handleModalOk}
+				onOk={handleModalSubmit}
 			/>
 		</div>
 	);

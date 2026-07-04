@@ -78,7 +78,8 @@ const handleOk = async () => { /* ... */ };
 | 工具栏主按钮 | `新增` | `新增用户`、`添加组织`、`新增反控规则` |
 | 表格操作列 | `编辑`、`删除` | `编辑用户`、`删除角色` |
 | CreateModal 标题 | `新增` / `编辑` | `新增用户` / `编辑组织` |
-| 新增成功提示 | `message.success("新增成功")` | `添加成功` |
+| 新增成功提示 | `message.success("新增成功")` | `添加成功`、`创建成功` |
+| 编辑成功提示 | `message.success("编辑成功")` | `保存成功`、`更新成功` |
 | 创建类动词 | 统一 `新增` | `添加`、`创建` |
 
 **非 CRUD 保留完整语义**
@@ -108,6 +109,18 @@ const handleOk = async () => { /* ... */ };
 // CreateModal
 <Modal title={isEdit ? "编辑" : "新增"} open={open} onOk={onOk} onCancel={onCancel}>
 
+// Modal 提交成功提示 — 与按钮/标题动词一致
+const handleModalSubmit = async (values: FormValues) => {
+  if (editingRecord?.id !== undefined) {
+    await update({ ...values, id: editingRecord.id });
+    message.success("编辑成功");
+  } else {
+    await create(values);
+    message.success("新增成功");
+  }
+  await loadData(pageNum, pageSize);
+};
+
 // 特殊动作 — 保留完整名称
 <Button type="link" onClick={() => handleAssign(record)}>权限分配</Button>
 <Button type="link" onClick={() => handleExport()}>导出</Button>
@@ -121,11 +134,14 @@ const handleOk = async () => { /* ... */ };
 
 <Modal title={isEdit ? "编辑角色" : "新增角色"} />
 
+// 编辑接口成功后仍用「保存成功」
+message.success("保存成功");
+
 // 不要把特殊动作缩短成 CRUD
 <Button>新增</Button>  {/* ❌ 语义应为「权限分配」 */}
 ```
 
-**边界**：删除确认框 `content` 仍写具体对象（如 `确定要删除用户「${name}」吗？`），与按钮简短文案不冲突；Modal `okText: "删除"` 等确认类文案见「Modal / confirm 按钮文案」；后端 `permName` 源头统一后，前端 `formatActionTitle` 仍保留以兼容历史数据。
+**边界**：删除确认框 `content` 仍写具体对象（如 `确定要删除用户「${name}」吗？`），与按钮简短文案不冲突；Modal `okText: "删除"` 等确认类文案见「Modal / confirm 按钮文案」；`handleModalSubmit` 等编辑/新增分支的成功 toast 须分别用 **编辑成功** / **新增成功**，与表格「编辑」、Modal 标题「编辑」一致，**不要**混用「保存成功」「更新成功」「创建成功」；后端 `permName` 源头统一后，前端 `formatActionTitle` 仍保留以兼容历史数据。**参考实现**：`apps/admin/src/pages/permission-organization/index.tsx`、`apps/admin/src/pages/reverse-control/index.tsx`。
 
 ### 搜索区查询与重置
 
@@ -1530,10 +1546,10 @@ const loadData = async () => {
 const handleModalSubmit = async (values: OrgFormValues) => {
   if (editingRecord?.deptId !== undefined) {
     await updateDept({ ...values, deptId: editingRecord.deptId });
-    message.success("保存成功");
+    message.success("编辑成功");
   } else {
     await createDept(values);
-    message.success("添加成功");
+    message.success("新增成功");
   }
   await loadData();
 };
