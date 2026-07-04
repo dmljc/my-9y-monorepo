@@ -10,8 +10,8 @@ import { filterRules, MOCK_RULES } from "./utils";
 const ReverseControl = () => {
 	const { message, modal } = App.useApp();
 	const [rules, setRules] = useState<ReverseControlRule[]>(MOCK_RULES);
-	const [draftDeviceName, setDraftDeviceName] = useState("");
-	const [appliedDeviceName, setAppliedDeviceName] = useState("");
+	const [deviceName, setDeviceName] = useState("");
+	const [searchKeyword, setSearchKeyword] = useState("");
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingRecord, setEditingRecord] =
 		useState<ReverseControlRule | null>(null);
@@ -19,8 +19,8 @@ const ReverseControl = () => {
 	const [pageSize, setPageSize] = useState(10);
 
 	const filteredRules = useMemo(
-		() => filterRules(rules, appliedDeviceName),
-		[appliedDeviceName, rules],
+		() => filterRules(rules, searchKeyword),
+		[searchKeyword, rules],
 	);
 
 	const pagedRules = useMemo(() => {
@@ -29,13 +29,13 @@ const ReverseControl = () => {
 	}, [filteredRules, pageNum, pageSize]);
 
 	const handleSearch = () => {
-		setAppliedDeviceName(draftDeviceName.trim());
+		setSearchKeyword(deviceName.trim());
 		setPageNum(1);
 	};
 
 	const handleReset = () => {
-		setDraftDeviceName("");
-		setAppliedDeviceName("");
+		setDeviceName("");
+		setSearchKeyword("");
 		setPageNum(1);
 	};
 
@@ -189,10 +189,10 @@ const ReverseControl = () => {
 						<Input
 							className={styles.searchInput}
 							placeholder="请输入设备名称"
-							value={draftDeviceName}
+							value={deviceName}
 							allowClear
 							onChange={(event) =>
-								setDraftDeviceName(event.target.value)
+								setDeviceName(event.target.value)
 							}
 							onPressEnter={handleSearch}
 						/>

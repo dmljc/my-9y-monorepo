@@ -5,11 +5,13 @@ import { getAssignDetail } from "./api";
 import type { RolePermissionDetailResponse, SysRole } from "./interface";
 import type { AssignAction, AssignRow } from "./utils";
 import {
+	buildAllHiddenIdsByPage,
 	buildAssignRows,
 	collectMenuIds,
 	extractCheckedKeys,
 	getActionKeys,
 	hiddenIdsByPage,
+	parseAssignDetailResponse,
 } from "./utils";
 
 interface AssignModalProps {
@@ -37,37 +39,61 @@ const AssignModal = ({
 	const [hiddenMenuIdsByPage, setHiddenMenuIdsByPage] = useState<
 		Record<string, number[]>
 	>({});
+	const [allHiddenIdsByPage, setAllHiddenIdsByPage] = useState<
+		Record<string, number[]>
+	>({});
 
 	useEffect(() => {
 		if (!open || role?.roleId === undefined) {
 			setAdminTableRows([]);
 			setCheckedKeys([]);
 			setHiddenMenuIdsByPage({});
+			setAllHiddenIdsByPage({});
 			return;
 		}
+
+		const roleId = role.roleId;
+		const roleMenuIds = role.menuIds ?? [];
+		let cancelled = false;
 
 		const loadDetail = async () => {
 			setDetailLoading(true);
 			try {
 				const res: RolePermissionDetailResponse = await getAssignDetail(
-					String(role.roleId),
+					String(roleId),
 				);
-				const modules = res.modules ?? [];
+				if (cancelled) return;
+
+				const { modules, assignedMenuIds } = parseAssignDetailResponse(
+					res,
+					roleMenuIds,
+				);
 				setAdminTableRows(buildAssignRows(modules));
-				setCheckedKeys(extractCheckedKeys(modules));
-				setHiddenMenuIdsByPage(hiddenIdsByPage(modules));
+				setCheckedKeys(extractCheckedKeys(modules, assignedMenuIds));
+				setHiddenMenuIdsByPage(
+					hiddenIdsByPage(modules, assignedMenuIds),
+				);
+				setAllHiddenIdsByPage(buildAllHiddenIdsByPage(modules));
 			} catch {
+				if (cancelled) return;
 				// 加载失败时清空，避免展示过期权限；toast 由全局 onError 弹出
 				setAdminTableRows([]);
 				setCheckedKeys([]);
 				setHiddenMenuIdsByPage({});
+				setAllHiddenIdsByPage({});
 			} finally {
-				setDetailLoading(false);
+				if (!cancelled) {
+					setDetailLoading(false);
+				}
 			}
 		};
 
 		loadDetail();
-	}, [open, role]);
+
+		return () => {
+			cancelled = true;
+		};
+	}, [open, role?.roleId, role?.menuIds]);
 
 	const isPageChecked = (pageKey: string) => checkedKeys.includes(pageKey);
 
@@ -95,6 +121,17 @@ const AssignModal = ({
 				keys.delete(actionKey);
 			}
 		});
+
+		if (checked) {
+			const hiddenIds = allHiddenIdsByPage[record.pageKey];
+			if (hiddenIds?.length) {
+				setHiddenMenuIdsByPage((prev) => ({
+					...prev,
+					[record.pageKey]: hiddenIds,
+				}));
+			}
+			return;
+		}
 
 		if (!checked) {
 			setHiddenMenuIdsByPage((prev) => {

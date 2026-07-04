@@ -7,8 +7,9 @@ import {
 	getDeptTree,
 	getRoleOptions,
 	NAME_MAX_LENGTH,
-	// NAME_PATTERN,
+	NAME_PATTERN,
 	PASSWORD_MAX_LENGTH,
+	PASSWORD_MIN_LENGTH,
 	PASSWORD_PATTERN,
 	recordToFormValues,
 	USERNAME_MAX_LENGTH,
@@ -26,13 +27,17 @@ const CreateModal = ({
 	open,
 	editingRecord,
 	onCancel,
-	onOk,
+	onOk: onOkProp,
 }: CreateModalProps) => {
 	const [form] = Form.useForm<UserFormValues>();
 	const [loading, setLoading] = useState(false);
 	const [deptTree, setDeptTree] = useState<DeptTreeNode[]>([]);
 	const [roleOptions, setRoleOptions] = useState<SelectOption[]>([]);
 	const isEdit = editingRecord !== null;
+
+	/** 编辑态占位符视为空值，跳过长度/格式校验（表示不修改密码） */
+	const skipEditPasswordPlaceholder = (value: string) =>
+		isEdit && value === EDIT_PASSWORD_PLACEHOLDER ? "" : value;
 
 	useEffect(() => {
 		if (!open) return;
@@ -84,7 +89,7 @@ const CreateModal = ({
 		form.setFieldValue("password", "");
 	};
 
-	const handleOk = async () => {
+	const onOk = async () => {
 		try {
 			const values = await form.validateFields();
 			setLoading(true);
@@ -96,10 +101,10 @@ const CreateModal = ({
 			) {
 				delete payload.password;
 			}
-			await onOk(payload);
+			await onOkProp(payload);
 			onCancel();
 		} catch {
-			// 表单校验失败或提交失败
+			// 表单校验失败或接口失败；接口 toast 已由全局 onError 弹出
 		} finally {
 			setLoading(false);
 		}
@@ -109,7 +114,7 @@ const CreateModal = ({
 		<Modal
 			title={isEdit ? "编辑" : "新增"}
 			open={open}
-			onOk={handleOk}
+			onOk={onOk}
 			onCancel={onCancel}
 			confirmLoading={loading}
 			destroyOnHidden
@@ -161,6 +166,10 @@ const CreateModal = ({
 							max: NAME_MAX_LENGTH,
 							message: `最多输入${NAME_MAX_LENGTH}个字符`,
 						},
+						{
+							pattern: NAME_PATTERN,
+							message: "可以包含中文、字母、数字",
+						},
 					]}
 				>
 					<Input
@@ -176,27 +185,15 @@ const CreateModal = ({
 					rules={[
 						{ required: !isEdit, message: "请输入密码" },
 						{
+							min: PASSWORD_MIN_LENGTH,
 							max: PASSWORD_MAX_LENGTH,
-							message: `最多输入${PASSWORD_MAX_LENGTH}个字符`,
+							message: "密码长度必须在5到20个字符之间",
+							transform: skipEditPasswordPlaceholder,
 						},
 						{
-							validator: (_, value: string) => {
-								if (
-									!value ||
-									(isEdit &&
-										value === EDIT_PASSWORD_PLACEHOLDER)
-								) {
-									return Promise.resolve();
-								}
-								if (!PASSWORD_PATTERN.test(value)) {
-									return Promise.reject(
-										new Error(
-											"仅支持字母、数字及常见符号 !@#$%^&*._-",
-										),
-									);
-								}
-								return Promise.resolve();
-							},
+							pattern: PASSWORD_PATTERN,
+							message: "仅支持字母、数字及常见符号 !@#$%^&*._-",
+							transform: skipEditPasswordPlaceholder,
 						},
 					]}
 				>

@@ -29,17 +29,16 @@ const PermissionRole = () => {
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
-	const [draftName, setDraftName] = useState("");
-	const [appliedName, setAppliedName] = useState("");
+	const [roleName, setRoleName] = useState("");
 	const initRef = useRef(false);
 
-	const loadData = async (p: number, ps: number, name = appliedName) => {
+	const loadData = async (p: number, ps: number, name = roleName) => {
 		setLoading(true);
 		try {
 			const query: RoleListQuery = {
 				pageNum: p,
 				pageSize: ps,
-				roleName: name || undefined,
+				roleName: name.trim() || undefined,
 			};
 			const data: RoleListResponse = await fetchRoleList(query);
 			setDataSource(data.list);
@@ -52,15 +51,12 @@ const PermissionRole = () => {
 	};
 
 	const handleSearch = () => {
-		const nextName = draftName.trim();
-		setAppliedName(nextName);
 		setPageNum(1);
-		loadData(1, pageSize, nextName);
+		loadData(1, pageSize);
 	};
 
 	const handleReset = () => {
-		setDraftName("");
-		setAppliedName("");
+		setRoleName("");
 		setPageNum(1);
 		loadData(1, pageSize, "");
 	};
@@ -213,9 +209,9 @@ const PermissionRole = () => {
 				<Input
 					className={styles.searchInput}
 					placeholder="请输入角色名称"
-					value={draftName}
+					value={roleName}
 					allowClear
-					onChange={(event) => setDraftName(event.target.value)}
+					onChange={(event) => setRoleName(event.target.value)}
 					onPressEnter={handleSearch}
 				/>
 				<Button type="primary" onClick={handleSearch}>

@@ -10,12 +10,12 @@ import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import type { User, UserFormValues, UserListFilters } from "./utils";
 import {
-	create,
+	createUser,
 	exportUsers,
 	exportUsersToJson,
-	list,
-	remove,
-	update,
+	fetchUserListResult,
+	removeUser,
+	updateUser,
 } from "./utils";
 
 const PermissionUser = () => {
@@ -39,7 +39,7 @@ const PermissionUser = () => {
 	) => {
 		setLoading(true);
 		try {
-			const result = await list({
+			const result = await fetchUserListResult({
 				pageNum: p,
 				pageSize: ps,
 				...(filters ?? {
@@ -88,10 +88,10 @@ const PermissionUser = () => {
 
 	const handleModalSubmit = async (values: UserFormValues) => {
 		if (editingRecord) {
-			await update(editingRecord.id, values);
+			await updateUser(editingRecord.id, values);
 			message.success("保存成功");
 		} else {
-			await create(values);
+			await createUser(values);
 			message.success("新增成功");
 		}
 		await loadData(pageNum, pageSize);
@@ -104,7 +104,7 @@ const PermissionUser = () => {
 			okText: "删除",
 			okButtonProps: { danger: true },
 			onOk: async () => {
-				await remove(record.id);
+				await removeUser(record.id);
 				message.success("删除成功");
 				await loadData(pageNum, pageSize);
 			},
@@ -196,92 +196,82 @@ const PermissionUser = () => {
 	];
 
 	return (
-		<div className={styles.page}>
-			<section className={styles.panel}>
-				<header className={styles.panelHeader}>
-					<div className={styles.filterBar}>
-						<span className={styles.filterLabel}>用户账号</span>
-						<Input
-							className={styles.searchInput}
-							placeholder="请输入用户账号"
-							value={username}
-							allowClear
-							onChange={(event) =>
-								setUsername(event.target.value)
-							}
-							onPressEnter={handleSearch}
-						/>
-						<span className={styles.filterLabel}>用户姓名</span>
-						<Input
-							className={styles.searchInput}
-							placeholder="请输入用户姓名"
-							value={name}
-							allowClear
-							onChange={(event) => setName(event.target.value)}
-							onPressEnter={handleSearch}
-						/>
-						<Button type="primary" onClick={handleSearch}>
-							查询
-						</Button>
-						<Button onClick={handleReset}>重置</Button>
-					</div>
-					<div className={styles.panelActions}>
-						<Button
-							type="primary"
-							icon={<PlusOutlined />}
-							onClick={handleAdd}
-						>
-							新增
-						</Button>
-						<Upload
-							showUploadList={false}
-							beforeUpload={() => {
-								handleImport();
-								return false;
-							}}
-						>
-							<Button icon={<UploadOutlined />}>导入</Button>
-						</Upload>
-						<Button
-							icon={<DownloadOutlined />}
-							onClick={handleExport}
-						>
-							导出
-						</Button>
-					</div>
-				</header>
-
-				<div className={styles.tableWrap}>
-					<Table
-						size="small"
-						className={styles.table}
-						columns={columns}
-						dataSource={dataSource}
-						rowKey="id"
-						loading={loading}
-						rowSelection={{
-							selectedRowKeys,
-							onChange: (keys) =>
-								setSelectedRowKeys(keys as string[]),
+		<div className={styles.permissionUser}>
+			<div className={styles.toolbar}>
+				<span className={styles.filterLabel}>用户账号</span>
+				<Input
+					className={styles.searchInput}
+					placeholder="请输入用户账号"
+					value={username}
+					allowClear
+					onChange={(event) => setUsername(event.target.value)}
+					onPressEnter={handleSearch}
+				/>
+				<span className={styles.filterLabel}>用户姓名</span>
+				<Input
+					className={styles.searchInput}
+					placeholder="请输入用户姓名"
+					value={name}
+					allowClear
+					onChange={(event) => setName(event.target.value)}
+					onPressEnter={handleSearch}
+				/>
+				<Button type="primary" onClick={handleSearch}>
+					查询
+				</Button>
+				<Button onClick={handleReset}>重置</Button>
+				<div className={styles.panelActions}>
+					<Button
+						type="primary"
+						icon={<PlusOutlined />}
+						onClick={handleAdd}
+					>
+						新增
+					</Button>
+					<Upload
+						showUploadList={false}
+						beforeUpload={() => {
+							handleImport();
+							return false;
 						}}
-						locale={{ emptyText: <Empty description="暂无用户" /> }}
-						pagination={{
-							current: pageNum,
-							pageSize,
-							total,
-							showSizeChanger: true,
-							showQuickJumper: true,
-							showTotal: (count) => `共 ${count} 条`,
-						}}
-						onChange={handleTableChange}
-					/>
+					>
+						<Button icon={<UploadOutlined />}>导入</Button>
+					</Upload>
+					<Button icon={<DownloadOutlined />} onClick={handleExport}>
+						导出
+					</Button>
 				</div>
-			</section>
+			</div>
+
+			<Table
+				size="small"
+				columns={columns}
+				dataSource={dataSource}
+				rowKey="id"
+				loading={loading}
+				rowSelection={{
+					selectedRowKeys,
+					onChange: (keys) => setSelectedRowKeys(keys as string[]),
+				}}
+				locale={{ emptyText: <Empty description="暂无用户" /> }}
+				pagination={{
+					current: pageNum,
+					pageSize,
+					total,
+					showSizeChanger: true,
+					showQuickJumper: true,
+					showTotal: (count) => `共 ${count} 条`,
+				}}
+				onChange={handleTableChange}
+			/>
 
 			<CreateModal
 				open={modalOpen}
 				editingRecord={editingRecord}
-				onCancel={() => setModalOpen(false)}
+				onCancel={() => {
+					setModalOpen(false);
+					setEditingRecord(null);
+				}}
 				onOk={handleModalSubmit}
 			/>
 		</div>

@@ -129,43 +129,86 @@ const handleOk = async () => { /* ... */ };
 
 ### 搜索区查询与重置
 
-**做什么**：列表页、统计页等带筛选条件的**搜索区**，须**成对**提供 **查询**（`type="primary"`）与 **重置** 按钮；处理函数命名为 **`handleSearch`**、**`handleReset`**。有「草稿 / 生效」两态筛选时（`draftFilter` / `appliedFilter` 或 `draftXxx` / `appliedXxx`），**查询**只把草稿同步为生效条件并触发加载/刷新；**重置**须清空草稿、恢复默认生效条件，并重置分页后重新加载（或刷新图表）。
+**做什么**：列表页、统计页等带筛选条件的**搜索区**，须**成对**提供 **查询**（`type="primary"`）与 **重置** 按钮；处理函数命名为 **`handleSearch`**、**`handleReset`**。
 
-**为什么**：仅提供「查询」时用户无法一键回到默认列表/图表，体验不完整；查询与重置配套也是各 CRUD 页已形成的统一模式。
+**筛选 state 命名（两档，默认用简单档）**
+
+| 场景 | 做法 |
+|------|------|
+| **常规 CRUD 列表**（1～2 个文本筛选项、点「查询」才拉接口） | state **与字段同名**，如 `username`、`name`、`roleName`；`Input` 直接绑定；**不要**拆成 `draftUsername` / `appliedUsername` 等草稿/生效双份命名 |
+| **多字段组合 / 统计图表**（须「点查询才生效」且翻页保持上次条件） | 用 `draftFilter` / `appliedFilter` 对象，或输入态与生效态分字段（如组织树 `deptName` + `searchKeyword`） |
+
+**为什么**：多数列表页筛选项与后端 query 字段一一对应，直接用 `username`、`name` 可读且与 `interface` 对齐；`draftXxx` / `appliedXxx` 只在确需「输入与生效分离」时才有价值，不应作为默认模板。
 
 **写法要点**
 
 | 部分 | 要求 |
 |------|------|
 | 按钮顺序 | 筛选项 → **查询** → **重置** →（可选）导出 / 新增等操作 |
-| 查询 | `handleSearch`：trim 文本类输入；更新 `applied*`；`setPageNum(1)` 后 `loadData` |
-| 重置 | `handleReset`：清空 `draft*`、恢复默认 `applied*`（或空串）；`setPageNum(1)` 后 `loadData` |
+| 查询 | `handleSearch`：`setPageNum(1)` 后 `loadData`；`loadData` 内对文本字段 **trim** 后拼 query |
+| 重置 | `handleReset`：清空筛选项 state、恢复默认（或空串）、`setPageNum(1)` 后 `loadData` |
 | 默认值 | 时间范围等放 `utils.ts` 的 `DEFAULT_FILTER` 等常量，重置时复用 |
 | 回车 | 文本 `Input` 可 `onPressEnter={handleSearch}`；重置仍靠按钮 |
 
-**✅ 推荐**
+**✅ 推荐 — 常规列表（直接字段名）**
 
 ```tsx
-const [draftName, setDraftName] = useState("");
-const [appliedName, setAppliedName] = useState("");
+const [username, setUsername] = useState("");
+const [name, setName] = useState("");
+
+const loadData = async (p: number, ps: number, filters?: UserListFilters) => {
+  setLoading(true);
+  try {
+    const result = await fetchUserListResult({
+      pageNum: p,
+      pageSize: ps,
+      ...(filters ?? {
+        username: username.trim() || undefined,
+        name: name.trim() || undefined,
+      }),
+    });
+    setDataSource(result.list);
+    setTotal(result.total);
+  } finally {
+    setLoading(false);
+  }
+};
 
 const handleSearch = () => {
-  const nextName = draftName.trim();
-  setAppliedName(nextName);
   setPageNum(1);
-  loadData(1, pageSize, nextName);
+  loadData(1, pageSize);
 };
 
 const handleReset = () => {
-  setDraftName("");
-  setAppliedName("");
+  setUsername("");
+  setName("");
   setPageNum(1);
-  loadData(1, pageSize, "");
+  loadData(1, pageSize, {});
 };
 
-<Input value={draftName} onChange={(e) => setDraftName(e.target.value)} onPressEnter={handleSearch} />
+<Input value={username} onChange={(e) => setUsername(e.target.value)} onPressEnter={handleSearch} />
 <Button type="primary" onClick={handleSearch}>查询</Button>
 <Button onClick={handleReset}>重置</Button>
+```
+
+**✅ 推荐 — 多字段 / 统计（draftFilter / appliedFilter）**
+
+```tsx
+const [draftFilter, setDraftFilter] = useState(DEFAULT_FILTER);
+const [appliedFilter, setAppliedFilter] = useState(DEFAULT_FILTER);
+
+const handleSearch = () => {
+  setAppliedFilter(draftFilter);
+  setPageNum(1);
+  loadData(1, pageSize, draftFilter);
+};
+
+const handleReset = () => {
+  setDraftFilter(DEFAULT_FILTER);
+  setAppliedFilter(DEFAULT_FILTER);
+  setPageNum(1);
+  loadData(1, pageSize, DEFAULT_FILTER);
+};
 ```
 
 **❌ 避免**
@@ -175,10 +218,14 @@ const handleReset = () => {
 <Button type="primary" onClick={handleSearch}>查询</Button>
 
 // 重置只清输入框，不刷新列表/图表
-const handleReset = () => setDraftName("");
+const handleReset = () => setUsername("");
+
+// 简单文本筛选用 draft/applied 双份命名
+const [draftUsername, setDraftUsername] = useState("");
+const [appliedUsername, setAppliedUsername] = useState("");
 ```
 
-**边界**：**无筛选条件**的纯列表（如 `warning-levels`）不必强行加搜索区；布局侧栏（`permission/`、`device/`）不适用；统计页用 `draftFilter` / `appliedFilter` 时，重置须同时恢复两者为 `DEFAULT_FILTER`；导出、新增等与筛选无关的按钮放在查询/重置之后（常用 `margin-left: auto` 靠右）。**参考实现**：`permission-role/`、`historical-data/`、`warning-list/`。
+**边界**：**无筛选条件**的纯列表（如 `warning-levels`）不必强行加搜索区；布局侧栏（`permission/`、`device/`）不适用；客户端树形筛选可用 `deptName`（输入）+ `searchKeyword`（生效 keyword），不必叫 draft/applied；导出、新增等与筛选无关的按钮放在查询/重置之后（常用 `margin-left: auto` 靠右）。**参考实现**：直接字段 — `permission-user/`、`historical-data/`、`warning-list/`；`draftFilter` — `statistics/`；输入/生效分离 — `permission-organization/`（`deptName` + `searchKeyword`）。
 
 ### useCallback / useMemo
 
@@ -1160,6 +1207,117 @@ const columns: ColumnsType<User> = [
 ```
 
 **边界**：与「Table columns 列宽」配合——未设 `scroll` 时数据列不写 `width`；确需 `scroll.x` 时再按文档取值（列宽之和、`max-content` 等），不要复制粘贴固定 magic number。
+
+### Form.Item 校验规则
+
+**做什么**：`Form.Item` 的 `rules` **优先**使用 Ant Design / async-validator 提供的**声明式属性**（如 `required`、`min`、`max`、`len`、`pattern`、`type`、`whitespace`）；仅当内置能力无法表达时，再写自定义 **`validator`**（或 `transform` + 内置规则组合）。
+
+**为什么**：`required` / `min` / `max` / `pattern` 等与[官方 Form 规则](https://ant.design/components/form-cn#rule)及 TS 类型一致，语义一眼可读；在 `validator` 里重复写 `value.length < n`、`RegExp.test` 等样板逻辑，难维护且与 Input 的 `maxLength` 等 props 容易脱节。
+
+**内置规则优先顺序（常见场景）**
+
+| 场景 | 优先用法 | 避免 |
+|------|----------|------|
+| 必填 | `{ required: true, message: "…" }`；纯空格无效时加 `whitespace: true` | `validator` 里 `if (!value) reject` |
+| 字符串长度 | `{ min, max, message: "…" }` 或 `{ len, message: "…" }` | `validator` 里手写 `value.length` |
+| 格式 / 字符集 | `{ pattern: REGEXP, message: "…" }` | `validator` 里 `REGEXP.test(value)` |
+| 数组至少 N 项 | `{ type: "array", min: 1, message: "…" }` | `validator` 里判断 `Array.isArray` + `length` |
+| 数字范围 | `{ type: "number", min, max }` | 字符串字段用手写 `Number(value)` 比较 |
+
+**写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 常量 | 长度、正则等放页面 `utils.ts`（如 `PASSWORD_MIN_LENGTH`、`USERNAME_PATTERN`），`rules` 引用常量，**不要** magic number / 内联长正则 |
+| 输入限制 | 与 `rules` 配套：文本字段在 `Input` 上设 `maxLength`（及按需 `showCount`），**不要**只靠提交时校验 |
+| 编辑可选字段 | 占位符 / 「不修改则不校验」用 **`transform`** 将特殊值转为 `""` 后再走 `min` / `pattern` 等；**不要**为简单跳过写整段 `validator` |
+| 条件必填 | 如 `{ required: !isEdit, message: "…" }` 仍用 `required` 属性；**不要**在 `validator` 里重复判空 |
+| 自定义 `validator` | 仅用于：跨字段比对（确认密码）、依赖其它表单项、异步远程校验、内置规则无法表达的复合业务逻辑 |
+
+**✅ 推荐**
+
+```tsx
+// utils.ts
+export const PASSWORD_MIN_LENGTH = 5;
+export const PASSWORD_MAX_LENGTH = 20;
+export const PASSWORD_PATTERN = /^[A-Za-z0-9!@#$%^&*._-]+$/;
+export const USERNAME_PATTERN = /^[A-Za-z0-9@]+$/;
+
+// CreateModal.tsx — 声明式 rules
+<Form.Item
+  name="username"
+  label="用户账号"
+  rules={[
+    { required: true, whitespace: true, message: "请输入用户账号" },
+    { max: USERNAME_MAX_LENGTH, message: `最多输入${USERNAME_MAX_LENGTH}个字符` },
+    { pattern: USERNAME_PATTERN, message: "可以包含大小写字母、数字、@" },
+  ]}
+>
+  <Input maxLength={USERNAME_MAX_LENGTH} showCount />
+</Form.Item>
+
+// 编辑态密码：transform 跳过占位符，长度 / 格式仍用内置规则
+const skipEditPasswordPlaceholder = (value: string) =>
+  isEdit && value === EDIT_PASSWORD_PLACEHOLDER ? "" : value;
+
+<Form.Item
+  name="password"
+  label="密码"
+  rules={[
+    { required: !isEdit, message: "请输入密码" },
+    {
+      min: PASSWORD_MIN_LENGTH,
+      max: PASSWORD_MAX_LENGTH,
+      message: "密码长度必须在5到20个字符之间",
+      transform: skipEditPasswordPlaceholder,
+    },
+    {
+      pattern: PASSWORD_PATTERN,
+      message: "仅支持字母、数字及常见符号 !@#$%^&*._-",
+      transform: skipEditPasswordPlaceholder,
+    },
+  ]}
+>
+  <Input maxLength={PASSWORD_MAX_LENGTH} allowClear />
+</Form.Item>
+
+<Form.Item
+  name="roleIds"
+  label="角色分配"
+  rules={[{ required: true, type: "array", min: 1, message: "请至少选择一个角色" }]}
+>
+  <Checkbox.Group options={roleOptions} />
+</Form.Item>
+```
+
+**❌ 避免**
+
+```tsx
+// 长度、格式本可用 min / max / pattern，却写 validator
+{
+  validator: (_, value: string) => {
+    if (!value) return Promise.resolve();
+    if (value.length < 5 || value.length > 20) {
+      return Promise.reject(new Error("密码长度必须在5到20个字符之间"));
+    }
+    if (!/^[A-Za-z0-9!@#$%^&*._-]+$/.test(value)) {
+      return Promise.reject(new Error("格式不正确"));
+    }
+    return Promise.resolve();
+  },
+}
+
+// 必填、max 本可声明式，却全塞进 validator
+{
+  validator: (_, value) => {
+    if (!value?.trim()) return Promise.reject(new Error("请输入用户姓名"));
+    if (value.length > 30) return Promise.reject(new Error("太长了"));
+    return Promise.resolve();
+  },
+}
+```
+
+**边界**：多条 `rules` 按顺序执行；`transform` 只影响**当前 rule** 的校验值，需在多条规则上重复时提取为同一函数（如 `skipEditPasswordPlaceholder`）；远程唯一性校验、与 `getFieldValue` 联动的确认密码等**必须**用 `validator`；Login 等未走页面 `utils.ts` 的简单页，常量仍可局部定义，但规则写法遵循本节约束。**参考实现**：`apps/admin/src/pages/permission-user/CreateModal.tsx`。
 
 ### Form.useForm 与 useEffect 依赖
 

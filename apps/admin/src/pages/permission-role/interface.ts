@@ -55,11 +55,22 @@ export interface RolePermissionModule {
 	directPermissions?: RolePermissionItem[] | null;
 }
 
-/** 角色权限分配详情响应 */
+/** 角色权限分配详情响应（request 解包后为 data 层） */
 export interface RolePermissionDetailResponse {
 	code?: number;
 	totalAssigned?: number;
 	modules?: RolePermissionModule[];
+	/** 已分配的 menuId 列表（部分后端不在树节点上写 checked，仅返回此字段） */
+	menuIds?: (number | string)[];
+	assignedMenuIds?: (number | string)[];
+	checkedMenuIds?: (number | string)[];
+	data?: {
+		totalAssigned?: number;
+		modules?: RolePermissionModule[];
+		menuIds?: (number | string)[];
+		assignedMenuIds?: (number | string)[];
+		checkedMenuIds?: (number | string)[];
+	};
 }
 
 /** 更新角色权限请求体 */

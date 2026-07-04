@@ -80,7 +80,7 @@ const PermissionOrganization = () => {
 	const handleModalSubmit = async (values: OrgFormValues) => {
 		if (editingRecord?.deptId !== undefined) {
 			await updateDept({ ...values, deptId: editingRecord.deptId });
-			message.success("保存成功");
+			message.success("编辑成功");
 		} else {
 			await createDept(values);
 			message.success("新增成功");

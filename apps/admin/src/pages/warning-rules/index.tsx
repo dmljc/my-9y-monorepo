@@ -1,7 +1,7 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Input, Switch, Table, Tag } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { create, list, remove, update } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
@@ -26,40 +26,32 @@ const WarningRules = () => {
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
 	const [togglingId, setTogglingId] = useState<string | null>(null);
-	const [draftRuleName, setDraftRuleName] = useState("");
-	const [appliedRuleName, setAppliedRuleName] = useState("");
+	const [name, setName] = useState("");
 
-	const loadData = useCallback(
-		async (p: number, ps: number, ruleName = appliedRuleName) => {
-			setLoading(true);
-			try {
-				const result = await list({
-					pageNum: p,
-					pageSize: ps,
-					name: ruleName,
-				});
-				setDataSource(result.list);
-				setTotal(result.total);
-				setPageNum(result.pageNum);
-				setPageSize(result.pageSize);
-			} catch {
-			} finally {
-				setLoading(false);
-			}
-		},
-		[appliedRuleName, message],
-	);
+	const loadData = async (p: number, ps: number, keyword = name) => {
+		setLoading(true);
+		try {
+			const result = await list({
+				pageNum: p,
+				pageSize: ps,
+				name: keyword.trim() || undefined,
+			});
+			setDataSource(result.list);
+			setTotal(result.total);
+			setPageNum(result.pageNum);
+			setPageSize(result.pageSize);
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	const handleSearch = () => {
-		const nextRuleName = draftRuleName.trim();
-		setAppliedRuleName(nextRuleName);
 		setPageNum(1);
-		void loadData(1, pageSize, nextRuleName);
+		void loadData(1, pageSize);
 	};
 
 	const handleReset = () => {
-		setDraftRuleName("");
-		setAppliedRuleName("");
+		setName("");
 		setPageNum(1);
 		loadData(1, pageSize, "");
 	};
@@ -234,11 +226,9 @@ const WarningRules = () => {
 						<Input
 							className={styles.searchInput}
 							placeholder="请输入规则名称"
-							value={draftRuleName}
+							value={name}
 							allowClear
-							onChange={(event) =>
-								setDraftRuleName(event.target.value)
-							}
+							onChange={(event) => setName(event.target.value)}
 							onPressEnter={handleSearch}
 						/>
 						<Button type="primary" onClick={handleSearch}>

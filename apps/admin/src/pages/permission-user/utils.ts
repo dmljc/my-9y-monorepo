@@ -83,6 +83,9 @@ export const USERNAME_MAX_LENGTH = 30;
 /** 用户姓名最大字符数 */
 export const NAME_MAX_LENGTH = 30;
 
+/** 密码最小字符数 */
+export const PASSWORD_MIN_LENGTH = 5;
+
 /** 密码最大字符数 */
 export const PASSWORD_MAX_LENGTH = 20;
 
@@ -541,7 +544,9 @@ async function mapListUsers(rows: SysUser[]): Promise<User[]> {
  * @param {UserListParams} - 列表查询参数。
  * @returns {UserListResult} - 分页用户列表。
  */
-export async function list(params: UserListParams): Promise<UserListResult> {
+export async function fetchUserListResult(
+	params: UserListParams,
+): Promise<UserListResult> {
 	const { pageNum, pageSize, username, name } = params;
 	const nameKeyword = name?.trim();
 
@@ -600,7 +605,7 @@ export async function detail(id: string): Promise<User> {
  * @param {UserFormValues} - 新增表单值。
  * @returns {void} - 无返回值。
  */
-export async function create(values: UserFormValues): Promise<void> {
+export async function createUser(values: UserFormValues): Promise<void> {
 	await createUserApi(formValuesToSysUser(values));
 }
 
@@ -611,7 +616,7 @@ export async function create(values: UserFormValues): Promise<void> {
  * @param {Partial<UserFormValues>} - 编辑表单值。
  * @returns {void} - 无返回值。
  */
-export async function update(
+export async function updateUser(
 	id: string,
 	values: Partial<UserFormValues>,
 ): Promise<void> {
@@ -642,7 +647,7 @@ export async function update(
  * @param {string} - 用户 ID。
  * @returns {void} - 无返回值。
  */
-export async function remove(id: string): Promise<void> {
+export async function removeUser(id: string): Promise<void> {
 	await removeUserApi(id);
 }
 
@@ -681,7 +686,7 @@ export async function getRoleOptions(): Promise<SelectOption[]> {
 export async function exportUsers(
 	filters: UserListFilters = {},
 ): Promise<User[]> {
-	const result = await list({
+	const result = await fetchUserListResult({
 		...filters,
 		pageNum: 1,
 		pageSize: 10_000,
