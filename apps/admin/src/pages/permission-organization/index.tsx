@@ -14,7 +14,6 @@ import {
 } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
-import type { SysDept } from "./interface";
 import type { OrgFormValues, OrgTreeNode } from "./utils";
 import {
 	buildOrgTree,
@@ -39,7 +38,7 @@ const PermissionOrganization = () => {
 	const loadData = async (keyword = searchKeyword) => {
 		setLoading(true);
 		try {
-			const data: SysDept[] = await fetchDeptList();
+			const data = await fetchDeptList();
 			const depts = data ?? [];
 			setFlatOrgsCache(depts);
 			setDataSource(filterOrgTree(buildOrgTree(depts), keyword));

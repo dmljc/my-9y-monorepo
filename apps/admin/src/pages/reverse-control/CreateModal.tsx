@@ -4,11 +4,7 @@ import { Button, Col, Form, Input, InputNumber, Modal, Radio, Row, Select, Switc
 import { useEffect, useState } from "react";
 import { getControllable, getModels } from "./api";
 import styles from "./index.module.css";
-import type {
-	ControllableProperty,
-	DeviceModelsResponse,
-	IiotControlRule,
-} from "./interface";
+import type { IiotControlRule } from "./interface";
 import type { RuleFormValues, SelectOption } from "./types";
 import * as utils from "./utils";
 
@@ -35,7 +31,7 @@ const CreateModal = ({
 
 	const loadPropertyOptions = async (modelId: string) => {
 		if (!modelId) return;
-		const data: ControllableProperty[] = await getControllable(modelId);
+		const data = await getControllable(modelId);
 		setPropertyOptionsMap((prev) => ({
 			...prev,
 			[modelId]: utils.toPropertyOptions(data ?? []),
@@ -43,7 +39,7 @@ const CreateModal = ({
 	};
 
 	const initModal = async () => {
-		const modelsData: DeviceModelsResponse = await getModels();
+		const modelsData = await getModels();
 		const options = utils.toModelOptions(modelsData?.models ?? []);
 		setModelOptions(options);
 

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { changeStatus, create, list, remove, update } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
-import type { ControlRuleListResponse, IiotControlRule } from "./interface";
+import type { IiotControlRule } from "./interface";
 import type { RuleFormValues } from "./types";
 import { isEnabled, toRule, toStatus } from "./utils";
 
@@ -21,14 +21,14 @@ const ReverseControl = () => {
 	);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
-	const [pageSize, setPageSize] = useState(10);
+	const [pageSize, setPageSize] = useState(15);
 	const [togglingId, setTogglingId] = useState<number | null>(null);
 	const initRef = useRef(false);
 
 	const loadData = async (p: number, ps: number, keyword = searchKeyword) => {
 		setLoading(true);
 		try {
-			const data: ControlRuleListResponse = await list({
+			const data = await list({
 				pageNum: p,
 				pageSize: ps,
 				ruleName: keyword.trim() || undefined,
@@ -237,6 +237,7 @@ const ReverseControl = () => {
 					pageSize,
 					total,
 					showSizeChanger: true,
+					pageSizeOptions: ["10", "15", "20", "50", "100"],
 					showQuickJumper: true,
 					showTotal: (count: number) => `共 ${count} 条`,
 				}}

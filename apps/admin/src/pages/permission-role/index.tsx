@@ -12,7 +12,7 @@ import {
 } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
-import type { RoleListQuery, RoleListResponse, SysRole } from "./interface";
+import type { RoleListQuery, SysRole } from "./interface";
 import type { RoleFormValues } from "./utils";
 import { formatPermissionCount } from "./utils";
 
@@ -28,7 +28,7 @@ const PermissionRole = () => {
 	);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
-	const [pageSize, setPageSize] = useState(10);
+	const [pageSize, setPageSize] = useState(15);
 	const [roleName, setRoleName] = useState("");
 	const initRef = useRef(false);
 
@@ -40,11 +40,11 @@ const PermissionRole = () => {
 				pageSize: ps,
 				roleName: name.trim() || undefined,
 			};
-			const data: RoleListResponse = await fetchRoleList(query);
+			const data = await fetchRoleList(query);
 			setDataSource(data.list);
 			setTotal(data.total ?? 0);
-			setPageNum(p);
-			setPageSize(ps);
+			setPageNum(data.pageNum ?? p);
+			setPageSize(data.pageSize ?? ps);
 		} finally {
 			setLoading(false);
 		}
@@ -91,7 +91,7 @@ const PermissionRole = () => {
 				remark: values.remark?.trim() ?? "",
 				roleKey: editingRecord.roleKey,
 			});
-			message.success("保存成功");
+			message.success("编辑成功");
 		} else {
 			await createRole({
 				roleName: values.roleName.trim(),
@@ -128,7 +128,7 @@ const PermissionRole = () => {
 	};
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {
-		loadData(pagination.current ?? 1, pagination.pageSize ?? 10);
+		loadData(pagination.current ?? 1, pagination.pageSize ?? pageSize);
 	};
 
 	const columns: ColumnsType<SysRole> = [
@@ -241,6 +241,7 @@ const PermissionRole = () => {
 					pageSize,
 					total,
 					showSizeChanger: true,
+					pageSizeOptions: ["10", "15", "20", "50", "100"],
 					showQuickJumper: true,
 					showTotal: (count) => `共 ${count} 条`,
 				}}

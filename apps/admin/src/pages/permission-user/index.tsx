@@ -11,6 +11,7 @@ import styles from "./index.module.css";
 import type { User, UserFormValues, UserListFilters } from "./utils";
 import {
 	createUser,
+	DEFAULT_PAGE_SIZE,
 	exportUsers,
 	exportUsersToJson,
 	fetchUserListResult,
@@ -27,7 +28,7 @@ const PermissionUser = () => {
 	const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
-	const [pageSize, setPageSize] = useState(10);
+	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 	const [username, setUsername] = useState("");
 	const [name, setName] = useState("");
 	const initRef = useRef(false);
@@ -89,7 +90,7 @@ const PermissionUser = () => {
 	const handleModalSubmit = async (values: UserFormValues) => {
 		if (editingRecord) {
 			await updateUser(editingRecord.id, values);
-			message.success("保存成功");
+			message.success("编辑成功");
 		} else {
 			await createUser(values);
 			message.success("新增成功");
@@ -134,7 +135,7 @@ const PermissionUser = () => {
 	};
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {
-		loadData(pagination.current ?? 1, pagination.pageSize ?? 10);
+		loadData(pagination.current ?? 1, pagination.pageSize ?? pageSize);
 	};
 
 	const columns: ColumnsType<User> = [
@@ -259,6 +260,7 @@ const PermissionUser = () => {
 					pageSize,
 					total,
 					showSizeChanger: true,
+					pageSizeOptions: ["10", "15", "20", "50", "100"],
 					showQuickJumper: true,
 					showTotal: (count) => `共 ${count} 条`,
 				}}

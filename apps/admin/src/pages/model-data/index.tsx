@@ -3,11 +3,7 @@ import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
 import { list, remove, sync } from "./api";
 import styles from "./index.module.css";
-import type {
-	DeviceDataListQuery,
-	DeviceDataListResponse,
-	DeviceDataSnapshot,
-} from "./interface";
+import type { DeviceDataListQuery, DeviceDataSnapshot } from "./interface";
 
 interface ModelDataFilters {
 	modelName: string;
@@ -23,7 +19,7 @@ const ModelData = () => {
 	const [dataSource, setDataSource] = useState<DeviceDataSnapshot[]>([]);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
-	const [pageSize, setPageSize] = useState(10);
+	const [pageSize, setPageSize] = useState(15);
 	const initRef = useRef(false);
 
 	const loadData = async (
@@ -41,7 +37,7 @@ const ModelData = () => {
 				propertyName:
 					filters?.propertyName ?? (propertyName.trim() || undefined),
 			};
-			const data: DeviceDataListResponse = await list(query);
+			const data = await list(query);
 			setDataSource(data.list ?? []);
 			setTotal(data.total ?? 0);
 			setPageNum(data.pageNum ?? p);
@@ -213,6 +209,7 @@ const ModelData = () => {
 					pageSize,
 					total,
 					showSizeChanger: true,
+					pageSizeOptions: ["10", "15", "20", "50", "100"],
 					showQuickJumper: true,
 					showTotal: (count: number) => `共 ${count} 条`,
 				}}

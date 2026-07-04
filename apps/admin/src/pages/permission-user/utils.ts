@@ -72,7 +72,7 @@ export interface UserListResult {
 // ---------------------------------------------------------------------------
 
 /** 默认每页条数 */
-export const DEFAULT_PAGE_SIZE = 10;
+export const DEFAULT_PAGE_SIZE = 15;
 
 /** 姓名筛选时一次拉取的上限（后端 nickName 未生效，需客户端过滤） */
 const MAX_FETCH_PAGE_SIZE = 10_000;
@@ -657,7 +657,7 @@ export async function removeUser(id: string): Promise<void> {
  * @returns {DeptTreeNode[]} - 部门树节点列表。
  */
 export async function getDeptTree(): Promise<DeptTreeNode[]> {
-	const data: DeptTreeNode[] = await fetchDeptTreeApi();
+	const data = await fetchDeptTreeApi();
 	return data ?? [];
 }
 
