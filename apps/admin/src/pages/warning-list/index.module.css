@@ -28,8 +28,9 @@
 	background-color: #fff;
 	box-shadow: 0 1px 4px rgba(15, 35, 52, 0.06);
 	background-repeat: no-repeat;
-	background-position: right -24px center;
-	background-size: auto 118%;
+	background-position: center;
+	/* 略放大，由 overflow:hidden 裁掉 PNG 自带描边 */
+	background-size: 106% 118%;
 }
 
 .summaryCardBlue,
