@@ -63,31 +63,47 @@ function buildBarChartOption({
 	barWidth,
 	valueFormatter,
 }: BarChartResolvedProps): EChartsOption {
+	// echarts v6 类型声明中，axis/grid 的联合类型与新增字段（outerBoundsMode、
+	// nameMoveOverlap）之间的交叉类型未能正确分发，直接内联对象字面量会触发
+	// 「excess property」误报；先赋值给变量再引用，绕开该联合类型的字面量校验。
+	const gridOption = {
+		left: 44,
+		right: 16,
+		top: 16,
+		bottom: 28,
+		// v6 默认开启防溢出，关闭以保持既有 grid 留白
+		outerBoundsMode: "none" as const,
+	};
+	const xAxisOption = {
+		type: "category" as const,
+		data: xAxisData,
+		nameMoveOverlap: false,
+		axisTick: { show: false },
+		axisLine: { show: false },
+		axisLabel: { color: "#86909c", fontSize: 12, margin: 12 },
+	};
+	const yAxisOption = {
+		type: "value" as const,
+		min: yAxis.min ?? 0,
+		max: yAxis.max,
+		interval: yAxis.interval,
+		nameMoveOverlap: false,
+		axisLine: { show: false },
+		axisTick: { show: false },
+		axisLabel: { color: "#86909c", fontSize: 12 },
+		splitLine: { lineStyle: { color: "#eef0f3", type: "solid" as const } },
+	};
+
 	return {
 		color: [barColor],
-		grid: { left: 44, right: 16, top: 16, bottom: 28 },
+		grid: gridOption,
 		tooltip: {
 			trigger: "axis",
 			axisPointer: { type: "shadow" },
 			valueFormatter: (value) => valueFormatter(Number(value)),
 		},
-		xAxis: {
-			type: "category",
-			data: xAxisData,
-			axisTick: { show: false },
-			axisLine: { show: false },
-			axisLabel: { color: "#86909c", fontSize: 12, margin: 12 },
-		},
-		yAxis: {
-			type: "value",
-			min: yAxis.min ?? 0,
-			max: yAxis.max,
-			interval: yAxis.interval,
-			axisLine: { show: false },
-			axisTick: { show: false },
-			axisLabel: { color: "#86909c", fontSize: 12 },
-			splitLine: { lineStyle: { color: "#eef0f3", type: "solid" } },
-		},
+		xAxis: xAxisOption,
+		yAxis: yAxisOption,
 		series: [
 			{
 				type: "bar",

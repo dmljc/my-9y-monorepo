@@ -107,6 +107,8 @@ const PieChart = ({ data, showInnerLabel = true, legend }: PieChartProps) => {
 
 	const option = useMemo<EChartsOption>(
 		() => ({
+			// v6 默认让 rich 继承普通 label 样式；关闭以保持图例 name/value 独立样式
+			richInheritPlainLabel: false,
 			color: colors,
 			tooltip: {
 				trigger: "item",

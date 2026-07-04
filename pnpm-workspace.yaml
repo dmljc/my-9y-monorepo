@@ -18,7 +18,7 @@ catalog:
   axios: ^1.18.1
 
   # Charts & Date
-  echarts: ^5.6.0
+  echarts: ^6.1.0
   dayjs: ^1.11.21
 
   # Router
