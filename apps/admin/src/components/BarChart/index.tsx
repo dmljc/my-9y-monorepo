@@ -3,7 +3,7 @@ import { BarChart as BarChartSeries } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
-import { useEcharts } from "../hooks/useEcharts";
+import { useEchartsInit } from "../hooks/useEchartsInit";
 import styles from "./BarChart.module.css";
 
 echarts.use([BarChartSeries, GridComponent, TooltipComponent, CanvasRenderer]);
@@ -104,7 +104,7 @@ function buildBarChartOption({
 }
 
 const BarChart = (props: BarChartProps) => {
-	const chartRef = useEcharts(buildBarChartOption(resolveProps(props)));
+	const chartRef = useEchartsInit(buildBarChartOption(resolveProps(props)));
 
 	return <div ref={chartRef} className={styles.container} />;
 };

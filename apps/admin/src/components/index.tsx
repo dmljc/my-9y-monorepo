@@ -3,7 +3,7 @@ export { default as BarChart } from "./BarChart";
 export { default as ErrorBoundary } from "./ErrorBoundary";
 export { default as ErrorFallback } from "./ErrorFallback";
 export { default as Forbidden } from "./Forbidden";
-export { useEcharts } from "./hooks/useEcharts";
+export { useEchartsInit } from "./hooks/useEchartsInit";
 export { default as NotFound } from "./NotFound";
 export type { PieChartItem, PieChartProps } from "./PieChart";
 

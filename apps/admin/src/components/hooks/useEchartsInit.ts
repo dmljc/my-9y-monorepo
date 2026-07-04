@@ -9,7 +9,7 @@ import { useEffect, useRef } from "react";
  * @param {EChartsOption} - ECharts 配置项。
  * @returns {React.RefObject<HTMLDivElement | null>} - 挂载图表的容器 ref。
  */
-export function useEcharts(option: EChartsOption) {
+export function useEchartsInit(option: EChartsOption) {
 	const chartRef = useRef<HTMLDivElement | null>(null);
 
 	useEffect(() => {

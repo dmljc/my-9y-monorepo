@@ -188,7 +188,7 @@ const PieChart = ({ data, showInnerLabel = true, legend }: PieChartProps) => {
 		[data, colors, showInnerLabel, mergedLegend, pieCenter],
 	);
 
-	const chartRef = useEcharts(option);
+	const chartRef = useEchartsInit(option);
 
 	return <div ref={chartRef} className={styles.container} />;
 };
