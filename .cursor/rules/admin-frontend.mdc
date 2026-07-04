@@ -342,7 +342,7 @@ const [submitting, setSubmitting] = useState(false);
 **✅ 推荐**
 
 ```tsx
-const data: RoleListResponse = await fetchRoleList(query);
+const data = await fetchRoleList(query);
 setDataSource(data.list);
 setTotal(data.total ?? 0);
 
@@ -624,7 +624,7 @@ import { buildOrgTree, filterOrgTree, setFlatOrgsCache } from "./utils";
 const loadData = async () => {
   setLoading(true);
   try {
-    const data: SysDept[] = await fetchDeptList();
+    const data = await fetchDeptList();
     const depts = data ?? [];
     setFlatOrgsCache(depts);
     setDataSource(filterOrgTree(buildOrgTree(depts), keyword));
@@ -654,7 +654,7 @@ export function buildOrgTree(depts: SysDept[]): OrgTreeNode[] { /* ... */ }
 import { list as fetchUserListApi } from "./api";
 
 export async function fetchUserListResult(params: UserListParams): Promise<UserListResult> {
-  const data: UserListResponse = await fetchUserListApi(toUserListQuery(params));
+  const data = await fetchUserListApi(toUserListQuery(params));
   // 行转换、角色补全等多步逻辑
   return { list, total, pageNum: params.pageNum, pageSize: params.pageSize };
 }
@@ -702,24 +702,92 @@ import { create, list, remove, update } from "./utils"; // ❌ HTTP 被藏在 ut
 | 路径 | 写相对业务路径（如 `/login`、`/system/user/list`），**不要**重复拼 `VITE_API_BASE_URL` 或 `/api` 前缀 |
 | GET 查询 | 筛选/分页参数用 `{ params: data }` |
 | 返回值 | 薄封装暂用 `Promise<any>`；**不要**在 `request.get<T>()` 上写泛型（`HttpClient` 不支持，见下节） |
-| 类型标注 | 编排层对 `await request.xxx()` 的结果用变量显式类型：`const data: UserListResponse = await fetchUserListApi(...)` |
+| 响应变量 | `await api.xxx()` 后**不要**写 `const data: XxxResponse = …`，见「接口响应不做变量类型标注」 |
 | 编排位置 | 多接口聚合、行级 `.map` 转换等**纯数据处理**可放 `utils.ts`；**单接口 CRUD 与 list 请求**在页面 `import ./api` 调用，不在 utils 再 export 同名函数 |
 | 页面导入 | **CRUD / list 请求** import `./api`；**树形/筛选/校验** import `./utils`；复杂 list 编排 import `./utils` 的非同名函数（见上节） |
 
 **request 类型约定**
 
-`@utils/http-client` 的 `HttpClient.get/post/put/delete` 签名固定为 `Promise<any>`，**不支持** `request.get<ResponseType>(...)` 泛型。类型安全由两层保证：
-
-1. **api.ts**：函数返回值写 `Promise<any>`（或具体类型，但不靠 request 泛型）
-2. **utils.ts / 页面**：对 `await request.xxx()` 的结果做显式类型标注
+`@utils/http-client` 的 `HttpClient.get/post/put/delete` 签名固定为 `Promise<any>`，**不支持** `request.get<ResponseType>(...)` 泛型。**不要**在 `request.get<T>()` 上写泛型；`await` 后的响应变量也**不要**再标 `XxxResponse`（见「接口响应不做变量类型标注」）。
 
 ```ts
 // ❌ TS2558: Expected 0 type arguments, but got 1
 const data = await request.get<UserListResponse>("/system/user/list", { params });
 
-// ✅
+// ❌ request 泛型不可用，变量显式类型也与 interface 重复
 const data: UserListResponse = await request.get("/system/user/list", { params });
+
+// ✅
+const data = await request.get("/system/user/list", { params });
 ```
+
+### 接口响应不做变量类型标注
+
+**做什么**：页面、`utils.ts` 编排层在 `await list(...)`、`await create(...)` 等 **api 调用之后**，**不要**给返回值变量写显式 TS 类型（如 `const data: DeviceDataListResponse = await list(query)`）；直接 `const data = await list(query)`，再按字段赋值给 state。**请求参数**、表格行、`useState`、`columns`、`utils` 编排函数的**入参 / 返回值签名**仍使用 `interface.ts` 中的类型。
+
+**为什么**：`api.ts` 返回 `Promise<any>`，全局 `request` 已解包 `{ code, data }`；响应变量再标一遍 `XxxListResponse` 与 `interface.ts` 重复，字段变更时要同步两处，且 HttpClient 不支持 response 泛型，标注也带不来编译期校验。
+
+**✅ 推荐**
+
+```tsx
+import { list } from "./api";
+import type { DeviceDataListQuery, DeviceDataSnapshot } from "./interface";
+
+const [dataSource, setDataSource] = useState<DeviceDataSnapshot[]>([]);
+
+const loadData = async (p: number, ps: number) => {
+  setLoading(true);
+  try {
+    const query: DeviceDataListQuery = {
+      pageNum: p,
+      pageSize: ps,
+      modelName: modelName.trim() || undefined,
+    };
+    const data = await list(query);
+    setDataSource(data.list ?? []);
+    setTotal(data.total ?? 0);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const columns: ColumnsType<DeviceDataSnapshot> = [
+  { title: "点位名称", dataIndex: "propertyName", key: "propertyName", ellipsis: true },
+];
+```
+
+```ts
+// utils.ts — 编排函数签名仍标注；内部 await 响应不标
+export async function fetchUserListResult(params: UserListParams): Promise<UserListResult> {
+  const data = await fetchUserListApi(toUserListQuery(params));
+  return {
+    list: (data.rows ?? []).map(sysUserToUser),
+    total: data.total ?? 0,
+    pageNum: params.pageNum,
+    pageSize: params.pageSize,
+  };
+}
+```
+
+**❌ 避免**
+
+```tsx
+const data: DeviceDataListResponse = await list(query);
+const data: RoleListResponse = await fetchRoleList(query);
+const depts: SysDept[] = await fetchDeptList();
+```
+
+**写法要点**
+
+| 场景 | 做法 |
+|------|------|
+| list / CRUD 响应变量 | `const data = await list(query)` |
+| 查询 / 提交体组装 | `const query: UserListQuery = { … }` |
+| 表格、state、columns | `DeviceDataSnapshot[]`、`ColumnsType<DeviceDataSnapshot>` |
+| `interface.ts` | 保留请求/响应、实体类型定义（中文 JSDoc） |
+| utils 编排 export | 函数签名可写 `Promise<UserListResult>`；函数体内 `await` 响应不标 |
+
+**边界**：`interface.ts` 类型**仍须保留**，供 query、实体、表格、编排函数签名使用；仅 **`await api` 后的中间变量**省略类型；需要局部收窄时优先拆字段（`const { list, total } = await list(query)`），**不要**为响应再套一层 `as XxxResponse`；下载 blob 等特殊响应同理不写 `: Blob` 变量标注，除非 TS 无法推断且确有歧义。**参考实现**：`apps/admin/src/pages/historical-data/`。
 
 **❌ 避免**
 
@@ -772,7 +840,7 @@ setDataSource(data.rows.map(sysUserToUser)); // 应抽到 utils.list
 
 ```ts
 import { list as fetchRoleListApi } from "./api";
-import type { RoleListQuery, RoleListResponse } from "./interface";
+import type { RoleListQuery } from "./interface";
 
 function toRoleListQuery(params: RoleListParams): RoleListQuery {
   const { pageNum, pageSize, name } = params;
@@ -781,7 +849,7 @@ function toRoleListQuery(params: RoleListParams): RoleListQuery {
 
 export async function list(params: RoleListParams): Promise<RoleListResult> {
   const { pageNum, pageSize } = params;
-  const data: RoleListResponse = await fetchRoleListApi(toRoleListQuery(params));
+  const data = await fetchRoleListApi(toRoleListQuery(params));
   return {
     list: (data.rows ?? []).map(sysRoleToRole),
     total: data.total ?? 0,
@@ -825,7 +893,7 @@ export function list(params: RoleListParams): Promise<RoleListResult> {
 ```tsx
 // index.tsx — 直出接口分页与实体，查询参数 inline 组装
 import { list } from "./api";
-import type { DeviceDataListQuery, DeviceDataListResponse, DeviceDataSnapshot } from "./interface";
+import type { DeviceDataListQuery, DeviceDataSnapshot } from "./interface";
 
 const loadData = async (p: number, ps: number, filter: DeviceFilter) => {
   setLoading(true);
@@ -842,7 +910,7 @@ const loadData = async (p: number, ps: number, filter: DeviceFilter) => {
         endDataTime: filter.dateRange[1],
       };
     }
-    const data: DeviceDataListResponse = await list(query);
+    const data = await list(query);
     setDataSource(data.list);
     setTotal(data.total);
     setPageNum(data.pageNum);
@@ -862,7 +930,7 @@ const columns: ColumnsType<DeviceDataSnapshot> = [
 
 ```ts
 export async function list(params: RoleListParams): Promise<RoleListResult> {
-  const data: RoleListResponse = await fetchRoleListApi(toRoleListQuery(params));
+  const data = await fetchRoleListApi(toRoleListQuery(params));
   return {
     list: (data.rows ?? []).map(sysRoleToRole),
     total: data.total ?? 0,
@@ -925,7 +993,7 @@ return { list: (data.list ?? []).map(snapshotToRecord) };
 ```tsx
 // index.tsx
 import { list } from "./api";
-import type { DeviceDataListQuery, DeviceDataListResponse } from "./interface";
+import type { DeviceDataListQuery } from "./interface";
 
 const loadData = async (p: number, ps: number, filter: DeviceFilter) => {
   setLoading(true);
@@ -942,7 +1010,7 @@ const loadData = async (p: number, ps: number, filter: DeviceFilter) => {
         endDataTime: filter.dateRange[1],
       };
     }
-    const data: DeviceDataListResponse = await list(query);
+    const data = await list(query);
     setDataSource(data.list);
     setTotal(data.total);
     setPageNum(data.pageNum);
@@ -969,7 +1037,7 @@ const [draftFilter, setDraftFilter] = useState<DeviceFilter>(() => {
 ```ts
 // utils.ts — permission-user / permission-role 等
 export async function list(params: UserListParams): Promise<UserListResult> {
-  const data: UserListResponse = await fetchUserListApi(toUserListQuery(params));
+  const data = await fetchUserListApi(toUserListQuery(params));
   // 行转换、角色补全、客户端过滤等真实逻辑
   return { list, total, pageNum: params.pageNum, pageSize: params.pageSize };
 }
@@ -1223,6 +1291,76 @@ const columns: ColumnsType<User> = [
 ```
 
 **边界**：与「Table columns 列宽」配合——未设 `scroll` 时数据列不写 `width`；确需 `scroll.x` 时再按文档取值（列宽之和、`max-content` 等），不要复制粘贴固定 magic number。
+
+### Table 分页
+
+**做什么**：带服务端分页的列表页，`pageSize` 初始值与 Table `pagination.pageSize` 统一为 **15**；开启 `showSizeChanger` 时显式配置 **`pageSizeOptions: ["10", "15", "20", "50", "100"]`**，使下拉含 **15 条/页** 且与默认一致。**不要**依赖 Ant Design 默认的 10 条/页或仅含 10/20/50/100 的选项。
+
+**为什么**：admin 列表页默认可视行数按 15 条对齐；不写 `pageSizeOptions` 时下拉无 15，或与 `useState(10)` 不一致会导致首屏条数、选项、接口 `pageSize` 三方脱节。
+
+**✅ 推荐**
+
+```tsx
+const [pageNum, setPageNum] = useState(1);
+const [pageSize, setPageSize] = useState(15);
+
+const loadData = async (p: number, ps: number) => {
+  setLoading(true);
+  try {
+    const data = await list({ pageNum: p, pageSize: ps, /* 筛选字段 */ });
+    setDataSource(data.list ?? []);
+    setTotal(data.total ?? 0);
+    setPageNum(data.pageNum ?? p);
+    setPageSize(data.pageSize ?? ps);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleTableChange = (pagination: TablePaginationConfig) => {
+  loadData(pagination.current ?? 1, pagination.pageSize ?? pageSize);
+};
+
+<Table
+  columns={columns}
+  dataSource={dataSource}
+  rowKey="id"
+  loading={loading}
+  pagination={{
+    current: pageNum,
+    pageSize,
+    total,
+    showSizeChanger: true,
+    pageSizeOptions: ["10", "15", "20", "50", "100"],
+    showQuickJumper: true,
+    showTotal: (count) => `共 ${count} 条`,
+  }}
+  onChange={handleTableChange}
+/>
+```
+
+**❌ 避免**
+
+```tsx
+const [pageSize, setPageSize] = useState(10); // ❌ 与项目默认 15 不一致
+
+pagination={{
+  showSizeChanger: true,
+  // ❌ 未写 pageSizeOptions，下拉无 15 条/页
+}}
+```
+
+**写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 初始 `pageSize` | `useState(15)` |
+| `pagination.pageSize` | 绑定同一 `pageSize` state |
+| `pageSizeOptions` | `["10", "15", "20", "50", "100"]`（含 15，顺序递增） |
+| 首屏 / 查询 / 重置 | `loadData` 传入当前 `pageSize`；切条数时 `handleTableChange` 用 `pagination.pageSize` |
+| 序号列 | `(pageNum - 1) * pageSize + index + 1` |
+
+**边界**：无分页或纯客户端分页的表格不适用；产品明确要求其它默认条数（如大屏 20）时单页覆盖，仍建议 `pageSizeOptions` 包含实际默认值；`permission-user` 等模块内已有 `DEFAULT_PAGE_SIZE` 常量时，新改页面对齐 **15** 或随该页一并迁移，**不要**同页 state 用 15、常量仍写 10。**参考实现**：`apps/admin/src/pages/historical-data/`。
 
 ### Form.Item 校验规则
 
@@ -1528,7 +1666,7 @@ modal.confirm({
 const loadData = async () => {
   setLoading(true);
   try {
-    const data: RoleListResponse = await list(query);
+    const data = await list(query);
     setDataSource(data.list);
     setTotal(data.total ?? 0);
   } finally {

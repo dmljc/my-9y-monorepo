@@ -1,9 +1,18 @@
 import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
+import { list, remove, sync } from "./api";
 import styles from "./index.module.css";
-import type { DeviceDataSnapshot } from "./interface";
-import { list, type ModelDataListParams, remove, sync } from "./utils";
+import type {
+	DeviceDataListQuery,
+	DeviceDataListResponse,
+	DeviceDataSnapshot,
+} from "./interface";
+
+interface ModelDataFilters {
+	modelName: string;
+	propertyName: string;
+}
 
 const ModelData = () => {
 	const { message, modal } = App.useApp();
@@ -20,22 +29,23 @@ const ModelData = () => {
 	const loadData = async (
 		p: number,
 		ps: number,
-		filters?: Pick<ModelDataListParams, "modelName" | "propertyName">,
+		filters?: ModelDataFilters,
 	) => {
 		setLoading(true);
 		try {
-			const result = await list({
+			const query: DeviceDataListQuery = {
 				pageNum: p,
 				pageSize: ps,
 				modelName:
 					filters?.modelName ?? (modelName.trim() || undefined),
 				propertyName:
 					filters?.propertyName ?? (propertyName.trim() || undefined),
-			});
-			setDataSource(result.list);
-			setTotal(result.total);
-			setPageNum(result.pageNum);
-			setPageSize(result.pageSize);
+			};
+			const data: DeviceDataListResponse = await list(query);
+			setDataSource(data.list ?? []);
+			setTotal(data.total ?? 0);
+			setPageNum(data.pageNum ?? p);
+			setPageSize(data.pageSize ?? ps);
 		} finally {
 			setLoading(false);
 		}
@@ -57,7 +67,7 @@ const ModelData = () => {
 		setModelName("");
 		setPropertyName("");
 		setPageNum(1);
-		loadData(1, pageSize, {});
+		loadData(1, pageSize, { modelName: "", propertyName: "" });
 	};
 
 	const handleSync = async () => {
@@ -86,7 +96,7 @@ const ModelData = () => {
 	};
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {
-		loadData(pagination.current ?? 1, pagination.pageSize ?? 10);
+		loadData(pagination.current ?? 1, pagination.pageSize ?? pageSize);
 	};
 
 	const columns: ColumnsType<DeviceDataSnapshot> = [
@@ -143,7 +153,6 @@ const ModelData = () => {
 		{
 			title: "操作",
 			key: "actions",
-			fixed: "right",
 			render: (_: unknown, record) => (
 				<div className={styles.actions}>
 					<Button

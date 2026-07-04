@@ -5,74 +5,70 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { list } from "./api";
 import styles from "./index.module.css";
-import type {
-	DeviceDataListQuery,
-	DeviceDataListResponse,
-	DeviceDataSnapshot,
-} from "./interface";
+import type { DeviceDataListQuery, DeviceDataSnapshot } from "./interface";
 
 const { RangePicker } = DatePicker;
 
-interface DeviceFilter {
+interface HistoricalDataFilters {
 	modelName: string;
 	propertyName: string;
 	dateRange: [string, string] | null;
 }
 
-const EMPTY_FILTER: DeviceFilter = {
-	modelName: "",
-	propertyName: "",
-	dateRange: null,
-};
-
-function parseInitialFilter(search: string): DeviceFilter {
+function parseInitialFilters(search: string): HistoricalDataFilters {
 	const params = new URLSearchParams(search);
 	const startTime = params.get("startTime");
 	const endTime = params.get("endTime");
 
 	return {
-		modelName: params.get("name") ?? "",
-		propertyName: "",
+		modelName: "",
+		propertyName: params.get("name") ?? "",
 		dateRange: startTime && endTime ? [startTime, endTime] : null,
 	};
 }
 
 const HistoricalData = () => {
 	const [searchParams] = useSearchParams();
-	const [filter, setFilter] = useState(() =>
-		parseInitialFilter(searchParams.toString()),
+	const initialFilters = parseInitialFilters(searchParams.toString());
+	const [modelName, setModelName] = useState(initialFilters.modelName);
+	const [propertyName, setPropertyName] = useState(
+		initialFilters.propertyName,
+	);
+	const [dateRange, setDateRange] = useState<[string, string] | null>(
+		initialFilters.dateRange,
 	);
 	const [loading, setLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<DeviceDataSnapshot[]>([]);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
-	const [pageSize, setPageSize] = useState(10);
+	const [pageSize, setPageSize] = useState(15);
 
 	const loadData = async (
 		p: number,
 		ps: number,
-		activeFilter: DeviceFilter = filter,
+		filters?: HistoricalDataFilters,
 	) => {
 		setLoading(true);
 		try {
+			const active = filters ?? { modelName, propertyName, dateRange };
 			const query: DeviceDataListQuery = {
 				pageNum: p,
 				pageSize: ps,
-				modelName: activeFilter.modelName.trim() || undefined,
-				propertyName: activeFilter.propertyName.trim() || undefined,
+				modelName: active.modelName.trim() || undefined,
+				propertyName: active.propertyName.trim() || undefined,
 			};
-			if (activeFilter.dateRange) {
+			if (active.dateRange) {
 				query.params = {
-					beginDataTime: activeFilter.dateRange[0],
-					endDataTime: activeFilter.dateRange[1],
+					beginDataTime: active.dateRange[0],
+					endDataTime: active.dateRange[1],
 				};
 			}
 
-			const data: DeviceDataListResponse = await list(query);
-			setDataSource(data.list);
-			setTotal(data.total);
-			setPageNum(data.pageNum);
-			setPageSize(data.pageSize);
+			const data = await list(query);
+			setDataSource(data.list ?? []);
+			setTotal(data.total ?? 0);
+			setPageNum(data.pageNum ?? p);
+			setPageSize(data.pageSize ?? ps);
 		} finally {
 			setLoading(false);
 		}
@@ -82,7 +78,7 @@ const HistoricalData = () => {
 	useEffect(() => {
 		if (!initRef.current) {
 			initRef.current = true;
-			loadData(pageNum, pageSize);
+			loadData(pageNum, pageSize, initialFilters);
 		}
 	}, []);
 
@@ -92,13 +88,19 @@ const HistoricalData = () => {
 	};
 
 	const handleReset = () => {
-		setFilter(EMPTY_FILTER);
+		setModelName("");
+		setPropertyName("");
+		setDateRange(null);
 		setPageNum(1);
-		loadData(1, pageSize, EMPTY_FILTER);
+		loadData(1, pageSize, {
+			modelName: "",
+			propertyName: "",
+			dateRange: null,
+		});
 	};
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {
-		loadData(pagination.current ?? 1, pagination.pageSize ?? 10);
+		loadData(pagination.current ?? 1, pagination.pageSize ?? pageSize);
 	};
 
 	const columns: ColumnsType<DeviceDataSnapshot> = [
@@ -155,28 +157,18 @@ const HistoricalData = () => {
 				<Input
 					className={styles.searchInput}
 					placeholder="请输入物模型名称"
-					value={filter.modelName}
+					value={modelName}
 					allowClear
-					onChange={(event) =>
-						setFilter((prev) => ({
-							...prev,
-							modelName: event.target.value,
-						}))
-					}
+					onChange={(event) => setModelName(event.target.value)}
 					onPressEnter={handleSearch}
 				/>
 				<span className={styles.filterLabel}>点位名称</span>
 				<Input
 					className={styles.searchInput}
 					placeholder="请输入点位名称"
-					value={filter.propertyName}
+					value={propertyName}
 					allowClear
-					onChange={(event) =>
-						setFilter((prev) => ({
-							...prev,
-							propertyName: event.target.value,
-						}))
-					}
+					onChange={(event) => setPropertyName(event.target.value)}
 					onPressEnter={handleSearch}
 				/>
 				<span className={styles.filterLabel}>时间</span>
@@ -186,19 +178,13 @@ const HistoricalData = () => {
 					className={styles.filterRange}
 					placeholder={["开始时间", "结束时间"]}
 					value={
-						filter.dateRange
-							? [
-									dayjs(filter.dateRange[0]),
-									dayjs(filter.dateRange[1]),
-								]
+						dateRange
+							? [dayjs(dateRange[0]), dayjs(dateRange[1])]
 							: null
 					}
 					onChange={(_, dateStrings) => {
 						const [start, end] = dateStrings;
-						setFilter((prev) => ({
-							...prev,
-							dateRange: start && end ? [start, end] : null,
-						}));
+						setDateRange(start && end ? [start, end] : null);
 					}}
 				/>
 				<Button type="primary" onClick={handleSearch}>
@@ -221,6 +207,7 @@ const HistoricalData = () => {
 					pageSize,
 					total,
 					showSizeChanger: true,
+					pageSizeOptions: ["10", "15", "20", "50", "100"],
 					showQuickJumper: true,
 					showTotal: (count: number) => `共 ${count} 条`,
 				}}
