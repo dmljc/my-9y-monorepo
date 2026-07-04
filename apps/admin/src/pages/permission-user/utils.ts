@@ -77,26 +77,11 @@ export const DEFAULT_PAGE_SIZE = 15;
 /** 姓名筛选时一次拉取的上限（后端 nickName 未生效，需客户端过滤） */
 const MAX_FETCH_PAGE_SIZE = 10_000;
 
-/** 用户账号最大字符数 */
-export const USERNAME_MAX_LENGTH = 30;
-
 /** 用户姓名最大字符数 */
 export const NAME_MAX_LENGTH = 30;
 
-/** 密码最小字符数 */
-export const PASSWORD_MIN_LENGTH = 5;
-
-/** 密码最大字符数 */
-export const PASSWORD_MAX_LENGTH = 20;
-
-/** 账号：字母、数字、@ */
-export const USERNAME_PATTERN = /^[A-Za-z0-9@]+$/;
-
 /** 姓名：中文、字母、数字 */
 export const NAME_PATTERN = /^[\u4e00-\u9fa5A-Za-z0-9]{1,30}$/;
-
-/** 密码：字母、数字及常见符号 */
-export const PASSWORD_PATTERN = /^[A-Za-z0-9!@#$%^&*._-]+$/;
 
 /** 编辑用户时密码框占位符，表示保留原密码。 */
 export const EDIT_PASSWORD_PLACEHOLDER = "************";

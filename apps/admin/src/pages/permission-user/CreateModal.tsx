@@ -1,5 +1,11 @@
 import { Checkbox, Form, Input, Modal, TreeSelect } from "antd";
 import { useEffect, useState } from "react";
+import {
+	getPasswordRules,
+	PASSWORD_MAX_LENGTH,
+	USERNAME_MAX_LENGTH,
+	USERNAME_RULES,
+} from "./formRules";
 import type { DeptTreeNode } from "./interface";
 import type { SelectOption, User, UserFormValues } from "./utils";
 import {
@@ -8,12 +14,7 @@ import {
 	getRoleOptions,
 	NAME_MAX_LENGTH,
 	NAME_PATTERN,
-	PASSWORD_MAX_LENGTH,
-	PASSWORD_MIN_LENGTH,
-	PASSWORD_PATTERN,
 	recordToFormValues,
-	USERNAME_MAX_LENGTH,
-	USERNAME_PATTERN,
 } from "./utils";
 
 interface CreateModalProps {
@@ -130,21 +131,7 @@ const CreateModal = ({
 				<Form.Item
 					name="username"
 					label="用户账号"
-					rules={[
-						{
-							required: true,
-							whitespace: true,
-							message: "请输入用户账号",
-						},
-						{
-							max: USERNAME_MAX_LENGTH,
-							message: `最多输入${USERNAME_MAX_LENGTH}个字符`,
-						},
-						{
-							pattern: USERNAME_PATTERN,
-							message: "可以包含大小写字母、数字、@",
-						},
-					]}
+					rules={USERNAME_RULES}
 				>
 					<Input
 						placeholder="请输入用户账号"
@@ -182,20 +169,10 @@ const CreateModal = ({
 				<Form.Item
 					name="password"
 					label="密码"
-					rules={[
-						{ required: !isEdit, message: "请输入密码" },
-						{
-							min: PASSWORD_MIN_LENGTH,
-							max: PASSWORD_MAX_LENGTH,
-							message: "密码长度必须在5到20个字符之间",
-							transform: skipEditPasswordPlaceholder,
-						},
-						{
-							pattern: PASSWORD_PATTERN,
-							message: "仅支持字母、数字及常见符号 !@#$%^&*._-",
-							transform: skipEditPasswordPlaceholder,
-						},
-					]}
+					rules={getPasswordRules(
+						!isEdit,
+						skipEditPasswordPlaceholder,
+					)}
 				>
 					<Input
 						placeholder={isEdit ? "请输入新密码" : "请输入密码"}

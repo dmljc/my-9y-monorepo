@@ -4,6 +4,12 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import loginHero from "@/assets/login/login-hero.webp";
 import { getDefaultPathForTop } from "@/layout/menuConfig";
+import {
+	PASSWORD_MAX_LENGTH,
+	PASSWORD_RULES,
+	USERNAME_MAX_LENGTH,
+	USERNAME_RULES,
+} from "@/pages/permission-user/formRules";
 import { useUserStore } from "@/stores/user";
 import styles from "./index.module.css";
 import type { LoginFormValues } from "./interface";
@@ -57,28 +63,24 @@ const Login = () => {
 					initialValues={{ remember: true }}
 					onFinish={onFinish}
 				>
-					<Form.Item
-						name="username"
-						rules={[{ required: true, message: "请输入用户名" }]}
-					>
+					<Form.Item name="username" rules={USERNAME_RULES}>
 						<Input
 							className={styles.input}
 							size="large"
 							prefix={<UserOutlined />}
-							placeholder="请输入用户名"
+							placeholder="请输入用户账号"
+							maxLength={USERNAME_MAX_LENGTH}
 							autoComplete="username"
 						/>
 					</Form.Item>
 
-					<Form.Item
-						name="password"
-						rules={[{ required: true, message: "请输入密码" }]}
-					>
+					<Form.Item name="password" rules={PASSWORD_RULES}>
 						<Input.Password
 							className={styles.input}
 							size="large"
 							prefix={<LockOutlined />}
 							placeholder="请输入密码"
+							maxLength={PASSWORD_MAX_LENGTH}
 							autoComplete="current-password"
 						/>
 					</Form.Item>
