@@ -70,6 +70,10 @@ function getErrorMessage(error: AxiosError<ApiResponse>): string {
 
 /**
  * 处理业务响应体：成功时解包 data 或原样返回；失败时 reject。
+ *
+ * HTTP 状态为 2xx 但响应体不是约定的 `{ code, data }` envelope 时
+ * （如反向代理/隧道异常返回的 HTML 页面），同样视为失败并 reject，
+ * 避免调用方拿到非预期结构（如 HTML 字符串）却误判为成功。
  */
 function unwrapBusinessBody(
 	body: unknown,
@@ -77,7 +81,9 @@ function unwrapBusinessBody(
 	onError?: (error: Error) => void,
 ): unknown {
 	if (!isBusinessEnvelope(body)) {
-		return body;
+		const err = new Error("服务响应异常，请稍后重试");
+		onError?.(err);
+		throw err;
 	}
 
 	const code = getBusinessCode(body);
