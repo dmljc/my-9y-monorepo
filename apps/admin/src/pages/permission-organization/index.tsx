@@ -1,9 +1,5 @@
-import {
-	DownloadOutlined,
-	PlusOutlined,
-	UploadOutlined,
-} from "@ant-design/icons";
-import { App, Button, Empty, Input, Table, Upload } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -15,13 +11,7 @@ import {
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import type { OrgFormValues, OrgTreeNode } from "./utils";
-import {
-	buildOrgTree,
-	exportOrgsToJson,
-	filterOrgTree,
-	getAllOrgs,
-	setFlatOrgsCache,
-} from "./utils";
+import { buildOrgTree, filterOrgTree, setFlatOrgsCache } from "./utils";
 
 const PermissionOrganization = () => {
 	const { message, modal } = App.useApp();
@@ -102,24 +92,6 @@ const PermissionOrganization = () => {
 		});
 	};
 
-	const handleExport = () => {
-		const depts = searchKeyword
-			? getAllOrgs().filter((dept) =>
-					dept.deptName?.includes(searchKeyword),
-				)
-			: getAllOrgs();
-		if (depts.length === 0) {
-			message.warning("暂无可导出的组织数据");
-			return;
-		}
-		exportOrgsToJson(depts);
-		message.success("导出成功");
-	};
-
-	const handleImport = () => {
-		message.info("导入功能待对接后端");
-	};
-
 	const columns: ColumnsType<OrgTreeNode> = [
 		{
 			title: "组织名称",
@@ -181,18 +153,6 @@ const PermissionOrganization = () => {
 						onClick={handleAdd}
 					>
 						新增
-					</Button>
-					<Upload
-						showUploadList={false}
-						beforeUpload={() => {
-							handleImport();
-							return false;
-						}}
-					>
-						<Button icon={<UploadOutlined />}>导入</Button>
-					</Upload>
-					<Button icon={<DownloadOutlined />} onClick={handleExport}>
-						导出
 					</Button>
 				</div>
 			</div>

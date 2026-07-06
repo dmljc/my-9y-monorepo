@@ -188,21 +188,3 @@ export function isDuplicateOrgName(
 			(excludeId === undefined || item.deptId !== excludeId),
 	);
 }
-
-/**
- * 导出组织数据为 JSON 文件。
- *
- * @param {SysDept[]} - 待导出组织列表。
- * @returns {void} - 无返回值。
- */
-export function exportOrgsToJson(depts: SysDept[]): void {
-	const blob = new Blob([JSON.stringify(depts, null, 2)], {
-		type: "application/json",
-	});
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement("a");
-	link.href = url;
-	link.download = `organizations-${Date.now()}.json`;
-	link.click();
-	URL.revokeObjectURL(url);
-}
