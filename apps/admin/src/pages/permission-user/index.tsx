@@ -1,9 +1,5 @@
-import {
-	DownloadOutlined,
-	PlusOutlined,
-	UploadOutlined,
-} from "@ant-design/icons";
-import { App, Button, Empty, Input, Table, Upload } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
 import CreateModal from "./CreateModal";
@@ -12,8 +8,6 @@ import type { User, UserFormValues, UserListFilters } from "./utils";
 import {
 	createUser,
 	DEFAULT_PAGE_SIZE,
-	exportUsers,
-	exportUsersToJson,
 	fetchUserListResult,
 	removeUser,
 	updateUser,
@@ -25,7 +19,6 @@ const PermissionUser = () => {
 	const [dataSource, setDataSource] = useState<User[]>([]);
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingRecord, setEditingRecord] = useState<User | null>(null);
-	const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -52,7 +45,6 @@ const PermissionUser = () => {
 			setTotal(result.total);
 			setPageNum(result.pageNum);
 			setPageSize(result.pageSize);
-			setSelectedRowKeys([]);
 		} finally {
 			setLoading(false);
 		}
@@ -110,28 +102,6 @@ const PermissionUser = () => {
 				await loadData(pageNum, pageSize);
 			},
 		});
-	};
-
-	const handleExport = async () => {
-		setLoading(true);
-		try {
-			const data = await exportUsers({
-				username: username.trim() || undefined,
-				name: name.trim() || undefined,
-			});
-			if (data.length === 0) {
-				message.warning("暂无可导出的用户数据");
-				return;
-			}
-			exportUsersToJson(data);
-			message.success("导出成功");
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const handleImport = () => {
-		message.info("导入功能待对接后端");
 	};
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {
@@ -229,18 +199,6 @@ const PermissionUser = () => {
 					>
 						新增
 					</Button>
-					<Upload
-						showUploadList={false}
-						beforeUpload={() => {
-							handleImport();
-							return false;
-						}}
-					>
-						<Button icon={<UploadOutlined />}>导入</Button>
-					</Upload>
-					<Button icon={<DownloadOutlined />} onClick={handleExport}>
-						导出
-					</Button>
 				</div>
 			</div>
 
@@ -250,10 +208,6 @@ const PermissionUser = () => {
 				dataSource={dataSource}
 				rowKey="id"
 				loading={loading}
-				rowSelection={{
-					selectedRowKeys,
-					onChange: (keys) => setSelectedRowKeys(keys as string[]),
-				}}
 				locale={{ emptyText: <Empty description="暂无用户" /> }}
 				pagination={{
 					current: pageNum,

@@ -64,13 +64,15 @@ export interface RolePermissionDetailResponse {
 	menuIds?: (number | string)[];
 	assignedMenuIds?: (number | string)[];
 	checkedMenuIds?: (number | string)[];
-	data?: {
-		totalAssigned?: number;
-		modules?: RolePermissionModule[];
-		menuIds?: (number | string)[];
-		assignedMenuIds?: (number | string)[];
-		checkedMenuIds?: (number | string)[];
-	};
+	data?:
+		| RolePermissionModule[]
+		| {
+				totalAssigned?: number;
+				modules?: RolePermissionModule[];
+				menuIds?: (number | string)[];
+				assignedMenuIds?: (number | string)[];
+				checkedMenuIds?: (number | string)[];
+		  };
 }
 
 /** 更新角色权限请求体 */

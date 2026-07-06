@@ -259,24 +259,6 @@ export function buildRoleNames(
 		.join(", ");
 }
 
-/**
- * 导出用户数据为 JSON 文件。
- *
- * @param {User[]} - 待导出的用户列表。
- * @returns {void} - 无返回值。
- */
-export function exportUsersToJson(users: User[]): void {
-	const blob = new Blob([JSON.stringify(users, null, 2)], {
-		type: "application/json",
-	});
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement("a");
-	link.href = url;
-	link.download = `users-${Date.now()}.json`;
-	link.click();
-	URL.revokeObjectURL(url);
-}
-
 // ---------------------------------------------------------------------------
 // 接口编排（api 薄封装之上的业务转换）
 // ---------------------------------------------------------------------------
@@ -660,21 +642,4 @@ export async function getRoleOptions(): Promise<SelectOption[]> {
 	return parseRoleRows(data)
 		.map(sysRoleToSelectOption)
 		.filter((item): item is SelectOption => item !== null);
-}
-
-/**
- * 按筛选条件获取待导出数据。
- *
- * @param {UserListFilters} - 列表筛选条件。
- * @returns {User[]} - 待导出用户列表。
- */
-export async function exportUsers(
-	filters: UserListFilters = {},
-): Promise<User[]> {
-	const result = await fetchUserListResult({
-		...filters,
-		pageNum: 1,
-		pageSize: 10_000,
-	});
-	return result.list;
 }

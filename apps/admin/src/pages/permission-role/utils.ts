@@ -124,6 +124,14 @@ export function parseAssignDetailResponse(
 		modules: [] as RolePermissionModule[],
 		assignedMenuIds: [] as number[],
 	};
+	if (Array.isArray(res)) {
+		return {
+			modules: res as RolePermissionModule[],
+			assignedMenuIds: pickAssignedMenuIds({
+				menuIds: roleMenuIds,
+			}),
+		};
+	}
 	if (res == null || typeof res !== "object") return empty;
 
 	const root = res as Record<string, unknown>;
@@ -134,10 +142,14 @@ export function parseAssignDetailResponse(
 		modules = root.modules as RolePermissionModule[];
 		assignedMenuIds = pickAssignedMenuIds(root);
 	} else if (root.data != null && typeof root.data === "object") {
-		const data = root.data as Record<string, unknown>;
-		if (Array.isArray(data.modules)) {
-			modules = data.modules as RolePermissionModule[];
-			assignedMenuIds = pickAssignedMenuIds(data);
+		if (Array.isArray(root.data)) {
+			modules = root.data as RolePermissionModule[];
+		} else {
+			const data = root.data as Record<string, unknown>;
+			if (Array.isArray(data.modules)) {
+				modules = data.modules as RolePermissionModule[];
+				assignedMenuIds = pickAssignedMenuIds(data);
+			}
 		}
 	}
 

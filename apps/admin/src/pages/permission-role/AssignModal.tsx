@@ -2,7 +2,7 @@ import { Checkbox, Empty, Modal, Spin, Table, Tabs } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useState } from "react";
 import { getAssignDetail } from "./api";
-import type { RolePermissionDetailResponse, SysRole } from "./interface";
+import type { SysRole } from "./interface";
 import type { AssignAction, AssignRow } from "./utils";
 import {
 	buildAllHiddenIdsByPage,
@@ -59,9 +59,7 @@ const AssignModal = ({
 		const loadDetail = async () => {
 			setDetailLoading(true);
 			try {
-				const res: RolePermissionDetailResponse = await getAssignDetail(
-					String(roleId),
-				);
+				const res = await getAssignDetail(String(roleId));
 				if (cancelled) return;
 
 				const { modules, assignedMenuIds } = parseAssignDetailResponse(
