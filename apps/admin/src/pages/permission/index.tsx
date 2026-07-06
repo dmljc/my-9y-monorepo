@@ -6,65 +6,47 @@ import {
 import type { MenuProps } from "antd";
 import { Menu } from "antd";
 import type { ReactNode } from "react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+	getActiveSideMenu,
+	getSideMenus,
+	type SideMenuItem,
+} from "@/layout/menuConfig";
+import { useMenuStore } from "@/layout/menuStore";
 import styles from "./index.module.css";
 
-type PermissionMenuKey = "role" | "user" | "organization";
-
-interface PermissionMenuItem {
-	key: PermissionMenuKey;
-	label: string;
-	path: string;
-	icon: ReactNode;
-}
-
-const PERMISSION_MENUS: PermissionMenuItem[] = [
-	{
-		key: "role",
-		label: "角色管理",
-		path: "/permission/role",
-		icon: <TeamOutlined />,
-	},
-	{
-		key: "user",
-		label: "用户管理",
-		path: "/permission/user",
-		icon: <UserOutlined />,
-	},
-	{
-		key: "organization",
-		label: "组织管理",
-		path: "/permission/organization",
-		icon: <ApartmentOutlined />,
-	},
-];
-
-function getActiveMenu(pathname: string): PermissionMenuItem {
-	return (
-		PERMISSION_MENUS.find((item) => pathname.startsWith(item.path)) ??
-		PERMISSION_MENUS[0]
-	);
-}
+const MENU_ICONS: Record<string, ReactNode> = {
+	role: <TeamOutlined />,
+	user: <UserOutlined />,
+	organization: <ApartmentOutlined />,
+};
 
 /** 角色权限模块布局：侧边栏 + 子路由内容 */
 const Permission = () => {
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
-	const activeMenu = getActiveMenu(pathname);
+	const menus = useMenuStore((state) => state.menus);
+	const fetchMenus = useMenuStore((state) => state.fetchMenus);
+	const sideMenus = getSideMenus("permission", menus);
+	const activeMenu = getActiveSideMenu("permission", pathname, menus);
+
+	useEffect(() => {
+		fetchMenus();
+	}, [fetchMenus]);
 
 	const menuItems = useMemo<MenuProps["items"]>(
 		() =>
-			PERMISSION_MENUS.map((item) => ({
+			sideMenus.map((item) => ({
 				key: item.key,
 				label: item.label,
-				icon: item.icon,
+				icon: MENU_ICONS[item.key],
 			})),
-		[],
+		[sideMenus],
 	);
 
 	const handleMenuClick: MenuProps["onClick"] = ({ key }) => {
-		const target = PERMISSION_MENUS.find((item) => item.key === key);
+		const target = sideMenus.find((item: SideMenuItem) => item.key === key);
 		if (target) {
 			navigate(target.path);
 		}
@@ -76,7 +58,7 @@ const Permission = () => {
 				<Menu
 					className={styles.sideMenu}
 					mode="inline"
-					selectedKeys={[activeMenu.key]}
+					selectedKeys={activeMenu ? [activeMenu.key] : []}
 					items={menuItems}
 					onClick={handleMenuClick}
 				/>

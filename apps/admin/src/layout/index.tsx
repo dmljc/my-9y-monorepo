@@ -10,15 +10,15 @@ import {
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { ConfigProvider, Flex, Layout, Menu, Typography } from "antd";
-import { type ReactNode, useMemo } from "react";
+import { type ReactNode, useEffect, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import styles from "./index.module.css";
 import {
 	getDefaultPathForTop,
 	getTopMenuByPath,
-	TOP_MENUS,
 	type TopMenuKey,
 } from "./menuConfig";
+import { useMenuStore } from "./menuStore";
 import UserDropdown from "./UserDropdown";
 
 const { Header, Content } = Layout;
@@ -37,24 +37,33 @@ const TOP_MENU_ICONS: Record<TopMenuKey, ReactNode> = {
 const AppLayout = () => {
 	const location = useLocation();
 	const navigate = useNavigate();
-	const activeTop = getTopMenuByPath(location.pathname);
+	const menus = useMenuStore((state) => state.menus);
+	const fetchMenus = useMenuStore((state) => state.fetchMenus);
+	const activeTop = getTopMenuByPath(location.pathname, menus);
+
+	useEffect(() => {
+		fetchMenus();
+	}, [fetchMenus]);
 
 	const topMenuItems = useMemo<MenuProps["items"]>(
 		() =>
-			TOP_MENUS.map((item) => ({
+			menus.map((item) => ({
 				key: item.key,
 				label: item.label,
 				icon: TOP_MENU_ICONS[item.key],
 			})),
-		[],
+		[menus],
 	);
 
 	const onTopMenuClick: MenuProps["onClick"] = ({ key }) => {
 		if (key === "dashboard") {
-			window.open(getDefaultPathForTop(key as TopMenuKey), "_blank");
+			window.open(
+				getDefaultPathForTop(key as TopMenuKey, menus),
+				"_blank",
+			);
 			return;
 		}
-		navigate(getDefaultPathForTop(key as TopMenuKey));
+		navigate(getDefaultPathForTop(key as TopMenuKey, menus));
 	};
 
 	return (

@@ -4,6 +4,7 @@ import { Avatar, Button, Dropdown, Space, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/user";
 import { clearToken } from "@/utils";
+import { useMenuStore } from "./menuStore";
 
 const userMenuItems: MenuProps["items"] = [
 	{
@@ -17,12 +18,14 @@ const UserDropdown = () => {
 	const navigate = useNavigate();
 	const user = useUserStore((state) => state.user);
 	const clearUser = useUserStore((state) => state.clearUser);
+	const clearMenus = useMenuStore((state) => state.clearMenus);
 	const displayName = user?.nickName || user?.userName || "用户";
 
 	const onMenuClick: MenuProps["onClick"] = ({ key }) => {
 		if (key === "logout") {
 			clearToken();
 			clearUser();
+			clearMenus();
 			navigate("/login");
 		}
 	};
