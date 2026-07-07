@@ -63,6 +63,7 @@ function buildBarChartOption({
 	barWidth,
 	valueFormatter,
 }: BarChartResolvedProps): EChartsOption {
+	const isEmpty = xAxisData.length === 0;
 	// echarts v6 类型声明中，axis/grid 的联合类型与新增字段（outerBoundsMode、
 	// nameMoveOverlap）之间的交叉类型未能正确分发，直接内联对象字面量会触发
 	// 「excess property」误报；先赋值给变量再引用，绕开该联合类型的字面量校验。
@@ -77,21 +78,38 @@ function buildBarChartOption({
 	const xAxisOption = {
 		type: "category" as const,
 		data: xAxisData,
+		show: true,
+		boundaryGap: true,
 		nameMoveOverlap: false,
-		axisTick: { show: false },
-		axisLine: { show: false },
-		axisLabel: { color: "#86909c", fontSize: 12, margin: 12 },
+		axisTick: { show: isEmpty },
+		axisLine: {
+			show: true,
+			lineStyle: { color: isEmpty ? "#e5e6eb" : "transparent" },
+		},
+		axisLabel: {
+			show: true,
+			color: "#86909c",
+			fontSize: 12,
+			margin: 12,
+		},
 	};
 	const yAxisOption = {
 		type: "value" as const,
 		min: yAxis.min ?? 0,
 		max: yAxis.max,
 		interval: yAxis.interval,
+		show: true,
 		nameMoveOverlap: false,
-		axisLine: { show: false },
+		axisLine: {
+			show: true,
+			lineStyle: { color: isEmpty ? "#e5e6eb" : "transparent" },
+		},
 		axisTick: { show: false },
-		axisLabel: { color: "#86909c", fontSize: 12 },
-		splitLine: { lineStyle: { color: "#eef0f3", type: "solid" as const } },
+		axisLabel: { show: true, color: "#86909c", fontSize: 12 },
+		splitLine: {
+			show: true,
+			lineStyle: { color: "#eef0f3", type: "solid" as const },
+		},
 	};
 
 	return {

@@ -1,12 +1,18 @@
 import { Button, DatePicker, Spin } from "antd";
 import type { Dayjs } from "dayjs";
-import { lazy, type ReactNode, Suspense, useState } from "react";
+import { lazy, type ReactNode, Suspense, useEffect, useState } from "react";
+import { alarmByBuilding, alarmByLevel, alarmTrend } from "./api";
 import styles from "./index.module.css";
 import {
-	BAR_Y_AXIS,
-	buildChartData,
+	buildBarYAxis,
+	EMPTY_CHART_DATA,
 	type FilterState,
 	getDefaultFilter,
+	type StatisticsChartData,
+	toBuildingBarData,
+	toLevelPieData,
+	toStatisticsQuery,
+	toTrendBarData,
 } from "./utils";
 
 const BarChart = lazy(() => import("@/components/BarChart"));
@@ -42,9 +48,37 @@ const Statistics = () => {
 		useState<FilterState>(getDefaultFilter);
 	const [appliedFilter, setAppliedFilter] =
 		useState<FilterState>(getDefaultFilter);
+	const [loading, setLoading] = useState(false);
+	const [chartData, setChartData] =
+		useState<StatisticsChartData>(EMPTY_CHART_DATA);
 
-	const { barAxisData, riskPieData, statusPieData } =
-		buildChartData(appliedFilter);
+	const { barAxisData, riskPieData, trendBarData } = chartData;
+
+	const loadData = async (filter: FilterState) => {
+		setLoading(true);
+		try {
+			const query = toStatisticsQuery(filter);
+			const [buildingData, levelData, trendData] = await Promise.all([
+				alarmByBuilding(query),
+				alarmByLevel(query),
+				alarmTrend(query.days),
+			]);
+
+			setChartData({
+				barAxisData: toBuildingBarData(buildingData ?? []),
+				riskPieData: toLevelPieData(levelData ?? []),
+				trendBarData: toTrendBarData(
+					trendData ?? { trend: [], days: query.days },
+				),
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		loadData(appliedFilter);
+	}, [appliedFilter]);
 
 	const handleSearch = () => setAppliedFilter({ ...draftFilter });
 
@@ -78,27 +112,40 @@ const Statistics = () => {
 				<Button onClick={handleReset}>重置</Button>
 			</div>
 
-			<div className={styles.chartGrid}>
-				<ChartCard
-					title="厂房总报警次数"
-					className={styles.chartCardLarge}
+			<div className={styles.chartArea}>
+				<Spin
+					spinning={loading}
+					classNames={{ root: styles.chartSpin }}
 				>
-					<BarChart
-						xAxisData={barAxisData.xAxisData}
-						yAxisData={barAxisData.yAxisData}
-						yAxis={BAR_Y_AXIS}
-					/>
-				</ChartCard>
+					<div className={styles.chartGrid}>
+						<ChartCard
+							title="厂房总报警次数"
+							className={styles.chartCardLarge}
+						>
+							<BarChart
+								xAxisData={barAxisData.xAxisData}
+								yAxisData={barAxisData.yAxisData}
+								yAxis={buildBarYAxis(barAxisData.yAxisData)}
+							/>
+						</ChartCard>
 
-				<div className={styles.bottomCharts}>
-					<ChartCard title="高中低危报警饼状图">
-						<PieChart data={riskPieData} />
-					</ChartCard>
+						<div className={styles.bottomCharts}>
+							<ChartCard title="高中低危报警饼状图">
+								<PieChart data={riskPieData} />
+							</ChartCard>
 
-					<ChartCard title="总报警次数趋势">
-						<PieChart data={statusPieData} />
-					</ChartCard>
-				</div>
+							<ChartCard title="总报警次数趋势">
+								<BarChart
+									xAxisData={trendBarData.xAxisData}
+									yAxisData={trendBarData.yAxisData}
+									yAxis={buildBarYAxis(
+										trendBarData.yAxisData,
+									)}
+								/>
+							</ChartCard>
+						</div>
+					</div>
+				</Spin>
 			</div>
 		</div>
 	);
