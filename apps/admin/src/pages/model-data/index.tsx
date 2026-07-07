@@ -1,7 +1,7 @@
 import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
-import { list, remove, sync } from "./api";
+import { list, remove } from "./api";
 import styles from "./index.module.css";
 import type { DeviceDataListQuery, DeviceDataSnapshot } from "./interface";
 
@@ -15,7 +15,6 @@ const ModelData = () => {
 	const [modelName, setModelName] = useState("");
 	const [propertyName, setPropertyName] = useState("");
 	const [loading, setLoading] = useState(false);
-	const [syncLoading, setSyncLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<DeviceDataSnapshot[]>([]);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
@@ -64,17 +63,6 @@ const ModelData = () => {
 		setPropertyName("");
 		setPageNum(1);
 		loadData(1, pageSize, { modelName: "", propertyName: "" });
-	};
-
-	const handleSync = async () => {
-		setSyncLoading(true);
-		try {
-			await sync();
-			message.success("同步成功");
-			await loadData(pageNum, pageSize);
-		} finally {
-			setSyncLoading(false);
-		}
 	};
 
 	const handleDelete = (record: DeviceDataSnapshot) => {
@@ -188,11 +176,6 @@ const ModelData = () => {
 					查询
 				</Button>
 				<Button onClick={handleReset}>重置</Button>
-				<div className={styles.panelActions}>
-					<Button loading={syncLoading} onClick={handleSync}>
-						同步
-					</Button>
-				</div>
 			</div>
 
 			<Table

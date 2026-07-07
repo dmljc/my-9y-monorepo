@@ -6,9 +6,5 @@ export const list = (data: DeviceDataListQuery): Promise<any> => {
 };
 
 export const remove = (ids: string): Promise<any> => {
-	return request.delete(`/iiot/device-data/local/${ids}`);
-};
-
-export const sync = (): Promise<any> => {
-	return request.post("/iiot/device-data/sync");
+	return request.delete(`/iiot/device-data/${ids}`);
 };
