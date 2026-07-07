@@ -23,6 +23,7 @@ export interface DeviceDataListQuery {
 	propertyName?: string;
 	searchValue?: string;
 	thingId?: string;
+	alarmTime?: string;
 	propertyId?: string;
 	dataType?: string;
 	params?: {

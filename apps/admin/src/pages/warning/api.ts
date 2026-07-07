@@ -1,5 +1,12 @@
-import type { StatusFilter, WarningItem } from "./utils";
-import { calcTodayStats, filterWarnings, MOCK_WARNINGS } from "./utils";
+import { request } from "@/utils";
+import type {
+	RiskLevel,
+	StatusFilter,
+	WarningItem,
+	WarningStats,
+	WarningStatus,
+	WarningType,
+} from "./utils";
 
 /** 告警列表查询参数 */
 export interface WarningListParams {
@@ -14,13 +21,25 @@ export interface WarningListParams {
 export interface WarningListResult {
 	list: WarningItem[];
 	total: number;
-	stats: ReturnType<typeof calcTodayStats>;
+	stats: WarningStats;
 	pageNum: number;
 	pageSize: number;
 }
 
-/** mock 数据内存副本（接入 API 后移除） */
-const warningsStore: WarningItem[] = [...MOCK_WARNINGS];
+interface IiotAlarm {
+	id?: number;
+	monitorType?: string;
+	deviceName?: string;
+	propertyName?: string;
+	currentValue?: string;
+	thresholdMin?: string;
+	thresholdMax?: string;
+	levelName?: string;
+	levelColor?: string;
+	alarmTime?: string;
+	status?: string;
+	thingId?: string;
+}
 
 /** 将筛选字段与分页参数组装为接口查询参数 */
 export function toListParams(
@@ -32,8 +51,10 @@ export function toListParams(
 	const params: WarningListParams = {
 		pageNum,
 		pageSize,
-		status,
 	};
+	if (status !== "all") {
+		params.status = status;
+	}
 
 	if (dateRange) {
 		params.startTime = dateRange[0];
@@ -43,46 +64,115 @@ export function toListParams(
 	return params;
 }
 
-function getFilteredWarnings(params: WarningListParams) {
-	const dateRange =
-		params.startTime && params.endTime
-			? ([params.startTime.slice(0, 10), params.endTime.slice(0, 10)] as [
-					string,
-					string,
-				])
-			: null;
+function toBackendStatus(status?: StatusFilter): string | undefined {
+	if (status === "processed") return "1";
+	if (status === "unprocessed") return "0";
+	return undefined;
+}
 
-	return filterWarnings(warningsStore, params.status ?? "all", dateRange);
+function toQuery(params: WarningListParams): Record<string, unknown> {
+	const query: Record<string, unknown> = {
+		pageNum: params.pageNum,
+		pageSize: params.pageSize,
+		status: toBackendStatus(params.status),
+	};
+	if (params.startTime || params.endTime) {
+		query.params = {
+			beginAlarmTime: params.startTime,
+			endAlarmTime: params.endTime,
+		};
+	}
+	return query;
+}
+
+function parseRows(data: unknown): { rows: IiotAlarm[]; total: number } {
+	if (!data || typeof data !== "object") return { rows: [], total: 0 };
+	const record = data as Record<string, unknown>;
+	const rows = Array.isArray(record.rows)
+		? (record.rows as IiotAlarm[])
+		: Array.isArray(record.list)
+			? (record.list as IiotAlarm[])
+			: [];
+	return {
+		rows,
+		total: typeof record.total === "number" ? record.total : rows.length,
+	};
+}
+
+function toWarningType(monitorType?: string): WarningType {
+	return monitorType === "room" ? "room" : "device";
+}
+
+function toWarningStatus(status?: string): WarningStatus {
+	return status === "1" || status === "processed" || status === "resolved"
+		? "processed"
+		: "unprocessed";
+}
+
+function toRiskLevel(alarm: IiotAlarm): RiskLevel {
+	if (alarm.levelName?.includes("一般")) return "low";
+	if (alarm.levelName?.includes("严重")) return "medium";
+	if (alarm.levelColor?.toLowerCase().includes("fa8c16")) return "medium";
+	if (alarm.levelColor?.toLowerCase().includes("faad14")) return "low";
+	return "high";
+}
+
+function toWarningItem(alarm: IiotAlarm): WarningItem {
+	const name = alarm.propertyName ?? alarm.deviceName ?? "";
+	return {
+		id: String(alarm.id ?? ""),
+		type: toWarningType(alarm.monitorType),
+		name,
+		currentValue: alarm.currentValue ?? "",
+		thresholdRange: `${alarm.thresholdMin ?? ""}-${alarm.thresholdMax ?? ""}`,
+		level: toRiskLevel(alarm),
+		levelName: alarm.levelName,
+		levelColor: alarm.levelColor,
+		time: alarm.alarmTime ?? "",
+		status: toWarningStatus(alarm.status),
+		thingId: alarm.thingId,
+	};
+}
+
+function parseStats(data: unknown): WarningStats {
+	if (!data || typeof data !== "object") {
+		return { totalToday: 0, solvedToday: 0, unsolvedToday: 0 };
+	}
+	const record = data as Record<string, unknown>;
+	const totalToday = record.totalToday ?? record.todayTotal ?? record.total;
+	const solvedToday =
+		record.solvedToday ?? record.resolvedToday ?? record.processedToday;
+	const unsolvedToday =
+		record.unsolvedToday ??
+		record.unresolvedToday ??
+		record.unprocessedToday;
+	return {
+		totalToday: typeof totalToday === "number" ? totalToday : 0,
+		solvedToday: typeof solvedToday === "number" ? solvedToday : 0,
+		unsolvedToday: typeof unsolvedToday === "number" ? unsolvedToday : 0,
+	};
 }
 
 /** 获取告警列表（分页） */
-export function list(params: WarningListParams): Promise<WarningListResult> {
-	// return request.get("/api/warning/list", { params });
-	const filtered = getFilteredWarnings(params);
+export async function list(
+	params: WarningListParams,
+): Promise<WarningListResult> {
+	const [listData, statsData] = await Promise.all([
+		request.get("/iiot/alarm/list", { params: toQuery(params) }),
+		request.get("/iiot/alarm/stats"),
+	]);
+	const { rows, total } = parseRows(listData);
 	const { pageNum, pageSize } = params;
-	const start = (pageNum - 1) * pageSize;
-
-	return Promise.resolve({
-		list: filtered.slice(start, start + pageSize),
-		total: filtered.length,
-		stats: calcTodayStats(warningsStore),
+	return {
+		list: rows.map(toWarningItem),
+		total,
+		stats: parseStats(statsData),
 		pageNum,
 		pageSize,
-	});
+	};
 }
 
 /** 标记告警为已解决 */
-export function processWarning(id: string): Promise<WarningItem> {
-	// return request.put(`/api/warning/${id}/process`);
-	const index = warningsStore.findIndex((item) => item.id === id);
-	if (index === -1) {
-		return Promise.reject(new Error("告警不存在"));
-	}
-
-	warningsStore[index] = {
-		...warningsStore[index],
-		status: "processed",
-	};
-
-	return Promise.resolve(warningsStore[index]);
+export async function processWarning(id: string): Promise<void> {
+	await request.put(`/iiot/alarm/${id}/resolve`);
 }

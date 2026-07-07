@@ -5,8 +5,7 @@ import {
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Menu } from "antd";
-import type { ReactNode } from "react";
-import { useEffect, useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
 	getActiveSideMenu,
@@ -27,13 +26,8 @@ const Permission = () => {
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
 	const menus = useMenuStore((state) => state.menus);
-	const fetchMenus = useMenuStore((state) => state.fetchMenus);
 	const sideMenus = getSideMenus("permission", menus);
 	const activeMenu = getActiveSideMenu("permission", pathname, menus);
-
-	useEffect(() => {
-		fetchMenus();
-	}, [fetchMenus]);
 
 	const menuItems = useMemo<MenuProps["items"]>(
 		() =>

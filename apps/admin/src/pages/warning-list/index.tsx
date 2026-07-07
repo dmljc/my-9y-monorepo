@@ -13,7 +13,6 @@ import { list, processWarning, toListParams } from "@/pages/warning/api";
 import {
 	buildStatCards,
 	buildWarningDeviceDataPath,
-	getMockStats,
 	LEVEL_COLOR,
 	LEVEL_LABEL,
 	STATUS_LABEL,
@@ -73,7 +72,11 @@ const WarningList = () => {
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
-	const [stats, setStats] = useState<WarningStats>(getMockStats);
+	const [stats, setStats] = useState<WarningStats>({
+		totalToday: 0,
+		solvedToday: 0,
+		unsolvedToday: 0,
+	});
 	const [processingId, setProcessingId] = useState<string | null>(null);
 
 	const statCards = buildStatCards(stats, STAT_CARD_ASSETS);
@@ -171,8 +174,10 @@ const WarningList = () => {
 			title: "等级",
 			dataIndex: "level",
 			key: "level",
-			render: (level: WarningItem["level"]) => (
-				<Tag color={LEVEL_COLOR[level]}>{LEVEL_LABEL[level]}</Tag>
+			render: (_: WarningItem["level"], record) => (
+				<Tag color={record.levelColor ?? LEVEL_COLOR[record.level]}>
+					{record.levelName ?? LEVEL_LABEL[record.level]}
+				</Tag>
 			),
 		},
 		{

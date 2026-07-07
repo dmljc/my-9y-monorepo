@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import loginHero from "@/assets/login/login-hero.webp";
 import { getDefaultPathForTop } from "@/layout/menuConfig";
+import { useMenuStore } from "@/layout/menuStore";
 import {
 	PASSWORD_MAX_LENGTH,
 	PASSWORD_RULES,
@@ -20,6 +21,7 @@ const Login = () => {
 	const [form] = Form.useForm<LoginFormValues>();
 	const login = useUserStore((state) => state.login);
 	const loading = useUserStore((state) => state.loading);
+	const fetchMenus = useMenuStore((state) => state.fetchMenus);
 
 	useEffect(() => {
 		const saved = getRememberMe();
@@ -33,6 +35,7 @@ const Login = () => {
 		const ok = await login({ username, password });
 		if (!ok) return;
 
+		await fetchMenus({ force: true });
 		setRememberMe(values);
 		navigate(getDefaultPathForTop("warning"));
 	};

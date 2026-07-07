@@ -1,14 +1,14 @@
 import { Form, Input, InputNumber, Modal, Select, Switch } from "antd";
 import { useEffect, useState } from "react";
+import { getLevelOptions } from "./api";
 import styles from "./index.module.css";
-import type { RuleFormValues, WarningRule } from "./utils";
+import type { RuleFormValues, RuleLevelOption, WarningRule } from "./utils";
 import {
 	DEVICE_OPTIONS,
 	MONITOR_TYPE_OPTIONS,
 	type MonitorType,
 	PROPERTY_OPTIONS,
 	ROOM_OPTIONS,
-	RULE_LEVEL_OPTIONS,
 } from "./utils";
 
 interface CreateModalProps {
@@ -26,6 +26,7 @@ const CreateModal = ({
 }: CreateModalProps) => {
 	const [form] = Form.useForm<RuleFormValues>();
 	const [submitting, setSubmitting] = useState(false);
+	const [levelOptions, setLevelOptions] = useState<RuleLevelOption[]>([]);
 	const isEdit = editingRecord !== null;
 
 	const monitorType = Form.useWatch("monitorType", form) as
@@ -35,6 +36,11 @@ const CreateModal = ({
 	useEffect(() => {
 		if (!open) return;
 
+		const init = async () => {
+			setLevelOptions(await getLevelOptions());
+		};
+		init();
+
 		if (editingRecord) {
 			form.setFieldsValue({
 				name: editingRecord.name,
@@ -43,7 +49,7 @@ const CreateModal = ({
 				propertyKey: editingRecord.propertyKey,
 				thresholdMin: editingRecord.thresholdMin,
 				thresholdMax: editingRecord.thresholdMax,
-				level: editingRecord.level,
+				levelId: editingRecord.levelId,
 				enabled: editingRecord.enabled,
 			});
 			return;
@@ -52,7 +58,6 @@ const CreateModal = ({
 		form.resetFields();
 		form.setFieldsValue({
 			monitorType: "device",
-			level: "urgent",
 			enabled: true,
 		});
 	}, [open, editingRecord, form]);
@@ -183,11 +188,11 @@ const CreateModal = ({
 				</Form.Item>
 
 				<Form.Item
-					name="level"
+					name="levelId"
 					label="绑定等级"
 					rules={[{ required: true, message: "请选择报警等级" }]}
 				>
-					<Select options={RULE_LEVEL_OPTIONS} />
+					<Select options={levelOptions} />
 				</Form.Item>
 
 				<Form.Item

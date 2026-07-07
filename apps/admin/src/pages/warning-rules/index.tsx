@@ -8,8 +8,6 @@ import styles from "./index.module.css";
 import {
 	formatThresholdRange,
 	MONITOR_TYPE_LABEL,
-	RULE_LEVEL_COLOR,
-	RULE_LEVEL_LABEL,
 	type RuleFormValues,
 	type WarningRule,
 } from "./utils";
@@ -47,7 +45,7 @@ const WarningRules = () => {
 
 	const handleSearch = () => {
 		setPageNum(1);
-		void loadData(1, pageSize);
+		loadData(1, pageSize);
 	};
 
 	const handleReset = () => {
@@ -164,11 +162,11 @@ const WarningRules = () => {
 		},
 		{
 			title: "等级",
-			dataIndex: "level",
-			key: "level",
-			render: (level: WarningRule["level"]) => (
-				<Tag color={RULE_LEVEL_COLOR[level]}>
-					{RULE_LEVEL_LABEL[level]}
+			dataIndex: "levelName",
+			key: "levelName",
+			render: (_: unknown, record) => (
+				<Tag color={record.levelColor || "processing"}>
+					{record.levelName || "-"}
 				</Tag>
 			),
 		},

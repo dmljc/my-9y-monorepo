@@ -1,7 +1,7 @@
 import { FileSearchOutlined } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Menu } from "antd";
-import { type ReactNode, useEffect, useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
 	getActiveSideMenu,
@@ -20,13 +20,8 @@ const Device = () => {
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
 	const menus = useMenuStore((state) => state.menus);
-	const fetchMenus = useMenuStore((state) => state.fetchMenus);
 	const sideMenus = getSideMenus("device", menus);
 	const activeMenu = getActiveSideMenu("device", pathname, menus);
-
-	useEffect(() => {
-		fetchMenus();
-	}, [fetchMenus]);
 
 	const menuItems = useMemo<MenuProps["items"]>(
 		() =>

@@ -13,6 +13,8 @@ interface HistoricalDataFilters {
 	modelName: string;
 	propertyName: string;
 	dateRange: [string, string] | null;
+	thingId?: string;
+	alarmTime?: string;
 }
 
 function parseInitialFilters(search: string): HistoricalDataFilters {
@@ -24,6 +26,8 @@ function parseInitialFilters(search: string): HistoricalDataFilters {
 		modelName: "",
 		propertyName: params.get("name") ?? "",
 		dateRange: startTime && endTime ? [startTime, endTime] : null,
+		thingId: params.get("thingId") ?? undefined,
+		alarmTime: params.get("alarmTime") ?? undefined,
 	};
 }
 
@@ -56,6 +60,8 @@ const HistoricalData = () => {
 				pageSize: ps,
 				modelName: active.modelName.trim() || undefined,
 				propertyName: active.propertyName.trim() || undefined,
+				thingId: active.thingId,
+				alarmTime: active.alarmTime,
 			};
 			if (active.dateRange) {
 				query.params = {

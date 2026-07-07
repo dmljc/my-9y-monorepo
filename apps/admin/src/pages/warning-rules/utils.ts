@@ -1,14 +1,9 @@
-import mockData from "./mockData.json";
-
 // ---------------------------------------------------------------------------
 // 类型
 // ---------------------------------------------------------------------------
 
 /** 监控对象类型 */
 export type MonitorType = "device" | "room";
-
-/** 报警等级 */
-export type RuleLevel = "urgent" | "serious" | "normal";
 
 /** 报警规则 */
 export interface WarningRule {
@@ -19,7 +14,9 @@ export interface WarningRule {
 	propertyKey: string;
 	thresholdMin: number;
 	thresholdMax: number;
-	level: RuleLevel;
+	levelId: string;
+	levelName: string;
+	levelColor: string;
 	enabled: boolean;
 }
 
@@ -31,15 +28,20 @@ export interface RuleFormValues {
 	propertyKey: string;
 	thresholdMin: number;
 	thresholdMax: number;
-	level: RuleLevel;
+	levelId: string;
 	enabled: boolean;
+}
+
+/** 报警等级选项 */
+export interface RuleLevelOption {
+	value: string;
+	label: string;
+	color?: string;
 }
 
 // ---------------------------------------------------------------------------
 // 常量
 // ---------------------------------------------------------------------------
-
-export const MOCK_RULES: WarningRule[] = mockData as WarningRule[];
 
 export const MONITOR_TYPE_LABEL: Record<MonitorType, string> = {
 	device: "设备",
@@ -48,22 +50,6 @@ export const MONITOR_TYPE_LABEL: Record<MonitorType, string> = {
 
 export const MONITOR_TYPE_OPTIONS = (
 	Object.entries(MONITOR_TYPE_LABEL) as [MonitorType, string][]
-).map(([value, label]) => ({ label, value }));
-
-export const RULE_LEVEL_LABEL: Record<RuleLevel, string> = {
-	urgent: "紧急",
-	serious: "严重",
-	normal: "一般",
-};
-
-export const RULE_LEVEL_COLOR: Record<RuleLevel, string> = {
-	urgent: "error",
-	serious: "warning",
-	normal: "processing",
-};
-
-export const RULE_LEVEL_OPTIONS = (
-	Object.entries(RULE_LEVEL_LABEL) as [RuleLevel, string][]
 ).map(([value, label]) => ({ label, value }));
 
 export const DEVICE_OPTIONS = [

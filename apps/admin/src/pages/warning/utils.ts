@@ -1,5 +1,4 @@
 import dayjs from "dayjs";
-import mockData from "./mockData.json";
 
 // ---------------------------------------------------------------------------
 // 类型
@@ -25,8 +24,11 @@ export interface WarningItem {
 	currentValue: string;
 	thresholdRange: string;
 	level: RiskLevel;
+	levelName?: string;
+	levelColor?: string;
 	time: string;
 	status: WarningStatus;
+	thingId?: string;
 }
 
 /** 今日顶部统计数据 */
@@ -60,9 +62,6 @@ export interface StatCardAssets {
 // ---------------------------------------------------------------------------
 // 常量
 // ---------------------------------------------------------------------------
-
-/** 本地测试数据（接入 API 后移除） */
-export const MOCK_WARNINGS: WarningItem[] = mockData as WarningItem[];
 
 export const TYPE_LABEL: Record<WarningType, string> = {
 	room: "房间",
@@ -117,11 +116,6 @@ export function calcTodayStats(warnings: WarningItem[]): WarningStats {
 	};
 }
 
-/** 从 mock 数据计算今日统计（首屏占位） */
-export function getMockStats(): WarningStats {
-	return calcTodayStats(MOCK_WARNINGS);
-}
-
 /** 根据统计数据构建顶部卡片 */
 export function buildStatCards(
 	stats: WarningStats,
@@ -155,27 +149,6 @@ export function buildStatCards(
 	];
 }
 
-/** 客户端过滤（mock 阶段使用，接入 API 后由服务端筛选） */
-export function filterWarnings(
-	warnings: WarningItem[],
-	status: StatusFilter,
-	dateRange: [string, string] | null,
-): WarningItem[] {
-	return warnings.filter((item) => {
-		if (status !== "all" && item.status !== status) return false;
-
-		if (dateRange) {
-			const [start, end] = dateRange;
-			const itemDate = item.time.slice(0, 10);
-			if (itemDate < start || itemDate > end) {
-				return false;
-			}
-		}
-
-		return true;
-	});
-}
-
 /** 构建告警前后 15 分钟历史数据页跳转路径 */
 export function buildWarningDeviceDataPath(record: WarningItem): string {
 	const center = dayjs(record.time);
@@ -185,6 +158,10 @@ export function buildWarningDeviceDataPath(record: WarningItem): string {
 		name: record.name,
 		type: record.type,
 	});
+	if (record.thingId) {
+		params.set("thingId", record.thingId);
+		params.set("alarmTime", record.time);
+	}
 
 	return `/historical-data?${params.toString()}`;
 }

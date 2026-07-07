@@ -10,7 +10,7 @@ import {
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { ConfigProvider, Flex, Layout, Menu, Typography } from "antd";
-import { type ReactNode, useEffect, useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import styles from "./index.module.css";
 import {
@@ -38,12 +38,7 @@ const AppLayout = () => {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const menus = useMenuStore((state) => state.menus);
-	const fetchMenus = useMenuStore((state) => state.fetchMenus);
 	const activeTop = getTopMenuByPath(location.pathname, menus);
-
-	useEffect(() => {
-		fetchMenus();
-	}, [fetchMenus]);
 
 	const topMenuItems = useMemo<MenuProps["items"]>(
 		() =>
