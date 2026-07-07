@@ -87,16 +87,6 @@ const SIDE_ROUTE_KEYS: Record<string, string> = {
 	"/permission/operation-log": "operationLog",
 };
 
-const SIDE_ROUTE_FALLBACKS: Partial<Record<TopMenuKey, SideMenuItem[]>> = {
-	permission: [
-		{
-			key: "operationLog",
-			label: "操作日志",
-			path: "/permission/operation-log",
-		},
-	],
-};
-
 const SIDE_ROUTE_ORDER: Record<string, number> = {
 	role: 1,
 	user: 2,
@@ -104,20 +94,8 @@ const SIDE_ROUTE_ORDER: Record<string, number> = {
 	operationLog: 4,
 };
 
-function mergeSideMenuFallbacks(
-	topKey: TopMenuKey,
-	menus: SideMenuItem[],
-): SideMenuItem[] {
-	const fallbackMenus = SIDE_ROUTE_FALLBACKS[topKey] ?? [];
-	const mergedMenus = [...menus];
-
-	for (const item of fallbackMenus) {
-		if (!mergedMenus.some((menu) => menu.key === item.key)) {
-			mergedMenus.push(item);
-		}
-	}
-
-	return mergedMenus.sort(
+function sortSideMenus(menus: SideMenuItem[]): SideMenuItem[] {
+	return [...menus].sort(
 		(prev, next) =>
 			(SIDE_ROUTE_ORDER[prev.key] ?? Number.MAX_SAFE_INTEGER) -
 			(SIDE_ROUTE_ORDER[next.key] ?? Number.MAX_SAFE_INTEGER),
@@ -222,7 +200,7 @@ function collectSideMenus(
 				: null;
 		})
 		.filter((item): item is SideMenuItem => item !== null);
-	return mergeSideMenuFallbacks(topConfig.key, backendMenus);
+	return sortSideMenus(backendMenus);
 }
 
 /**
@@ -304,8 +282,7 @@ export function getSideMenus(
 	topKey: TopMenuKey,
 	menus: TopMenuItem[] = [],
 ): SideMenuItem[] {
-	return mergeSideMenuFallbacks(
-		topKey,
+	return sortSideMenus(
 		menus.find((item) => item.key === topKey)?.children ?? [],
 	);
 }
