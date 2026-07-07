@@ -1,14 +1,17 @@
 import { Form, Input, InputNumber, Modal, Select, Switch } from "antd";
 import { useEffect, useState } from "react";
-import { getLevelOptions } from "./api";
+import { listLevels } from "./api";
 import styles from "./index.module.css";
 import type { RuleFormValues, RuleLevelOption, WarningRule } from "./utils";
 import {
+	BUILDING_OPTIONS,
 	DEVICE_OPTIONS,
-	MONITOR_TYPE_OPTIONS,
-	type MonitorType,
+	MAX_LENGTH_12,
 	PROPERTY_OPTIONS,
 	ROOM_OPTIONS,
+	THRESHOLD_MAX,
+	THRESHOLD_MIN,
+	toLevelOptions,
 } from "./utils";
 
 interface CreateModalProps {
@@ -25,47 +28,29 @@ const CreateModal = ({
 	onSubmit,
 }: CreateModalProps) => {
 	const [form] = Form.useForm<RuleFormValues>();
-	const [submitting, setSubmitting] = useState(false);
+	const [loading, setLoading] = useState(false);
 	const [levelOptions, setLevelOptions] = useState<RuleLevelOption[]>([]);
 	const isEdit = editingRecord !== null;
-
-	const monitorType = Form.useWatch("monitorType", form) as
-		| MonitorType
-		| undefined;
 
 	useEffect(() => {
 		if (!open) return;
 
 		const init = async () => {
-			setLevelOptions(await getLevelOptions());
+			const data = await listLevels();
+			setLevelOptions(toLevelOptions(data));
 		};
 		init();
 
 		if (editingRecord) {
-			form.setFieldsValue({
-				name: editingRecord.name,
-				monitorType: editingRecord.monitorType,
-				targetName: editingRecord.targetName,
-				propertyKey: editingRecord.propertyKey,
-				thresholdMin: editingRecord.thresholdMin,
-				thresholdMax: editingRecord.thresholdMax,
-				levelId: editingRecord.levelId,
-				enabled: editingRecord.enabled,
-			});
+			form.setFieldsValue(editingRecord);
 			return;
 		}
 
 		form.resetFields();
 		form.setFieldsValue({
-			monitorType: "device",
 			enabled: true,
 		});
-	}, [open, editingRecord, form]);
-
-	const handleMonitorTypeChange = () => {
-		form.setFieldValue("targetName", undefined);
-		form.setFieldValue("propertyKey", undefined);
-	};
+	}, [open, editingRecord]);
 
 	const handleOk = async () => {
 		try {
@@ -80,19 +65,15 @@ const CreateModal = ({
 				return;
 			}
 
-			setSubmitting(true);
+			setLoading(true);
 			await onSubmit(values);
 			onCancel();
 		} catch (err) {
 			if (err && typeof err === "object" && "errorFields" in err) return;
 		} finally {
-			setSubmitting(false);
+			setLoading(false);
 		}
 	};
-
-	const targetOptions =
-		monitorType === "room" ? ROOM_OPTIONS : DEVICE_OPTIONS;
-	const targetLabel = monitorType === "room" ? "房间名称" : "设备名称";
 
 	return (
 		<Modal
@@ -100,7 +81,7 @@ const CreateModal = ({
 			open={open}
 			onOk={handleOk}
 			onCancel={onCancel}
-			confirmLoading={submitting}
+			confirmLoading={loading}
 			destroyOnHidden
 			width={560}
 			classNames={{ footer: styles.ruleModalFooter }}
@@ -116,45 +97,102 @@ const CreateModal = ({
 				<Form.Item
 					name="name"
 					label="规则名称"
-					rules={[{ required: true, message: "请输入规则名称" }]}
-				>
-					<Input placeholder="请输入规则名称" />
-				</Form.Item>
-
-				<Form.Item
-					name="monitorType"
-					label="监控类型"
-					rules={[{ required: true, message: "请选择监控对象" }]}
-				>
-					<Select
-						options={MONITOR_TYPE_OPTIONS}
-						onChange={handleMonitorTypeChange}
-					/>
-				</Form.Item>
-
-				<Form.Item
-					name="targetName"
-					label={targetLabel}
 					rules={[
 						{
 							required: true,
-							message: `请选择${targetLabel}`,
+							whitespace: true,
+							message: "请输入规则名称",
+						},
+						{
+							max: MAX_LENGTH_12,
+							message: `最多输入${MAX_LENGTH_12}个字符`,
+						},
+					]}
+				>
+					<Input
+						maxLength={MAX_LENGTH_12}
+						placeholder="请输入规则名称"
+						showCount
+					/>
+				</Form.Item>
+
+				<Form.Item label="所属房间" required>
+					<div className={styles.thresholdRange}>
+						<Form.Item
+							name="buildingNames"
+							noStyle
+							rules={[
+								{
+									required: true,
+									type: "array",
+									min: 1,
+									message: "请至少选择一个厂房",
+								},
+							]}
+						>
+							<Select
+								mode="multiple"
+								placeholder="请选择厂房"
+								options={BUILDING_OPTIONS}
+								allowClear
+							/>
+						</Form.Item>
+						<Form.Item
+							name="roomNames"
+							noStyle
+							rules={[
+								{
+									required: true,
+									type: "array",
+									min: 1,
+									message: "请至少选择一个房间",
+								},
+							]}
+						>
+							<Select
+								mode="multiple"
+								placeholder="请选择房间"
+								options={ROOM_OPTIONS}
+								allowClear
+							/>
+						</Form.Item>
+					</div>
+				</Form.Item>
+
+				<Form.Item
+					name="deviceNames"
+					label="设备名称"
+					rules={[
+						{
+							required: true,
+							type: "array",
+							min: 1,
+							message: "请至少选择一个设备",
 						},
 					]}
 				>
 					<Select
-						placeholder={`请选择${targetLabel}`}
-						options={targetOptions}
+						mode="multiple"
+						placeholder="请选择设备"
+						options={DEVICE_OPTIONS}
 						allowClear
 					/>
 				</Form.Item>
 
 				<Form.Item
-					name="propertyKey"
+					name="propertyKeys"
 					label="物模型属性"
-					rules={[{ required: true, message: "请选择物模型属性" }]}
+					rules={[
+						{
+							required: true,
+							type: "array",
+							min: 1,
+							message: "请至少选择一个属性",
+						},
+					]}
 				>
 					<Select
+						mode="multiple"
 						placeholder="请选择物模型属性"
 						options={PROPERTY_OPTIONS}
 						allowClear
@@ -166,22 +204,44 @@ const CreateModal = ({
 						<Form.Item
 							name="thresholdMin"
 							noStyle
-							rules={[{ required: true, message: "请输入下限" }]}
+							rules={[
+								{ required: true, message: "请输入下限" },
+								{
+									type: "number",
+									min: THRESHOLD_MIN,
+									max: THRESHOLD_MAX,
+									message: `请输入${THRESHOLD_MIN}-${THRESHOLD_MAX}之间的数字`,
+								},
+							]}
 						>
 							<InputNumber
 								className={styles.thresholdInput}
 								placeholder="下限"
+								min={THRESHOLD_MIN}
+								max={THRESHOLD_MAX}
+								precision={2}
 							/>
 						</Form.Item>
 						<span className={styles.thresholdDivider}>-</span>
 						<Form.Item
 							name="thresholdMax"
 							noStyle
-							rules={[{ required: true, message: "请输入上限" }]}
+							rules={[
+								{ required: true, message: "请输入上限" },
+								{
+									type: "number",
+									min: THRESHOLD_MIN,
+									max: THRESHOLD_MAX,
+									message: `请输入${THRESHOLD_MIN}-${THRESHOLD_MAX}之间的数字`,
+								},
+							]}
 						>
 							<InputNumber
 								className={styles.thresholdInput}
 								placeholder="上限"
+								min={THRESHOLD_MIN}
+								max={THRESHOLD_MAX}
+								precision={2}
 							/>
 						</Form.Item>
 					</div>
