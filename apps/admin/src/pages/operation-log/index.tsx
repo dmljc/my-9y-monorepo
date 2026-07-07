@@ -27,7 +27,8 @@ const OperationLog = () => {
 	const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(
 		getQuickRangeDates(DEFAULT_QUICK_RANGE),
 	);
-	const [userKeyword, setUserKeyword] = useState("");
+	const [userName, setUserName] = useState("");
+	const [operName, setOperName] = useState("");
 
 	const [loading, setLoading] = useState(false);
 	const [exportLoading, setExportLoading] = useState(false);
@@ -40,18 +41,17 @@ const OperationLog = () => {
 		p: number,
 		ps: number,
 		filters?: {
-			userKeyword?: string;
+			userName?: string;
+			operName?: string;
 			dateRange?: [Dayjs, Dayjs] | null;
 		},
 	): OperLogListQuery => {
-		const active = filters ?? { userKeyword, dateRange };
-		const user = active.userKeyword?.trim();
+		const active = filters ?? { userName, operName, dateRange };
 		const query: OperLogListQuery = {
 			pageNum: p,
 			pageSize: ps,
-			operName: user,
-			createBy: user,
-			operIp: user,
+			userName: active.userName?.trim(),
+			operName: active.operName?.trim(),
 		};
 		if (active.dateRange) {
 			query.params = {
@@ -66,7 +66,8 @@ const OperationLog = () => {
 		p: number,
 		ps: number,
 		filters?: {
-			userKeyword?: string;
+			userName?: string;
+			operName?: string;
 			dateRange?: [Dayjs, Dayjs] | null;
 		},
 	) => {
@@ -99,10 +100,12 @@ const OperationLog = () => {
 		const defaultRange = getQuickRangeDates(DEFAULT_QUICK_RANGE);
 		setQuickRange(DEFAULT_QUICK_RANGE);
 		setDateRange(defaultRange);
-		setUserKeyword("");
+		setUserName("");
+		setOperName("");
 		setPageNum(1);
 		loadData(1, pageSize, {
-			userKeyword: "",
+			userName: "",
+			operName: "",
 			dateRange: defaultRange,
 		});
 	};
@@ -183,6 +186,24 @@ const OperationLog = () => {
 	return (
 		<div className={styles.operationLog}>
 			<div className={styles.toolbar}>
+				<span className={styles.filterLabel}>账号</span>
+				<Input
+					className={styles.searchInput}
+					placeholder="请输入账号"
+					value={userName}
+					allowClear
+					onChange={(event) => setUserName(event.target.value)}
+					onPressEnter={handleSearch}
+				/>
+				<span className={styles.filterLabel}>用户名</span>
+				<Input
+					className={styles.searchInput}
+					placeholder="请输入用户名"
+					value={operName}
+					allowClear
+					onChange={(event) => setOperName(event.target.value)}
+					onPressEnter={handleSearch}
+				/>
 				<span className={styles.filterLabel}>时间范围</span>
 				<Select
 					className={styles.quickSelect}
@@ -201,14 +222,6 @@ const OperationLog = () => {
 						}
 						setDateRange([dates[0], dates[1]]);
 					}}
-				/>
-				<Input
-					className={styles.searchInput}
-					placeholder="用户名/账号/IP"
-					value={userKeyword}
-					allowClear
-					onChange={(event) => setUserKeyword(event.target.value)}
-					onPressEnter={handleSearch}
 				/>
 				<Button type="primary" onClick={handleSearch}>
 					查询

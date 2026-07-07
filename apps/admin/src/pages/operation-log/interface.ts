@@ -9,6 +9,7 @@ export interface SysOperLog {
 	requestMethod?: string;
 	operatorType?: number;
 	operName?: string;
+	userName?: string;
 	deptName?: string;
 	operUrl?: string;
 	operIp?: string;
@@ -29,7 +30,7 @@ export interface OperLogListQuery {
 	pageNum: number;
 	pageSize: number;
 	operName?: string;
-	createBy?: string;
+	userName?: string;
 	operIp?: string;
 	businessType?: number;
 	status?: number;
