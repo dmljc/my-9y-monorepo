@@ -26,46 +26,6 @@ export const DEFAULT_FORM_VALUES: Pick<
 /** 筛选区「全部」选项。 */
 export const ALL_BUILDING_OPTION = { label: "全部", value: "" } as const;
 
-export const BUILDING_OPTIONS = [
-	{ label: "X03", value: "X03" },
-	{ label: "X05", value: "X05" },
-	{ label: "X12", value: "X12" },
-];
-
-/**
- * 厂房 → 房间选项（后续可改为接口动态加载）。
- */
-export const ROOMS_BY_BUILDING: Record<
-	string,
-	{ label: string; value: string }[]
-> = {
-	X03: [
-		{ label: "101", value: "101" },
-		{ label: "103", value: "103" },
-		{ label: "104", value: "104" },
-		{ label: "107", value: "107" },
-		{ label: "109", value: "109" },
-		{ label: "111", value: "111" },
-		{ label: "113", value: "113" },
-	],
-	X05: [
-		{ label: "201", value: "201" },
-		{ label: "202", value: "202" },
-		{ label: "203", value: "203" },
-		{ label: "204", value: "204" },
-		{ label: "205", value: "205" },
-		{ label: "206", value: "206" },
-	],
-	X12: [
-		{ label: "102", value: "102" },
-		{ label: "105", value: "105" },
-		{ label: "106", value: "106" },
-		{ label: "108", value: "108" },
-		{ label: "110", value: "110" },
-		{ label: "112", value: "112" },
-	],
-};
-
 export const TYPE_OPTIONS = [
 	{ label: "泵", value: "pump" },
 	{ label: "压缩机", value: "compressor" },
@@ -108,12 +68,16 @@ export function normalizeStats(
  * 将厂房列表接口响应转为 Select 选项。
  *
  * @param {unknown} - 厂房接口 data 字段。
- * @returns {Array<{ label: string; value: string }>} - 含「全部」的选项列表。
+ * @param {boolean} - 是否包含「全部」选项。
+ * @returns {Array<{ label: string; value: string }>} - 厂房选项列表。
  */
 export function normalizeBuildingOptions(
 	data: unknown,
+	includeAll = true,
 ): { label: string; value: string }[] {
-	const options: { label: string; value: string }[] = [ALL_BUILDING_OPTION];
+	const options: { label: string; value: string }[] = includeAll
+		? [ALL_BUILDING_OPTION]
+		: [];
 
 	if (!Array.isArray(data)) return options;
 
@@ -125,11 +89,70 @@ export function normalizeBuildingOptions(
 		if (item && typeof item === "object") {
 			const record = item as Record<string, unknown>;
 			const value = String(
-				record.value ?? record.building ?? record.label ?? "",
+				record.value ??
+					record.buildingId ??
+					record.id ??
+					record.building ??
+					record.buildingName ??
+					record.name ??
+					record.label ??
+					"",
 			);
 			if (!value.trim()) continue;
 			options.push({
-				label: String(record.label ?? record.building ?? value),
+				label: String(
+					record.label ??
+						record.building ??
+						record.buildingName ??
+						record.name ??
+						value,
+				),
+				value,
+			});
+		}
+	}
+
+	return options;
+}
+
+/**
+ * 将房间列表接口响应转为 Select 选项。
+ *
+ * @param {unknown} - 房间接口 data 字段。
+ * @returns {Array<{ label: string; value: string }>} - 房间选项列表。
+ */
+export function normalizeRoomOptions(
+	data: unknown,
+): { label: string; value: string }[] {
+	const options: { label: string; value: string }[] = [];
+
+	if (!Array.isArray(data)) return options;
+
+	for (const item of data) {
+		if (typeof item === "string" && item.trim()) {
+			options.push({ label: item, value: item });
+			continue;
+		}
+		if (item && typeof item === "object") {
+			const record = item as Record<string, unknown>;
+			const value = String(
+				record.value ??
+					record.roomId ??
+					record.id ??
+					record.roomName ??
+					record.name ??
+					record.label ??
+					"",
+			);
+			if (!value.trim()) continue;
+			options.push({
+				label: String(
+					record.label ??
+						record.roomName ??
+						record.name ??
+						record.roomNo ??
+						value,
+				),
 				value,
 			});
 		}

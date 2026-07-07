@@ -10,16 +10,17 @@ import {
 } from "antd";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
+import { buildings as fetchBuildings, rooms as fetchRooms } from "./api";
 import type { DeviceFormValues, DeviceLedger } from "./interface";
 import {
-	BUILDING_OPTIONS,
 	CYCLE_UNIT_OPTIONS,
 	DATE_FORMAT,
 	DEFAULT_FORM_VALUES,
 	MAX_LENGTH_12,
 	MAX_LENGTH_20,
+	normalizeBuildingOptions,
 	normalizeDateValue,
-	ROOMS_BY_BUILDING,
+	normalizeRoomOptions,
 	TYPE_OPTIONS,
 } from "./utils";
 
@@ -41,14 +42,20 @@ const CreateModal = ({
 }: CreateModalProps) => {
 	const [form] = Form.useForm<DeviceFormValues>();
 	const [loading, setLoading] = useState(false);
+	const [buildingLoading, setBuildingLoading] = useState(false);
+	const [buildingOptions, setBuildingOptions] = useState<
+		{ label: string; value: string }[]
+	>([]);
+	const [roomLoading, setRoomLoading] = useState(false);
+	const [roomOptions, setRoomOptions] = useState<
+		{ label: string; value: string }[]
+	>([]);
 	const isEdit = editingRecord !== null;
 
 	const building = Form.useWatch("building", form);
 	const cycleValue = Form.useWatch("cycleValue", form);
 	const cycleUnit = Form.useWatch("cycleUnit", form);
 	const lastInspection = Form.useWatch("lastInspection", form);
-
-	const roomOptions = ROOMS_BY_BUILDING[building] ?? [];
 
 	let nextInspectionDate = "";
 	if (lastInspection && cycleValue && cycleUnit) {
@@ -72,6 +79,62 @@ const CreateModal = ({
 		}
 		form.setFieldsValue(DEFAULT_FORM_VALUES);
 	}, [open, editingRecord]);
+
+	useEffect(() => {
+		if (!open) return;
+
+		let ignore = false;
+		const loadBuildings = async () => {
+			setBuildingLoading(true);
+			try {
+				const buildingData = await fetchBuildings();
+				if (!ignore) {
+					setBuildingOptions(
+						normalizeBuildingOptions(buildingData, false),
+					);
+				}
+			} finally {
+				if (!ignore) {
+					setBuildingLoading(false);
+				}
+			}
+		};
+
+		loadBuildings();
+
+		return () => {
+			ignore = true;
+		};
+	}, [open]);
+
+	useEffect(() => {
+		if (!open) return;
+		if (!building) {
+			setRoomOptions([]);
+			return;
+		}
+
+		let ignore = false;
+		const loadRooms = async () => {
+			setRoomLoading(true);
+			try {
+				const roomData = await fetchRooms({ buildingId: building });
+				if (!ignore) {
+					setRoomOptions(normalizeRoomOptions(roomData));
+				}
+			} finally {
+				if (!ignore) {
+					setRoomLoading(false);
+				}
+			}
+		};
+
+		loadRooms();
+
+		return () => {
+			ignore = true;
+		};
+	}, [open, building]);
 
 	const handleFactoryChange = () => {
 		form.setFieldValue("room", undefined);
@@ -195,7 +258,8 @@ const CreateModal = ({
 						>
 							<Select
 								placeholder="请选择厂房"
-								options={BUILDING_OPTIONS}
+								options={buildingOptions}
+								loading={buildingLoading}
 								onChange={handleFactoryChange}
 							/>
 						</Form.Item>
@@ -211,6 +275,7 @@ const CreateModal = ({
 							<Select
 								placeholder="请选择房间"
 								options={roomOptions}
+								loading={roomLoading}
 								disabled={!building}
 							/>
 						</Form.Item>

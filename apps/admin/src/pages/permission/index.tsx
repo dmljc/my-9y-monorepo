@@ -1,5 +1,6 @@
 import {
 	ApartmentOutlined,
+	FileTextOutlined,
 	TeamOutlined,
 	UserOutlined,
 } from "@ant-design/icons";
@@ -19,6 +20,7 @@ const MENU_ICONS: Record<string, ReactNode> = {
 	role: <TeamOutlined />,
 	user: <UserOutlined />,
 	organization: <ApartmentOutlined />,
+	operationLog: <FileTextOutlined />,
 };
 
 /** 角色权限模块布局：侧边栏 + 子路由内容 */

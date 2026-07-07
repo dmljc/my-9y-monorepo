@@ -23,6 +23,7 @@ const PermissionUser = lazy(() => import("@/pages/permission-user"));
 const PermissionOrganization = lazy(
 	() => import("@/pages/permission-organization"),
 );
+const OperationLog = lazy(() => import("@/pages/operation-log"));
 const NotFound = lazy(() => import("@/components/NotFound"));
 const Forbidden = lazy(() => import("@/components/Forbidden"));
 const ServerError = lazy(() => import("@/components/ServerError"));
@@ -145,6 +146,10 @@ const routes: RouteObject[] = [
 									{
 										path: "organization",
 										element: <PermissionOrganization />,
+									},
+									{
+										path: "operation-log",
+										element: <OperationLog />,
 									},
 								],
 							},

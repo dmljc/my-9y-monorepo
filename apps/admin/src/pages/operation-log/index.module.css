@@ -1,0 +1,48 @@
+.operationLog {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	width: 100%;
+	padding: 24px;
+	border-radius: 4px;
+	background: #fff;
+}
+
+.toolbar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.filterLabel {
+	flex: none;
+	font-size: 14px;
+	line-height: 22px;
+	color: #333;
+	white-space: nowrap;
+}
+
+.quickSelect {
+	width: 128px;
+}
+
+.datePicker {
+	width: 360px;
+}
+
+.searchInput {
+	width: 180px;
+}
+
+.keywordInput {
+	width: 220px;
+}
+
+.panelActions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-left: auto;
+}

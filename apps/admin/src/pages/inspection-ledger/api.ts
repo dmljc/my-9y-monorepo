@@ -1,5 +1,9 @@
 import { request } from "@/utils";
-import type { DeviceLedger, DeviceLedgerListQuery } from "./interface";
+import type {
+	DeviceLedger,
+	DeviceLedgerListQuery,
+	RoomListQuery,
+} from "./interface";
 
 export const list = (data: DeviceLedgerListQuery): Promise<any> => {
 	return request.get("/device/inspection-ledger/list", { params: data });
@@ -10,7 +14,11 @@ export const stats = (): Promise<any> => {
 };
 
 export const buildings = (): Promise<any> => {
-	return request.get("/device/inspection-ledger/buildings");
+	return request.get("/iiot/alarm/buildings");
+};
+
+export const rooms = (data: RoomListQuery): Promise<any> => {
+	return request.get("/iiot/alarm/rooms", { params: data });
 };
 
 export const detail = (id: number): Promise<any> => {

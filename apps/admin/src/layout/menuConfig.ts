@@ -84,7 +84,45 @@ const SIDE_ROUTE_KEYS: Record<string, string> = {
 	"/permission/role": "role",
 	"/permission/user": "user",
 	"/permission/organization": "organization",
+	"/permission/operation-log": "operationLog",
 };
+
+const SIDE_ROUTE_FALLBACKS: Partial<Record<TopMenuKey, SideMenuItem[]>> = {
+	permission: [
+		{
+			key: "operationLog",
+			label: "操作日志",
+			path: "/permission/operation-log",
+		},
+	],
+};
+
+const SIDE_ROUTE_ORDER: Record<string, number> = {
+	role: 1,
+	user: 2,
+	organization: 3,
+	operationLog: 4,
+};
+
+function mergeSideMenuFallbacks(
+	topKey: TopMenuKey,
+	menus: SideMenuItem[],
+): SideMenuItem[] {
+	const fallbackMenus = SIDE_ROUTE_FALLBACKS[topKey] ?? [];
+	const mergedMenus = [...menus];
+
+	for (const item of fallbackMenus) {
+		if (!mergedMenus.some((menu) => menu.key === item.key)) {
+			mergedMenus.push(item);
+		}
+	}
+
+	return mergedMenus.sort(
+		(prev, next) =>
+			(SIDE_ROUTE_ORDER[prev.key] ?? Number.MAX_SAFE_INTEGER) -
+			(SIDE_ROUTE_ORDER[next.key] ?? Number.MAX_SAFE_INTEGER),
+	);
+}
 
 interface RouteCandidate {
 	label: string;
@@ -171,7 +209,7 @@ function collectSideMenus(
 ): SideMenuItem[] {
 	if (!topCandidate) return [];
 
-	return flattenCandidates(topCandidate.children)
+	const backendMenus = flattenCandidates(topCandidate.children)
 		.filter((candidate) => candidate.path.startsWith(`${topConfig.path}/`))
 		.map((candidate) => {
 			const key = SIDE_ROUTE_KEYS[candidate.path];
@@ -184,6 +222,7 @@ function collectSideMenus(
 				: null;
 		})
 		.filter((item): item is SideMenuItem => item !== null);
+	return mergeSideMenuFallbacks(topConfig.key, backendMenus);
 }
 
 /**
@@ -265,7 +304,10 @@ export function getSideMenus(
 	topKey: TopMenuKey,
 	menus: TopMenuItem[] = [],
 ): SideMenuItem[] {
-	return menus.find((item) => item.key === topKey)?.children ?? [];
+	return mergeSideMenuFallbacks(
+		topKey,
+		menus.find((item) => item.key === topKey)?.children ?? [],
+	);
 }
 
 export function getActiveSideMenu(

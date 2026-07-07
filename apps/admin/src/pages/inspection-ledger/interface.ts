@@ -43,6 +43,13 @@ export interface DeviceLedgerListResponse {
 }
 
 /**
+ * 房间列表查询参数。
+ */
+export interface RoomListQuery {
+	buildingId: string;
+}
+
+/**
  * 设备统计概览。
  */
 export interface DeviceLedgerStats {
