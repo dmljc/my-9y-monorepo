@@ -4,6 +4,10 @@
 }
 
 .header {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	flex: none;
 	background: #fff;
 	border-bottom: 1px solid #e8edf2;
 	padding: 0 32px;
