@@ -255,6 +255,10 @@ const WarningList = () => {
 								: null
 						}
 						onChange={(_, dateStrings) => {
+							if (!Array.isArray(dateStrings)) {
+								setDateRange(null);
+								return;
+							}
 							const [start, end] = dateStrings;
 							setDateRange(start && end ? [start, end] : null);
 						}}

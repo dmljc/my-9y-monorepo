@@ -13,7 +13,7 @@ alwaysApply: false
 - 使用 **箭头函数组件**：`const Xxx = () => { ... }`，文件末尾 `export default Xxx`；**不强制** `FC`。
 - 有 props 时：`const Xxx = (props: XxxProps) => { ... }`，单独定义 `XxxProps` 接口。
 - **页面组件名用功能名即可，不要加 `Page` 后缀**（如 `Login`、`DigitalTwin`，不要 `LoginPage`）；目录名与组件名一致：`pages/Login/`。
-- 业务逻辑保持精简，复杂逻辑抽 hooks/utils。
+- 业务逻辑保持精简；列表页**数据加载、筛选、分页与 CRUD** 若无特殊说明**内联 `index.tsx`**，复杂**纯函数**才抽 `utils.ts`；**仅一处使用**的小型 UI 片段同样 inline，不单独抽子组件（见「列表页逻辑：非特殊不抽 hook」「列表 utils：非必需不抽离」「单处使用：非特殊不抽组件」）。
 - 使用 **Ant Design** 默认主题即可；无明确需求时不要加 `ConfigProvider theme` 覆盖色板。
 
 ### 事件处理函数命名
@@ -151,22 +151,74 @@ message.success("保存成功");
 
 | 场景 | 做法 |
 |------|------|
-| **常规 CRUD 列表**（1～2 个文本筛选项、点「查询」才拉接口） | state **与字段同名**，如 `username`、`name`、`roleName`；`Input` 直接绑定；**不要**拆成 `draftUsername` / `appliedUsername` 等草稿/生效双份命名 |
+| **常规 CRUD 列表**（点「查询」才拉接口；筛选项为 `Input`、`Select`、`DatePicker`、`RangePicker` 等任意控件） | **每个筛选项各用一个 state**，命名与后端 query / `interface` 字段同名（如 `deviceName`、`building`、`modelName`、`dateRange`）；控件直接绑定该 state；**不要**用 `draftFilter` / `appliedFilter` 对象把多个字段包在一起，也**不要** `draftXxx` / `appliedXxx` 草稿/生效双份命名 |
 | **多字段组合 / 统计图表**（须「点查询才生效」且翻页保持上次条件） | 用 `draftFilter` / `appliedFilter` 对象，或输入态与生效态分字段（如组织树 `deptName` + `searchKeyword`） |
 
-**为什么**：多数列表页筛选项与后端 query 字段一一对应，直接用 `username`、`name` 可读且与 `interface` 对齐；`draftXxx` / `appliedXxx` 只在确需「输入与生效分离」时才有价值，不应作为默认模板。
+**为什么**：搜索区控件类型（文本、下拉、日期、时间范围等）不改变 state 写法——字段与接口 query 一一对应时，各自独立 state 即可；`draftFilter` 对象或 `draftXxx` / `appliedXxx` 只在确需「输入与生效分离」时才有价值（如统计页多图表、翻页须锁定上次查询条件），**不应因为筛选项是 Select、有 2 个以上字段、或控件类型混合，就默认拆成草稿对象**。
+
+**何时才用 draft / applied（判断标准）**
+
+| 用简单档（每字段一个 state） | 才用 draftFilter / appliedFilter |
+|------------------------------|----------------------------------|
+| 用户管理、历史数据、点检台账等 CRUD 列表 | 统计分析等多图表页（`statistics/`） |
+| 筛选项为任意 Ant Design 控件，字段与接口 query 一一对应 | 须「点查询」后翻页仍用**上一次生效条件**，且表单输入可与生效条件不同步 |
+| `loadData` 读当前各字段 state，`handleReset` 清空后重载 | 组织树等客户端筛选：`deptName`（输入）+ `searchKeyword`（生效） |
 
 **写法要点**
 
 | 部分 | 要求 |
 |------|------|
 | 按钮顺序 | 筛选项 → **查询** → **重置** →（可选）导出 / 新增等操作 |
+| state 形态 | 一字段一 state；`Input` / `Select` / `DatePicker` / `RangePicker` 等均直接绑定，**不要**合并进 `draftFilter` 对象 |
 | 查询 | `handleSearch`：`setPageNum(1)` 后 `loadData`；`loadData` 内对文本字段 **trim** 后拼 query |
-| 重置 | `handleReset`：清空筛选项 state、恢复默认（或空串）、`setPageNum(1)` 后 `loadData` |
+| 重置 | `handleReset`：清空各筛选项 state、恢复默认（或空串）、`setPageNum(1)` 后 `loadData` |
 | 默认值 | 时间范围等放 `utils.ts` 的 `DEFAULT_FILTER` 等常量，重置时复用 |
 | 回车 | 文本 `Input` 可 `onPressEnter={handleSearch}`；重置仍靠按钮 |
 
 **✅ 推荐 — 常规列表（直接字段名）**
+
+```tsx
+const [deviceName, setDeviceName] = useState("");
+const [building, setBuilding] = useState("");
+
+const loadData = async (
+  p: number,
+  ps: number,
+  filters?: { deviceName?: string; building?: string },
+) => {
+  setLoading(true);
+  try {
+    const active = filters ?? { deviceName, building };
+    const data = await list({
+      pageNum: p,
+      pageSize: ps,
+      deviceName: active.deviceName?.trim(),
+      building: active.building,
+    });
+    setDataSource(data.list ?? []);
+    setTotal(data.total ?? 0);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleSearch = () => {
+  setPageNum(1);
+  loadData(1, pageSize);
+};
+
+const handleReset = () => {
+  setDeviceName("");
+  setBuilding("");
+  setPageNum(1);
+  loadData(1, pageSize, { deviceName: "", building: "" });
+};
+
+<Input value={deviceName} onChange={(e) => setDeviceName(e.target.value)} onPressEnter={handleSearch} />
+<Select value={building} options={buildingOptions} onChange={setBuilding} />
+<Button type="primary" onClick={handleSearch}>查询</Button>
+<Button onClick={handleReset}>重置</Button>
+```
 
 ```tsx
 const [username, setUsername] = useState("");
@@ -179,8 +231,8 @@ const loadData = async (p: number, ps: number, filters?: UserListFilters) => {
       pageNum: p,
       pageSize: ps,
       ...(filters ?? {
-        username: username.trim() || undefined,
-        name: name.trim() || undefined,
+        username: username.trim(),
+        name: name.trim(),
       }),
     });
     setDataSource(result.list);
@@ -236,12 +288,75 @@ const handleReset = () => {
 // 重置只清输入框，不刷新列表/图表
 const handleReset = () => setUsername("");
 
-// 简单文本筛选用 draft/applied 双份命名
+// 简单筛选用 draft/applied 双份命名字段
 const [draftUsername, setDraftUsername] = useState("");
 const [appliedUsername, setAppliedUsername] = useState("");
+
+// ❌ 常规 CRUD 用 draftFilter 对象包裹搜索区字段（不论 Input、Select、DatePicker 等）
+const [draftFilter, setDraftFilter] = useState({ deviceName: "", building: "" });
+const [appliedFilter, setAppliedFilter] = useState({ deviceName: "", building: "" });
+
+const handleSearch = () => {
+  const nextFilter = { deviceName: draftFilter.deviceName.trim(), building: draftFilter.building };
+  setAppliedFilter(nextFilter);
+  loadData(1, pageSize, nextFilter);
+};
+
+<Input
+  value={draftFilter.deviceName}
+  onChange={(e) => setDraftFilter((prev) => ({ ...prev, deviceName: e.target.value }))}
+/>
+<Select
+  value={draftFilter.building}
+  onChange={(value) => setDraftFilter((prev) => ({ ...prev, building: value }))}
+/>
+
+// ✅ 应拆成独立 state：deviceName + building；日期类同理用 dateRange 等字段名，不要塞进 draftFilter
 ```
 
-**边界**：**无筛选条件**的纯列表（如 `warning-levels`）不必强行加搜索区；布局侧栏（`permission/`、`device/`）不适用；客户端树形筛选可用 `deptName`（输入）+ `searchKeyword`（生效 keyword），不必叫 draft/applied；导出、新增等与筛选无关的按钮放在查询/重置之后（常用 `margin-left: auto` 靠右）。**参考实现**：直接字段 — `permission-user/`、`historical-data/`、`warning-list/`；`draftFilter` — `statistics/`；输入/生效分离 — `permission-organization/`（`deptName` + `searchKeyword`）。
+**边界**：**无筛选条件**的纯列表（如 `warning-levels`）不必强行加搜索区；布局侧栏（`permission/`、`device/`）不适用；客户端树形筛选可用 `deptName`（输入）+ `searchKeyword`（生效 keyword），不必叫 draft/applied；导出、新增等与筛选无关的按钮放在查询/重置之后（常用 `margin-left: auto` 靠右）。**参考实现**：直接字段 — `permission-user/`、`historical-data/`、`warning-list/`、`inspection-ledger/`；`draftFilter` — `statistics/`；输入/生效分离 — `permission-organization/`（`deptName` + `searchKeyword`）。
+
+### 查询参数空值处理（不写 `undefined` 占位）
+
+**做什么**：组装列表查询参数时，默认**不要**写 `xxx || undefined`、`xxx ?? undefined` 这类占位兜底；优先直接传处理后的值（如 `trim()` 后字符串）。仅在后端明确要求“字段不存在”和“空字符串”语义不同，才用条件展开省略该字段。
+
+**为什么**：`undefined` 占位会增加噪音，且在常见请求序列化里通常会被忽略；同样语义下，直接传值或按条件省略字段更直观，也更易维护。
+
+**✅ 推荐**
+
+```tsx
+const query = {
+  pageNum: p,
+  pageSize: ps,
+  deviceName: deviceName.trim(),
+  building,
+};
+
+const data = await list(query);
+```
+
+```tsx
+// 仅当后端明确区分「空字符串」与「不传字段」时再省略 key
+const query = {
+  pageNum: p,
+  pageSize: ps,
+  ...(deviceName.trim() ? { deviceName: deviceName.trim() } : {}),
+  ...(building ? { building } : {}),
+};
+```
+
+**❌ 避免**
+
+```tsx
+const query = {
+  pageNum: p,
+  pageSize: ps,
+  deviceName: deviceName.trim() || undefined,
+  building: building || undefined,
+};
+```
+
+**边界**：若后端明确要求“空值字段必须省略”，使用条件展开省略字段；不要默认以 `undefined` 占位来表达“可选参数”。
 
 ### useCallback / useMemo
 
@@ -384,7 +499,88 @@ const displayName = user && user.nickName ? user.nickName : user && user.userNam
 | 多个候选字段取首个有效 | `a ?? b ?? c`（**不超过 2～3 段**） |
 | `0` / `""` 是合法值 | 用 `??`，**不要**用 `\|\|` 兜底（会把 `0` 误判为空） |
 
-**边界**：**后端字段已固定**时直出接口字段（见「列表数据直出接口字段」），**不要**再写 `list` / `rows` 双字段 if 兼容；**连续超过 2～3 个** `??` 链式兜底时，优先拆变量或对齐 `interface.ts` 类型，避免一行难以扫读；**多步骤分支**（如根据状态走不同 API、不同 UI）仍用 `if/else` 或 `switch`；需要把 `0`、`""` 也视为「空」时才用 `||`，并与 `??` 区分使用场景。
+**边界**：**后端字段已固定**时直出接口字段（见「列表数据直出接口字段」），**不要**再写 `list` / `rows` 双字段 if 兼容；**连续超过 2～3 个** `??` 链式兜底时，优先拆变量或对齐 `interface.ts` 类型，避免一行难以扫读；**多步骤分支**（如根据状态走不同 API、不同 UI）仍用 `if/else` 或 `switch`；需要把 `0`、`""` 也视为「空」时才用 `||`，并与 `??` 区分使用场景；**复杂条件 + 多步计算**的三元表达式改 `if/else` 块，见「三元运算符与 if/else」。
+
+### 三元运算符与 if/else
+
+**做什么**：**简单二选一**、单行即可读懂时，用三元 `? :` 或 `??`；当三元里嵌套条件、链式调用、类型收窄或多步赋值，**扫读成本高**时，改用 **`if` / `else` 块**（或提前 `return`），把「何时执行」与「怎么算」分开写。
+
+**为什么**：三元适合 `isEdit ? "编辑" : "新增"` 这类一眼能读完的表达式；把 `a && b && c ? fn(...).add(...).format(...) : ""` 挤在一行，条件、分支、副作用混在一起，维护时容易漏改；`if` 块先写守卫条件，再在块内分步计算，与「可选链与空值合并」里「简单兜底用 `??`、多步骤用 `if/else`」一致。
+
+**何时用哪种**
+
+| 场景 | 推荐 | 避免 |
+|------|------|------|
+| 文案 / 布尔二选一 | `isEdit ? "编辑" : "新增"` | 为此单独写 6 行 `if/else` |
+| 空值兜底 | `total ?? 0`、`list ?? []` | 冗长三元 `x !== undefined ? x : 0` |
+| 多条件 + 多步计算 | `if` 块内分步赋值 | 三元里嵌套 `&&`、方法链、`format` |
+| 嵌套三元 | 拆 `if/else` 或提前 `return` | `a ? b ? c : d : e` |
+| 仅赋值、有副作用 | `let` + `if` 或 IIFE（少用） | 超长 `const x = cond ? (…多行…) : …` |
+
+**✅ 推荐 — 简单三元 / 空值合并**
+
+```tsx
+<Modal title={isEdit ? "编辑" : "新增"} open={open} onOk={onOk} onCancel={onCancel} />
+
+const roomOptions = ROOMS_BY_BUILDING[building] ?? [];
+
+const statusColor = STATUS_COLOR[record.status ?? ""] ?? "default";
+```
+
+**✅ 推荐 — 复杂逻辑用 if 块**
+
+```tsx
+let nextInspectionDate = "";
+if (lastInspection && cycleValue && cycleUnit) {
+  const unit = cycleUnit === "month" ? "month" : "day";
+  nextInspectionDate = dayjs(lastInspection)
+    .add(cycleValue, unit)
+    .format(DATE_FORMAT);
+}
+
+// 展示
+<span>{nextInspectionDate || "-"}</span>
+```
+
+```tsx
+if (!open) return;
+
+form.resetFields();
+if (editingRecord) {
+  form.setFieldsValue({
+    ...editingRecord,
+    lastInspection: normalizeDateValue(editingRecord.lastInspection),
+  });
+  return;
+}
+form.setFieldsValue(DEFAULT_FORM_VALUES);
+```
+
+**❌ 避免**
+
+```tsx
+// 条件、单位换算、日期链式调用挤在一个三元里
+const nextInspectionDate =
+  lastInspection && cycleValue && cycleUnit
+    ? dayjs(lastInspection)
+        .add(cycleValue, cycleUnit === "month" ? "month" : "day")
+        .format(DATE_FORMAT)
+    : "";
+
+// 嵌套三元 — 改 if/else、查表常量（如 STATUS_LABEL[status]）或提前 return
+const label = status === "overdue" ? "逾期" : status === "soon" ? "即将到期" : "正常";
+```
+
+**写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 判断标准 | 三元**超过一行**、含 `&&` 守卫 + 方法链、或需块内临时变量时，优先 `if` |
+| 赋值 | 块内多次赋值用 `let` + `if`；简单结果仍可用 `const x = cond ? a : b` |
+| 块内小分支 | 块里仍可用**单行**三元（如 `unit = cycleUnit === "month" ? "month" : "day"`） |
+| 与 `??` 分工 | 仅 null/undefined 兜底用 `??`；带业务条件的计算不用三元硬写 |
+
+**边界**：JSX 里简单 `condition ? <A /> : <B />` 可保留三元；`filter.map` 等短 `render` 回调同理；与「可选链与空值合并」不冲突——**不要**为 `data.total ?? 0` 写 `if`；**不要**为复杂业务计算强行压成一行三元。**参考实现**：`if` 块 — `inspection-ledger/CreateModal.tsx`（下次点检日期预览）；简单三元 — 各页 `isEdit ? "编辑" : "新增"`。
 
 ### get / set 工具函数命名
 
@@ -437,7 +633,7 @@ export const writeRememberMe = (values: LoginParams) => { /* ... */ };
 
 ### 页面 utils 中文 JSDoc
 
-**做什么**：页面目录下的 `utils.ts`、`types.ts`、`formRules.ts`、`interface.ts` 等非组件文件中，**导出的类型、常量、函数**以及**模块内私有常量、工具函数**，均须用 **中文 JSDoc 多行注释**；函数按下方模板补充 **`@param`**、**`@returns`**，类型与常量仅写摘要段。`api.ts` 中的薄封装接口函数可省略 JSDoc（见「页面 api.ts 接口函数」）。
+**做什么**：页面目录下的 `utils.ts`、`types.ts`、`interface.ts` 等非组件文件中，**导出的类型、常量、函数**以及**模块内私有常量、工具函数**，均须用 **中文 JSDoc 多行注释**；函数按下方模板补充 **`@param`**、**`@returns`**，类型与常量仅写摘要段。`api.ts` 中的薄封装接口函数可省略 JSDoc（见「页面 api.ts 接口函数」）。**`formRules.ts` 为可选文件**，仅当按「Form：非特殊不抽离」「formRules：非特殊不单独抽文件」确需抽离时才建，并同样遵守本节约束。
 
 **为什么**：utils 常被页面、弹窗、hooks 多处引用；统一 `@param {类型} - 说明`、`@returns {类型} - 说明` 格式便于 IDE 悬停阅读，并明确参数与返回值的业务语义。
 
@@ -501,6 +697,56 @@ export const getAssignDetail = (id: string) =>
 
 函数名仍用 **动词 + 简短宾语**，表达真实职责；缩短的是**重复上下文**，不是删掉语义。
 
+**✅ 推荐 — utils 常量（本目录专用）**
+
+`utils.ts` 中**仅本页/本目录**使用的选项、默认值、布局、校验长度等常量，去掉与目录重复的前缀（如 `DEVICE_`、`FACTORY_`）；**表单 `maxLength` / `rules` 共用的长度上限**优先命名为 **`MAX_LENGTH_<数字>`**，常量值与后缀数字一致，多个字段限制相同时**共用一个常量**。
+
+| 避免（inspection-ledger 示例） | 推荐 |
+|-------------------------------|------|
+| `DEVICE_CODE_MAX_LENGTH` | `MAX_LENGTH_20` |
+| `DEVICE_NAME_MAX_LENGTH` / `MANUFACTURER_MAX_LENGTH` | 合并为 `MAX_LENGTH_12` |
+| `DEFAULT_DEVICE_FORM_VALUES` | `DEFAULT_FORM_VALUES` |
+| `DEVICE_TYPE_OPTIONS` / `DEVICE_TYPE_LABEL` | `TYPE_OPTIONS` / `TYPE_LABEL` |
+| `FACTORY_BUILDING_OPTIONS` | `BUILDING_OPTIONS` |
+| `ROOM_OPTIONS_BY_FACTORY` | `ROOMS_BY_BUILDING` |
+| `TWIN_FIELD_LABEL_COL` / `TWIN_FIELD_WRAPPER_COL` | `TWIN_LABEL_COL` / `TWIN_WRAPPER_COL` |
+
+```ts
+// pages/inspection-ledger/utils.ts — 目录即业务上下文
+/** 设备编码最大长度。 */
+export const MAX_LENGTH_20 = 20;
+
+/** 设备名称、生产厂家最大长度。 */
+export const MAX_LENGTH_12 = 12;
+
+export const DEFAULT_FORM_VALUES = { /* … */ };
+export const TYPE_OPTIONS = [ /* … */ ];
+export const BUILDING_OPTIONS = [ /* … */ ];
+```
+
+```tsx
+// CreateModal.tsx
+import { MAX_LENGTH_20 } from "./utils";
+
+<Form.Item
+  name="deviceCode"
+  rules={[
+    { required: true, whitespace: true, message: "请输入设备编码" },
+    { max: MAX_LENGTH_20, message: `最多输入${MAX_LENGTH_20}个字符` },
+  ]}
+>
+  <Input maxLength={MAX_LENGTH_20} showCount />
+</Form.Item>
+```
+
+**长度常量何时不用 `MAX_LENGTH_<n>`**
+
+| 场景 | 做法 |
+|------|------|
+| 本页 `utils.ts`、仅服务当前模块表单 | `MAX_LENGTH_20`、`MAX_LENGTH_12`；同长度多字段共用一个 |
+| **跨页共用**（如 `permission-user/formRules.ts` 供 Login 与 CreateModal） | 保留语义名：`USERNAME_MAX_LENGTH`、`PASSWORD_MAX_LENGTH` |
+| 除长度外还有独立语义（正则、最小值等） | `PASSWORD_MIN_LENGTH`、`USERNAME_PATTERN` 等按字段语义命名 |
+
 **❌ 避免**
 
 ```tsx
@@ -515,6 +761,15 @@ export function build() { /* ... */ }   // ❌ 太泛
 export function proc() { /* ... */ }    // ❌ 缩写不可读
 ```
 
+```ts
+// 目录已是 inspection-ledger，仍重复 Device / Factory
+export const DEVICE_CODE_MAX_LENGTH = 20;
+export const DEVICE_NAME_MAX_LENGTH = 12;
+export const MANUFACTURER_MAX_LENGTH = 12; // ❌ 与上同为 12，应共用一个 MAX_LENGTH_12
+export const DEFAULT_DEVICE_FORM_VALUES = { /* … */ };
+export const FACTORY_BUILDING_OPTIONS = [ /* … */ ];
+```
+
 **写法要点**
 
 | 部分 | 要求 |
@@ -522,14 +777,15 @@ export function proc() { /* ... */ }    // ❌ 缩写不可读
 | 文件名 | 功能名即可：`CreateModal`、`AssignModal`；不加 `Page`、不加与父目录同义的前缀 |
 | 组件 / Props | 与文件名一致：`AssignModal`、`AssignModalProps` |
 | utils 类型 | 模块内专用 UI/表格类型可缩短：`AssignRow`、`AssignAction`；**后端实体**仍用 `interface.ts` 的 `SysRole` 等，与接口字段对齐 |
+| utils 常量 | 去掉重复模块前缀；本页表单长度用 `MAX_LENGTH_<n>`，同值共用；跨页共用长度仍用语义名 |
 | utils 函数 | 去掉重复的 `Permission`、`Module` 等；保留动词：`build`、`extract`、`collect`、`format` |
 | api 函数 | 通用 CRUD 仍用 `list` / `create` / `update` / `remove`；**本模块特有**接口用短语义名：`getAssignDetail`，不要 `getRolePermissionAssignDetail` |
 
-**边界**：**跨页面复用**（抽到 `src/utils`、`src/components` 或多页 import 的 export）须用**完整、无歧义**命名，不必强行缩短。**`interface.ts` 中与后端对齐的类型**（如 `SysUser`、`RolePermissionModule`）保持接口语义，不为 shorten 而改名。**布局 / 全局**组件（`layout/`、`components/`）无「页面目录」上下文，仍用完整功能名（如 `UserDropdown`）。参考 `pages/permission-role/`（`AssignModal`、`buildAssignRows`、`collectMenuIds`）。
+**边界**：**跨页面复用**（抽到 `src/utils`、`src/components` 或多页 import 的 export）须用**完整、无歧义**命名，不必强行缩短。**`interface.ts` 中与后端对齐的类型**（如 `SysUser`、`RolePermissionModule`）保持接口语义，不为 shorten 而改名。**布局 / 全局**组件（`layout/`、`components/`）无「页面目录」上下文，仍用完整功能名（如 `UserDropdown`）。参考 `pages/permission-role/`（`AssignModal`、`buildAssignRows`）；utils 常量缩短 — `pages/inspection-ledger/utils.ts`。
 
 ### 页面 api.ts 接口函数
 
-**做什么**：页面目录下的 `api.ts` 只做 **HTTP 薄封装**——`import { request } from "@/utils"`，一行 `return request.get/post/put/delete(...)`；请求/响应类型放同目录 `interface.ts`；**HTTP 调用由页面直接 import `./api`**，在 `loadData`、`handleModalSubmit` 等调用处 inline 组装参数（trim 等）；`utils.ts` 只放**不发起请求**的纯函数（树形转换、客户端筛选、表单选项、校验等）；**成功提示**、状态更新留在页面或 hooks；**失败提示**由 `request` 全局 `onError` 统一处理。
+**做什么**：页面目录下的 `api.ts` 只做 **HTTP 薄封装**——`import { request } from "@/utils"`，一行 `return request.get/post/put/delete(...)`；请求/响应类型放同目录 `interface.ts`；**HTTP 调用由页面直接 import `./api`**，在 `loadData`、`handleModalSubmit` 等调用处 inline 组装参数（trim 等）；`utils.ts` 只放**不发起请求**的纯函数（树形转换、客户端筛选、表单选项、校验等）；**成功提示**、状态更新留在**页面** `index.tsx`；**失败提示**由 `request` 全局 `onError` 统一处理。
 
 **为什么**：接口层与 UI 层职责分离；`api.ts` 保持统一形态后便于批量对接后端、替换 mock，也避免在接口文件里散落 `if (code !== 200)`、字段映射等业务逻辑。
 
@@ -1065,6 +1321,119 @@ export function toListParams(pageNum: number, pageSize: number, filter: DeviceFi
 
 **边界**：需要复杂 list 编排时页面 `import { fetchXxxListResult } from "./utils"`，**CRUD 仍** `import ./api`；与「列表数据直出接口字段」配合，表格不重命名后端字段；加载列表用 `try/finally` 关 `loading`，勿写空 `catch {}`（见「HTTP 全局错误提示」）。**参考实现**：`apps/admin/src/pages/historical-data/`（无 `utils.ts`）；`apps/admin/src/pages/permission-organization/`、`permission-role/`（utils 无 api）；`apps/admin/src/pages/permission-user/`（含复杂 list 编排）。
 
+### 列表页逻辑：非特殊不抽 hook
+
+**做什么**：列表 / CRUD 页的 **数据加载、筛选、分页、CRUD 操作**（含 `useState`、`loadData`、`handleSearch` / `handleReset`、`handleTableChange`、`handleModalSubmit`、删除确认等），**若无特殊说明须内联**在页面组件文件（`index.tsx`）内；**不要**仅为「看起来整齐」单独建 `useXxx.ts`、`useDeviceLedger.ts` 等**只服务本页**的 hook 文件。
+
+**为什么**：常规列表页就是若干 `useState` + `loadData` + 事件处理，与 JSX 同文件阅读成本最低；再包一层 hook 只会增加 import 跳转、长 return 解构，且与「列表 utils：非必需不抽离」同一原则——**就近维护、无复用不拆文件**。`utils.ts` 仍放**无 React 依赖**的纯函数（选项、格式化、树形转换、统计卡片组装等），**不要**用 hook 替代 utils 或把 HTTP 藏进 hook 再绕一圈导出。
+
+**默认内联在 `index.tsx`**
+
+| 逻辑 | 做法 |
+|------|------|
+| 筛选项 state | 每字段一个 `useState`，与「搜索区查询与重置」一致 |
+| `loadData` | 组件内 async 函数，`import ./api` 调接口，`try/finally` 关 `loading` |
+| 查询 / 重置 / 分页 | `handleSearch`、`handleReset`、`handleTableChange` 写在页面内 |
+| 弹窗 state | `modalOpen`、`editingRecord` 等与 `handleAdd` / `handleEdit` 同文件 |
+| CRUD 提交 / 删除 | `handleModalSubmit`、`handleDelete`（含 `modal.confirm`）inline |
+| 首屏加载 | `useEffect` + `useRef` 防 Strict Mode 双调，或直接 `useEffect(() => { loadData(...) }, [])` |
+
+**何时才单独抽 hook**
+
+| 场景 | 做法 |
+|------|------|
+| **多页面 / 多入口**共用同一套列表编排 | 抽到 `src/hooks/` 或共享模块，命名表达复用语义 |
+| 单页内**明显复杂**且页面 JSX 过长（如多 Tab、左树右表各一套 CRUD） | 可拆 hook，但须确有可读性收益，**不要**为 CRUD 列表默认建 hook |
+| 纯计算 / 转换 / 常量 | 放 `utils.ts`，**不要**为无 React 逻辑建 hook |
+
+**✅ 推荐 — 逻辑内联在 `index.tsx`（inspection-ledger / permission-organization / historical-data）**
+
+```tsx
+// index.tsx
+const { message, modal } = App.useApp();
+const [loading, setLoading] = useState(false);
+const [dataSource, setDataSource] = useState<DeviceLedger[]>([]);
+const [pageNum, setPageNum] = useState(1);
+const [pageSize, setPageSize] = useState(15);
+const [deviceName, setDeviceName] = useState("");
+const [modalOpen, setModalOpen] = useState(false);
+const [editingRecord, setEditingRecord] = useState<DeviceLedger | null>(null);
+
+const loadData = async (p: number, ps: number) => {
+  setLoading(true);
+  try {
+    const data = await list({
+      pageNum: p,
+      pageSize: ps,
+      deviceName: deviceName.trim() || undefined,
+    });
+    setDataSource(data.list ?? []);
+    setTotal(data.total ?? 0);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleSearch = () => {
+  setPageNum(1);
+  loadData(1, pageSize);
+};
+
+const handleModalSubmit = async (values: DeviceFormValues) => {
+  const payload = { /* inline trim / 日期格式化 */ };
+  if (editingRecord?.id !== undefined) {
+    await update({ ...payload, id: editingRecord.id });
+    message.success("编辑成功");
+  } else {
+    await create(payload);
+    message.success("新增成功");
+  }
+  await loadData(pageNum, pageSize);
+};
+
+// JSX：筛选项、Table、CreateModal 同文件
+```
+
+**目录分工**
+
+```
+pages/inspection-ledger/
+  index.tsx         # state、loadData、筛选、分页、CRUD、首屏 useEffect
+  api.ts            # HTTP 薄封装
+  interface.ts      # 请求/响应类型
+  utils.ts          # buildStatCards、normalizeDateValue 等纯函数（无 useState）
+  CreateModal.tsx   # 表单 UI
+  tableColumns.tsx  # 列配置（可选，列多时可拆）
+```
+
+**❌ 避免**
+
+```
+pages/inspection-ledger/
+  index.tsx           # 仅解构 useXxx 的 20+ 个返回值
+  useDeviceLedger.ts  # ❌ 仅本页使用，内容与 index 强耦合
+```
+
+```tsx
+// index.tsx — 无复用却整页逻辑外包到 hook
+const {
+  deviceName, setDeviceName, loading, dataSource, handleSearch, handleReset,
+  handleAdd, handleEdit, handleModalSubmit, handleDelete, /* … */
+} = useDeviceLedger({ statCardAssets });
+```
+
+**写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 默认 | 数据加载、筛选、分页、CRUD **内联 `index.tsx`**；无特殊说明不抽 hook |
+| HTTP | 页面 `import ./api`；hook **不要**成为 api 的唯一入口 |
+| 纯函数 | 统计卡片、选项 normalize 等放 `utils.ts`，页面内调用 |
+| 子组件 | `CreateModal`、`tableColumns` 可拆文件；**单处** `map` / 展示块 inline（见「单处使用：非特殊不抽组件」）；**页面编排**仍留 `index.tsx` |
+| 禁止 | 仅为 `loadData` + CRUD 模板单独建 `useXxxList` / `useDeviceLedger` |
+
+**边界**：与「列表 utils：非必需不抽离」「Form：非特殊不抽离」「页面 api.ts 接口函数」配合——三层分工为 **`api.ts` HTTP**、**`utils.ts` 纯函数**、**`index.tsx` 页面 state 与编排**；`tableColumns.tsx` 拆列配置属 UI 拆分，不违背本规则；全局 `src/hooks/`（如鉴权、通用分页）跨页复用时不受限。**参考实现**：`inspection-ledger/`、`permission-organization/`、`historical-data/`、`reverse-control/`。
+
 ### 列表页 DOM 扁平化
 
 **做什么**：列表/CRUD 页在**布局与功能不变**的前提下，尽量少套仅用于布局的 wrapper（`section`、`header`、多层 `div`），保持 JSX 扁平。
@@ -1133,6 +1502,80 @@ export function toListParams(pageNum: number, pageSize: number, filter: DeviceFi
 | 表格外层 `tableWrap` | 列少、无固定列需求时直接 `<Table />`；确需横向滚动再设 `scroll.x` |
 
 **边界**：弹窗（`<CreateModal />`）与表格并列挂在根容器下即可（Modal 会 portal 到 body）；**仍需保留**有明确职责的分组（如 `.panelActions` 将操作按钮作为一组靠右）；多区块页面（左树右表、上下两块独立卡片）可保留额外容器；工具栏用 `flex-wrap` 自然换行即可，不必为此单独写 `@media`。
+
+### 单处使用：非特殊不抽组件
+
+**做什么**：页面内**仅在一处调用**的 JSX 片段、小型展示块或渲染逻辑，**默认 inline** 写在调用处（如 `map` 回调、`return` 内对应区块）；**不要**为此单独声明同文件子组件（如 `StatCardView`）、`renderXxx` 函数或仅为一次使用的 helper。
+
+**为什么**：单处使用的提取并不会复用，反而要在组件名、props 与调用点之间跳转；与「列表页逻辑：非特殊不抽 hook」「Form：非特殊不抽离」同一原则——**无复用、无独立职责边界时不拆**。数据组装、选项、列配置等无 React 依赖的逻辑仍放 `utils.ts`；确有跨文件复用或独立交互（弹窗、表单）时再拆子组件文件。
+
+**默认 inline**
+
+| 对象 | 做法 |
+|------|------|
+| `map` 内卡片 / 列表项 UI | 回调内直接写 JSX |
+| 仅本页一处的小块展示 | 写在 `return` 对应位置，不包 `XxxView` |
+| 统计卡片数据 | `utils.ts` 的 `buildStatCards` 等纯函数；**展示** inline |
+| 表格列 | 列多时可拆 `tableColumns.tsx`（见边界） |
+
+**何时才抽子组件 / render 函数**
+
+| 场景 | 做法 |
+|------|------|
+| **多处**引用同一 UI（本页 2+ 处或其它页面） | 同文件子组件或 `components/` / 独立文件 |
+| **独立交互**（表单弹窗、权限分配、多步向导） | `CreateModal.tsx`、`AssignModal.tsx` 等 |
+| 单块 JSX **过长**且含自有 state / effect，inline 明显难读 | 可拆同目录子组件，但须确有可读性收益 |
+| 纯数据 / 格式化 | `utils.ts`，**不要**为展示再包一层 View |
+
+**✅ 推荐 — 统计卡片 inline（inspection-ledger）**
+
+```tsx
+const statCards = buildStatCards(stats, STAT_CARD_ASSETS);
+
+<div className={styles.summaryCards}>
+  {statCards.map((card) => (
+    <div
+      key={card.key}
+      className={`${styles.summaryCard} ${STAT_CARD_TONE_CLASS[card.tone]}`}
+      style={{ backgroundImage: `url(${card.background}), ${STAT_CARD_GRADIENT[card.tone]}` }}
+    >
+      <div className={styles.summaryCardTitle}>{card.title}</div>
+      <div className={styles.summaryCardValue} style={card.valueColor ? { color: card.valueColor } : undefined}>
+        {card.value}
+      </div>
+      <img className={styles.summaryCardIllustration} src={card.image} alt="" draggable={false} />
+    </div>
+  ))}
+</div>
+```
+
+**❌ 避免**
+
+```tsx
+// 仅 map 一处使用，却单独声明子组件
+const StatCardView = ({ card }: { card: StatCard }) => (
+  <div className={styles.summaryCard}>{/* … */}</div>
+);
+
+{statCards.map((card) => (
+  <StatCardView key={card.key} card={card} />
+))}
+
+// 仅一处调用的 render 包装
+const renderStatCard = (card: StatCard) => <div>{/* … */}</div>;
+return <div>{statCards.map(renderStatCard)}</div>;
+```
+
+**写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 判断标准 | **调用点是否只有 1 处**；无复用则 inline |
+| 常量 / 查表 | `STAT_CARD_GRADIENT`、`STAT_CARD_TONE_CLASS` 等同文件 `const` 可保留 |
+| 数据层 | `buildStatCards`、`normalizeXxx` 放 `utils.ts`，与展示分离 |
+| 禁止 | 仅为 `map` 里十几行 JSX 建 `XxxView` / `renderXxx` |
+
+**边界**：`CreateModal`、`tableColumns.tsx`、`AssignModal` 等**跨区块、可复用或体量明显**的拆分不受限；与「列表页 DOM 扁平化」不冲突——inline 的是**逻辑组件**，不是多加无意义 `div`；若子组件将来被第二处引用，再提取不迟。**参考实现**：inline — `inspection-ledger/index.tsx`（统计卡片）；子组件 — `CreateModal.tsx`、`tableColumns.tsx`。
 
 ## Ant Design
 
@@ -1362,6 +1805,42 @@ pagination={{
 
 **边界**：无分页或纯客户端分页的表格不适用；产品明确要求其它默认条数（如大屏 20）时单页覆盖，仍建议 `pageSizeOptions` 包含实际默认值；`permission-user` 等模块内已有 `DEFAULT_PAGE_SIZE` 常量时，新改页面对齐 **15** 或随该页一并迁移，**不要**同页 state 用 15、常量仍写 10。**参考实现**：`apps/admin/src/pages/historical-data/`。
 
+### Form：非特殊不抽离
+
+**做什么**：Ant Design `Form` 相关的 UI 与交互逻辑——`rules`、`labelCol` / `wrapperCol` 等布局配置、编辑回显（`setFieldsValue`）、提交前字段组装（`trim`、日期格式化）——**默认**写在承载表单的组件内（如 `CreateModal.tsx`）或页面 `handleModalSubmit` 中 **inline**；**不要**仅为单个弹窗、无跨文件复用而单独建 `formRules.ts`、`formLayout.ts`，或在 `utils.ts` export `recordToFormValues`、`formValuesToXxx` 等专用于一次 CRUD 的转换函数。
+
+**为什么**：表单项与 `Form.Item` 就近维护，增删字段时只改一处；拆到独立文件会增加 import 跳转与双处同步，也容易让人误以为全模块复用。`utils.ts` 保留**跨组件复用**或**含通用业务语义**的常量（选项列表、`MAX_LENGTH_*`、正则、`normalizeDateValue`、`toApiDateTime`），**不要**放 `maxLengthRule`、`requiredTrimRule` 等仅为拼 `rules` 的一行 helper，或单弹窗专用的表单胶水代码。
+
+**分工速查**
+
+| 逻辑 | 默认位置 | 何时才抽离 |
+|------|----------|------------|
+| `rules` | `CreateModal.tsx` 内 `rules={[…]}` | 跨页 / 跨组件共用；规则工厂（见「formRules：非特殊不单独抽文件」） |
+| `labelCol` / `wrapperCol` | 同文件 `Form.Item` 或文件顶部 `const` | 同模块多表单共用；全站 layout token（见「Form 布局配置：非特殊不抽 utils」） |
+| 编辑回显 | `CreateModal` 的 `useEffect` 内 inline | 多弹窗 / 多入口共用复杂映射（见「setFieldsValue 编辑回显」「表单字段映射：非特殊不抽 utils」） |
+| 提交组装 | 页面 `handleModalSubmit` 内 inline | 多入口复杂编排（见「表单字段映射：非特殊不抽 utils」「列表 utils：非必需不抽离」） |
+| 长度 / 正则 / 选项 | `utils.ts` 放**数值 / 正则常量**；`rules` 内直接写 `{ max: MAX_LENGTH_20, message: … }` | 把 `maxLengthRule` 等规则 helper export 到 `utils`；跨组件才抽 `formRules.ts` |
+
+**✅ 推荐 — 单弹窗就近维护**
+
+```
+pages/inspection-ledger/
+  CreateModal.tsx   # rules、布局 const、setFieldsValue、Form JSX
+  utils.ts          # TYPE_OPTIONS、MAX_LENGTH_*、normalizeDateValue
+  index.tsx         # handleModalSubmit 内 inline 组装提交体
+```
+
+**❌ 避免**
+
+```
+pages/inspection-ledger/
+  CreateModal.tsx
+  formRules.ts      # ❌ 仅本弹窗使用
+  utils.ts          # ❌ export ledgerToFormValues / formValuesToLedger / maxLengthRule 仅服务 CreateModal
+```
+
+**边界**：下文「Form.Item 校验规则」「formRules」「Form 布局配置」「setFieldsValue 编辑回显」「表单字段映射」等是对上表各行的细化，**有冲突时以「确有跨文件复用 / 复杂编排」为准**才抽离；Login 引用 `permission-user/formRules.ts`、权限分配等跨模块场景属例外。**参考实现**：inline — `inspection-ledger/`；跨页 rules — `permission-user/formRules.ts`。
+
 ### Form.Item 校验规则
 
 **做什么**：`Form.Item` 的 `rules` **优先**使用 Ant Design / async-validator 提供的**声明式属性**（如 `required`、`min`、`max`、`len`、`pattern`、`type`、`whitespace`）；仅当内置能力无法表达时，再写自定义 **`validator`**（或 `transform` + 内置规则组合）。
@@ -1382,7 +1861,8 @@ pagination={{
 
 | 部分 | 要求 |
 |------|------|
-| 常量 | 长度、正则等放页面 `utils.ts`（如 `PASSWORD_MIN_LENGTH`、`USERNAME_PATTERN`），`rules` 引用常量，**不要** magic number / 内联长正则 |
+| 常量 | 长度、正则等数值 / 模式放 `utils.ts`（如 `MAX_LENGTH_20`、`USERNAME_PATTERN`）；`rules` 内**直接写声明式规则**，**不要**再包 `maxLengthRule()` helper |
+| rules 放置 | 默认在 `CreateModal.tsx` 等表单组件内 **inline** 写 `rules`；**不要**为仅本弹窗使用的规则单独建 `formRules.ts`，也**不要**在 `utils.ts` export 规则工厂（见「Form：非特殊不抽离」「formRules：非特殊不单独抽文件」） |
 | 输入限制 | 与 `rules` 配套：文本字段在 `Input` 上设 `maxLength`（及按需 `showCount`），**不要**只靠提交时校验 |
 | 编辑可选字段 | 占位符 / 「不修改则不校验」用 **`transform`** 将特殊值转为 `""` 后再走 `min` / `pattern` 等；**不要**为简单跳过写整段 `validator` |
 | 条件必填 | 如 `{ required: !isEdit, message: "…" }` 仍用 `required` 属性；**不要**在 `validator` 里重复判空 |
@@ -1471,7 +1951,141 @@ const skipEditPasswordPlaceholder = (value: string) =>
 }
 ```
 
-**边界**：多条 `rules` 按顺序执行；`transform` 只影响**当前 rule** 的校验值，需在多条规则上重复时提取为同一函数（如 `skipEditPasswordPlaceholder`）；远程唯一性校验、与 `getFieldValue` 联动的确认密码等**必须**用 `validator`；Login 等未走页面 `utils.ts` 的简单页，常量仍可局部定义，但规则写法遵循本节约束。**参考实现**：`apps/admin/src/pages/permission-user/CreateModal.tsx`。
+**边界**：多条 `rules` 按顺序执行；`transform` 只影响**当前 rule** 的校验值，需在多条规则上重复时提取为同一函数（如 `skipEditPasswordPlaceholder`）；远程唯一性校验、与 `getFieldValue` 联动的确认密码等**必须**用 `validator`；Login 等未走页面 `utils.ts` 的简单页，常量仍可局部定义，但规则写法遵循本节约束。**参考实现**：`apps/admin/src/pages/permission-user/CreateModal.tsx`（跨页共用规则见 `permission-user/formRules.ts`）。
+
+### formRules：非特殊不单独抽文件
+
+**做什么**：`Form.Item` 的 `rules` **默认**写在表单所在组件内（如 `CreateModal.tsx`），与对应 `Form.Item` 就近阅读；**不要**为仅服务单个弹窗、无跨文件复用的校验规则单独建 `formRules.ts`。
+
+**为什么**：多数 CRUD 弹窗的 rules 就是若干条声明式配置，拆到独立文件只会增加 import 跳转，字段增删时还要在两个文件间同步；长度上限等常量仍放 `utils.ts`，与「Form：非特殊不抽离」「Form.Item 校验规则」分工清晰。
+
+**何时才单独抽 `formRules.ts`**
+
+| 场景 | 做法 |
+|------|------|
+| **跨页面 / 跨组件共用**同一套规则 | 可建 `formRules.ts` 并 export（如 `permission-user/formRules.ts` 供 `Login` 与 `CreateModal` 共用 `USERNAME_RULES`） |
+| **可复用规则工厂** | 如 `getPasswordRules(required, transform)`，新增/编辑/登录多处调用 |
+| 单组件内 rules **极少** | 直接 inline 在 `CreateModal.tsx`，**不要**建 `formRules.ts` |
+
+**写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 默认位置 | `CreateModal.tsx`（或承载 Form 的组件）内 `rules={[…]}` 或组件顶部 `const xxxRules: Rule[] = […]` |
+| 常量 | `MAX_LENGTH_*`、正则等仍放 `utils.ts`；`rules` 用 `{ max: MAX_LENGTH_20, message: … }`，**不要** `utils` 里的 `maxLengthRule` |
+| 抽离文件 | 仅在有上表「跨页共用 / 规则工厂」等理由时建 `formRules.ts`；**不要**把 `requiredTrimRule`、`maxLengthRule` 放进 `utils.ts` 或 `formRules.ts` 只为「看起来整齐」 |
+
+**✅ 推荐 — 单弹窗 inline**
+
+```tsx
+// CreateModal.tsx
+import { MAX_LENGTH_20 } from "./utils";
+
+<Form.Item
+  name="deviceCode"
+  label="设备编码"
+  rules={[
+    { required: true, whitespace: true, message: "请输入设备编码" },
+    { max: MAX_LENGTH_20, message: `最多输入${MAX_LENGTH_20}个字符` },
+  ]}
+>
+  <Input maxLength={MAX_LENGTH_20} showCount />
+</Form.Item>
+```
+
+**✅ 推荐 — 跨页共用才抽 `formRules.ts`**
+
+```ts
+// permission-user/formRules.ts — Login 与 CreateModal 共用
+export const USERNAME_RULES: Rule[] = [ /* … */ ];
+export function getPasswordRules(required = true, transform?: …): Rule[] { /* … */ }
+```
+
+```tsx
+// Login/index.tsx
+import { USERNAME_RULES, PASSWORD_RULES } from "@/pages/permission-user/formRules";
+```
+
+**❌ 避免**
+
+```
+pages/inspection-ledger/
+  CreateModal.tsx   # 唯一消费者
+  formRules.ts      # ❌ 仅 re-export 几条本可 inline 的 rules
+```
+
+```tsx
+// ❌ 单弹窗、无复用，却在 utils 或 formRules 包一层
+// utils.ts
+export function maxLengthRule(max: number) {
+  return { max, message: `最多输入${max}个字符` };
+}
+
+// formRules.ts
+export const deviceCodeRules = [
+  { required: true, whitespace: true, message: "请输入设备编码" },
+  { max: 20, message: "最多输入20个字符" },
+];
+```
+
+**边界**：与「Form.Item 校验规则」配合——长度用声明式 `{ max, message }` 写在 `Form.Item` 旁；Login 从 `permission-user/formRules` 引用属于跨模块复用，可保留。**参考实现**：inline — `inspection-ledger/CreateModal.tsx`；`formRules.ts` — `permission-user/`（含 `Login` 共用账号密码规则）。
+
+### Form 布局配置：非特殊不抽 utils
+
+**做什么**：仅单个弹窗 / 表单组件使用的 `Form` 布局 props（如双列 `Row` 内 `Form.Item` 的 `labelCol`、`wrapperCol`，或 `layout` / `labelCol` 覆写），**默认**写在承载表单的组件文件内——直接写在 `Form.Item` 上，或在**同一文件**顶部定义局部常量；**不要** export 到 `utils.ts`。
+
+**为什么**：`{ span: 8 }` / `{ span: 16 }` 这类配置只为对齐当前弹窗栅格，放进 `utils.ts` 会让人误以为全模块复用，也增加无意义的 import；属「Form：非特殊不抽离」中布局一行——**单消费者、无业务计算**的配置就近放表单组件。
+
+**何时才放到 utils**
+
+| 场景 | 做法 |
+|------|------|
+| 仅 `CreateModal` 双列表单项 | 同文件 `const TWIN_LABEL_COL = { span: 8 }` 或 `labelCol={{ span: 8 }}` |
+| 同模块多个表单共用同一套布局 | 可抽到 `utils.ts` 或模块内 `formLayout.ts` |
+| 全项目统一 Form 主题 | 用 layout 层 `ConfigProvider` / token，而非页面 `utils` |
+
+**写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 默认 | `labelCol` / `wrapperCol` 写在 `CreateModal.tsx` 的 `Form.Item` 或文件内常量 |
+| 复用次数 | 同一文件内重复 2 次以上，可在**该组件文件**顶部 `const`，不必进 `utils` |
+| `utils.ts` 保留 | 选项列表、校验 helper、日期格式化等业务/数据常量 |
+| 禁止 | 仅为一个弹窗 export `TWIN_LABEL_COL` / `TWIN_WRAPPER_COL` |
+
+**✅ 推荐 — 单弹窗（CreateModal.tsx）**
+
+```tsx
+const TWIN_LABEL_COL = { span: 8 };
+const TWIN_WRAPPER_COL = { span: 16 };
+
+<Form form={form} layout="horizontal" labelCol={{ span: 4 }} wrapperCol={{ span: 20 }}>
+  <Row gutter={12}>
+    <Col span={12}>
+      <Form.Item name="building" label="所属厂房" labelCol={TWIN_LABEL_COL} wrapperCol={TWIN_WRAPPER_COL}>
+        <Select options={BUILDING_OPTIONS} />
+      </Form.Item>
+    </Col>
+  </Row>
+</Form>
+```
+
+```tsx
+// 只用一两次也可直接 inline
+<Form.Item name="cycleUnit" label="周期单位" labelCol={{ span: 8 }} wrapperCol={{ span: 16 }}>
+  <Select options={CYCLE_UNIT_OPTIONS} />
+</Form.Item>
+```
+
+**❌ 避免**
+
+```ts
+// utils.ts — 仅 inspection-ledger/CreateModal 引用
+export const TWIN_LABEL_COL = { span: 8 } as const;
+export const TWIN_WRAPPER_COL = { span: 16 } as const;
+```
+
+**边界**：属「Form：非特殊不抽离」布局行；`utils` 放**跨组件复用**或**含逻辑**的常量/函数；布局 magic number 若设计稿全站统一，优先评估 layout token，而非页面 `utils`。**参考实现**：`inspection-ledger/CreateModal.tsx`（`TWIN_LABEL_COL` 文件内常量）。
 
 ### Form.useForm 与 useEffect 依赖
 
@@ -1542,11 +2156,89 @@ useEffect(() => {
 }, [open, editingRecord]);
 ```
 
-**边界**：仅当 `editingRecord` 中某些字段的值需在回显前做**转换/格式化**（如日期对象转字符串、数组 join）时，才值得手动拆开 `setFieldsValue({ field: transform(record.field), ... })`；若字段名与 `Form.Item` 的 `name` 一一对应且值类型一致，直接传整个 record。
+**边界**：仅当 `editingRecord` 中某些字段的值需在回显前做**转换/格式化**（如日期对象转字符串、数组 join）时，才在 `CreateModal` 内 **inline** 覆盖对应字段（如 `{ ...editingRecord, lastInspection: normalizeDateValue(...) }`）；字段名与 `Form.Item` 的 `name` 一一对应且值类型一致时，直接 `setFieldsValue(editingRecord)`；**不要**为此单独在 `utils.ts` 建 `recordToFormValues` / `ledgerToFormValues`（见「Form：非特殊不抽离」「表单字段映射：非特殊不抽 utils」）。
+
+### 表单字段映射：非特殊不抽 utils
+
+**做什么**：弹窗**编辑回显**（列表行 → 表单）与**提交组装**（表单 → 接口 body）的字段映射，**默认**写在 `CreateModal.tsx` 的 `useEffect` / 页面 `handleModalSubmit` 内 **inline**；**不要**在 `utils.ts` 单独 export `recordToFormValues`、`ledgerToFormValues`、`formValuesToXxx` 等仅为单次 CRUD 服务的转换函数。
+
+**为什么**：多数映射只是 `trim`、日期格式化或 `?? ""` 兜底，抽成 utils 会增加文件跳转，且与「Form：非特殊不抽离」「setFieldsValue 编辑回显」「列表 utils：非必需不抽离」重复；`utils.ts` 应保留选项、统计、日期等**可复用纯工具**，而非单弹窗专用的双向 DTO 转换。
+
+**何时才抽到 utils**
+
+| 场景 | 做法 |
+|------|------|
+| 单弹窗编辑回显 + 提交 | `CreateModal` / `handleModalSubmit` 内 inline |
+| 字段与 `Form.Item` 同名、无需转换 | `form.setFieldsValue(editingRecord)` |
+| 仅个别字段需转换 | spread 后覆盖该字段，如 `{ ...record, lastInspection: normalizeDateValue(...) }` |
+| **多个弹窗 / 多入口**共用同一套复杂映射 | 可 export 转换函数到 `utils.ts` |
+| 映射含多接口聚合、难 inline 的编排 | 同「列表 utils：非必需不抽离」复杂档 |
+
+**写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 编辑回显 | 优先整行 `setFieldsValue(editingRecord)`；有转换再 spread + 覆盖 |
+| 提交 | `handleModalSubmit` 内组装 `{ ...values, deviceCode: values.deviceCode.trim(), lastInspection: toApiDateTime(...) }` 后 `await create` / `update` |
+| 日期等通用片段 | `normalizeDateValue`、`toApiDateTime` 等可留 `utils.ts` |
+| 禁止 | 仅为「看起来整齐」建 `ledgerToFormValues` + `formValuesToLedger` 成对函数 |
+
+**✅ 推荐 — 回显 inline（CreateModal）**
+
+```tsx
+useEffect(() => {
+  if (!open) return;
+  form.resetFields();
+  if (editingRecord) {
+    form.setFieldsValue({
+      ...editingRecord,
+      lastInspection: normalizeDateValue(editingRecord.lastInspection),
+    });
+    return;
+  }
+  form.setFieldsValue(DEFAULT_FORM_VALUES);
+}, [open, editingRecord]);
+```
+
+**✅ 推荐 — 提交 inline（页面 `index.tsx`）**
+
+```tsx
+const handleModalSubmit = async (values: DeviceFormValues) => {
+  const payload: DeviceLedger = {
+    deviceCode: values.deviceCode.trim(),
+    deviceName: values.deviceName.trim(),
+    deviceType: values.deviceType,
+    manufacturer: values.manufacturer.trim(),
+    building: values.building,
+    room: values.room,
+    cycleValue: values.cycleValue,
+    cycleUnit: values.cycleUnit,
+    lastInspection: toApiDateTime(values.lastInspection),
+  };
+  if (editingRecord?.id !== undefined) {
+    await update({ ...payload, id: editingRecord.id });
+    message.success("编辑成功");
+  } else {
+    await create(payload);
+    message.success("新增成功");
+  }
+  await loadData(pageNum, pageSize);
+};
+```
+
+**❌ 避免**
+
+```ts
+// utils.ts — 仅 CreateModal / 单页使用
+export function ledgerToFormValues(record: DeviceLedger): DeviceFormValues { /* … */ }
+export function formValuesToLedger(values: DeviceFormValues): DeviceLedger { /* … */ }
+```
+
+**边界**：与「setFieldsValue 编辑回显」「编辑弹窗不回显详情接口」「列表 utils：非必需不抽离」「列表页逻辑：非特殊不抽 hook」配合；跨页复用的账号规则仍见 `formRules.ts` 例外；权限等**多步骤编排**可保留 `recordToFormValues` 类函数。**参考实现**：inline — `inspection-ledger/`（`CreateModal` + `index.tsx`）、`permission-organization/`。
 
 ### 编辑弹窗不回显详情接口
 
-**做什么**：列表页点击「编辑」打开弹窗时，**不要**再调 `detail` / `getById` 等详情接口；表单回显直接从表格当前行 `editingRecord` 取值，经 `recordToFormValues`（字段映射）后 `setFieldsValue`。
+**做什么**：列表页点击「编辑」打开弹窗时，**不要**再调 `detail` / `getById` 等详情接口；表单回显直接从表格当前行 `editingRecord` 取值 `setFieldsValue`；个别字段需格式化时在 `CreateModal` 内 inline，**不要**抽到 `utils` 的 `recordToFormValues`（见「表单字段映射：非特殊不抽 utils」）。
 
 **为什么**：列表接口已包含编辑所需字段，再请求详情只会增加延迟、Network 开销和失败点，无额外收益。
 
@@ -1572,7 +2264,10 @@ useEffect(() => {
   loadMeta();
 
   if (editingRecord) {
-    form.setFieldsValue(recordToFormValues(editingRecord));
+    form.setFieldsValue({
+      ...editingRecord,
+      lastInspection: normalizeDateValue(editingRecord.lastInspection),
+    });
     return;
   }
 
@@ -1585,7 +2280,7 @@ useEffect(() => {
 ```tsx
 if (editingRecord) {
   const record = await detail(editingRecord.id);
-  form.setFieldsValue(recordToFormValues(record));
+  form.setFieldsValue(record);
 }
 ```
 

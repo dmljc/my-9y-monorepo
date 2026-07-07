@@ -9,114 +9,82 @@ import {
 	Select,
 } from "antd";
 import dayjs from "dayjs";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import type { DeviceFormValues, DeviceLedger } from "./interface";
 import {
-	buildDeviceNameRules,
-	buildManufacturerRules,
-	cycleValueRules,
-	deviceCodeRules,
-	deviceTypeRules,
-	requiredSelectRule,
-} from "./formRules";
-import type { DeviceFormValues, InspectionDevice } from "./types";
-import {
+	BUILDING_OPTIONS,
 	CYCLE_UNIT_OPTIONS,
-	calcNextInspectionDate,
 	DATE_FORMAT,
-	DEFAULT_DEVICE_FORM_VALUES,
-	DEVICE_CODE_MAX_LENGTH,
-	DEVICE_NAME_MAX_LENGTH,
-	DEVICE_TYPE_OPTIONS,
-	FACTORY_BUILDING_OPTIONS,
-	MANUFACTURER_MAX_LENGTH,
+	DEFAULT_FORM_VALUES,
+	MAX_LENGTH_12,
+	MAX_LENGTH_20,
 	normalizeDateValue,
-	ROOM_OPTIONS_BY_FACTORY,
-	recordToFormValues,
-	TWIN_FIELD_LABEL_COL,
-	TWIN_FIELD_WRAPPER_COL,
+	ROOMS_BY_BUILDING,
+	TYPE_OPTIONS,
 } from "./utils";
+
+const TWIN_LABEL_COL = { span: 8 };
+const TWIN_WRAPPER_COL = { span: 16 };
 
 interface CreateModalProps {
 	open: boolean;
-	editingRecord: InspectionDevice | null;
-	existingDevices: InspectionDevice[];
+	editingRecord: DeviceLedger | null;
 	onCancel: () => void;
-	onOk: (values: DeviceFormValues) => void;
+	onOk: (values: DeviceFormValues) => Promise<void>;
 }
 
 const CreateModal = ({
 	open,
 	editingRecord,
-	existingDevices,
 	onCancel,
-	onOk,
+	onOk: onOkProp,
 }: CreateModalProps) => {
 	const [form] = Form.useForm<DeviceFormValues>();
 	const [loading, setLoading] = useState(false);
 	const isEdit = editingRecord !== null;
 
-	const factoryBuilding = Form.useWatch("factoryBuilding", form);
+	const building = Form.useWatch("building", form);
 	const cycleValue = Form.useWatch("cycleValue", form);
 	const cycleUnit = Form.useWatch("cycleUnit", form);
-	const lastInspectionDate = Form.useWatch("lastInspectionDate", form);
+	const lastInspection = Form.useWatch("lastInspection", form);
 
-	const roomOptions = useMemo(
-		() =>
-			factoryBuilding
-				? (ROOM_OPTIONS_BY_FACTORY[factoryBuilding] ?? [])
-				: [],
-		[factoryBuilding],
-	);
+	const roomOptions = ROOMS_BY_BUILDING[building] ?? [];
 
-	// 下次点检日期由「上次点检 + 周期」自动推导，只读展示
-	const nextInspectionDate = useMemo(() => {
-		if (!lastInspectionDate || !cycleValue || !cycleUnit) return "";
-		return calcNextInspectionDate(
-			normalizeDateValue(lastInspectionDate),
-			cycleValue,
-			cycleUnit,
-		);
-	}, [lastInspectionDate, cycleValue, cycleUnit]);
-
-	const nameRules = useMemo(
-		() => buildDeviceNameRules(existingDevices, editingRecord?.id),
-		[existingDevices, editingRecord?.id],
-	);
-
-	const manufacturerRules = useMemo(
-		() => buildManufacturerRules(existingDevices, editingRecord?.id),
-		[existingDevices, editingRecord?.id],
-	);
+	let nextInspectionDate = "";
+	if (lastInspection && cycleValue && cycleUnit) {
+		const unit = cycleUnit === "month" ? "month" : "day";
+		nextInspectionDate = dayjs(lastInspection)
+			.add(cycleValue, unit)
+			.format(DATE_FORMAT);
+	}
 
 	useEffect(() => {
 		if (!open) return;
-
+		form.resetFields();
 		if (editingRecord) {
-			form.setFieldsValue(recordToFormValues(editingRecord));
+			form.setFieldsValue({
+				...editingRecord,
+				lastInspection: normalizeDateValue(
+					editingRecord.lastInspection,
+				),
+			});
 			return;
 		}
-
-		form.resetFields();
-		form.setFieldsValue(DEFAULT_DEVICE_FORM_VALUES);
-	}, [open, editingRecord, form]);
+		form.setFieldsValue(DEFAULT_FORM_VALUES);
+	}, [open, editingRecord]);
 
 	const handleFactoryChange = () => {
 		form.setFieldValue("room", undefined);
 	};
 
-	const handleOk = async () => {
+	const onOk = async () => {
 		try {
 			const values = await form.validateFields();
 			setLoading(true);
-			onOk({
-				...values,
-				lastInspectionDate: normalizeDateValue(
-					values.lastInspectionDate,
-				),
-			});
+			await onOkProp(values);
 			onCancel();
 		} catch {
-			// 表单校验失败
+			// 表单校验失败或接口失败
 		} finally {
 			setLoading(false);
 		}
@@ -126,7 +94,7 @@ const CreateModal = ({
 		<Modal
 			title={isEdit ? "编辑" : "新增"}
 			open={open}
-			onOk={handleOk}
+			onOk={onOk}
 			onCancel={onCancel}
 			confirmLoading={loading}
 			destroyOnHidden
@@ -139,18 +107,46 @@ const CreateModal = ({
 				wrapperCol={{ span: 20 }}
 				preserve={false}
 			>
-				<Form.Item name="code" label="设备编码" rules={deviceCodeRules}>
+				<Form.Item
+					name="deviceCode"
+					label="设备编码"
+					rules={[
+						{
+							required: true,
+							whitespace: true,
+							message: "请输入设备编码",
+						},
+						{
+							max: MAX_LENGTH_20,
+							message: `最多输入${MAX_LENGTH_20}个字符`,
+						},
+					]}
+				>
 					<Input
 						placeholder="请输入设备编码"
-						maxLength={DEVICE_CODE_MAX_LENGTH}
+						maxLength={MAX_LENGTH_20}
 						showCount
 					/>
 				</Form.Item>
 
-				<Form.Item name="name" label="设备名称" rules={nameRules}>
+				<Form.Item
+					name="deviceName"
+					label="设备名称"
+					rules={[
+						{
+							required: true,
+							whitespace: true,
+							message: "请输入设备名称",
+						},
+						{
+							max: MAX_LENGTH_12,
+							message: `最多输入${MAX_LENGTH_12}个字符`,
+						},
+					]}
+				>
 					<Input
 						placeholder="请输入设备名称"
-						maxLength={DEVICE_NAME_MAX_LENGTH}
+						maxLength={MAX_LENGTH_12}
 						showCount
 					/>
 				</Form.Item>
@@ -158,22 +154,32 @@ const CreateModal = ({
 				<Form.Item
 					name="deviceType"
 					label="设备类型"
-					rules={deviceTypeRules}
+					rules={[{ required: true, message: "请选择设备类型" }]}
 				>
 					<Select
 						placeholder="请选择设备类型"
-						options={DEVICE_TYPE_OPTIONS}
+						options={TYPE_OPTIONS}
 					/>
 				</Form.Item>
 
 				<Form.Item
 					name="manufacturer"
 					label="厂家"
-					rules={manufacturerRules}
+					rules={[
+						{
+							required: true,
+							whitespace: true,
+							message: "请输入厂家",
+						},
+						{
+							max: MAX_LENGTH_12,
+							message: `最多输入${MAX_LENGTH_12}个字符`,
+						},
+					]}
 				>
 					<Input
 						placeholder="请输入厂家"
-						maxLength={MANUFACTURER_MAX_LENGTH}
+						maxLength={MAX_LENGTH_12}
 						showCount
 					/>
 				</Form.Item>
@@ -181,15 +187,15 @@ const CreateModal = ({
 				<Row gutter={12}>
 					<Col span={12}>
 						<Form.Item
-							name="factoryBuilding"
+							name="building"
 							label="所属厂房"
-							labelCol={TWIN_FIELD_LABEL_COL}
-							wrapperCol={TWIN_FIELD_WRAPPER_COL}
-							rules={[requiredSelectRule("请选择厂房")]}
+							labelCol={TWIN_LABEL_COL}
+							wrapperCol={TWIN_WRAPPER_COL}
+							rules={[{ required: true, message: "请选择厂房" }]}
 						>
 							<Select
 								placeholder="请选择厂房"
-								options={FACTORY_BUILDING_OPTIONS}
+								options={BUILDING_OPTIONS}
 								onChange={handleFactoryChange}
 							/>
 						</Form.Item>
@@ -198,14 +204,14 @@ const CreateModal = ({
 						<Form.Item
 							name="room"
 							label="所属房间"
-							labelCol={TWIN_FIELD_LABEL_COL}
-							wrapperCol={TWIN_FIELD_WRAPPER_COL}
-							rules={[requiredSelectRule("请选择房间")]}
+							labelCol={TWIN_LABEL_COL}
+							wrapperCol={TWIN_WRAPPER_COL}
+							rules={[{ required: true, message: "请选择房间" }]}
 						>
 							<Select
 								placeholder="请选择房间"
 								options={roomOptions}
-								disabled={!factoryBuilding}
+								disabled={!building}
 							/>
 						</Form.Item>
 					</Col>
@@ -216,9 +222,16 @@ const CreateModal = ({
 						<Form.Item
 							name="cycleValue"
 							label="周期数值"
-							labelCol={TWIN_FIELD_LABEL_COL}
-							wrapperCol={TWIN_FIELD_WRAPPER_COL}
-							rules={cycleValueRules}
+							labelCol={TWIN_LABEL_COL}
+							wrapperCol={TWIN_WRAPPER_COL}
+							rules={[
+								{ required: true, message: "请输入周期数值" },
+								{
+									type: "number",
+									min: 1,
+									message: "请输入大于等于1的自然数",
+								},
+							]}
 						>
 							<InputNumber
 								min={1}
@@ -233,9 +246,11 @@ const CreateModal = ({
 						<Form.Item
 							name="cycleUnit"
 							label="周期单位"
-							labelCol={TWIN_FIELD_LABEL_COL}
-							wrapperCol={TWIN_FIELD_WRAPPER_COL}
-							rules={[requiredSelectRule("请选择周期单位")]}
+							labelCol={TWIN_LABEL_COL}
+							wrapperCol={TWIN_WRAPPER_COL}
+							rules={[
+								{ required: true, message: "请选择周期单位" },
+							]}
 						>
 							<Select
 								placeholder="单位"
@@ -246,7 +261,7 @@ const CreateModal = ({
 				</Row>
 
 				<Form.Item
-					name="lastInspectionDate"
+					name="lastInspection"
 					label="上次点检日期"
 					getValueFromEvent={(value) =>
 						value ? value.format(DATE_FORMAT) : undefined
@@ -254,7 +269,7 @@ const CreateModal = ({
 					getValueProps={(value) => ({
 						value: value ? dayjs(value) : undefined,
 					})}
-					rules={[requiredSelectRule("请选择上次点检日期")]}
+					rules={[{ required: true, message: "请选择上次点检日期" }]}
 				>
 					<DatePicker style={{ width: "100%" }} />
 				</Form.Item>

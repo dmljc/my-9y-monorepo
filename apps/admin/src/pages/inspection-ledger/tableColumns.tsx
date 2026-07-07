@@ -1,24 +1,66 @@
 import { Button, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import type { InspectionDevice } from "./types";
-import {
-	DEVICE_TYPE_LABEL,
-	formatCycleText,
-	STATUS_COLOR,
-	STATUS_LABEL,
-} from "./utils";
+import dayjs from "dayjs";
+import type { DeviceLedger } from "./interface";
+import { DATE_FORMAT, TYPE_OPTIONS } from "./utils";
+
+const TYPE_LABEL = Object.fromEntries(
+	TYPE_OPTIONS.map(({ label, value }) => [value, label]),
+);
+
+const CYCLE_UNIT_LABEL: Record<string, string> = {
+	day: "天",
+	month: "月",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+	normal: "正常",
+	expiring_soon: "即将到期",
+	overdue: "逾期未检",
+	"0": "正常",
+	"1": "即将到期",
+	"2": "逾期未检",
+};
+
+const STATUS_COLOR: Record<string, string> = {
+	normal: "success",
+	expiring_soon: "warning",
+	overdue: "error",
+	"0": "success",
+	"1": "warning",
+	"2": "error",
+};
+
+const formatCycleText = (
+	cycleValue?: number,
+	cycleUnit?: string,
+	cycleText?: string,
+): string => {
+	if (cycleText?.trim()) return cycleText;
+	if (!cycleValue || !cycleUnit) return "";
+	const unitLabel = CYCLE_UNIT_LABEL[cycleUnit] ?? cycleUnit;
+	return `每${cycleValue}${unitLabel}`;
+};
+
+const formatInspectionDate = (value?: string): string => {
+	if (!value) return "";
+	const parsed = dayjs(value);
+	return parsed.isValid() ? parsed.format(DATE_FORMAT) : value;
+};
 
 export interface DeviceTableColumnOptions {
 	pageNum: number;
 	pageSize: number;
-	inspectingId: string | null;
+	inspectingId: number | null;
 	actionsClassName: string;
-	onPerformInspection: (record: InspectionDevice) => void;
-	onEdit: (record: InspectionDevice) => void;
-	onDelete: (record: InspectionDevice) => void;
+	onPerformInspection: (record: DeviceLedger) => void;
+	onEdit: (record: DeviceLedger) => void;
+	onDelete: (record: DeviceLedger) => void;
 }
 
-/** 构建点检台账表格列（列定义集中维护，便于后续增删字段） */
+/**
+ * 构建点检台账表格列。
+ */
 export const buildDeviceTableColumns = ({
 	pageNum,
 	pageSize,
@@ -27,89 +69,95 @@ export const buildDeviceTableColumns = ({
 	onPerformInspection,
 	onEdit,
 	onDelete,
-}: DeviceTableColumnOptions): ColumnsType<InspectionDevice> => [
+}: DeviceTableColumnOptions): ColumnsType<DeviceLedger> => [
 	{
 		title: "序号",
 		key: "index",
 		width: 72,
 		align: "center",
 		fixed: "left",
-		render: (_: unknown, __: InspectionDevice, index: number) =>
+		render: (_: unknown, __: DeviceLedger, index: number) =>
 			(pageNum - 1) * pageSize + index + 1,
 	},
 	{
 		title: "设备编码",
-		dataIndex: "code",
-		key: "code",
-		width: 100,
+		dataIndex: "deviceCode",
+		key: "deviceCode",
+		ellipsis: true,
 	},
 	{
 		title: "设备名称",
-		dataIndex: "name",
-		key: "name",
-		width: 120,
+		dataIndex: "deviceName",
+		key: "deviceName",
 		ellipsis: true,
 	},
 	{
 		title: "设备类型",
 		dataIndex: "deviceType",
 		key: "deviceType",
-		width: 100,
-		render: (type: string) => DEVICE_TYPE_LABEL[type] ?? type,
+		ellipsis: true,
+		render: (type: string) => TYPE_LABEL[type] ?? type,
 	},
 	{
 		title: "厂家",
 		dataIndex: "manufacturer",
 		key: "manufacturer",
-		width: 100,
 		ellipsis: true,
 	},
 	{
 		title: "所属厂房",
-		dataIndex: "factoryBuilding",
-		key: "factoryBuilding",
-		width: 100,
+		dataIndex: "building",
+		key: "building",
+		ellipsis: true,
 	},
 	{
 		title: "所属房间",
 		dataIndex: "room",
 		key: "room",
-		width: 90,
+		ellipsis: true,
 	},
 	{
 		title: "点检周期",
 		key: "cycle",
-		width: 100,
+		ellipsis: true,
 		render: (_: unknown, record) =>
-			formatCycleText(record.cycleValue, record.cycleUnit),
+			formatCycleText(
+				record.cycleValue,
+				record.cycleUnit,
+				record.cycleText,
+			),
 	},
 	{
 		title: "上次点检",
-		dataIndex: "lastInspectionDate",
-		key: "lastInspectionDate",
-		width: 110,
+		dataIndex: "lastInspection",
+		key: "lastInspection",
+		ellipsis: true,
+		render: (value: string) => formatInspectionDate(value),
 	},
 	{
 		title: "下次点检",
-		dataIndex: "nextInspectionDate",
-		key: "nextInspectionDate",
-		width: 110,
+		dataIndex: "nextInspection",
+		key: "nextInspection",
+		ellipsis: true,
+		render: (value: string) => formatInspectionDate(value),
 	},
 	{
 		title: "状态",
 		dataIndex: "status",
 		key: "status",
-		width: 100,
-		render: (status: InspectionDevice["status"]) => (
-			<Tag color={STATUS_COLOR[status]}>{STATUS_LABEL[status]}</Tag>
-		),
+		render: (status?: string) => {
+			if (!status) return null;
+			const label = STATUS_LABEL[status] ?? status;
+			const color = STATUS_COLOR[status] ?? "default";
+			return <Tag color={color}>{label}</Tag>;
+		},
 	},
 	{
 		title: "操作",
 		key: "actions",
-		width: 220,
 		fixed: "right",
-		render: (_: unknown, record: InspectionDevice) => (
+		width: 180,
+		render: (_: unknown, record: DeviceLedger) => (
 			<div className={actionsClassName}>
 				<Button
 					type="link"
