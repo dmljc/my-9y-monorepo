@@ -77,19 +77,12 @@
 	gap: 24px;
 }
 
-.chartHeader {
-	flex: none;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	margin-bottom: 12px;
-}
-
 .chartTitle {
+	flex: none;
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
+	margin-bottom: 12px;
 	font-size: 15px;
 	line-height: 22px;
 	font-weight: 500;
@@ -102,44 +95,4 @@
 	height: 18px;
 	border-radius: 2px;
 	background: #0984ff;
-}
-
-@media (max-width: 960px) {
-	.statistics {
-		height: auto;
-		min-height: calc(100vh - 64px - 24px - 24px);
-	}
-
-	.bottomCharts {
-		grid-template-columns: 1fr;
-	}
-
-	.chartCardLarge,
-	.bottomCharts {
-		flex: none;
-	}
-
-	.chartCardLarge {
-		min-height: 360px;
-	}
-
-	.bottomCharts .chartCard {
-		min-height: 320px;
-	}
-}
-
-@media (max-width: 760px) {
-	.bottomCharts .chartCard {
-		min-height: 300px;
-	}
-
-	.filterItem {
-		width: 100%;
-		align-items: flex-start;
-		flex-direction: column;
-	}
-
-	.filterPicker {
-		width: 100%;
-	}
 }

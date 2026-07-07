@@ -5,8 +5,8 @@ import styles from "./index.module.css";
 import {
 	BAR_Y_AXIS,
 	buildChartData,
-	DEFAULT_FILTER,
 	type FilterState,
+	getDefaultFilter,
 } from "./utils";
 
 const BarChart = lazy(() => import("@/components/BarChart"));
@@ -20,30 +20,28 @@ interface ChartCardProps {
 	children: ReactNode;
 }
 
-const ChartFallback = () => (
-	<div className={styles.chartFallback}>
-		<Spin />
-	</div>
-);
-
-// 图表卡片组件
 const ChartCard = ({ title, className, children }: ChartCardProps) => (
 	<div className={`${styles.chartCard} ${className ?? ""}`}>
-		<header className={styles.chartHeader}>
-			<div className={styles.chartTitle}>{title}</div>
-		</header>
+		<div className={styles.chartTitle}>{title}</div>
 		<div className={styles.chartBody}>
-			<Suspense fallback={<ChartFallback />}>{children}</Suspense>
+			<Suspense
+				fallback={
+					<div className={styles.chartFallback}>
+						<Spin />
+					</div>
+				}
+			>
+				{children}
+			</Suspense>
 		</div>
 	</div>
 );
 
-// 统计页面组件
 const Statistics = () => {
-	// draftFilter：表单编辑态；appliedFilter：点击「查询」后生效的筛选条件
-	const [draftFilter, setDraftFilter] = useState<FilterState>(DEFAULT_FILTER);
+	const [draftFilter, setDraftFilter] =
+		useState<FilterState>(getDefaultFilter);
 	const [appliedFilter, setAppliedFilter] =
-		useState<FilterState>(DEFAULT_FILTER);
+		useState<FilterState>(getDefaultFilter);
 
 	const { barAxisData, riskPieData, statusPieData } =
 		buildChartData(appliedFilter);
@@ -51,13 +49,14 @@ const Statistics = () => {
 	const handleSearch = () => setAppliedFilter({ ...draftFilter });
 
 	const handleReset = () => {
-		setDraftFilter(DEFAULT_FILTER);
-		setAppliedFilter(DEFAULT_FILTER);
+		const next = getDefaultFilter();
+		setDraftFilter(next);
+		setAppliedFilter(next);
 	};
 
 	return (
 		<div className={styles.statistics}>
-			<section className={styles.filterBar}>
+			<div className={styles.filterBar}>
 				<div className={styles.filterItem}>
 					<span className={styles.filterLabel}>时间选择</span>
 					<RangePicker
@@ -66,9 +65,10 @@ const Statistics = () => {
 						format="YYYY-MM-DD"
 						allowClear
 						onChange={(dates) =>
-							setDraftFilter({
+							setDraftFilter((prev) => ({
+								...prev,
 								timeRange: dates as [Dayjs, Dayjs] | null,
-							})
+							}))
 						}
 					/>
 				</div>
@@ -76,9 +76,9 @@ const Statistics = () => {
 					查询
 				</Button>
 				<Button onClick={handleReset}>重置</Button>
-			</section>
+			</div>
 
-			<section className={styles.chartGrid}>
+			<div className={styles.chartGrid}>
 				<ChartCard
 					title="厂房总报警次数"
 					className={styles.chartCardLarge}
@@ -99,7 +99,7 @@ const Statistics = () => {
 						<PieChart data={statusPieData} />
 					</ChartCard>
 				</div>
-			</section>
+			</div>
 		</div>
 	);
 };
