@@ -157,6 +157,11 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
 				return response;
 			}
 
+			const responseType = response.config.responseType;
+			if (responseType === "blob" || responseType === "arraybuffer") {
+				return response;
+			}
+
 			return unwrapBusinessBody(
 				response.data,
 				successCode,

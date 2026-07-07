@@ -6,24 +6,28 @@ import { exportLog, list } from "./api";
 import styles from "./index.module.css";
 import type { OperLogListQuery, SysOperLog } from "./interface";
 import {
+	buildExportFileName,
+	DATE_TIME_FORMAT,
+	DEFAULT_QUICK_RANGE,
+	downloadBlob,
 	formatOperAction,
 	getQuickRangeDates,
 	QUICK_RANGE_OPTIONS,
 	type QuickRange,
+	resolveExportBlob,
+	XLSX_MIME,
 } from "./utils";
 
 const { RangePicker } = DatePicker;
 
-const DATE_TIME_FORMAT = "YYYY-MM-DD HH:mm:ss";
-
 const OperationLog = () => {
 	const { message } = App.useApp();
-	const [quickRange, setQuickRange] = useState<QuickRange>("24h");
+	const [quickRange, setQuickRange] =
+		useState<QuickRange>(DEFAULT_QUICK_RANGE);
 	const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(
-		getQuickRangeDates("24h"),
+		getQuickRangeDates(DEFAULT_QUICK_RANGE),
 	);
 	const [userKeyword, setUserKeyword] = useState("");
-	const [keyword, setKeyword] = useState("");
 
 	const [loading, setLoading] = useState(false);
 	const [exportLoading, setExportLoading] = useState(false);
@@ -37,20 +41,17 @@ const OperationLog = () => {
 		ps: number,
 		filters?: {
 			userKeyword?: string;
-			keyword?: string;
 			dateRange?: [Dayjs, Dayjs] | null;
 		},
 	): OperLogListQuery => {
-		const active = filters ?? { userKeyword, keyword, dateRange };
+		const active = filters ?? { userKeyword, dateRange };
 		const user = active.userKeyword?.trim();
-		const text = active.keyword?.trim();
 		const query: OperLogListQuery = {
 			pageNum: p,
 			pageSize: ps,
 			operName: user,
 			createBy: user,
-			title: text,
-			searchValue: text,
+			operIp: user,
 		};
 		if (active.dateRange) {
 			query.params = {
@@ -66,7 +67,6 @@ const OperationLog = () => {
 		ps: number,
 		filters?: {
 			userKeyword?: string;
-			keyword?: string;
 			dateRange?: [Dayjs, Dayjs] | null;
 		},
 	) => {
@@ -96,15 +96,13 @@ const OperationLog = () => {
 	};
 
 	const handleReset = () => {
-		const defaultRange = getQuickRangeDates("24h");
-		setQuickRange("24h");
+		const defaultRange = getQuickRangeDates(DEFAULT_QUICK_RANGE);
+		setQuickRange(DEFAULT_QUICK_RANGE);
 		setDateRange(defaultRange);
 		setUserKeyword("");
-		setKeyword("");
 		setPageNum(1);
 		loadData(1, pageSize, {
 			userKeyword: "",
-			keyword: "",
 			dateRange: defaultRange,
 		});
 	};
@@ -127,19 +125,47 @@ const OperationLog = () => {
 		setExportLoading(true);
 		try {
 			const response = await exportLog(buildQuery(pageNum, pageSize));
-			const blob = new Blob([response.data]);
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = "操作日志.xlsx";
-			link.click();
-			URL.revokeObjectURL(url);
+			const blob = await resolveExportBlob(
+				response.data instanceof Blob
+					? response.data
+					: new Blob([response.data], { type: XLSX_MIME }),
+			);
+			downloadBlob(blob, buildExportFileName());
+		} catch (error) {
+			if (error instanceof Error) {
+				message.error(error.message);
+			}
 		} finally {
 			setExportLoading(false);
 		}
 	};
 
 	const columns: ColumnsType<SysOperLog> = [
+		{
+			title: "序号",
+			key: "index",
+			width: 72,
+			align: "center",
+			render: (_, __, index) => (pageNum - 1) * pageSize + index + 1,
+		},
+		{
+			title: "账号",
+			dataIndex: "userName",
+			key: "userName",
+			ellipsis: true,
+		},
+		{
+			title: "用户名",
+			dataIndex: "operName",
+			key: "operName",
+			ellipsis: true,
+		},
+		{
+			title: "操作",
+			key: "action",
+			ellipsis: true,
+			render: (_, record) => formatOperAction(record),
+		},
 		{
 			title: "时间",
 			dataIndex: "operTime",
@@ -151,24 +177,6 @@ const OperationLog = () => {
 			dataIndex: "operIp",
 			key: "operIp",
 			ellipsis: true,
-		},
-		{
-			title: "用户名",
-			dataIndex: "operName",
-			key: "operName",
-			ellipsis: true,
-		},
-		{
-			title: "账号",
-			dataIndex: "createBy",
-			key: "createBy",
-			ellipsis: true,
-		},
-		{
-			title: "操作",
-			key: "action",
-			ellipsis: true,
-			render: (_, record) => formatOperAction(record),
 		},
 	];
 
@@ -196,18 +204,10 @@ const OperationLog = () => {
 				/>
 				<Input
 					className={styles.searchInput}
-					placeholder="用户名和账号"
+					placeholder="用户名/账号/IP"
 					value={userKeyword}
 					allowClear
 					onChange={(event) => setUserKeyword(event.target.value)}
-					onPressEnter={handleSearch}
-				/>
-				<Input
-					className={styles.keywordInput}
-					placeholder="关键词"
-					value={keyword}
-					allowClear
-					onChange={(event) => setKeyword(event.target.value)}
 					onPressEnter={handleSearch}
 				/>
 				<Button type="primary" onClick={handleSearch}>

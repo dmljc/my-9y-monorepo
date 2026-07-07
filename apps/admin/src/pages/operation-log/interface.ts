@@ -30,8 +30,7 @@ export interface OperLogListQuery {
 	pageSize: number;
 	operName?: string;
 	createBy?: string;
-	title?: string;
-	searchValue?: string;
+	operIp?: string;
 	businessType?: number;
 	status?: number;
 	params?: {
