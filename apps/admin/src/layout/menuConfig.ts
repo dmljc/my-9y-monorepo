@@ -7,7 +7,7 @@ export type TopMenuKey =
 	| "historicalData"
 	| "modelData"
 	| "reverseControl"
-	| "permission";
+	| "system";
 
 export interface TopMenuItem {
 	key: TopMenuKey;
@@ -67,10 +67,10 @@ const TOP_ROUTE_CONFIGS: RouteConfig[] = [
 	{ key: "modelData", label: "物模型数据", path: "/model-data" },
 	{ key: "reverseControl", label: "设备反控", path: "/reverse-control" },
 	{
-		key: "permission",
-		label: "角色权限",
-		path: "/permission",
-		defaultPath: "/permission/role",
+		key: "system",
+		label: "系统管理",
+		path: "/system",
+		defaultPath: "/system/role",
 	},
 ];
 
@@ -81,10 +81,10 @@ const SIDE_ROUTE_KEYS: Record<string, string> = {
 	"/warning/rules": "rules",
 	"/warning/levels": "levels",
 	"/device/inspection-ledger": "inspectionLedger",
-	"/permission/role": "role",
-	"/permission/user": "user",
-	"/permission/organization": "organization",
-	"/permission/operation-log": "operationLog",
+	"/system/role": "role",
+	"/system/user": "user",
+	"/system/organization": "organization",
+	"/system/operation-log": "operationLog",
 };
 
 const SIDE_ROUTE_ORDER: Record<string, number> = {

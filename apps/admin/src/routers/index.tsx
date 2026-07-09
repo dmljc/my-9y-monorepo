@@ -121,7 +121,7 @@ const routes: RouteObject[] = [
 								element: <ReverseControl />,
 							},
 							{
-								path: "/permission",
+								path: "/system",
 								element: <Permission />,
 								children: [
 									{
@@ -129,8 +129,8 @@ const routes: RouteObject[] = [
 										element: (
 											<Navigate
 												to={getDefaultPathForTop(
-													"permission",
-												).replace("/permission/", "")}
+													"system",
+												).replace("/system/", "")}
 												replace
 											/>
 										),

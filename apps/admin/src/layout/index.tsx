@@ -31,7 +31,7 @@ const TOP_MENU_ICONS: Record<TopMenuKey, ReactNode> = {
 	historicalData: <DatabaseOutlined />,
 	modelData: <ClusterOutlined />,
 	reverseControl: <ControlOutlined />,
-	permission: <SafetyOutlined />,
+	system: <SafetyOutlined />,
 };
 
 const AppLayout = () => {

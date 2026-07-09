@@ -21,6 +21,13 @@ export const remove = (id: string): Promise<any> => {
 	return request.delete(`/system/user/${id}`);
 };
 
+export const exportUser = (data: UserListQuery) => {
+	return request.raw.post("/system/user/export", null, {
+		params: data,
+		responseType: "blob",
+	});
+};
+
 export const getDeptTree = (): Promise<any> => {
 	return request.get("/system/user/deptTree");
 };

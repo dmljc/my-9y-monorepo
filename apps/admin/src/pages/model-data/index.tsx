@@ -1,6 +1,8 @@
 import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
+import Access from "@/components/Access";
+import { PERM_MODEL_DATA } from "@/constants/permission";
 import { list, remove } from "./api";
 import styles from "./index.module.css";
 import type { DeviceDataListQuery, DeviceDataSnapshot } from "./interface";
@@ -139,13 +141,15 @@ const ModelData = () => {
 			key: "actions",
 			render: (_: unknown, record) => (
 				<div className={styles.actions}>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleDelete(record)}
-					>
-						删除
-					</Button>
+					<Access code={PERM_MODEL_DATA.DELETE}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleDelete(record)}
+						>
+							删除
+						</Button>
+					</Access>
 				</div>
 			),
 		},

@@ -2,6 +2,8 @@ import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useCallback, useEffect, useRef, useState } from "react";
+import Access from "@/components/Access";
+import { PERM_WARNING_LEVELS } from "@/constants/permission";
 import { create, list, remove, update } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
@@ -119,20 +121,24 @@ const WarningLevels = () => {
 			fixed: "right",
 			render: (_: unknown, record: WarningLevel) => (
 				<div className={styles.actions}>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => openEdit(record)}
-					>
-						编辑
-					</Button>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleDelete(record)}
-					>
-						删除
-					</Button>
+					<Access code={PERM_WARNING_LEVELS.EDIT}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => openEdit(record)}
+						>
+							编辑
+						</Button>
+					</Access>
+					<Access code={PERM_WARNING_LEVELS.DELETE}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleDelete(record)}
+						>
+							删除
+						</Button>
+					</Access>
 				</div>
 			),
 		},
@@ -146,13 +152,15 @@ const WarningLevels = () => {
 						<span className={styles.panelIcon} aria-hidden />
 						<span>报警等级管理</span>
 					</div>
-					<Button
-						type="primary"
-						icon={<PlusOutlined />}
-						onClick={openAdd}
-					>
-						新增
-					</Button>
+					<Access code={PERM_WARNING_LEVELS.CREATE}>
+						<Button
+							type="primary"
+							icon={<PlusOutlined />}
+							onClick={openAdd}
+						>
+							新增
+						</Button>
+					</Access>
 				</header>
 
 				<div className={styles.tableWrap}>

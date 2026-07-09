@@ -2,6 +2,8 @@ import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Input, Switch, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
+import Access from "@/components/Access";
+import { PERM_REVERSE_CONTROL } from "@/constants/permission";
 import { changeStatus, create, list, remove, update } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
@@ -177,20 +179,24 @@ const ReverseControl = () => {
 			align: "center",
 			render: (_: unknown, record) => (
 				<div className={styles.actions}>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleEdit(record)}
-					>
-						编辑
-					</Button>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleDelete(record)}
-					>
-						删除
-					</Button>
+					<Access code={PERM_REVERSE_CONTROL.EDIT}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleEdit(record)}
+						>
+							编辑
+						</Button>
+					</Access>
+					<Access code={PERM_REVERSE_CONTROL.REMOVE}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleDelete(record)}
+						>
+							删除
+						</Button>
+					</Access>
 				</div>
 			),
 		},
@@ -213,13 +219,15 @@ const ReverseControl = () => {
 				</Button>
 				<Button onClick={handleReset}>重置</Button>
 				<div className={styles.panelActions}>
-					<Button
-						type="primary"
-						icon={<PlusOutlined />}
-						onClick={handleAdd}
-					>
-						新增
-					</Button>
+					<Access code={PERM_REVERSE_CONTROL.ADD}>
+						<Button
+							type="primary"
+							icon={<PlusOutlined />}
+							onClick={handleAdd}
+						>
+							新增
+						</Button>
+					</Access>
 				</div>
 			</div>
 

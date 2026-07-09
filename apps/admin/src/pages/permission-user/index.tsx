@@ -2,12 +2,16 @@ import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
+import Access from "@/components/Access";
+import { PERM_USER } from "@/constants/permission";
+import { downloadBlob } from "@/utils";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import type { User, UserFormValues, UserListFilters } from "./utils";
 import {
 	createUser,
 	DEFAULT_PAGE_SIZE,
+	exportUsers,
 	fetchUserListResult,
 	removeUser,
 	updateUser,
@@ -24,6 +28,7 @@ const PermissionUser = () => {
 	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 	const [username, setUsername] = useState("");
 	const [name, setName] = useState("");
+	const [exportLoading, setExportLoading] = useState(false);
 	const initRef = useRef(false);
 
 	const loadData = async (
@@ -108,6 +113,19 @@ const PermissionUser = () => {
 		loadData(pagination.current ?? 1, pagination.pageSize ?? pageSize);
 	};
 
+	const handleExport = async () => {
+		setExportLoading(true);
+		try {
+			const blob = await exportUsers({
+				username: username.trim() || undefined,
+				name: name.trim() || undefined,
+			});
+			downloadBlob(blob, "用户.xlsx");
+		} finally {
+			setExportLoading(false);
+		}
+	};
+
 	const columns: ColumnsType<User> = [
 		{
 			title: "序号",
@@ -147,20 +165,24 @@ const PermissionUser = () => {
 			fixed: "right",
 			render: (_: unknown, record: User) => (
 				<div className={styles.actions}>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleEdit(record)}
-					>
-						编辑
-					</Button>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleDelete(record)}
-					>
-						删除
-					</Button>
+					<Access code={PERM_USER.EDIT}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleEdit(record)}
+						>
+							编辑
+						</Button>
+					</Access>
+					<Access code={PERM_USER.REMOVE}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleDelete(record)}
+						>
+							删除
+						</Button>
+					</Access>
 				</div>
 			),
 		},
@@ -192,13 +214,20 @@ const PermissionUser = () => {
 				</Button>
 				<Button onClick={handleReset}>重置</Button>
 				<div className={styles.panelActions}>
-					<Button
-						type="primary"
-						icon={<PlusOutlined />}
-						onClick={handleAdd}
-					>
-						新增
-					</Button>
+					<Access code={PERM_USER.EXPORT}>
+						<Button loading={exportLoading} onClick={handleExport}>
+							导出
+						</Button>
+					</Access>
+					<Access code={PERM_USER.ADD}>
+						<Button
+							type="primary"
+							icon={<PlusOutlined />}
+							onClick={handleAdd}
+						>
+							新增
+						</Button>
+					</Access>
 				</div>
 			</div>
 

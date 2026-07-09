@@ -28,8 +28,8 @@ const Permission = () => {
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
 	const menus = useMenuStore((state) => state.menus);
-	const sideMenus = getSideMenus("permission", menus);
-	const activeMenu = getActiveSideMenu("permission", pathname, menus);
+	const sideMenus = getSideMenus("system", menus);
+	const activeMenu = getActiveSideMenu("system", pathname, menus);
 
 	const menuItems = useMemo<MenuProps["items"]>(
 		() =>

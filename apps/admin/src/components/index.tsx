@@ -1,3 +1,4 @@
+export { default as Access } from "./Access";
 export type { BarChartProps, BarChartYAxisConfig } from "./BarChart";
 export { default as BarChart } from "./BarChart";
 export { default as ErrorBoundary } from "./ErrorBoundary";

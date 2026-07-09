@@ -1,6 +1,8 @@
 import { Button, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
+import Access from "@/components/Access";
+import { PERM_INSPECTION_LEDGER } from "@/constants/permission";
 import type { DeviceLedger } from "./interface";
 import { DATE_FORMAT, TYPE_OPTIONS } from "./utils";
 
@@ -92,6 +94,12 @@ export const buildDeviceTableColumns = ({
 		ellipsis: true,
 	},
 	{
+		title: "型号",
+		dataIndex: "deviceType",
+		key: "deviceType",
+		ellipsis: true,
+	},
+	{
 		title: "设备类型",
 		dataIndex: "deviceType",
 		key: "deviceType",
@@ -159,24 +167,34 @@ export const buildDeviceTableColumns = ({
 		width: 180,
 		render: (_: unknown, record: DeviceLedger) => (
 			<div className={actionsClassName}>
-				<Button
-					type="link"
-					size="small"
-					loading={inspectingId === record.id}
-					onClick={() => onPerformInspection(record)}
-				>
-					执行点检
-				</Button>
-				<Button type="link" size="small" onClick={() => onEdit(record)}>
-					编辑
-				</Button>
-				<Button
-					type="link"
-					size="small"
-					onClick={() => onDelete(record)}
-				>
-					删除
-				</Button>
+				<Access code={PERM_INSPECTION_LEDGER.INSPECT}>
+					<Button
+						type="link"
+						size="small"
+						loading={inspectingId === record.id}
+						onClick={() => onPerformInspection(record)}
+					>
+						执行点检
+					</Button>
+				</Access>
+				<Access code={PERM_INSPECTION_LEDGER.EDIT}>
+					<Button
+						type="link"
+						size="small"
+						onClick={() => onEdit(record)}
+					>
+						编辑
+					</Button>
+				</Access>
+				<Access code={PERM_INSPECTION_LEDGER.DELETE}>
+					<Button
+						type="link"
+						size="small"
+						onClick={() => onDelete(record)}
+					>
+						删除
+					</Button>
+				</Access>
 			</div>
 		),
 	},

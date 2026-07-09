@@ -2,6 +2,8 @@ import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
+import Access from "@/components/Access";
+import { PERM_ROLE } from "@/constants/permission";
 import AssignModal from "./AssignModal";
 import {
 	create as createRole,
@@ -176,27 +178,33 @@ const PermissionRole = () => {
 			fixed: "right",
 			render: (_: unknown, record: SysRole) => (
 				<div className={styles.actions}>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleEdit(record)}
-					>
-						编辑
-					</Button>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleAssign(record)}
-					>
-						权限分配
-					</Button>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleDelete(record)}
-					>
-						删除
-					</Button>
+					<Access code={PERM_ROLE.EDIT}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleEdit(record)}
+						>
+							编辑
+						</Button>
+					</Access>
+					<Access code={PERM_ROLE.EDIT}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleAssign(record)}
+						>
+							权限分配
+						</Button>
+					</Access>
+					<Access code={PERM_ROLE.REMOVE}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleDelete(record)}
+						>
+							删除
+						</Button>
+					</Access>
 				</div>
 			),
 		},
@@ -219,13 +227,15 @@ const PermissionRole = () => {
 				</Button>
 				<Button onClick={handleReset}>重置</Button>
 				<div className={styles.panelActions}>
-					<Button
-						type="primary"
-						icon={<PlusOutlined />}
-						onClick={handleAdd}
-					>
-						新增
-					</Button>
+					<Access code={PERM_ROLE.ADD}>
+						<Button
+							type="primary"
+							icon={<PlusOutlined />}
+							onClick={handleAdd}
+						>
+							新增
+						</Button>
+					</Access>
 				</div>
 			</div>
 

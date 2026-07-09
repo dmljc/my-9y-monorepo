@@ -9,6 +9,8 @@ import cardOrangeCircleImg from "@/assets/warning/card-orange-circle.png";
 import statSolvedTodayImg from "@/assets/warning/stat-solved-today.png";
 import statTotalTodayImg from "@/assets/warning/stat-total-today.png";
 import statUnsolvedTodayImg from "@/assets/warning/stat-unsolved-today.png";
+import Access from "@/components/Access";
+import { PERM_WARNING_LIST } from "@/constants/permission";
 import { list, processWarning, toListParams } from "@/pages/warning/api";
 import {
 	buildStatCards,
@@ -209,24 +211,28 @@ const WarningList = () => {
 			fixed: "right",
 			render: (_: unknown, record: WarningItem) => (
 				<div className={styles.actions}>
-					<Button
-						type="link"
-						size="small"
-						onClick={() =>
-							navigate(buildWarningDeviceDataPath(record))
-						}
-					>
-						查看前后15分钟数据
-					</Button>
-					{record.status === "unprocessed" ? (
+					<Access code={PERM_WARNING_LIST.VIEW_DATA}>
 						<Button
 							type="link"
 							size="small"
-							loading={processingId === record.id}
-							onClick={() => handleProcess(record)}
+							onClick={() =>
+								navigate(buildWarningDeviceDataPath(record))
+							}
 						>
-							标记解决
+							查看前后15分钟数据
 						</Button>
+					</Access>
+					{record.status === "unprocessed" ? (
+						<Access code={PERM_WARNING_LIST.RESOLVE}>
+							<Button
+								type="link"
+								size="small"
+								loading={processingId === record.id}
+								onClick={() => handleProcess(record)}
+							>
+								标记解决
+							</Button>
+						</Access>
 					) : (
 						<span className={styles.processedAction}>已处理</span>
 					)}

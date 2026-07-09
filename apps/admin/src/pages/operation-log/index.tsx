@@ -2,6 +2,9 @@ import { App, Button, DatePicker, Empty, Input, Select, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import type { Dayjs } from "dayjs";
 import { useEffect, useRef, useState } from "react";
+import Access from "@/components/Access";
+import { PERM_OPERATION_LOG } from "@/constants/permission";
+import { downloadBlob, resolveExportBlob, XLSX_MIME } from "@/utils";
 import { exportLog, list } from "./api";
 import styles from "./index.module.css";
 import type { OperLogListQuery, SysOperLog } from "./interface";
@@ -9,13 +12,10 @@ import {
 	buildExportFileName,
 	DATE_TIME_FORMAT,
 	DEFAULT_QUICK_RANGE,
-	downloadBlob,
 	formatOperAction,
 	getQuickRangeDates,
 	QUICK_RANGE_OPTIONS,
 	type QuickRange,
-	resolveExportBlob,
-	XLSX_MIME,
 } from "./utils";
 
 const { RangePicker } = DatePicker;
@@ -132,6 +132,7 @@ const OperationLog = () => {
 				response.data instanceof Blob
 					? response.data
 					: new Blob([response.data], { type: XLSX_MIME }),
+				XLSX_MIME,
 			);
 			downloadBlob(blob, buildExportFileName());
 		} catch (error) {
@@ -228,9 +229,11 @@ const OperationLog = () => {
 				</Button>
 				<Button onClick={handleReset}>重置</Button>
 				<div className={styles.panelActions}>
-					<Button loading={exportLoading} onClick={handleExport}>
-						导出
-					</Button>
+					<Access code={PERM_OPERATION_LOG.EXPORT}>
+						<Button loading={exportLoading} onClick={handleExport}>
+							导出
+						</Button>
+					</Access>
 				</div>
 			</div>
 

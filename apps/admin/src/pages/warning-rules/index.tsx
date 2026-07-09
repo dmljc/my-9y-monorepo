@@ -2,6 +2,8 @@ import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Input, Switch, Table, Tag } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
+import Access from "@/components/Access";
+import { PERM_WARNING_RULES } from "@/constants/permission";
 import {
 	create,
 	list as fetchRuleList,
@@ -207,20 +209,24 @@ const WarningRules = () => {
 			fixed: "right",
 			render: (_: unknown, record: WarningRule) => (
 				<div className={styles.actions}>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleEdit(record)}
-					>
-						编辑
-					</Button>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleDelete(record)}
-					>
-						删除
-					</Button>
+					<Access code={PERM_WARNING_RULES.EDIT}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleEdit(record)}
+						>
+							编辑
+						</Button>
+					</Access>
+					<Access code={PERM_WARNING_RULES.DELETE}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleDelete(record)}
+						>
+							删除
+						</Button>
+					</Access>
 				</div>
 			),
 		},
@@ -243,13 +249,15 @@ const WarningRules = () => {
 				</Button>
 				<Button onClick={handleReset}>重置</Button>
 				<div className={styles.panelActions}>
-					<Button
-						type="primary"
-						icon={<PlusOutlined />}
-						onClick={handleAdd}
-					>
-						新增
-					</Button>
+					<Access code={PERM_WARNING_RULES.CREATE}>
+						<Button
+							type="primary"
+							icon={<PlusOutlined />}
+							onClick={handleAdd}
+						>
+							新增
+						</Button>
+					</Access>
 				</div>
 			</div>
 

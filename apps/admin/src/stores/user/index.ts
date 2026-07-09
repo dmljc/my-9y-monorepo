@@ -4,7 +4,7 @@ import { getInfo, login as loginApi } from "./api";
 import type { LoginParams, UserInfo } from "./interface";
 
 /** localStorage 中缓存用户信息的键名。 */
-const USER_CACHE_KEY = "user_cache";
+const USER_CACHE_KEY = "user_info";
 
 /** 缓存中的用户数据结构。 */
 interface UserCache {

@@ -2,6 +2,8 @@ import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
+import Access from "@/components/Access";
+import { PERM_ORGANIZATION } from "@/constants/permission";
 import {
 	create as createDept,
 	list as fetchDeptList,
@@ -111,20 +113,24 @@ const PermissionOrganization = () => {
 			fixed: "right",
 			render: (_: unknown, record: OrgTreeNode) => (
 				<div className={styles.actions}>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleEdit(record)}
-					>
-						编辑
-					</Button>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleDelete(record)}
-					>
-						删除
-					</Button>
+					<Access code={PERM_ORGANIZATION.EDIT}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleEdit(record)}
+						>
+							编辑
+						</Button>
+					</Access>
+					<Access code={PERM_ORGANIZATION.REMOVE}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleDelete(record)}
+						>
+							删除
+						</Button>
+					</Access>
 				</div>
 			),
 		},
@@ -147,13 +153,15 @@ const PermissionOrganization = () => {
 				</Button>
 				<Button onClick={handleReset}>重置</Button>
 				<div className={styles.panelActions}>
-					<Button
-						type="primary"
-						icon={<PlusOutlined />}
-						onClick={handleAdd}
-					>
-						新增
-					</Button>
+					<Access code={PERM_ORGANIZATION.ADD}>
+						<Button
+							type="primary"
+							icon={<PlusOutlined />}
+							onClick={handleAdd}
+						>
+							新增
+						</Button>
+					</Access>
 				</div>
 			</div>
 

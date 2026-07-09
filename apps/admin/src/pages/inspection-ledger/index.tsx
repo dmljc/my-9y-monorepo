@@ -8,6 +8,8 @@ import cardPurpleCircleImg from "@/assets/inspection-ledger/card-purple-circle.p
 import statExpiringImg from "@/assets/inspection-ledger/stat-expiring.png";
 import statOverdueImg from "@/assets/inspection-ledger/stat-overdue.png";
 import statTotalImg from "@/assets/inspection-ledger/stat-total.png";
+import Access from "@/components/Access";
+import { PERM_INSPECTION_LEDGER } from "@/constants/permission";
 import {
 	create,
 	buildings as fetchBuildings,
@@ -287,13 +289,15 @@ const InspectionLedger = () => {
 					<Button onClick={handleReset}>重置</Button>
 				</div>
 				<div className={styles.panelActions}>
-					<Button
-						type="primary"
-						icon={<PlusOutlined />}
-						onClick={handleAdd}
-					>
-						新增
-					</Button>
+					<Access code={PERM_INSPECTION_LEDGER.CREATE}>
+						<Button
+							type="primary"
+							icon={<PlusOutlined />}
+							onClick={handleAdd}
+						>
+							新增
+						</Button>
+					</Access>
 				</div>
 			</div>
 
