@@ -14,22 +14,19 @@ export interface DeviceDataSnapshot {
 }
 
 /**
- * 设备数据列表查询参数。
+ * 历史数据查询参数（GET /iiot/device-data/history）。
  */
-export interface DeviceDataListQuery {
+export interface DeviceDataHistoryQuery {
 	pageNum: number;
 	pageSize: number;
+	thingId?: string;
 	modelName?: string;
 	propertyName?: string;
-	searchValue?: string;
-	thingId?: string;
-	alarmTime?: string;
 	propertyId?: string;
-	dataType?: string;
-	params?: {
-		beginDataTime?: string;
-		endDataTime?: string;
-	};
+	startTime?: string;
+	endTime?: string;
+	/** 告警上下文跳转时使用，走 /iiot/alarm/context-data。 */
+	alarmTime?: string;
 }
 
 /**

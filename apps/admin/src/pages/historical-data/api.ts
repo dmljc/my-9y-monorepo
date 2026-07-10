@@ -1,5 +1,5 @@
 import { request } from "@/utils";
-import type { DeviceDataListQuery } from "./interface";
+import type { DeviceDataHistoryQuery } from "./interface";
 
 function parseContextData(data: unknown): any {
 	if (Array.isArray(data)) return { list: data, total: data.length };
@@ -14,7 +14,7 @@ function parseContextData(data: unknown): any {
 	return data;
 }
 
-export const list = (data: DeviceDataListQuery): Promise<any> => {
+export const list = (data: DeviceDataHistoryQuery): Promise<any> => {
 	if (data.thingId && data.alarmTime) {
 		return request
 			.get("/iiot/alarm/context-data", {
@@ -25,5 +25,7 @@ export const list = (data: DeviceDataListQuery): Promise<any> => {
 			})
 			.then(parseContextData);
 	}
-	return request.get("/iiot/device-data/list", { params: data });
+
+	const { alarmTime: _, ...historyQuery } = data;
+	return request.get("/iiot/device-data/history", { params: historyQuery });
 };

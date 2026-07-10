@@ -5,9 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { list } from "./api";
 import styles from "./index.module.css";
-import type { DeviceDataListQuery, DeviceDataSnapshot } from "./interface";
+import type { DeviceDataHistoryQuery, DeviceDataSnapshot } from "./interface";
 
 const { RangePicker } = DatePicker;
+
+const DATE_TIME_FORMAT = "YYYY-MM-DD HH:mm:ss";
 
 interface HistoricalDataFilters {
 	modelName: string;
@@ -55,19 +57,17 @@ const HistoricalData = () => {
 		setLoading(true);
 		try {
 			const active = filters ?? { modelName, propertyName, dateRange };
-			const query: DeviceDataListQuery = {
+			const query: DeviceDataHistoryQuery = {
 				pageNum: p,
 				pageSize: ps,
-				modelName: active.modelName.trim() || undefined,
-				propertyName: active.propertyName.trim() || undefined,
+				modelName: active.modelName.trim(),
+				propertyName: active.propertyName.trim(),
 				thingId: active.thingId,
 				alarmTime: active.alarmTime,
 			};
 			if (active.dateRange) {
-				query.params = {
-					beginDataTime: active.dateRange[0],
-					endDataTime: active.dateRange[1],
-				};
+				query.startTime = active.dateRange[0];
+				query.endTime = active.dateRange[1];
 			}
 
 			const data = await list(query);
@@ -179,8 +179,8 @@ const HistoricalData = () => {
 				/>
 				<span className={styles.filterLabel}>时间</span>
 				<RangePicker
-					format="YYYY-MM-DD HH:mm"
-					showTime={{ format: "HH:mm" }}
+					format={DATE_TIME_FORMAT}
+					showTime={{ format: "HH:mm:ss" }}
 					className={styles.filterRange}
 					placeholder={["开始时间", "结束时间"]}
 					value={
