@@ -1,12 +1,12 @@
 ---
-description: admin 顶部统计卡片布局与插图定位（告警列表等页复用）
-globs: apps/admin/src/pages/**/*
+description: admin / ipad 顶部统计卡片布局与插图定位（告警列表等页复用）
+globs: apps/admin/src/pages/**/*,apps/ipad/src/pages/**/*
 alwaysApply: false
 ---
 
-# admin 顶部统计卡片
+# admin / ipad 顶部统计卡片
 
-适用于告警列表、点检台账等页顶部的 3 列统计卡片；**参考实现**：`apps/admin/src/pages/warning-list/index.module.css`。
+适用于 `apps/admin`、`apps/ipad` 中告警列表、点检台账等页顶部的 3 列统计卡片；结构、类名与插图定位两应用一致。**参考实现**：`apps/admin/src/pages/warning-list/index.module.css`。
 
 ## 卡片结构
 
@@ -47,9 +47,9 @@ alwaysApply: false
 
 ## 替换卡片图片时
 
-1. 插图放 `apps/admin/src/assets/warning/`（或对应业务目录），圆形装饰背景与 3D 插图分开资源。
+1. 插图放对应应用资源目录：admin → `apps/admin/src/assets/warning/`（或业务子目录）；ipad → `apps/ipad/src/assets/<业务>/`。圆形装饰背景与 3D 插图分开资源。
 2. 蓝 / 绿 / 橙三色对应 `.summaryCardBlue` / `.summaryCardGreen` / `.summaryCardOrange` 标题竖条色：`#0984ff` / `#2acd7f` / `#fa8c16`。
-3. 新页对齐 `warning-list` 的卡片 CSS，仅替换图片路径与文案，**不要**改插图定位为百分比宽度或同时设 `left`+`right`。
+3. 新页（含 ipad）对齐 `warning-list` 的卡片 CSS，仅替换图片路径与文案，**不要**改插图定位为百分比宽度或同时设 `left`+`right`，也**不要**另起一套统计卡类名。
 
 ## 待对齐页面
 

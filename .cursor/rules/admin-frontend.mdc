@@ -1,12 +1,69 @@
 ---
-description: admin 应用前端页面与组件约定（React + Ant Design）
-globs: apps/admin/**/*
+description: admin / ipad 前端页面与组件约定（React + Ant Design）
+globs: apps/admin/**/*,apps/ipad/**/*
 alwaysApply: false
 ---
 
-# admin 前端约定
+# admin / ipad 前端约定
 
-适用于 `apps/admin` 下新增或修改的页面、布局、组件。
+适用于 `apps/admin`、`apps/ipad` 下新增或修改的页面、布局、组件。
+
+**两应用共用本文件全部约定**（组件形态、事件命名、CRUD 文案、搜索区、api/utils 分层、Ant Design、列表页扁平化、Form / Modal / Table、HTTP 错误处理等）。下文仅补充 **ipad 目录落位** 与少量端差异；未单独说明的一律按 admin 写法执行。顶部统计卡片另见 `.cursor/rules/admin-stat-cards.mdc`（两应用共用）。
+
+## ipad 目录与文件管理
+
+**做什么**：`apps/ipad` 的目录、文件命名与页面拆分与 `apps/admin` **保持同一套风格**——按功能建 `pages/<功能名>/`，页面入口 `index.tsx`，配套 `api.ts` / `interface.ts` / `utils.ts` / `index.module.css`（按需）；**不要**把业务页长期堆在扁平的 `src/components/`。
+
+**为什么**：两应用同 monorepo、同技术栈（React + Ant Design）；目录与编码一致后，跨端改需求、复用约定与 Code Review 成本更低。
+
+### 推荐目录
+
+```
+apps/ipad/src/
+  pages/
+    Dashboard/           # 页面目录名 = 组件名；不要 DashboardPage
+      index.tsx          # 箭头函数组件，export default
+      index.module.css   # 复杂布局用 CSS Modules（默认）
+      api.ts             # HTTP 薄封装（有接口时）
+      interface.ts       # 请求/响应类型（中文 JSDoc）
+      utils.ts           # 纯函数；非必需不建
+      CreateModal.tsx    # 独立交互弹窗才拆
+    warning-list/        # 多词功能用 kebab-case，与 admin 一致
+      index.tsx
+      index.module.css
+      ...
+  layout/                # 有壳层布局时再建
+  routers/               # 路由懒加载写法对齐 admin `src/routers`
+  utils/                 # 跨页 request、工具
+  assets/                # 静态图；统计卡插图按业务分子目录
+  App.tsx
+  main.tsx
+```
+
+### 与当前脚手架对齐时
+
+| 现状（避免长期保留） | 目标 |
+|----------------------|------|
+| `src/components/Dashboard.tsx` + `style.ts` | `src/pages/Dashboard/index.tsx` +（默认）`index.module.css` |
+| `import type { FC }` + `const Xxx: FC` | `const Xxx = () => { ... }`，**不强制** `FC` |
+| 业务组件散落 `components/` | 仅跨页复用的纯 UI 才进 `src/components/`；页面专属放对应 `pages/` |
+
+### 编码要点（与 admin 同规，ipad 须遵守）
+
+- 箭头函数组件、props 单独 `XxxProps`、页面名不加 `Page` 后缀。
+- 事件：`handle` + 动作（本页 UI）；Form / Modal 等与 prop 同名用 `onFinish` / `onOk`。
+- 列表 CRUD、搜索区、分页（默认 `pageSize` 15）、`loading` 命名、api 薄封装、utils 纯函数、HTTP 错误靠全局 `onError`——全文各节对 ipad **同等生效**。
+- 有顶部 3 列统计卡时，结构与 CSS 对齐 `admin-stat-cards.mdc`；插图放 `apps/ipad/src/assets/<业务>/`。
+- 路径别名：`@/` → `apps/ipad/src`（admin 为 `apps/admin/src`）。
+
+### ipad 端差异（仅下列例外）
+
+| 项 | 约定 |
+|----|------|
+| 产品形态 | 面向平板 / 触控大屏；全屏页、手势区可按设计加触摸友好间距，**不**因此另起一套目录或组件命名 |
+| `@media` | 设计稿**明确**要求平板断点时，可在该页 CSS Modules 写媒体查询；无标注则仍默认不写（见「不写响应式 @media」） |
+| `style.ts` | 仅**极简**单层容器（无 Ant 内部覆盖、无多类名）时可用同目录 `style.ts` 导出 `CSSProperties`；复杂页一律 CSS Modules |
+| 主内容边距 | 无 admin 侧栏壳时，全屏页可不套 layout `padding: 24px`；一旦出现列表/多区块白底面板，模块间距仍按「页面边距」24 / 16 |
 
 ## 组件
 
@@ -2626,12 +2683,12 @@ pages/Login/
 
 ## 样式（例外）
 
-仅当页面极简（单层容器、无 Ant 内部样式覆盖）时，可参考 `apps/ipad` 使用同目录 `style.ts` 导出 `CSSProperties`。
+仅当页面极简（单层容器、无 Ant 内部样式覆盖、无多类名）时，admin / ipad 均可使用同目录 `style.ts` 导出 `CSSProperties`；一旦出现列表、多区块或需覆盖 Ant 局部样式，改回 CSS Modules。
 
 ## 其它
 
-- 路径别名：`@/` 指向 `apps/admin/src`。
-- 路由懒加载写法与 `src/routers/index.tsx` 保持一致。
+- 路径别名：`@/` 在 `apps/admin` 指向 `apps/admin/src`，在 `apps/ipad` 指向 `apps/ipad/src`。
+- 路由懒加载写法与各应用 `src/routers/index.tsx` 保持一致（ipad 引入路由时对齐 admin 写法）。
 - 提交前在仓库根目录执行 `pnpm lint`。
 
 ## 示例（页面骨架）
@@ -2644,4 +2701,13 @@ const Login = () => {
 };
 
 export default Login;
+```
+
+```tsx
+// apps/ipad/src/pages/Dashboard/index.tsx — 与 admin 同形态
+const Dashboard = () => {
+  return <div className={styles.dashboard}>...</div>;
+};
+
+export default Dashboard;
 ```
