@@ -21,7 +21,7 @@ alwaysApply: false
 ```
 apps/ipad/src/
   pages/
-    Dashboard/           # 页面目录名 = 组件名；不要 DashboardPage
+    dashboard/           # 目录小写；组件名仍用 Dashboard，不要 DashboardPage
       index.tsx          # 箭头函数组件，export default
       index.module.css   # 复杂布局用 CSS Modules（默认）
       api.ts             # HTTP 薄封装（有接口时）
@@ -44,7 +44,7 @@ apps/ipad/src/
 
 | 现状（避免长期保留） | 目标 |
 |----------------------|------|
-| `src/components/Dashboard.tsx` + `style.ts` | `src/pages/Dashboard/index.tsx` +（默认）`index.module.css` |
+| `src/components/Dashboard.tsx` + `style.ts` | `src/pages/dashboard/index.tsx` +（默认）`index.module.css` |
 | `import type { FC }` + `const Xxx: FC` | `const Xxx = () => { ... }`，**不强制** `FC` |
 | 业务组件散落 `components/` | 仅跨页复用的纯 UI 才进 `src/components/`；页面专属放对应 `pages/` |
 
@@ -61,15 +61,70 @@ apps/ipad/src/
 | 项 | 约定 |
 |----|------|
 | 产品形态 | 面向平板 / 触控大屏；全屏页、手势区可按设计加触摸友好间距，**不**因此另起一套目录或组件命名 |
-| `@media` | 设计稿**明确**要求平板断点时，可在该页 CSS Modules 写媒体查询；无标注则仍默认不写（见「不写响应式 @media」） |
+| 方向 | **仅横屏**；布局、CSS、设计稿对齐一律按横屏视口，**不要**为竖屏写第二套布局或 `@media (orientation: portrait)` |
+| `@media` | 设计稿**明确**要求平板断点时，可在该页 CSS Modules 写媒体查询；无标注则仍默认不写（见「不写响应式 @media」）。**不要**为竖屏或窄屏手机断点适配 |
 | `style.ts` | 仅**极简**单层容器（无 Ant 内部覆盖、无多类名）时可用同目录 `style.ts` 导出 `CSSProperties`；复杂页一律 CSS Modules |
 | 主内容边距 | 无 admin 侧栏壳时，全屏页可不套 layout `padding: 24px`；一旦出现列表/多区块白底面板，模块间距仍按「页面边距」24 / 16 |
+
+### ipad 目标设备与视口（布局 / CSS 兼容基准）
+
+**做什么**：`apps/ipad` 的页面布局、全屏页尺寸、固定宽高、背景图、canvas / 图表容器等，以现场平板 **HUAWEI MatePad 11.5″ S（柔光版）横屏** 为兼容基准；开发与验收时优先保证该机横屏下无溢出、无关键裁切、触控可点。
+
+**为什么**：ipad 端只部署在指定平板横屏使用，不以手机竖屏或多机型自适应为目标；把型号与分辨率写进约定后，CSS 与布局不会误按桌面宽屏或竖屏平板去适配。
+
+**设备信息（现场机）**
+
+| 项 | 值 |
+|----|-----|
+| 品牌 / 型号名 | HUAWEI MatePad 11.5″ S（柔光版） |
+| 型号（型号） | `SLG-W10` |
+| 屏幕尺寸 | 11.5 英寸 |
+| 分辨率（物理像素） | **2800 × 1840** |
+| 宽高比 | **3 : 2** |
+| 刷新率 | 144Hz（布局一般无需特殊处理） |
+| 内存 / 存储 | 12GB + 512GB（性能参考，不影响 CSS） |
+| 颜色 | 深空灰 |
+
+**横屏视口与 CSS 写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 方向 | **只做横屏**：逻辑宽 > 逻辑高；设计稿、全屏页、`100vw` / `100vh`、固定定位均按横屏 |
+| 不写竖屏 | **不要** `orientation: portrait`、竖屏专用断点，或「竖屏再换一列」布局 |
+| 比例 | 按 **3:2**（横屏约 `2800:1840`）理解画面；全屏背景、封面图、地图容器优先 `object-fit` / 等比铺满，避免按 16:9 硬裁 |
+| 物理分辨率参考 | 验收与切图可对照 **2800 × 1840**；CSS 仍用 `px` / `%` / `vh`/`vw`，**不要**把布局写成死绑物理像素的绝对坐标（除非设计明确要求） |
+| 触控 | 按钮、列表行、热区保持可点尺寸；间距可略大于桌面 admin，但仍用约定的 24 / 16 模块间距，不另起一套数字体系 |
+| 与 admin 差异 | admin 面向桌面宽屏；ipad **不要**复制 admin 的窄屏 `@media`，也**不要**假设侧栏 + 大工作区同时存在 |
+
+**✅ 推荐**
+
+```css
+/* 全屏横屏页：按视口铺满，不按竖屏折叠 */
+.dashboard {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+```
+
+**❌ 避免**
+
+```css
+/* 不要为竖屏再写一套 */
+@media (orientation: portrait) {
+  .dashboard {
+    flex-direction: column;
+  }
+}
+```
+
+**边界**：若日后更换其它平板，先更新本节设备表与比例，再改页面；临时用桌面浏览器调试时可模拟接近 **3:2 横屏** 的视口，但仍以真机横屏为准。
 
 ## 组件
 
 - 使用 **箭头函数组件**：`const Xxx = () => { ... }`，文件末尾 `export default Xxx`；**不强制** `FC`。
 - 有 props 时：`const Xxx = (props: XxxProps) => { ... }`，单独定义 `XxxProps` 接口。
-- **页面组件名用功能名即可，不要加 `Page` 后缀**（如 `Login`、`DigitalTwin`，不要 `LoginPage`）；目录名与组件名一致：`pages/Login/`。
+- **页面组件名用功能名即可，不要加 `Page` 后缀**（如 `Login`、`DigitalTwin`，不要 `LoginPage`）；目录名用小写（多词 kebab-case）：`pages/login/`。
 - 业务逻辑保持精简；列表页**数据加载、筛选、分页与 CRUD** 若无特殊说明**内联 `index.tsx`**，复杂**纯函数**才抽 `utils.ts`；**仅一处使用**的小型 UI 片段同样 inline，不单独抽子组件（见「列表页逻辑：非特殊不抽 hook」「列表 utils：非必需不抽离」「单处使用：非特殊不抽组件」）。
 - 使用 **Ant Design** 默认主题即可；无明确需求时不要加 `ConfigProvider theme` 覆盖色板。
 
@@ -2520,7 +2575,7 @@ useEffect(() => {
 复杂页面（表单、列表、多区块布局）采用 **CSS Modules**：
 
 ```
-pages/Login/
+pages/login/
   index.tsx
   index.module.css   # 布局、间距；必要时 :global(.ant-*) 或 @media
   api.ts             # HTTP 薄封装（见「页面 api.ts 接口函数」）
@@ -2679,7 +2734,7 @@ pages/Login/
 }
 ```
 
-**边界**：移动端专属页面、设计稿标注断点行为、或 layout 层统一断点变量除外；确需响应式时优先在 layout 集中定义，单页避免自创 magic number 断点；与「列表页 DOM 扁平化」不冲突——保留 `flex-wrap` 即可，不必为换行单独写 `@media`。
+**边界**：移动端专属页面、设计稿标注断点行为、或 layout 层统一断点变量除外；确需响应式时优先在 layout 集中定义，单页避免自创 magic number 断点；与「列表页 DOM 扁平化」不冲突——保留 `flex-wrap` 即可，不必为换行单独写 `@media`。`apps/ipad` 另见「ipad 目标设备与视口」——**仅横屏**（HUAWEI MatePad 11.5″ S / `SLG-W10`，约 2800×1840、3:2），**不要**为竖屏写 `@media (orientation: portrait)`。
 
 ## 样式（例外）
 
@@ -2704,7 +2759,7 @@ export default Login;
 ```
 
 ```tsx
-// apps/ipad/src/pages/Dashboard/index.tsx — 与 admin 同形态
+// apps/ipad/src/pages/dashboard/index.tsx — 与 admin 同形态
 const Dashboard = () => {
   return <div className={styles.dashboard}>...</div>;
 };

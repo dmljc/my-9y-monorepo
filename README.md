@@ -43,7 +43,7 @@ pnpm ipad:dev
 | **http-client** | — | Token、解包、401；见各 app `vite.config.ts` 别名 |
 
 - admin 编码约定：[.cursor/rules/admin-frontend.mdc](.cursor/rules/admin-frontend.mdc)
-- admin 页面示例：`apps/admin/src/pages/Login/`
+- admin 页面示例：`apps/admin/src/pages/login/`
 
 ## 根目录配置文件
 
