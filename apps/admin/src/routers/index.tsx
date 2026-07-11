@@ -5,8 +5,8 @@ import RouteError from "@/components/RouteError";
 import { getDefaultPathForTop } from "@/layout/menuConfig";
 
 const Layout = lazy(() => import("@/layout"));
-const Login = lazy(() => import("@/pages/Login"));
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Login = lazy(() => import("@/pages/login"));
+const Dashboard = lazy(() => import("@/pages/dashboard"));
 const Statistics = lazy(() => import("@/pages/statistics"));
 const Warning = lazy(() => import("@/pages/warning"));
 const WarningList = lazy(() => import("@/pages/warning-list"));

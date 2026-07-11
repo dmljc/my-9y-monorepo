@@ -9,4 +9,4 @@ pnpm lint         # 根目录 Biome
 ```
 
 **编码约定（Cursor）：** [.cursor/rules/admin-frontend.mdc](../../.cursor/rules/admin-frontend.mdc)  
-**参考页面：** `src/pages/Login/`
+**参考页面：** `src/pages/login/`
