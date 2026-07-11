@@ -1,0 +1,84 @@
+/*
+  设计稿基准：2800 × 1840
+  卡片（蓝湖）：Y=972 H=660；第 2 卡 X=725 W=676
+  → 第 1 卡 X≈25、间距≈24
+*/
+.home {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	background: #f4f9ff;
+	container-type: size;
+}
+
+.bg {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: fill;
+	pointer-events: none;
+	user-select: none;
+	z-index: 0;
+}
+
+/* 标题：设计稿约 left 80、top 200；字号 72 */
+.header {
+	position: absolute;
+	top: calc(200 / 1840 * 100%);
+	left: calc(80 / 2800 * 100%);
+	z-index: 2;
+}
+
+.title {
+	margin: 0;
+	font-size: calc(72 / 2800 * 100cqw);
+	font-weight: 700;
+	line-height: 1.28;
+	letter-spacing: 0.02em;
+	white-space: nowrap;
+}
+
+.titleMain {
+	color: #1a1a1a;
+}
+
+.titleAccent {
+	color: #1677ff;
+}
+
+/*
+  热区：顶 972、高 660、左 25、宽 2788（4×676+3×24）
+*/
+.navGrid {
+	position: absolute;
+	top: calc(972 / 1840 * 100%);
+	left: calc(25 / 2800 * 100%);
+	width: calc(2788 / 2800 * 100%);
+	height: calc(660 / 1840 * 100%);
+	z-index: 2;
+	display: grid;
+	grid-template-columns: repeat(4, calc(676 / 2788 * 100%));
+	gap: calc(24 / 2788 * 100%);
+}
+
+.navHit {
+	display: block;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	border: none;
+	border-radius: calc(36 / 2800 * 100cqw);
+	background: transparent;
+	cursor: pointer;
+}
+
+.navHit:focus-visible {
+	outline: 2px solid #1677ff;
+	outline-offset: -2px;
+}
+
+.navHit:active {
+	background: rgba(22, 119, 255, 0.06);
+}

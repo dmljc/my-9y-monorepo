@@ -1,27 +1,26 @@
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { Button, Checkbox, Form, Input, Typography } from "antd";
+import { App, Button, Checkbox, Form, Input, Typography } from "antd";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import loginBg from "@/assets/login/login-bg.webp";
-import { getDefaultPathForTop } from "@/layout/menuConfig";
-import { useMenuStore } from "@/layout/menuStore";
+import { DEFAULT_HOME_PATH } from "@/layout/menuConfig";
+import { useUserStore } from "@/stores/user";
 import {
 	PASSWORD_MAX_LENGTH,
 	PASSWORD_RULES,
 	USERNAME_MAX_LENGTH,
 	USERNAME_RULES,
-} from "@/pages/permission-user/formRules";
-import { useUserStore } from "@/stores/user";
+} from "./formRules";
 import styles from "./index.module.css";
 import type { LoginFormValues } from "./interface";
 import { getRememberMe, setRememberMe } from "./utils";
 
 const Login = () => {
 	const navigate = useNavigate();
+	const { message } = App.useApp();
 	const [form] = Form.useForm<LoginFormValues>();
 	const login = useUserStore((state) => state.login);
 	const loading = useUserStore((state) => state.loading);
-	const fetchMenus = useMenuStore((state) => state.fetchMenus);
 
 	useEffect(() => {
 		const saved = getRememberMe();
@@ -33,11 +32,13 @@ const Login = () => {
 	const onFinish = async (values: LoginFormValues) => {
 		const { username, password } = values;
 		const ok = await login({ username, password });
-		if (!ok) return;
+		if (!ok) {
+			message.error("登录失败，请重试");
+			return;
+		}
 
-		await fetchMenus({ force: true });
 		setRememberMe(values);
-		navigate(getDefaultPathForTop("warning"));
+		navigate(DEFAULT_HOME_PATH);
 	};
 
 	return (

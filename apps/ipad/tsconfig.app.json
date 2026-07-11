@@ -4,8 +4,9 @@
 		"composite": true,
 		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@utils/*": ["../../utils/*"]
 		}
 	},
-	"include": ["src"]
+	"include": ["src", "../../utils/http-client/**/*.ts"]
 }

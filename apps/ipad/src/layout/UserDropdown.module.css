@@ -1,0 +1,14 @@
+.trigger {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 40px;
+	width: 40px;
+	padding: 0;
+	border-radius: 50%;
+}
+
+.avatar {
+	background: #3d8bff;
+	color: #fff;
+}
