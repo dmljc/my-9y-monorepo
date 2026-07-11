@@ -1,5 +1,5 @@
 // commitlint.config.cjs — 与 pnpm workspace 目录结构对齐
-// 应用：apps/admin、apps/dashboard；共享：utils/http-client、packages/*
+// 应用：apps/admin、apps/ipad；共享：utils/http-client、packages/*
 
 /** cz-git 可选 scope，同时用于 commitlint scope-enum 校验 */
 const SCOPES = [
@@ -8,17 +8,13 @@ const SCOPES = [
 		description: "后台管理系统",
 	},
 	{
-		name: "apps/dashboard",
-		description: "可视化大屏",
+		name: "apps/ipad",
+		description: "iPad 应用",
 	},
-    {
-        name: 'apps/ipad',
-        description: 'iPad 应用',
-    },
-    {   
-        name: 'packages',
-        description: '共享包',
-    },
+	{
+		name: "packages",
+		description: "共享包",
+	},
 	{
 		name: "utils/http-client",
 		description: "Axios 封装",

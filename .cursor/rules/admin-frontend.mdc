@@ -2626,7 +2626,7 @@ pages/Login/
 
 ## 样式（例外）
 
-仅当页面极简（单层容器、无 Ant 内部样式覆盖）时，可参考 `apps/dashboard` 使用同目录 `style.ts` 导出 `CSSProperties`。
+仅当页面极简（单层容器、无 Ant 内部样式覆盖）时，可参考 `apps/ipad` 使用同目录 `style.ts` 导出 `CSSProperties`。
 
 ## 其它
 

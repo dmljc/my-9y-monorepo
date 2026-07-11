@@ -1,5 +1,5 @@
 packages:
-  - "apps/*" # 应用：admin 管理后台、dashboard 大屏等
+  - "apps/*" # 应用：admin 管理后台、ipad 等
   - "packages/*" # 可复用包
   - "utils/*" # 共享工具：如 @utils/http-client
 

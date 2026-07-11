@@ -136,7 +136,7 @@ importers:
         specifier: 'catalog:'
         version: 8.1.4(@types/node@25.9.1)(jiti@2.6.1)(yaml@2.9.0)
 
-  apps/dashboard:
+  apps/ipad:
     dependencies:
       '@ant-design/icons':
         specifier: 'catalog:'
