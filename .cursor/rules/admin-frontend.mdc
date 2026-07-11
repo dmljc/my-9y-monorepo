@@ -35,7 +35,7 @@ apps/ipad/src/
   layout/                # 有壳层布局时再建
   routers/               # 路由懒加载写法对齐 admin `src/routers`
   utils/                 # 跨页 request、工具
-  assets/                # 静态图；统计卡插图按业务分子目录
+  assets/                # 静态图（优先 .webp）；统计卡插图按业务分子目录
   App.tsx
   main.tsx
 ```
@@ -119,6 +119,40 @@ apps/ipad/src/
 ```
 
 **边界**：若日后更换其它平板，先更新本节设备表与比例，再改页面；临时用桌面浏览器调试时可模拟接近 **3:2 横屏** 的视口，但仍以真机横屏为准。
+
+## 设计稿切图与静态资源
+
+**做什么**：从蓝湖 / Figma 等 UI 设计稿提取并落入 `apps/admin/src/assets/`、`apps/ipad/src/assets/` 的背景图、插画、导航卡图、装饰切图等光栅资源，**优先导出并提交 `.webp`**；代码中 `import` / `url(...)` 也指向 webp。
+
+**为什么**：登录页、首页全屏背景与 3D 插画体积大；WebP 在相近观感下通常比 PNG / JPEG 更小，利于平板与后台首屏加载。
+
+**写法要点**
+
+| 部分 | 要求 |
+|------|------|
+| 默认格式 | 背景、插画、装饰图、统计卡插图等 → **`.webp`** |
+| 落盘路径 | 按业务分子目录，如 `assets/login/login-bg.webp`、`assets/home/nav-device.webp` |
+| 源文件 | 设计稿下载多为 PNG / JPG；入库前转换并**不要**把大体积 PNG 长期留在 `src/assets/` |
+| 质量 | 全屏背景可适当压缩（如质量 85～90）；小图标/插画保证边缘清晰即可 |
+| 例外 | 需无损透明且 WebP 效果明显劣化、或必须矢量时，可用 PNG / SVG；图标优先 SVG 或图标库，不必强行 webp |
+
+**✅ 推荐**
+
+```tsx
+import loginBg from "@/assets/login/login-bg.webp";
+import homeHero from "@/assets/home/home-hero.webp";
+
+<img src={loginBg} alt="" aria-hidden draggable={false} />
+```
+
+**❌ 避免**
+
+```tsx
+// 设计稿导出的大图未转 webp 就直接入库
+import loginBg from "@/assets/login/login-bg.png";
+```
+
+**边界**：已有历史 PNG / JPEG 资源可逐步迁移，新切图默认 webp；动画帧、favicon、极少见的兼容场景除外。admin / ipad 两应用同等适用。
 
 ## 组件
 
@@ -2744,6 +2778,7 @@ pages/login/
 
 - 路径别名：`@/` 在 `apps/admin` 指向 `apps/admin/src`，在 `apps/ipad` 指向 `apps/ipad/src`。
 - 路由懒加载写法与各应用 `src/routers/index.tsx` 保持一致（ipad 引入路由时对齐 admin 写法）。
+- 从 UI 设计稿提取的背景图、插画等静态资源优先使用 **WebP**（见「设计稿切图与静态资源」）。
 - 提交前在仓库根目录执行 `pnpm lint`。
 
 ## 示例（页面骨架）
