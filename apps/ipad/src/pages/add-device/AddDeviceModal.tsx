@@ -69,6 +69,7 @@ const AddDeviceModal = ({
 	return (
 		<Modal
 			className={styles.modal}
+			rootClassName={styles.modalRoot}
 			title={isEdit ? "编辑" : "添加设备"}
 			open={open}
 			onOk={handleOk}
@@ -78,7 +79,7 @@ const AddDeviceModal = ({
 			confirmLoading={loading}
 			destroyOnHidden
 			centered
-			width="calc(550 / 1400 * 100cqw)"
+			width="calc(730 / 1400 * 100cqw)"
 			getContainer={getContainer}
 		>
 			<Form
@@ -107,7 +108,8 @@ const AddDeviceModal = ({
 					label="设备厂家"
 					rules={manufacturerRules}
 				>
-					<Input placeholder="请输入设备厂家" maxLength={40} />
+					{/* 蓝湖稿占位为「请输入设备名称」 */}
+					<Input placeholder="请输入设备名称" maxLength={40} />
 				</Form.Item>
 			</Form>
 		</Modal>
