@@ -232,174 +232,182 @@
 		{
 			"value": "room-3",
 			"label": "房间3"
+		},
+		{
+			"value": "room-4",
+			"label": "房间4"
+		},
+		{
+			"value": "room-5",
+			"label": "房间5"
 		}
 	],
 	"sampleDevices": [
 		{
 			"id": "x12-sample-1",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
-			"roomId": "",
+			"deviceCode": "X12-P01",
+			"deviceName": "一号取样泵",
+			"roomId": "room-1",
 			"buildingKey": "x12"
 		},
 		{
 			"id": "x12-sample-2",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X12-P02",
+			"deviceName": "二号取样泵",
 			"roomId": "",
 			"buildingKey": "x12"
 		},
 		{
 			"id": "x12-sample-3",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X12-P03",
+			"deviceName": "三号取样泵",
 			"roomId": "",
 			"buildingKey": "x12"
 		},
 		{
 			"id": "x12-sample-4",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X12-P04",
+			"deviceName": "四号取样泵",
 			"roomId": "",
 			"buildingKey": "x12"
 		},
 		{
 			"id": "x12-sample-5",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X12-P05",
+			"deviceName": "五号取样泵",
 			"roomId": "",
 			"buildingKey": "x12"
 		},
 		{
 			"id": "x12-sample-6",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X12-P06",
+			"deviceName": "六号取样泵",
 			"roomId": "",
 			"buildingKey": "x12"
 		},
 		{
 			"id": "x12-sample-7",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X12-P07",
+			"deviceName": "七号取样泵",
 			"roomId": "",
 			"buildingKey": "x12"
 		},
 		{
 			"id": "x12-sample-8",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X12-P08",
+			"deviceName": "八号取样泵",
 			"roomId": "room-1",
 			"buildingKey": "x12"
 		},
 		{
 			"id": "x03-sample-1",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X03-A01",
+			"deviceName": "东区取样泵",
 			"roomId": "",
 			"buildingKey": "x03"
 		},
 		{
 			"id": "x03-sample-2",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
-			"roomId": "",
+			"deviceCode": "X03-A02",
+			"deviceName": "西区取样泵",
+			"roomId": "room-2",
 			"buildingKey": "x03"
 		},
 		{
 			"id": "x03-sample-3",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X03-A03",
+			"deviceName": "南区取样泵",
 			"roomId": "",
 			"buildingKey": "x03"
 		},
 		{
 			"id": "x03-sample-4",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X03-A04",
+			"deviceName": "北区取样泵",
 			"roomId": "",
 			"buildingKey": "x03"
 		},
 		{
 			"id": "x03-sample-5",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X03-A05",
+			"deviceName": "中区取样泵",
 			"roomId": "",
 			"buildingKey": "x03"
 		},
 		{
 			"id": "x03-sample-6",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X03-A06",
+			"deviceName": "备用取样泵A",
 			"roomId": "",
 			"buildingKey": "x03"
 		},
 		{
 			"id": "x03-sample-7",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X03-A07",
+			"deviceName": "备用取样泵B",
 			"roomId": "",
 			"buildingKey": "x03"
 		},
 		{
 			"id": "x03-sample-8",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X03-A08",
+			"deviceName": "循环取样泵",
 			"roomId": "room-1",
 			"buildingKey": "x03"
 		},
 		{
 			"id": "x06-sample-1",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X06-S01",
+			"deviceName": "产线取样泵1",
 			"roomId": "",
 			"buildingKey": "x06"
 		},
 		{
 			"id": "x06-sample-2",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X06-S02",
+			"deviceName": "产线取样泵2",
 			"roomId": "",
 			"buildingKey": "x06"
 		},
 		{
 			"id": "x06-sample-3",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
-			"roomId": "",
+			"deviceCode": "X06-S03",
+			"deviceName": "产线取样泵3",
+			"roomId": "room-3",
 			"buildingKey": "x06"
 		},
 		{
 			"id": "x06-sample-4",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X06-S04",
+			"deviceName": "质检取样泵",
 			"roomId": "",
 			"buildingKey": "x06"
 		},
 		{
 			"id": "x06-sample-5",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X06-S05",
+			"deviceName": "清洗取样泵",
 			"roomId": "",
 			"buildingKey": "x06"
 		},
 		{
 			"id": "x06-sample-6",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X06-S06",
+			"deviceName": "回流取样泵",
 			"roomId": "",
 			"buildingKey": "x06"
 		},
 		{
 			"id": "x06-sample-7",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X06-S07",
+			"deviceName": "冷却取样泵",
 			"roomId": "",
 			"buildingKey": "x06"
 		},
 		{
 			"id": "x06-sample-8",
-			"deviceCode": "ASD",
-			"deviceName": "取样泵",
+			"deviceCode": "X06-S08",
+			"deviceName": "总管取样泵",
 			"roomId": "room-1",
 			"buildingKey": "x06"
 		}

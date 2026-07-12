@@ -75,6 +75,7 @@ const SampleConfig = () => {
 		{
 			title: "操作",
 			key: "actions",
+			width: "9%",
 			render: (_, record) => (
 				<button
 					type="button"
