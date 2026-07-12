@@ -9,6 +9,7 @@ const Login = lazy(() => import("@/pages/login"));
 const Home = lazy(() => import("@/pages/home"));
 const DeviceControl = lazy(() => import("@/pages/device-control"));
 const SampleConfig = lazy(() => import("@/pages/sample-config"));
+const AddDevice = lazy(() => import("@/pages/add-device"));
 const NotFound = lazy(() => import("@/components/NotFound"));
 
 const routes: RouteObject[] = [
@@ -37,6 +38,10 @@ const routes: RouteObject[] = [
 							{
 								path: "/sample-config",
 								element: <SampleConfig />,
+							},
+							{
+								path: "/add-device",
+								element: <AddDevice />,
 							},
 						],
 					},

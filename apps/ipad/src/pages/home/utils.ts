@@ -66,5 +66,6 @@ export const HOME_NAV_ITEMS: HomeNavItem[] = [
 	{
 		key: "add-device",
 		label: "添加设备",
+		path: "/add-device",
 	},
 ];

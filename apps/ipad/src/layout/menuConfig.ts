@@ -12,6 +12,12 @@ export const getDocumentTitle = (pathname: string): string => {
 	if (pathname.startsWith("/device-control")) {
 		return `设备控制 - ${appTitle}`;
 	}
+	if (pathname.startsWith("/sample-config")) {
+		return `取样配置 - ${appTitle}`;
+	}
+	if (pathname.startsWith("/add-device")) {
+		return `添加设备 - ${appTitle}`;
+	}
 	if (pathname.startsWith("/home")) {
 		return appTitle;
 	}

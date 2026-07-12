@@ -411,5 +411,79 @@
 			"roomId": "room-1",
 			"buildingKey": "x06"
 		}
+	],
+	"addDevices": [
+		{
+			"id": "x12-add-1",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"manufacturer": "ASD",
+			"status": "running",
+			"buildingKey": "x12"
+		},
+		{
+			"id": "x12-add-2",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"manufacturer": "ASD",
+			"status": "running",
+			"buildingKey": "x12"
+		},
+		{
+			"id": "x12-add-3",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"manufacturer": "ASD",
+			"status": "closed",
+			"buildingKey": "x12"
+		},
+		{
+			"id": "x12-add-4",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"manufacturer": "ASD",
+			"status": "closed",
+			"buildingKey": "x12"
+		},
+		{
+			"id": "x12-add-5",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"manufacturer": "ASD",
+			"status": "closed",
+			"buildingKey": "x12"
+		},
+		{
+			"id": "x03-add-1",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"manufacturer": "ASD",
+			"status": "running",
+			"buildingKey": "x03"
+		},
+		{
+			"id": "x03-add-2",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"manufacturer": "ASD",
+			"status": "closed",
+			"buildingKey": "x03"
+		},
+		{
+			"id": "x06-add-1",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"manufacturer": "ASD",
+			"status": "closed",
+			"buildingKey": "x06"
+		}
 	]
 }
