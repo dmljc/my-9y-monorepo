@@ -63,7 +63,7 @@ const SampleConfig = () => {
 			render: (roomId: string, record) => (
 				<Select
 					className={styles.roomSelect}
-					popupClassName={styles.roomDropdown}
+					classNames={{ popup: { root: styles.roomDropdown } }}
 					placeholder="请选择房间号"
 					value={roomId || undefined}
 					options={ROOM_OPTIONS}
