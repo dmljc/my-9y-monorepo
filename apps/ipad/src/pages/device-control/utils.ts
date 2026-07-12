@@ -18,6 +18,8 @@ export interface DeviceItem {
 	levelLabel: string;
 	roomLabel: string;
 	enabled: boolean;
+	/** 是否处于清洗中。 */
+	cleaning: boolean;
 	temperature: number;
 	flowRate: number;
 	buildingKey: string;

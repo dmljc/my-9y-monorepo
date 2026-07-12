@@ -57,6 +57,12 @@ const DeviceControl = () => {
 	};
 
 	const handleClean = () => {
+		if (!selected) return;
+		setDevices((prev) =>
+			prev.map((item) =>
+				item.id === selected.id ? { ...item, cleaning: true } : item,
+			),
+		);
 		message.success("已下发设备清洗指令");
 	};
 
@@ -176,18 +182,81 @@ const DeviceControl = () => {
 							</div>
 
 							<div className={styles.detailBody}>
-								<button
-									type="button"
-									className={styles.cleanBtn}
-									onClick={handleClean}
-								>
-									<ClearOutlined
-										className={styles.cleanIcon}
-									/>
-									<span className={styles.cleanText}>
-										设备清洗
-									</span>
-								</button>
+								{selected.cleaning ? (
+									<div
+										className={styles.cleaningStatus}
+										role="status"
+										aria-live="polite"
+									>
+										<svg
+											className={styles.cleaningIcon}
+											xmlns="http://www.w3.org/2000/svg"
+											viewBox="0 0 18 18"
+											fill="none"
+											aria-hidden
+										>
+											<title>清洗中</title>
+											<g fill="#0099AF">
+												<circle
+													cx="9"
+													cy="2.2"
+													r="1.7"
+												/>
+												<circle
+													cx="13.8"
+													cy="4.2"
+													r="1.55"
+												/>
+												<circle
+													cx="15.8"
+													cy="9"
+													r="1.35"
+												/>
+												<circle
+													cx="13.8"
+													cy="13.8"
+													r="1.15"
+												/>
+												<circle
+													cx="9"
+													cy="15.8"
+													r="1"
+												/>
+												<circle
+													cx="4.2"
+													cy="13.8"
+													r="0.85"
+												/>
+												<circle
+													cx="2.2"
+													cy="9"
+													r="0.7"
+												/>
+												<circle
+													cx="4.2"
+													cy="4.2"
+													r="0.55"
+												/>
+											</g>
+										</svg>
+										<span className={styles.cleaningText}>
+											清洗中
+										</span>
+									</div>
+								) : (
+									<button
+										type="button"
+										className={styles.cleanBtn}
+										onClick={handleClean}
+									>
+										<ClearOutlined
+											className={styles.cleanIcon}
+										/>
+										<span className={styles.cleanText}>
+											设备清洗
+										</span>
+									</button>
+								)}
 
 								<div className={styles.metricRow}>
 									<div className={styles.metricCard}>

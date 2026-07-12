@@ -13,9 +13,18 @@
 		}
 	},
 	"buildings": [
-		{ "key": "x12", "label": "X12" },
-		{ "key": "x03", "label": "X03" },
-		{ "key": "x06", "label": "X06" }
+		{
+			"key": "x12",
+			"label": "X12"
+		},
+		{
+			"key": "x03",
+			"label": "X03"
+		},
+		{
+			"key": "x06",
+			"label": "X06"
+		}
 	],
 	"devices": [
 		{
@@ -27,7 +36,8 @@
 			"enabled": false,
 			"temperature": 35.5,
 			"flowRate": 35.5,
-			"buildingKey": "x12"
+			"buildingKey": "x12",
+			"cleaning": true
 		},
 		{
 			"id": "x12-102",
@@ -38,7 +48,8 @@
 			"enabled": false,
 			"temperature": 35.5,
 			"flowRate": 35.5,
-			"buildingKey": "x12"
+			"buildingKey": "x12",
+			"cleaning": false
 		},
 		{
 			"id": "x12-103",
@@ -49,7 +60,8 @@
 			"enabled": true,
 			"temperature": 35.5,
 			"flowRate": 35.5,
-			"buildingKey": "x12"
+			"buildingKey": "x12",
+			"cleaning": false
 		},
 		{
 			"id": "x12-104",
@@ -60,7 +72,8 @@
 			"enabled": false,
 			"temperature": 35.5,
 			"flowRate": 35.5,
-			"buildingKey": "x12"
+			"buildingKey": "x12",
+			"cleaning": false
 		},
 		{
 			"id": "x12-105",
@@ -71,7 +84,8 @@
 			"enabled": false,
 			"temperature": 35.5,
 			"flowRate": 35.5,
-			"buildingKey": "x12"
+			"buildingKey": "x12",
+			"cleaning": false
 		},
 		{
 			"id": "x12-106",
@@ -82,7 +96,8 @@
 			"enabled": true,
 			"temperature": 35.5,
 			"flowRate": 35.5,
-			"buildingKey": "x12"
+			"buildingKey": "x12",
+			"cleaning": false
 		},
 		{
 			"id": "x12-107",
@@ -93,7 +108,8 @@
 			"enabled": false,
 			"temperature": 35.5,
 			"flowRate": 35.5,
-			"buildingKey": "x12"
+			"buildingKey": "x12",
+			"cleaning": false
 		},
 		{
 			"id": "x12-108",
@@ -104,7 +120,8 @@
 			"enabled": false,
 			"temperature": 35.5,
 			"flowRate": 35.5,
-			"buildingKey": "x12"
+			"buildingKey": "x12",
+			"cleaning": false
 		},
 		{
 			"id": "x03-101",
@@ -115,7 +132,8 @@
 			"enabled": true,
 			"temperature": 34.2,
 			"flowRate": 28.0,
-			"buildingKey": "x03"
+			"buildingKey": "x03",
+			"cleaning": false
 		},
 		{
 			"id": "x03-102",
@@ -126,7 +144,8 @@
 			"enabled": false,
 			"temperature": 34.2,
 			"flowRate": 28.0,
-			"buildingKey": "x03"
+			"buildingKey": "x03",
+			"cleaning": false
 		},
 		{
 			"id": "x03-103",
@@ -137,7 +156,8 @@
 			"enabled": false,
 			"temperature": 34.2,
 			"flowRate": 28.0,
-			"buildingKey": "x03"
+			"buildingKey": "x03",
+			"cleaning": false
 		},
 		{
 			"id": "x03-104",
@@ -148,7 +168,8 @@
 			"enabled": true,
 			"temperature": 34.2,
 			"flowRate": 28.0,
-			"buildingKey": "x03"
+			"buildingKey": "x03",
+			"cleaning": false
 		},
 		{
 			"id": "x06-101",
@@ -159,7 +180,8 @@
 			"enabled": false,
 			"temperature": 36.0,
 			"flowRate": 30.5,
-			"buildingKey": "x06"
+			"buildingKey": "x06",
+			"cleaning": false
 		},
 		{
 			"id": "x06-102",
@@ -170,7 +192,8 @@
 			"enabled": true,
 			"temperature": 36.0,
 			"flowRate": 30.5,
-			"buildingKey": "x06"
+			"buildingKey": "x06",
+			"cleaning": false
 		},
 		{
 			"id": "x06-103",
@@ -181,7 +204,8 @@
 			"enabled": false,
 			"temperature": 36.0,
 			"flowRate": 30.5,
-			"buildingKey": "x06"
+			"buildingKey": "x06",
+			"cleaning": false
 		},
 		{
 			"id": "x06-104",
@@ -192,7 +216,8 @@
 			"enabled": false,
 			"temperature": 36.0,
 			"flowRate": 30.5,
-			"buildingKey": "x06"
+			"buildingKey": "x06",
+			"cleaning": false
 		}
 	]
 }

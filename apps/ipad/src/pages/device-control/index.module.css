@@ -437,6 +437,51 @@
 	text-align: center;
 }
 
+/* 蓝湖「清洗中」：140×44 / #E2FBFF / 描边·文案 #0099AF / 圆角 8 */
+.cleaningStatus {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: calc(8 / 1400 * 100cqw);
+	width: calc(140 / 1400 * 100cqw);
+	height: calc(44 / 1400 * 100cqw);
+	margin-bottom: calc(16 / 1400 * 100cqw);
+	padding: 0;
+	border: 1px solid #0099af;
+	border-radius: calc(8 / 1400 * 100cqw);
+	background: #e2fbff;
+	box-sizing: border-box;
+}
+
+.cleaningIcon {
+	flex: none;
+	width: calc(18 / 1400 * 100cqw);
+	height: calc(18 / 1400 * 100cqw);
+	display: block;
+	animation: cleaningSpin 1s linear infinite;
+	transform-origin: center;
+}
+
+.cleaningText {
+	flex: none;
+	height: calc(22 / 1400 * 100cqw);
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	font-style: normal;
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #0099af;
+	text-align: center;
+	white-space: nowrap;
+}
+
+@keyframes cleaningSpin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
 .metricRow {
 	display: flex;
 	align-items: flex-start;
