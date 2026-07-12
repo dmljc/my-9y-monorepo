@@ -35,7 +35,7 @@ const UserDropdown = () => {
 			<Button type="text" className={styles.trigger}>
 				<Space size={8}>
 					<Avatar
-						size={40}
+						size={48}
 						icon={<UserOutlined />}
 						className={styles.avatar}
 					/>

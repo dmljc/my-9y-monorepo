@@ -1,7 +1,6 @@
 /*
-  设计稿基准：2800 × 1840
-  卡片（蓝湖）：Y=972 H=660；第 2 卡 X=725 W=676
-  → 第 1 卡 X≈25、间距≈24
+  蓝湖逻辑画布：1400 × 920
+  物理稿 2800 × 1840 为 2x，落地时标注值 ÷2 后用 /1400 * 100cqw
 */
 .home {
 	position: relative;
@@ -31,13 +30,13 @@
 	font-display: swap;
 }
 
-/* 标题：蓝湖标注 680×98 / 80px / letter-spacing 5 / AlimamaShuHeiTi */
+/* 标题：680×98 / 字号 80 / letter-spacing 5；顶 225、左 37.5 */
 .header {
 	position: absolute;
-	top: calc(450 / 1840 * 100%);
-	left: calc(75 / 2800 * 100%);
-	width: calc(680 / 2800 * 100%);
-	height: calc(98 / 1840 * 100%);
+	top: calc(225 / 1400 * 100cqw);
+	left: calc(37.5 / 1400 * 100cqw);
+	width: calc(680 / 1400 * 100cqw);
+	height: calc(98 / 1400 * 100cqw);
 	z-index: 2;
 }
 
@@ -48,10 +47,10 @@
 	font-family:
 		"AlimamaShuHeiTi", "PingFang SC", "Microsoft YaHei", sans-serif;
 	font-weight: bold;
-	font-size: calc(80 / 2800 * 100cqw);
+	font-size: calc(80 / 1400 * 100cqw);
 	font-style: normal;
-	line-height: calc(98 / 2800 * 100cqw);
-	letter-spacing: calc(5 / 2800 * 100cqw);
+	line-height: calc(98 / 1400 * 100cqw);
+	letter-spacing: calc(5 / 1400 * 100cqw);
 	text-align: center;
 	white-space: nowrap;
 }
@@ -64,19 +63,17 @@
 	color: #1677ff;
 }
 
-/*
-  热区：顶 972、高 660、左 25、宽 2788（4×676+3×24）
-*/
+/* 热区：顶 486、高 330、左 12.5、宽 1394（4×338+3×12） */
 .navGrid {
 	position: absolute;
-	top: calc(972 / 1840 * 100%);
-	left: calc(25 / 2800 * 100%);
-	width: calc(2788 / 2800 * 100%);
-	height: calc(660 / 1840 * 100%);
+	top: calc(486 / 1400 * 100cqw);
+	left: calc(12.5 / 1400 * 100cqw);
+	width: calc(1394 / 1400 * 100cqw);
+	height: calc(330 / 1400 * 100cqw);
 	z-index: 2;
 	display: grid;
-	grid-template-columns: repeat(4, calc(676 / 2788 * 100%));
-	gap: calc(24 / 2788 * 100%);
+	grid-template-columns: repeat(4, 1fr);
+	gap: calc(12 / 1400 * 100cqw);
 }
 
 .navHit {
@@ -85,7 +82,7 @@
 	height: 100%;
 	padding: 0;
 	border: none;
-	border-radius: calc(36 / 2800 * 100cqw);
+	border-radius: calc(18 / 1400 * 100cqw);
 	background: transparent;
 	cursor: pointer;
 }

@@ -1,8 +1,10 @@
-import { ClearOutlined, LeftOutlined } from "@ant-design/icons";
+import { ClearOutlined } from "@ant-design/icons";
 import { App, Switch } from "antd";
 import { type CSSProperties, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import activeBg from "@/assets/device-control/active_bg.webp";
+import iconBack from "@/assets/device-control/icon-back.webp";
+import tabIndicator from "@/assets/device-control/tab-indicator.webp";
 import unActiveBg from "@/assets/device-control/un_active_bg.webp";
 import UserDropdown from "@/layout/UserDropdown";
 import styles from "./index.module.css";
@@ -71,7 +73,13 @@ const DeviceControl = () => {
 					onClick={handleBack}
 					aria-label="返回首页"
 				>
-					<LeftOutlined className={styles.backIcon} />
+					<img
+						className={styles.backIcon}
+						src={iconBack}
+						alt=""
+						aria-hidden
+						draggable={false}
+					/>
 					<span className={styles.brand}>
 						{import.meta.env.VITE_APP_TITLE}
 					</span>
@@ -86,13 +94,26 @@ const DeviceControl = () => {
 							onClick={() => setBuildingKey(tab.key)}
 						>
 							{tab.label}
+							{buildingKey === tab.key ? (
+								<img
+									className={styles.tabIndicator}
+									src={tabIndicator}
+									alt=""
+									aria-hidden
+									draggable={false}
+								/>
+							) : null}
 						</button>
 					))}
 				</nav>
 
 				<div className={styles.headerRight}>
 					<span className={styles.masterLabel}>厂房总开关</span>
-					<Switch checked={masterOn} onChange={handleMasterChange} />
+					<Switch
+						checked={masterOn}
+						onChange={handleMasterChange}
+						className={`${styles.controlSwitch} ${styles.masterSwitch}`}
+					/>
 					<UserDropdown />
 				</div>
 			</header>
@@ -127,18 +148,29 @@ const DeviceControl = () => {
 					{selected ? (
 						<>
 							<div className={styles.detailHeader}>
-								<span className={styles.detailLeft}>
-									{selected.levelLabel}
-								</span>
-								<span className={styles.detailCenter}>
-									{selected.roomLabel}
-								</span>
+								<div className={styles.detailHeaderMain}>
+									<span className={styles.deviceNameLabel}>
+										设备名称
+									</span>
+									<span className={styles.deviceNameValue}>
+										{selected.levelLabel}
+									</span>
+									<span className={styles.roomLabel}>
+										监控房
+									</span>
+									<span className={styles.roomValue}>
+										{selected.roomLabel}
+									</span>
+								</div>
 								<div className={styles.detailSwitch}>
-									<span>开关</span>
+									<span className={styles.switchLabel}>
+										开关
+									</span>
 									<Switch
 										checked={selected.enabled}
 										onChange={handleDeviceSwitch}
-										className={styles.headerSwitch}
+										className={styles.controlSwitch}
+										aria-label="开关"
 									/>
 								</div>
 							</div>
@@ -152,7 +184,9 @@ const DeviceControl = () => {
 									<ClearOutlined
 										className={styles.cleanIcon}
 									/>
-									设备清洗
+									<span className={styles.cleanText}>
+										设备清洗
+									</span>
 								</button>
 
 								<div className={styles.metricRow}>

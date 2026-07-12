@@ -2,13 +2,17 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	height: 40px;
-	width: 40px;
+	width: calc(48 / 1400 * 100cqw);
+	height: calc(48 / 1400 * 100cqw);
 	padding: 0;
 	border-radius: 50%;
 }
 
 .avatar {
-	background: #3d8bff;
+	width: calc(48 / 1400 * 100cqw);
+	height: calc(48 / 1400 * 100cqw);
+	background: #0984ff;
 	color: #fff;
+	font-size: calc(24 / 1400 * 100cqw);
+	line-height: 1;
 }
