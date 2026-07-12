@@ -23,25 +23,41 @@
 	z-index: 0;
 }
 
-/* 标题：设计稿约 left 80、top 200；字号 72 */
+@font-face {
+	font-family: "AlimamaShuHeiTi";
+	src: url("../../assets/fonts/AlimamaShuHeiTi-Bold.woff2") format("woff2");
+	font-weight: bold;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* 标题：蓝湖标注 680×98 / 80px / letter-spacing 5 / AlimamaShuHeiTi */
 .header {
 	position: absolute;
-	top: calc(200 / 1840 * 100%);
-	left: calc(80 / 2800 * 100%);
+	top: calc(450 / 1840 * 100%);
+	left: calc(75 / 2800 * 100%);
+	width: calc(680 / 2800 * 100%);
+	height: calc(98 / 1840 * 100%);
 	z-index: 2;
 }
 
 .title {
 	margin: 0;
-	font-size: calc(72 / 2800 * 100cqw);
-	font-weight: 700;
-	line-height: 1.28;
-	letter-spacing: 0.02em;
+	width: 100%;
+	height: 100%;
+	font-family:
+		"AlimamaShuHeiTi", "PingFang SC", "Microsoft YaHei", sans-serif;
+	font-weight: bold;
+	font-size: calc(80 / 2800 * 100cqw);
+	font-style: normal;
+	line-height: calc(98 / 2800 * 100cqw);
+	letter-spacing: calc(5 / 2800 * 100cqw);
+	text-align: center;
 	white-space: nowrap;
 }
 
 .titleMain {
-	color: #1a1a1a;
+	color: #000000;
 }
 
 .titleAccent {

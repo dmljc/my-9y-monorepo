@@ -21,7 +21,6 @@ const Home = () => {
 
 	return (
 		<div className={styles.home} data-page="home">
-			{/* 设计稿整页背景（标题区已掩码，卡片/装饰 1:1） */}
 			<img
 				className={styles.bg}
 				src={homeBg}
@@ -30,6 +29,7 @@ const Home = () => {
 				draggable={false}
 			/>
 
+			{/* 仅保留一处标题（对齐设计稿位置，文案走脱敏 VITE_APP_TITLE） */}
 			<header className={styles.header}>
 				<h1 className={styles.title}>
 					<span className={styles.titleMain}>
@@ -48,7 +48,6 @@ const Home = () => {
 				</h1>
 			</header>
 
-			{/* 透明热区：对齐设计稿卡片坐标，承载点击 */}
 			<div className={styles.navGrid}>
 				{HOME_NAV_ITEMS.map((item) => (
 					<button
