@@ -1,12 +1,9 @@
 import { ClearOutlined } from "@ant-design/icons";
 import { App, Switch } from "antd";
 import { type CSSProperties, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import activeBg from "@/assets/device-control/active_bg.webp";
-import iconBack from "@/assets/device-control/icon-back.webp";
-import tabIndicator from "@/assets/device-control/tab-indicator.webp";
 import unActiveBg from "@/assets/device-control/un_active_bg.webp";
-import UserDropdown from "@/layout/UserDropdown";
+import BuildingPageHeader from "@/layout/BuildingPageHeader";
 import styles from "./index.module.css";
 import { BUILDING_TABS, type DeviceItem, getDevicesByBuilding } from "./utils";
 
@@ -17,7 +14,6 @@ const THUMB_BG = {
 } as CSSProperties;
 
 const DeviceControl = () => {
-	const navigate = useNavigate();
 	const { message } = App.useApp();
 	const [buildingKey, setBuildingKey] = useState(BUILDING_TABS[0].key);
 	const [devices, setDevices] = useState<DeviceItem[]>(() =>
@@ -34,10 +30,6 @@ const DeviceControl = () => {
 		setDevices(next);
 		setSelectedId(next[0]?.id ?? "");
 	}, [buildingKey]);
-
-	const handleBack = () => {
-		navigate("/home");
-	};
 
 	const handleMasterChange = (checked: boolean) => {
 		setMasterOn(checked);
@@ -72,57 +64,13 @@ const DeviceControl = () => {
 			data-page="device-control"
 			style={THUMB_BG}
 		>
-			<header className={styles.header}>
-				<button
-					type="button"
-					className={styles.backBtn}
-					onClick={handleBack}
-					aria-label="返回首页"
-				>
-					<img
-						className={styles.backIcon}
-						src={iconBack}
-						alt=""
-						aria-hidden
-						draggable={false}
-					/>
-					<span className={styles.brand}>
-						{import.meta.env.VITE_APP_TITLE}
-					</span>
-				</button>
-
-				<nav className={styles.tabs} aria-label="厂房切换">
-					{BUILDING_TABS.map((tab) => (
-						<button
-							key={tab.key}
-							type="button"
-							className={`${styles.tab} ${buildingKey === tab.key ? styles.tabActive : ""}`}
-							onClick={() => setBuildingKey(tab.key)}
-						>
-							{tab.label}
-							{buildingKey === tab.key ? (
-								<img
-									className={styles.tabIndicator}
-									src={tabIndicator}
-									alt=""
-									aria-hidden
-									draggable={false}
-								/>
-							) : null}
-						</button>
-					))}
-				</nav>
-
-				<div className={styles.headerRight}>
-					<span className={styles.masterLabel}>厂房总开关</span>
-					<Switch
-						checked={masterOn}
-						onChange={handleMasterChange}
-						className={`${styles.controlSwitch} ${styles.masterSwitch}`}
-					/>
-					<UserDropdown />
-				</div>
-			</header>
+			<BuildingPageHeader
+				buildingKey={buildingKey}
+				buildings={BUILDING_TABS}
+				onBuildingChange={setBuildingKey}
+				masterOn={masterOn}
+				onMasterChange={handleMasterChange}
+			/>
 
 			<div className={styles.body}>
 				<aside className={styles.sidebar}>

@@ -57,6 +57,7 @@ export const HOME_NAV_ITEMS: HomeNavItem[] = [
 	{
 		key: "sample",
 		label: "取样配置",
+		path: "/sample-config",
 	},
 	{
 		key: "pipeline",

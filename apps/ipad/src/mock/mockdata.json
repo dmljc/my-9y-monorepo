@@ -219,5 +219,189 @@
 			"buildingKey": "x06",
 			"cleaning": false
 		}
+	],
+	"sampleRooms": [
+		{
+			"value": "room-1",
+			"label": "房间1"
+		},
+		{
+			"value": "room-2",
+			"label": "房间2"
+		},
+		{
+			"value": "room-3",
+			"label": "房间3"
+		}
+	],
+	"sampleDevices": [
+		{
+			"id": "x12-sample-1",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x12"
+		},
+		{
+			"id": "x12-sample-2",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x12"
+		},
+		{
+			"id": "x12-sample-3",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x12"
+		},
+		{
+			"id": "x12-sample-4",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x12"
+		},
+		{
+			"id": "x12-sample-5",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x12"
+		},
+		{
+			"id": "x12-sample-6",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x12"
+		},
+		{
+			"id": "x12-sample-7",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x12"
+		},
+		{
+			"id": "x12-sample-8",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "room-1",
+			"buildingKey": "x12"
+		},
+		{
+			"id": "x03-sample-1",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x03"
+		},
+		{
+			"id": "x03-sample-2",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x03"
+		},
+		{
+			"id": "x03-sample-3",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x03"
+		},
+		{
+			"id": "x03-sample-4",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x03"
+		},
+		{
+			"id": "x03-sample-5",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x03"
+		},
+		{
+			"id": "x03-sample-6",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x03"
+		},
+		{
+			"id": "x03-sample-7",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x03"
+		},
+		{
+			"id": "x03-sample-8",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "room-1",
+			"buildingKey": "x03"
+		},
+		{
+			"id": "x06-sample-1",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x06"
+		},
+		{
+			"id": "x06-sample-2",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x06"
+		},
+		{
+			"id": "x06-sample-3",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x06"
+		},
+		{
+			"id": "x06-sample-4",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x06"
+		},
+		{
+			"id": "x06-sample-5",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x06"
+		},
+		{
+			"id": "x06-sample-6",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x06"
+		},
+		{
+			"id": "x06-sample-7",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "",
+			"buildingKey": "x06"
+		},
+		{
+			"id": "x06-sample-8",
+			"deviceCode": "ASD",
+			"deviceName": "取样泵",
+			"roomId": "room-1",
+			"buildingKey": "x06"
+		}
 	]
 }
