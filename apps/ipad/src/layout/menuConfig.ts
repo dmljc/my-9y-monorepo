@@ -18,6 +18,9 @@ export const getDocumentTitle = (pathname: string): string => {
 	if (pathname.startsWith("/add-device")) {
 		return `添加设备 - ${appTitle}`;
 	}
+	if (pathname.startsWith("/pipeline-config")) {
+		return `管道配置 - ${appTitle}`;
+	}
 	if (pathname.startsWith("/home")) {
 		return appTitle;
 	}

@@ -62,6 +62,7 @@ export const HOME_NAV_ITEMS: HomeNavItem[] = [
 	{
 		key: "pipeline",
 		label: "管道配置",
+		path: "/pipeline-config",
 	},
 	{
 		key: "add-device",

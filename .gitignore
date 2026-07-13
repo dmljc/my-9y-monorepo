@@ -35,3 +35,6 @@ cache
 # Cursor MCP（含 LANHU_COOKIE 等敏感信息）
 .cursor/mcp.json
 
+# Lanhu / Axure MCP 本地解析缓存
+/data/
+

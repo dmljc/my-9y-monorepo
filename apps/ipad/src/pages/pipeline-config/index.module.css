@@ -1,0 +1,357 @@
+/*
+  蓝湖自定义画布：1400×920
+  管道配置：顶栏 + 分段切换 + 表格（字段对齐产品草稿，样式对齐 UI 稿）
+*/
+.pipelineConfig {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	background: #f5f5f5;
+	container-type: size;
+}
+
+.body {
+	flex: 1;
+	min-height: 0;
+	padding: calc(16 / 1400 * 100cqw);
+}
+
+.panel {
+	height: 100%;
+	overflow: auto;
+	padding: calc(20 / 1400 * 100cqw) calc(16 / 1400 * 100cqw)
+		calc(24 / 1400 * 100cqw);
+	border-radius: calc(16 / 1400 * 100cqw);
+	background: #fff;
+	box-sizing: border-box;
+}
+
+.panelHeader {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: calc(20 / 1400 * 100cqw);
+	min-height: calc(50 / 1400 * 100cqw);
+}
+
+.segment {
+	display: flex;
+	width: calc(400 / 1400 * 100cqw);
+	height: calc(48 / 1400 * 100cqw);
+	border-radius: calc(24 / 1400 * 100cqw);
+	background: #fff;
+	box-shadow: 0 0 calc(3 / 1400 * 100cqw) 0 rgba(191, 191, 191, 0.5);
+	overflow: hidden;
+}
+
+.addBtn {
+	position: absolute;
+	right: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: calc(6 / 1400 * 100cqw);
+	box-sizing: border-box;
+	min-width: calc(110 / 1400 * 100cqw);
+	height: calc(50 / 1400 * 100cqw);
+	padding: 0 calc(28 / 1400 * 100cqw);
+	border: 1px solid #e2e6eb;
+	border-radius: calc(25 / 1400 * 100cqw);
+	background: #fff;
+	box-shadow: 0 calc(2 / 1400 * 100cqw) calc(10 / 1400 * 100cqw)
+		rgba(15, 23, 42, 0.08);
+	font-family:
+		"HarmonyOS_Sans_SC", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	font-weight: 400;
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #000000;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.addBtnPlus {
+	flex-shrink: 0;
+	width: calc(24 / 1400 * 100cqw);
+	height: calc(24 / 1400 * 100cqw);
+	display: block;
+}
+
+.addBtn:hover {
+	border-color: #cfd6de;
+	box-shadow: 0 calc(3 / 1400 * 100cqw) calc(12 / 1400 * 100cqw)
+		rgba(15, 23, 42, 0.1);
+}
+
+.segmentItem {
+	flex: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border: none;
+	background: transparent;
+	font-family:
+		"HarmonyOS_Sans_SC", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	font-weight: 400;
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #000000;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.segmentItemActive {
+	border-radius: calc(24 / 1400 * 100cqw);
+	background: #0984ff;
+	font-family:
+		"HarmonyOS_Sans_SC_Medium", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-weight: 500;
+	color: #ffffff;
+}
+
+.table {
+	width: 100%;
+}
+
+.table :global(.ant-table) {
+	background: transparent;
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	color: #000000;
+}
+
+.table :global(.ant-table-container) {
+	border-radius: calc(9 / 1400 * 100cqw) calc(9 / 1400 * 100cqw) 0 0;
+	overflow: hidden;
+	box-shadow: 0 calc(1 / 1400 * 100cqw) calc(2.5 / 1400 * 100cqw) 0
+		rgba(0, 0, 0, 0.1);
+}
+
+.table :global(.ant-table-thead > tr > th) {
+	height: calc(60 / 1400 * 100cqw);
+	padding: 0 calc(24 / 1400 * 100cqw);
+	background: #f6f9ff;
+	border-bottom: none;
+	font-family:
+		"HarmonyOS_Sans_SC_Medium", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-weight: 500;
+	font-size: calc(19 / 1400 * 100cqw);
+	color: #000000;
+}
+
+.table :global(.ant-table-tbody > tr > td) {
+	height: calc(60 / 1400 * 100cqw);
+	padding: 0 calc(24 / 1400 * 100cqw);
+	border-bottom: 1px solid #ececec;
+	background: #fff;
+	font-size: calc(19 / 1400 * 100cqw);
+	color: #000000;
+	vertical-align: middle;
+}
+
+.table :global(.ant-table-tbody > tr:last-child > td) {
+	border-bottom: none;
+}
+
+.rowStripe :global(td) {
+	background: #f6f9ff;
+}
+
+.statusRunning {
+	color: #ff3636;
+}
+
+.statusClosed {
+	color: #959595;
+}
+
+.actions {
+	display: inline-flex;
+	align-items: center;
+	gap: calc(16 / 1400 * 100cqw);
+}
+
+.actionBtn {
+	padding: 0;
+	border: none;
+	background: transparent;
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #0984ff;
+	cursor: pointer;
+}
+
+.actionBtn:hover {
+	color: #0670db;
+}
+
+.actionDash {
+	color: #959595;
+}
+
+/* —— 编辑弹窗（对齐添加设备弹窗尺寸与样式） —— */
+.modalRoot :global(.ant-modal-mask) {
+	background: rgba(0, 0, 0, 0.45);
+}
+
+.modal :global(.ant-modal-container),
+.modal:global(.ant-modal) {
+	padding: 0;
+}
+
+.modal :global(.ant-modal-content) {
+	padding: 0;
+	border-radius: calc(12 / 1400 * 100cqw);
+	overflow: hidden;
+	box-shadow: 0 calc(8 / 1400 * 100cqw) calc(28 / 1400 * 100cqw)
+		rgba(0, 0, 0, 0.12);
+}
+
+.modal :global(.ant-modal-header) {
+	margin: 0;
+	padding: calc(21 / 1400 * 100cqw) calc(24 / 1400 * 100cqw)
+		calc(20 / 1400 * 100cqw);
+	border-bottom: 1px solid #ebebeb;
+}
+
+.modal :global(.ant-modal-title) {
+	font-family:
+		"HarmonyOS_Sans_SC", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	font-weight: 400;
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #000000;
+}
+
+.modal :global(.ant-modal-close) {
+	top: calc(18 / 1400 * 100cqw);
+	inset-inline-end: calc(20 / 1400 * 100cqw);
+	width: calc(22 / 1400 * 100cqw);
+	height: calc(22 / 1400 * 100cqw);
+	color: #999999;
+}
+
+.modal :global(.ant-modal-close:hover) {
+	color: #666666;
+	background: transparent;
+}
+
+.modal :global(.ant-modal-close .ant-modal-close-x) {
+	width: 100%;
+	height: 100%;
+	font-size: calc(14 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+}
+
+.modal :global(.ant-modal-body) {
+	padding: calc(24 / 1400 * 100cqw) calc(24 / 1400 * 100cqw)
+		calc(51 / 1400 * 100cqw);
+}
+
+.modal :global(.ant-modal-footer) {
+	margin: 0;
+	padding: calc(22 / 1400 * 100cqw) calc(20 / 1400 * 100cqw)
+		calc(21 / 1400 * 100cqw);
+	border-top: 1px solid #ebebeb;
+}
+
+.modal :global(.ant-modal-footer .ant-btn) {
+	min-width: calc(90 / 1400 * 100cqw);
+	height: calc(40 / 1400 * 100cqw);
+	padding: 0 calc(16 / 1400 * 100cqw);
+	border-radius: calc(6 / 1400 * 100cqw);
+	font-family:
+		"HarmonyOS_Sans_SC", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(16 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+}
+
+.modal :global(.ant-modal-footer .ant-btn + .ant-btn) {
+	margin-inline-start: calc(13 / 1400 * 100cqw);
+}
+
+.modal :global(.ant-modal-footer .ant-btn-default) {
+	border-color: #d9d9d9;
+	color: #000000;
+	background: #fff;
+	box-shadow: none;
+}
+
+.modal :global(.ant-modal-footer .ant-btn-default:hover) {
+	border-color: #0984ff;
+	color: #0984ff;
+}
+
+.modal :global(.ant-modal-footer .ant-btn-primary) {
+	background: #0984ff;
+	border-color: #0984ff;
+	box-shadow: none;
+}
+
+.modal :global(.ant-modal-footer .ant-btn-primary:hover) {
+	background: #0670db;
+	border-color: #0670db;
+}
+
+.form :global(.ant-form-item) {
+	margin-bottom: calc(21 / 1400 * 100cqw);
+}
+
+.form :global(.ant-form-item:last-child) {
+	margin-bottom: 0;
+}
+
+.form :global(.ant-form-item-label) {
+	padding: 0 0 calc(15 / 1400 * 100cqw);
+}
+
+.form :global(.ant-form-item-label > label) {
+	height: auto;
+	font-family:
+		"HarmonyOS_Sans_SC", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(16 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #000000;
+}
+
+.form :global(.ant-input) {
+	height: calc(40 / 1400 * 100cqw);
+	padding: 0 calc(12 / 1400 * 100cqw);
+	border-radius: calc(4 / 1400 * 100cqw);
+	border-color: #d9d9d9;
+	font-family:
+		"HarmonyOS_Sans_SC", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(16 / 1400 * 100cqw);
+	color: #000000;
+	box-shadow: none;
+}
+
+.form :global(.ant-input::placeholder) {
+	color: #bfbfbf;
+}
+
+.form :global(.ant-input:hover),
+.form :global(.ant-input:focus),
+.form :global(.ant-input-focused) {
+	border-color: #0984ff;
+	box-shadow: none;
+}

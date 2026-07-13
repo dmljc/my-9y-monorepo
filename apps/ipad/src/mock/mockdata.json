@@ -485,5 +485,133 @@
 			"status": "closed",
 			"buildingKey": "x06"
 		}
+	],
+	"pipelineConfigs": [
+		{
+			"id": "x12-room-1",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "running",
+			"buildingKey": "x12",
+			"configType": "room"
+		},
+		{
+			"id": "x12-room-2",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "running",
+			"buildingKey": "x12",
+			"configType": "room"
+		},
+		{
+			"id": "x12-room-3",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "closed",
+			"buildingKey": "x12",
+			"configType": "room"
+		},
+		{
+			"id": "x12-room-4",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "closed",
+			"buildingKey": "x12",
+			"configType": "room"
+		},
+		{
+			"id": "x12-room-5",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "closed",
+			"buildingKey": "x12",
+			"configType": "room"
+		},
+		{
+			"id": "x12-room-6",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "closed",
+			"buildingKey": "x12",
+			"configType": "room"
+		},
+		{
+			"id": "x12-room-7",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "closed",
+			"buildingKey": "x12",
+			"configType": "room"
+		},
+		{
+			"id": "x12-device-1",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "running",
+			"buildingKey": "x12",
+			"configType": "device"
+		},
+		{
+			"id": "x12-device-2",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "closed",
+			"buildingKey": "x12",
+			"configType": "device"
+		},
+		{
+			"id": "x12-device-3",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "closed",
+			"buildingKey": "x12",
+			"configType": "device"
+		},
+		{
+			"id": "x03-room-1",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "closed",
+			"buildingKey": "x03",
+			"configType": "room"
+		},
+		{
+			"id": "x03-device-1",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "running",
+			"buildingKey": "x03",
+			"configType": "device"
+		},
+		{
+			"id": "x06-room-1",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "closed",
+			"buildingKey": "x06",
+			"configType": "room"
+		},
+		{
+			"id": "x06-device-1",
+			"deviceCode": "ASD",
+			"deviceName": "ASD",
+			"sampleRoom": "ASD",
+			"status": "closed",
+			"buildingKey": "x06",
+			"configType": "device"
+		}
 	]
 }
