@@ -1,14 +1,76 @@
 ---
-description: admin / ipad 前端页面与组件约定（React + Ant Design）
-globs: apps/admin/**/*,apps/ipad/**/*
+description: admin / ipad 前端页面与组件约定（React + Ant Design）；含银河麒麟断网运行约束
+globs: apps/admin/**/*,apps/ipad/**/*,package.json,.npmrc,pnpm-workspace.yaml,scripts/**
 alwaysApply: false
 ---
 
 # admin / ipad 前端约定
 
-适用于 `apps/admin`、`apps/ipad` 下新增或修改的页面、布局、组件。
+适用于 `apps/admin`、`apps/ipad` 下新增或修改的页面、布局、组件；以及为 **银河麒麟断网交付** 服务的根目录脚本 / pnpm 配置（`package.json`、`.npmrc`、`pnpm-workspace.yaml`、`scripts/`）。
 
-**两应用共用本文件全部约定**（组件形态、事件命名、CRUD 文案、搜索区、api/utils 分层、Ant Design、列表页扁平化、Form / Modal / Table、HTTP 错误处理等）。下文仅补充 **ipad 目录落位** 与少量端差异；未单独说明的一律按 admin 写法执行。顶部统计卡片另见 `.cursor/rules/admin-stat-cards.mdc`（两应用共用）。
+**两应用共用本文件全部约定**（组件形态、事件命名、CRUD 文案、搜索区、api/utils 分层、Ant Design、列表页扁平化、Form / Modal / Table、HTTP 错误处理等）。下文仅补充 **ipad 目录落位**、**银河麒麟断网运行** 与少量端差异；未单独说明的一律按 admin 写法执行。顶部统计卡片另见 `.cursor/rules/admin-stat-cards.mdc`（两应用共用）。
+
+## 银河麒麟断网运行（交付约束）
+
+**做什么**：保证 `apps/admin` / `apps/ipad` 在 **银河麒麟 + 断网 + Node 24 + Chrome ≥ 145** 下可正常 **启动（dev）与打包（build）**。Mac / Windows **有网**开发按常规 `pnpm install` 即可，**不为**这两端单独做断网或跨系统拷贝兼容。
+
+**为什么**：现场交付机常为断网麒麟；若在麒麟上再跑 `pnpm install`，会因 `node_modules/.modules.yaml` 中 `storeDir` 与安装机绝对路径不一致，弹出 “modules directories will be removed and reinstalled from scratch”，离线无法重装。须在有网环境装齐（含 Linux 原生可选依赖）后 **整包拷贝** 到麒麟直接运行。
+
+### 运行环境
+
+| 项 | 要求 |
+|----|------|
+| 操作系统（交付） | 银河麒麟（Linux），**断网** |
+| Node | **24**（与开发机一致） |
+| 浏览器 | **Chrome ≥ 145** |
+| 包管理 | pnpm（仓库锁定 `packageManager`，当前为 `pnpm@10.5.1`） |
+
+### 标准交付流程
+
+1. **有网机**（多为 Mac）在仓库根目录执行 `pnpm install`（须装上 Linux 侧 `@swc/core`、rolldown、lightningcss 等可选原生包）。
+2. **整包拷贝**工程到麒麟，**必须包含完整 `node_modules`**（勿只拷源码）。
+3. 麒麟上 **不要** 再执行 `pnpm install` / `pnpm i`。
+4. 直接：`pnpm admin:dev` / `pnpm admin:build`（ipad 同理：`pnpm ipad:dev` / `pnpm ipad:build`）。
+
+### 须保留的仓库配置（勿「简化」掉）
+
+| 位置 | 配置 / 文件 | 作用 |
+|------|-------------|------|
+| `.npmrc` | `verify-deps-before-run=false` | 跑脚本时不自动 install，避免麒麟触发 modules purge |
+| `.npmrc` | `package-import-method=copy` | 依赖写入 `node_modules` 实体，整包拷贝更自包含 |
+| 根 `package.json` → `pnpm.supportedArchitectures` | `os: current + linux` 等 | 有网安装时顺带拉取 Linux 原生可选依赖 |
+| 根 `package.json` scripts | `admin:*` / `ipad:*` 走 `node scripts/run-app-script.mjs …` | 不经过会校验 store 的 `pnpm -F …`，直接调本地 `.bin` |
+| `scripts/run-app-script.mjs` | 用 `PATH` 指向 app/root 的 `.bin` 执行子包 scripts | 断网麒麟启动 / 打包入口 |
+
+### 编码与改配置时注意
+
+| 要求 | 说明 |
+|------|------|
+| **不要**把 `admin:dev` 等改回 `pnpm -F admin dev` | 易在麒麟上再次触发 storeDir 不一致与重装提示 |
+| **不要**删除或改坏 `run-app-script.mjs`、上述 `.npmrc` / `supportedArchitectures` | 断网交付会回归 |
+| **不要**在麒麟断网机上「修依赖」靠 `pnpm install` | 应回到有网机重装后重新整包拷贝 |
+| Mac / Windows 有网 | 无需额外兼容逻辑；`current` 保证本机原生包，Linux 包仅为拷贝到麒麟预留 |
+| 前端代码 | 不引入依赖外网 CDN、安装时下载二进制、或断网不可用的运行时能力；静态资源随仓库 / `node_modules` 交付 |
+
+**✅ 推荐**
+
+```bash
+# 有网机
+pnpm install
+# 将整个仓库（含 node_modules）拷到麒麟后：
+pnpm admin:dev
+pnpm admin:build
+```
+
+**❌ 避免**
+
+```bash
+# 麒麟断网机上
+pnpm install   # ❌ 会因 storeDir 不一致要求 purge 重装，离线必失败
+pnpm -F admin dev   # ❌ 勿绕过 run-app-script；易再次走 pnpm modules 校验
+```
+
+**边界**：本节只约束 **麒麟断网交付** 与相关根目录工具链；不要求 Windows / Mac 断网可运行，也不要求从麒麟回拷到 Windows。生产构建产物用 Nginx 等托管时，仍须满足 Chrome ≥ 145；`dev` / `build` 本身以 Node 24 + 预装 `node_modules` 为准。
 
 ## ipad 目录与文件管理
 
@@ -2922,6 +2984,7 @@ pages/login/
 - 设计稿上的客户真实项目名 / 真实信息须**掩码**后落地，**不得**提交到公网（见「客户真实信息掩码（设计稿落地）」）。
 - `apps/ipad` 多模块页边距与模块间距统一 **16px**（见「ipad 模块边距」）；**不要**套用 admin「模块间 24px」。
 - `apps/ipad` 蓝湖落地以 **1400×920** 为逻辑基准，关键尺寸用 `calc(n / 1400 * 100cqw)`（见「ipad CSS 尺寸与蓝湖落地」）；**不要**混用 2800/1840 分母或宽高拆 `cqw`/`cqh`。
+- **银河麒麟断网交付**：Node 24 + Chrome ≥ 145；有网装依赖后整包拷贝，断网机勿 `pnpm install`；保留 `run-app-script` 与相关 pnpm 配置（见「银河麒麟断网运行」）。
 - 提交前在仓库根目录执行 `pnpm lint`。
 
 ## 示例（页面骨架）
