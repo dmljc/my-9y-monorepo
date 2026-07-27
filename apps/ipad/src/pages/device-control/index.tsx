@@ -1,13 +1,13 @@
 import { ClearOutlined } from "@ant-design/icons";
 import { App, Switch } from "antd";
 import { type CSSProperties, useEffect, useState } from "react";
-import activeBg from "@/assets/device-control/active_bg.webp";
-import unActiveBg from "@/assets/device-control/un_active_bg.webp";
+import activeBg from "@/assets/device-control/active-bg.webp";
+import unActiveBg from "@/assets/device-control/un-active-bg.webp";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
 import styles from "./index.module.css";
 import { BUILDING_TABS, type DeviceItem, getDevicesByBuilding } from "./utils";
 
-/** 设备卡背景：选中 active_bg，未选中 un_active_bg（均为设计稿 304×160）。 */
+/** 设备卡背景：选中 active-bg，未选中 un-active-bg（均为设计稿 304×160）。 */
 const THUMB_BG = {
 	"--thumb-bg": `url(${unActiveBg})`,
 	"--thumb-bg-active": `url(${activeBg})`,
