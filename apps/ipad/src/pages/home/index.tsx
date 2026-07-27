@@ -2,14 +2,12 @@ import { App } from "antd";
 import { useNavigate } from "react-router-dom";
 import homeBg from "@/assets/home/home-bg.webp";
 import styles from "./index.module.css";
-import { HOME_NAV_ITEMS, splitHomeTitle } from "./utils";
+import { NAV_ITEMS, splitTitle } from "./utils";
 
 const Home = () => {
 	const navigate = useNavigate();
 	const { message } = App.useApp();
-	const titleParts = splitHomeTitle(
-		import.meta.env.VITE_APP_TITLE || "XXXX孪生平台",
-	);
+	const titleParts = splitTitle(import.meta.env.VITE_APP_TITLE);
 
 	const handleNavClick = (path?: string) => {
 		if (path) {
@@ -49,7 +47,7 @@ const Home = () => {
 			</header>
 
 			<div className={styles.navGrid}>
-				{HOME_NAV_ITEMS.map((item) => (
+				{NAV_ITEMS.map((item) => (
 					<button
 						key={item.key}
 						type="button"
