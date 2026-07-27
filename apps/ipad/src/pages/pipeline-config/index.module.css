@@ -159,6 +159,20 @@
 	font-size: calc(19 / 1400 * 100cqw);
 	color: #000000;
 	vertical-align: middle;
+	overflow: visible;
+}
+
+.table :global(.ant-table-cell) {
+	overflow: visible;
+}
+
+.table :global(.ant-table-tbody > tr) {
+	position: relative;
+	z-index: 0;
+}
+
+.table :global(.ant-table-tbody > tr:has(.pipeFieldError)) {
+	z-index: 2;
 }
 
 .table :global(.ant-table-tbody > tr:last-child > td) {
@@ -213,45 +227,78 @@
 	vertical-align: middle;
 }
 
-.pipeInCell {
+.pipeFieldCell {
+	position: relative;
 	display: inline-flex;
 	align-items: center;
-	gap: calc(12 / 1400 * 100cqw);
 	max-width: 100%;
 	vertical-align: middle;
 }
 
-.pipeInInput {
+.pipeFieldInput {
 	flex: none;
 	width: calc(200 / 1400 * 100cqw);
 	max-width: 100%;
 }
 
-.pipeInInput:global(.ant-input) {
+/* 管道号（OUT）：输入框收窄 50px，匀给右侧「管道号重复」文案区 */
+.pipeOutInput {
+	width: calc(200 / 1400 * 100cqw - 50px);
+}
+
+.pipeOutCell {
+	/* 输入框收窄 50px 后，右侧文案区 = 原 40px + 匀出的 50px */
+	min-width: calc(200 / 1400 * 100cqw + 8px + 90px);
+}
+
+.pipeOutCell .pipeFieldError {
+	left: calc(200 / 1400 * 100cqw - 50px + 8px);
+}
+
+.flowRateInput {
+	width: calc(160 / 1400 * 100cqw);
+}
+
+.pipeFieldInput:global(.ant-input) {
 	height: calc(36 / 1400 * 100cqw);
 	padding: 0 calc(12 / 1400 * 100cqw);
 	border-radius: calc(6 / 1400 * 100cqw);
 	font-family:
 		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
 		"Microsoft YaHei", sans-serif;
-	font-size: calc(19 / 1400 * 100cqw);
+	font-size: 16px;
 	line-height: calc(22 / 1400 * 100cqw);
 }
 
-.pipeInInputError:global(.ant-input),
-.pipeInInputError:global(.ant-input-status-error) {
+.pipeFieldInput:global(.ant-input::placeholder) {
+	font-size: 15px;
+}
+
+.pipeFieldInputError:global(.ant-input),
+.pipeFieldInputError:global(.ant-input-status-error) {
 	border-color: #ff4d4f;
 }
 
-.pipeInError {
-	flex: none;
+.pipeFieldInputError:global(.ant-input::placeholder) {
+	color: #ff4d4f;
+	font-size: 15px;
+}
+
+/* 非必填报错（重复 / 不存在 / 流量超限）：绝对定位在输入框右侧，不撑高行 */
+.pipeFieldError {
+	position: absolute;
+	left: calc(100% + 8px);
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 2;
 	font-family:
 		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
 		"Microsoft YaHei", sans-serif;
-	font-size: calc(16 / 1400 * 100cqw);
+	font-size: 15px;
 	line-height: calc(22 / 1400 * 100cqw);
 	color: #ff4d4f;
 	white-space: nowrap;
+	pointer-events: none;
 }
 
 .saveBtn {
@@ -381,8 +428,20 @@
 	margin-bottom: calc(21 / 1400 * 100cqw);
 }
 
-.form :global(.ant-form-item:last-child) {
+/* 校验前后保持同一外边距，避免 with-help 导致高度跳动 */
+.form :global(.ant-form-item-with-help) {
+	margin-bottom: calc(21 / 1400 * 100cqw);
+}
+
+.form :global(.ant-form-item:last-child),
+.form :global(.ant-form-item-with-help:last-child) {
 	margin-bottom: 0;
+}
+
+/* 错误文案改在输入框内展示，隐藏下方 explain 占位 */
+.form :global(.ant-form-item-explain),
+.form :global(.ant-form-item-extra) {
+	display: none;
 }
 
 .form :global(.ant-form-item-label) {
@@ -407,18 +466,36 @@
 	font-family:
 		"HarmonyOS_Sans_SC", "HarmonyOS Sans SC", "PingFang SC",
 		"Microsoft YaHei", sans-serif;
-	font-size: calc(16 / 1400 * 100cqw);
+	font-size: 16px;
 	color: #000000;
 	box-shadow: none;
 }
 
 .form :global(.ant-input::placeholder) {
 	color: #bfbfbf;
+	font-size: 15px;
+}
+
+.formInputError:global(.ant-input),
+.formInputError:global(.ant-input-status-error) {
+	border-color: #ff4d4f;
+}
+
+.formInputError:global(.ant-input::placeholder) {
+	color: #ff4d4f;
+	font-size: 15px;
 }
 
 .form :global(.ant-input:hover),
 .form :global(.ant-input:focus),
 .form :global(.ant-input-focused) {
 	border-color: #0984ff;
+	box-shadow: none;
+}
+
+.formInputError:global(.ant-input:hover),
+.formInputError:global(.ant-input:focus),
+.formInputError:global(.ant-input-focused) {
+	border-color: #ff4d4f;
 	box-shadow: none;
 }

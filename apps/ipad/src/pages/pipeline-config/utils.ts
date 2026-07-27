@@ -25,10 +25,14 @@ export interface PipelineItem {
 	id: string;
 	deviceCode: string;
 	deviceName: string;
-	/** 房间号（房间配置）/ 取样房间号（设备配置）。 */
+	/** 房间号（房间配置）/ 取样房间号（设备配置，兼容旧字段）。 */
 	sampleRoom: string;
-	/** 管道号（IN）。 */
+	/** 管道号（IN），房间配置使用。 */
 	pipeIn: string;
+	/** 管道号（OUT），设备配置使用。 */
+	pipeOut: string;
+	/** 流量（L/min），设备配置使用；以字符串便于受控输入。 */
+	flowRate: string;
 	status: PipelineStatus;
 	buildingKey: string;
 	configType: PipelineConfigType;
@@ -42,6 +46,8 @@ export interface PipelineFormValues {
 	deviceName: string;
 	sampleRoom: string;
 	pipeIn: string;
+	pipeOut: string;
+	flowRate: string;
 }
 
 /**
@@ -69,9 +75,9 @@ export const STATUS_LABEL: Record<PipelineStatus, string> = {
 };
 
 /**
- * 系统中已存在的管道号（mock 白名单，仅数字）。
+ * 系统中已存在的管道号（mock 白名单，仅数字；IN / OUT 共用）。
  */
-export const EXISTING_PIPE_IN_SET = new Set([
+export const EXISTING_PIPE_NO_SET = new Set([
 	"1001",
 	"1002",
 	"1003",
@@ -89,29 +95,105 @@ export const EXISTING_PIPE_IN_SET = new Set([
 	"2001",
 	"2002",
 	"2003",
+	"3001",
+	"3002",
+	"3003",
+	"3004",
+	"3005",
 ]);
 
 /** 管道号不存在提示。 */
-export const PIPE_IN_NOT_FOUND_MSG = "管道号不存在，请重新输入";
+export const PIPE_NO_NOT_FOUND_MSG = "管道号不存在";
 
 /** 管道号重复提示。 */
-export const PIPE_IN_DUPLICATE_MSG = "管道号已存在，请重新输入";
+export const PIPE_NO_DUPLICATE_MSG = "管道号重复";
+
+/** 管道号必填提示（展示在输入框内）。 */
+export const PIPE_NO_REQUIRED_MSG = "请输入管道号";
+
+/** 流量必填提示（展示在输入框内）。 */
+export const FLOW_RATE_REQUIRED_MSG = "请输入流量";
+
+/** 流量范围错误提示。 */
+export const FLOW_RATE_RANGE_MSG = "流量超限";
+
+/** 流量最小值。 */
+export const FLOW_RATE_MIN = 0;
+
+/** 流量最大值。 */
+export const FLOW_RATE_MAX = 999999.99;
 
 /**
- * 仅保留数字字符。
+ * 仅保留数字字符（管道号）。
  *
  * @param {string} - 原始输入。
  * @returns {string} - 过滤后的数字串。
  */
-export const sanitizePipeInInput = (value: string): string => {
+export const sanitizePipeNoInput = (value: string): string => {
 	return value.replace(/\D/g, "");
 };
 
 /**
- * 校验房间管道号（IN）：必填、存在性、列表内不重复。
+ * 流量输入过滤：数字 + 至多一个小数点，小数最多两位。
+ *
+ * @param {string} - 原始输入。
+ * @returns {string} - 过滤后的流量字符串。
+ */
+export const sanitizeFlowRateInput = (value: string): string => {
+	let next = value.replace(/[^\d.]/g, "");
+	const dotIndex = next.indexOf(".");
+	if (dotIndex !== -1) {
+		const intPart = next.slice(0, dotIndex).replace(/\./g, "");
+		const decPart = next
+			.slice(dotIndex + 1)
+			.replace(/\./g, "")
+			.slice(0, 2);
+		next = `${intPart}.${decPart}`;
+	}
+	const [intRaw = "", decRaw] = next.split(".");
+	const intPart = intRaw.slice(0, 6);
+	if (decRaw !== undefined) {
+		return `${intPart}.${decRaw}`;
+	}
+	return intPart;
+};
+
+/**
+ * 校验管道号：必填、存在性、列表内同字段不重复。
  *
  * @param {string} - 待校验管道号。
  * @param {string} - 当前行 id（排除自身做重复校验）。
+ * @param {PipelineItem[]} - 当前列表。
+ * @param {"pipeIn" | "pipeOut"} - 校验字段。
+ * @returns {string} - 错误文案；通过时为空串。
+ */
+export const validatePipeNo = (
+	pipeNo: string,
+	recordId: string,
+	list: PipelineItem[],
+	field: "pipeIn" | "pipeOut",
+): string => {
+	const value = pipeNo.trim();
+	if (!value) {
+		return PIPE_NO_REQUIRED_MSG;
+	}
+	if (!EXISTING_PIPE_NO_SET.has(value)) {
+		return PIPE_NO_NOT_FOUND_MSG;
+	}
+	const duplicated = list.some(
+		(item) => item.id !== recordId && item[field].trim() === value,
+	);
+	if (duplicated) {
+		return PIPE_NO_DUPLICATE_MSG;
+	}
+	return "";
+};
+
+/**
+ * 校验房间管道号（IN）。
+ *
+ * @param {string} - 待校验管道号。
+ * @param {string} - 当前行 id。
  * @param {PipelineItem[]} - 当前列表。
  * @returns {string} - 错误文案；通过时为空串。
  */
@@ -120,18 +202,42 @@ export const validateRoomPipeIn = (
 	recordId: string,
 	list: PipelineItem[],
 ): string => {
-	const value = pipeIn.trim();
+	return validatePipeNo(pipeIn, recordId, list, "pipeIn");
+};
+
+/**
+ * 校验设备管道号（OUT）。
+ *
+ * @param {string} - 待校验管道号。
+ * @param {string} - 当前行 id。
+ * @param {PipelineItem[]} - 当前列表。
+ * @returns {string} - 错误文案；通过时为空串。
+ */
+export const validateDevicePipeOut = (
+	pipeOut: string,
+	recordId: string,
+	list: PipelineItem[],
+): string => {
+	return validatePipeNo(pipeOut, recordId, list, "pipeOut");
+};
+
+/**
+ * 校验流量：必填、0.00～999999.99、最多两位小数。
+ *
+ * @param {string} - 待校验流量。
+ * @returns {string} - 错误文案；通过时为空串。
+ */
+export const validateFlowRate = (flowRate: string): string => {
+	const value = flowRate.trim();
 	if (!value) {
-		return "请输入管道号";
+		return FLOW_RATE_REQUIRED_MSG;
 	}
-	if (!EXISTING_PIPE_IN_SET.has(value)) {
-		return PIPE_IN_NOT_FOUND_MSG;
+	if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+		return FLOW_RATE_RANGE_MSG;
 	}
-	const duplicated = list.some(
-		(item) => item.id !== recordId && item.pipeIn.trim() === value,
-	);
-	if (duplicated) {
-		return PIPE_IN_DUPLICATE_MSG;
+	const num = Number(value);
+	if (Number.isNaN(num) || num < FLOW_RATE_MIN || num > FLOW_RATE_MAX) {
+		return FLOW_RATE_RANGE_MSG;
 	}
 	return "";
 };
@@ -153,10 +259,21 @@ export const getPipelinesByBuilding = (
 				item.buildingKey === buildingKey &&
 				item.configType === configType,
 		)
-		.map((item) => ({
-			...item,
-			pipeIn: sanitizePipeInInput(item.pipeIn ?? ""),
-			status: item.status as PipelineStatus,
-			configType: item.configType as PipelineConfigType,
-		}));
+		.map((item) => {
+			const raw = item as PipelineItem & {
+				pipeOut?: string;
+				flowRate?: string | number;
+			};
+			return {
+				...item,
+				pipeIn: sanitizePipeNoInput(raw.pipeIn ?? ""),
+				pipeOut: sanitizePipeNoInput(raw.pipeOut ?? ""),
+				flowRate:
+					raw.flowRate === undefined || raw.flowRate === null
+						? ""
+						: String(raw.flowRate),
+				status: item.status as PipelineStatus,
+				configType: item.configType as PipelineConfigType,
+			};
+		});
 };

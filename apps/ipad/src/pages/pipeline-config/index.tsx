@@ -1,6 +1,12 @@
 import { App, Input, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useEffect, useRef, useState } from "react";
+import {
+	type Dispatch,
+	type SetStateAction,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
 import EditModal from "./EditModal";
 import { MAX_LENGTH_40 } from "./formRules";
@@ -8,12 +14,16 @@ import styles from "./index.module.css";
 import {
 	BUILDING_TABS,
 	CONFIG_TYPE_OPTIONS,
+	FLOW_RATE_REQUIRED_MSG,
 	getPipelinesByBuilding,
+	PIPE_NO_REQUIRED_MSG,
 	type PipelineConfigType,
 	type PipelineFormValues,
 	type PipelineItem,
-	STATUS_LABEL,
-	sanitizePipeInInput,
+	sanitizeFlowRateInput,
+	sanitizePipeNoInput,
+	validateDevicePipeOut,
+	validateFlowRate,
 	validateRoomPipeIn,
 } from "./utils";
 
@@ -30,15 +40,32 @@ const PipelineConfig = () => {
 	const [editingRecord, setEditingRecord] = useState<PipelineItem | null>(
 		null,
 	);
-	/** 房间管道配置：行级管道号错误文案。 */
-	const [pipeInErrors, setPipeInErrors] = useState<Record<string, string>>(
+	/** 行级管道号错误文案（房间 IN / 设备 OUT）。 */
+	const [pipeNoErrors, setPipeNoErrors] = useState<Record<string, string>>(
 		{},
 	);
+	/** 设备配置：行级流量错误文案。 */
+	const [flowRateErrors, setFlowRateErrors] = useState<
+		Record<string, string>
+	>({});
 
 	useEffect(() => {
 		setPipelines(getPipelinesByBuilding(buildingKey, configType));
-		setPipeInErrors({});
+		setPipeNoErrors({});
+		setFlowRateErrors({});
 	}, [buildingKey, configType]);
+
+	const clearFieldError = (
+		setter: Dispatch<SetStateAction<Record<string, string>>>,
+		id: string,
+	) => {
+		setter((prev) => {
+			if (!prev[id]) return prev;
+			const next = { ...prev };
+			delete next[id];
+			return next;
+		});
+	};
 
 	const handleMasterChange = (checked: boolean) => {
 		setMasterOn(checked);
@@ -52,22 +79,28 @@ const PipelineConfig = () => {
 		setModalOpen(true);
 	};
 
-	const handleEdit = (record: PipelineItem) => {
-		setEditingRecord(record);
-		setModalOpen(true);
-	};
-
 	const handlePipeInChange = (id: string, raw: string) => {
-		const pipeIn = sanitizePipeInInput(raw);
+		const pipeIn = sanitizePipeNoInput(raw);
 		setPipelines((prev) =>
 			prev.map((item) => (item.id === id ? { ...item, pipeIn } : item)),
 		);
-		setPipeInErrors((prev) => {
-			if (!prev[id]) return prev;
-			const next = { ...prev };
-			delete next[id];
-			return next;
-		});
+		clearFieldError(setPipeNoErrors, id);
+	};
+
+	const handlePipeOutChange = (id: string, raw: string) => {
+		const pipeOut = sanitizePipeNoInput(raw);
+		setPipelines((prev) =>
+			prev.map((item) => (item.id === id ? { ...item, pipeOut } : item)),
+		);
+		clearFieldError(setPipeNoErrors, id);
+	};
+
+	const handleFlowRateChange = (id: string, raw: string) => {
+		const flowRate = sanitizeFlowRateInput(raw);
+		setPipelines((prev) =>
+			prev.map((item) => (item.id === id ? { ...item, flowRate } : item)),
+		);
+		clearFieldError(setFlowRateErrors, id);
 	};
 
 	const handleSave = (record: PipelineItem) => {
@@ -78,18 +111,42 @@ const PipelineConfig = () => {
 				pipelines,
 			);
 			if (error) {
-				setPipeInErrors((prev) => ({ ...prev, [record.id]: error }));
+				setPipeNoErrors((prev) => ({ ...prev, [record.id]: error }));
 				return;
 			}
-			setPipeInErrors((prev) => {
-				const next = { ...prev };
-				delete next[record.id];
-				return next;
-			});
+			clearFieldError(setPipeNoErrors, record.id);
 			message.success("保存成功");
 			return;
 		}
-		message.success(`“${record.deviceName}”已保存`);
+
+		const pipeError = validateDevicePipeOut(
+			record.pipeOut,
+			record.id,
+			pipelines,
+		);
+		const flowError = validateFlowRate(record.flowRate);
+		if (pipeError || flowError) {
+			if (pipeError) {
+				setPipeNoErrors((prev) => ({
+					...prev,
+					[record.id]: pipeError,
+				}));
+			} else {
+				clearFieldError(setPipeNoErrors, record.id);
+			}
+			if (flowError) {
+				setFlowRateErrors((prev) => ({
+					...prev,
+					[record.id]: flowError,
+				}));
+			} else {
+				clearFieldError(setFlowRateErrors, record.id);
+			}
+			return;
+		}
+		clearFieldError(setPipeNoErrors, record.id);
+		clearFieldError(setFlowRateErrors, record.id);
+		message.success("保存成功");
 	};
 
 	const handleModalSubmit = async (
@@ -97,7 +154,7 @@ const PipelineConfig = () => {
 	): Promise<boolean | undefined> => {
 		if (configType === "room") {
 			const sampleRoom = values.sampleRoom.trim();
-			const pipeIn = sanitizePipeInInput(values.pipeIn);
+			const pipeIn = sanitizePipeNoInput(values.pipeIn ?? "");
 			const tempId = editingRecord?.id ?? "__new__";
 			const error = validateRoomPipeIn(pipeIn, tempId, pipelines);
 			if (error) {
@@ -121,6 +178,8 @@ const PipelineConfig = () => {
 				deviceName: "",
 				sampleRoom,
 				pipeIn,
+				pipeOut: "",
+				flowRate: "",
 				status: "closed",
 				buildingKey,
 				configType,
@@ -130,15 +189,28 @@ const PipelineConfig = () => {
 			return;
 		}
 
+		const deviceCode = values.deviceCode.trim();
+		const deviceName = values.deviceName.trim();
+		const pipeOut = sanitizePipeNoInput(values.pipeOut ?? "");
+		const flowRate = sanitizeFlowRateInput(values.flowRate ?? "");
+		const tempId = editingRecord?.id ?? "__new__";
+		const pipeError = validateDevicePipeOut(pipeOut, tempId, pipelines);
+		const flowError = validateFlowRate(flowRate);
+		if (pipeError || flowError) {
+			message.error(pipeError || flowError);
+			return false;
+		}
+
 		if (editingRecord) {
 			setPipelines((prev) =>
 				prev.map((item) =>
 					item.id === editingRecord.id
 						? {
 								...item,
-								deviceCode: values.deviceCode.trim(),
-								deviceName: values.deviceName.trim(),
-								sampleRoom: values.sampleRoom.trim(),
+								deviceCode,
+								deviceName,
+								pipeOut,
+								flowRate,
 							}
 						: item,
 				),
@@ -148,11 +220,13 @@ const PipelineConfig = () => {
 		}
 
 		const newItem: PipelineItem = {
-			id: `${buildingKey}-${configType}-${Date.now()}`,
-			deviceCode: values.deviceCode.trim(),
-			deviceName: values.deviceName.trim(),
-			sampleRoom: values.sampleRoom.trim(),
+			id: `${buildingKey}-device-${Date.now()}`,
+			deviceCode,
+			deviceName,
+			sampleRoom: "",
 			pipeIn: "",
+			pipeOut,
+			flowRate,
 			status: "closed",
 			buildingKey,
 			configType,
@@ -173,22 +247,30 @@ const PipelineConfig = () => {
 			dataIndex: "pipeIn",
 			key: "pipeIn",
 			render: (pipeIn: string, record) => {
-				const error = pipeInErrors[record.id];
+				const error = pipeNoErrors[record.id];
+				const requiredError = error === PIPE_NO_REQUIRED_MSG;
+				const sideError = error && !requiredError ? error : "";
 				return (
-					<div className={styles.pipeInCell}>
+					<div className={styles.pipeFieldCell}>
 						<Input
-							className={`${styles.pipeInInput} ${error ? styles.pipeInInputError : ""}`}
+							className={`${styles.pipeFieldInput} ${error ? styles.pipeFieldInputError : ""}`}
 							value={pipeIn}
 							status={error ? "error" : undefined}
 							maxLength={MAX_LENGTH_40}
 							inputMode="numeric"
-							placeholder="请输入管道号"
+							placeholder={
+								requiredError
+									? PIPE_NO_REQUIRED_MSG
+									: "请输入管道号"
+							}
 							onChange={(e) =>
 								handlePipeInChange(record.id, e.target.value)
 							}
 						/>
-						{error ? (
-							<span className={styles.pipeInError}>{error}</span>
+						{sideError ? (
+							<span className={styles.pipeFieldError}>
+								{sideError}
+							</span>
 						) : null}
 					</div>
 				);
@@ -197,7 +279,7 @@ const PipelineConfig = () => {
 		{
 			title: "操作",
 			key: "actions",
-			width: "14%",
+			width: "10%",
 			render: (_, record) => (
 				<button
 					type="button"
@@ -224,55 +306,87 @@ const PipelineConfig = () => {
 			ellipsis: true,
 		},
 		{
-			title: "取样房间号",
-			dataIndex: "sampleRoom",
-			key: "sampleRoom",
-			ellipsis: true,
+			title: "管道号（OUT）",
+			dataIndex: "pipeOut",
+			key: "pipeOut",
+			render: (pipeOut: string, record) => {
+				const error = pipeNoErrors[record.id];
+				const requiredError = error === PIPE_NO_REQUIRED_MSG;
+				const sideError = error && !requiredError ? error : "";
+				return (
+					<div
+						className={`${styles.pipeFieldCell} ${styles.pipeOutCell}`}
+					>
+						<Input
+							className={`${styles.pipeFieldInput} ${styles.pipeOutInput} ${error ? styles.pipeFieldInputError : ""}`}
+							value={pipeOut}
+							status={error ? "error" : undefined}
+							maxLength={MAX_LENGTH_40}
+							inputMode="numeric"
+							placeholder={
+								requiredError
+									? PIPE_NO_REQUIRED_MSG
+									: "请输入管道号"
+							}
+							onChange={(e) =>
+								handlePipeOutChange(record.id, e.target.value)
+							}
+						/>
+						{sideError ? (
+							<span className={styles.pipeFieldError}>
+								{sideError}
+							</span>
+						) : null}
+					</div>
+				);
+			},
 		},
 		{
-			title: "状态",
-			dataIndex: "status",
-			key: "status",
-			width: "12%",
-			render: (status: PipelineItem["status"]) => (
-				<span
-					className={
-						status === "running"
-							? styles.statusRunning
-							: styles.statusClosed
-					}
-				>
-					{STATUS_LABEL[status]}
-				</span>
-			),
+			title: "流量（L/min）",
+			dataIndex: "flowRate",
+			key: "flowRate",
+			render: (flowRate: string, record) => {
+				const error = flowRateErrors[record.id];
+				const requiredError = error === FLOW_RATE_REQUIRED_MSG;
+				const sideError = error && !requiredError ? error : "";
+				return (
+					<div className={styles.pipeFieldCell}>
+						<Input
+							className={`${styles.pipeFieldInput} ${styles.flowRateInput} ${error ? styles.pipeFieldInputError : ""}`}
+							value={flowRate}
+							status={error ? "error" : undefined}
+							inputMode="decimal"
+							placeholder={
+								requiredError
+									? FLOW_RATE_REQUIRED_MSG
+									: "请输入流量"
+							}
+							onChange={(e) =>
+								handleFlowRateChange(record.id, e.target.value)
+							}
+						/>
+						{sideError ? (
+							<span className={styles.pipeFieldError}>
+								{sideError}
+							</span>
+						) : null}
+					</div>
+				);
+			},
 		},
 		{
 			title: "操作",
 			key: "actions",
-			width: "14%",
-			render: (_, record) => {
-				if (record.status === "running") {
-					return <span className={styles.actionDash}>—</span>;
-				}
-				return (
-					<div className={styles.actions}>
-						<button
-							type="button"
-							className={styles.actionBtn}
-							onClick={() => handleEdit(record)}
-						>
-							编辑
-						</button>
-						<button
-							type="button"
-							className={styles.actionBtn}
-							onClick={() => handleSave(record)}
-						>
-							保存
-						</button>
-					</div>
-				);
-			},
+			width: "10%",
+			render: (_, record) => (
+				<button
+					type="button"
+					className={styles.saveBtn}
+					onClick={() => handleSave(record)}
+				>
+					保存
+				</button>
+			),
 		},
 	];
 

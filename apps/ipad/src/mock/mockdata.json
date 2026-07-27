@@ -495,7 +495,9 @@
 			"status": "running",
 			"buildingKey": "x12",
 			"configType": "room",
-			"pipeIn": "1001"
+			"pipeIn": "1001",
+			"pipeOut": "",
+			"flowRate": ""
 		},
 		{
 			"id": "x12-room-2",
@@ -505,7 +507,9 @@
 			"status": "running",
 			"buildingKey": "x12",
 			"configType": "room",
-			"pipeIn": "1002"
+			"pipeIn": "1002",
+			"pipeOut": "",
+			"flowRate": ""
 		},
 		{
 			"id": "x12-room-3",
@@ -515,7 +519,9 @@
 			"status": "closed",
 			"buildingKey": "x12",
 			"configType": "room",
-			"pipeIn": "1003"
+			"pipeIn": "1003",
+			"pipeOut": "",
+			"flowRate": ""
 		},
 		{
 			"id": "x12-room-4",
@@ -525,7 +531,9 @@
 			"status": "closed",
 			"buildingKey": "x12",
 			"configType": "room",
-			"pipeIn": "1004"
+			"pipeIn": "1004",
+			"pipeOut": "",
+			"flowRate": ""
 		},
 		{
 			"id": "x12-room-5",
@@ -535,7 +543,9 @@
 			"status": "closed",
 			"buildingKey": "x12",
 			"configType": "room",
-			"pipeIn": "1005"
+			"pipeIn": "1005",
+			"pipeOut": "",
+			"flowRate": ""
 		},
 		{
 			"id": "x12-room-6",
@@ -545,7 +555,9 @@
 			"status": "closed",
 			"buildingKey": "x12",
 			"configType": "room",
-			"pipeIn": "1006"
+			"pipeIn": "1006",
+			"pipeOut": "",
+			"flowRate": ""
 		},
 		{
 			"id": "x12-room-7",
@@ -555,37 +567,45 @@
 			"status": "closed",
 			"buildingKey": "x12",
 			"configType": "room",
-			"pipeIn": "1007"
+			"pipeIn": "1007",
+			"pipeOut": "",
+			"flowRate": ""
 		},
 		{
 			"id": "x12-device-1",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "101",
+			"deviceName": "取样泵",
+			"sampleRoom": "",
 			"status": "running",
 			"buildingKey": "x12",
 			"configType": "device",
-			"pipeIn": "08"
+			"pipeIn": "08",
+			"pipeOut": "3001",
+			"flowRate": "12.50"
 		},
 		{
 			"id": "x12-device-2",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "102",
+			"deviceName": "东区取样泵",
+			"sampleRoom": "",
 			"status": "closed",
 			"buildingKey": "x12",
 			"configType": "device",
-			"pipeIn": "09"
+			"pipeIn": "09",
+			"pipeOut": "3002",
+			"flowRate": "8.00"
 		},
 		{
 			"id": "x12-device-3",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "103",
+			"deviceName": "西区取样设备",
+			"sampleRoom": "",
 			"status": "closed",
 			"buildingKey": "x12",
 			"configType": "device",
-			"pipeIn": "10"
+			"pipeIn": "10",
+			"pipeOut": "3003",
+			"flowRate": "35.5"
 		},
 		{
 			"id": "x03-room-1",
@@ -595,17 +615,21 @@
 			"status": "closed",
 			"buildingKey": "x03",
 			"configType": "room",
-			"pipeIn": "1008"
+			"pipeIn": "1008",
+			"pipeOut": "",
+			"flowRate": ""
 		},
 		{
 			"id": "x03-device-1",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "201",
+			"deviceName": "一号取样泵机组",
+			"sampleRoom": "",
 			"status": "running",
 			"buildingKey": "x03",
 			"configType": "device",
-			"pipeIn": "12"
+			"pipeIn": "12",
+			"pipeOut": "3004",
+			"flowRate": "100"
 		},
 		{
 			"id": "x06-room-1",
@@ -615,17 +639,21 @@
 			"status": "closed",
 			"buildingKey": "x06",
 			"configType": "room",
-			"pipeIn": "1009"
+			"pipeIn": "1009",
+			"pipeOut": "",
+			"flowRate": ""
 		},
 		{
 			"id": "x06-device-1",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "202",
+			"deviceName": "循环取样泵",
+			"sampleRoom": "",
 			"status": "closed",
 			"buildingKey": "x06",
 			"configType": "device",
-			"pipeIn": "14"
+			"pipeIn": "14",
+			"pipeOut": "3005",
+			"flowRate": "0.01"
 		}
 	]
 }
