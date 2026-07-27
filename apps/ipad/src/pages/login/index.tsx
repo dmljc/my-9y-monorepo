@@ -5,15 +5,17 @@ import { useNavigate } from "react-router-dom";
 import loginBg from "@/assets/login/login-bg.webp";
 import { DEFAULT_HOME_PATH } from "@/layout/menuConfig";
 import { useUserStore } from "@/stores/user";
-import {
-	PASSWORD_MAX_LENGTH,
-	PASSWORD_RULES,
-	USERNAME_MAX_LENGTH,
-	USERNAME_RULES,
-} from "./formRules";
 import styles from "./index.module.css";
 import type { LoginFormValues } from "./interface";
-import { getRememberMe, setRememberMe } from "./utils";
+import {
+	getRememberMe,
+	PASSWORD_MAX_LENGTH,
+	PASSWORD_MIN_LENGTH,
+	PASSWORD_PATTERN,
+	setRememberMe,
+	USERNAME_MAX_LENGTH,
+	USERNAME_PATTERN,
+} from "./utils";
 
 const Login = () => {
 	const navigate = useNavigate();
@@ -64,7 +66,24 @@ const Login = () => {
 					initialValues={{ remember: true }}
 					onFinish={onFinish}
 				>
-					<Form.Item name="username" rules={USERNAME_RULES}>
+					<Form.Item
+						name="username"
+						rules={[
+							{
+								required: true,
+								whitespace: true,
+								message: "请输入用户账号",
+							},
+							{
+								max: USERNAME_MAX_LENGTH,
+								message: `最多输入${USERNAME_MAX_LENGTH}个字符`,
+							},
+							{
+								pattern: USERNAME_PATTERN,
+								message: "可以包含大小写字母、数字、@",
+							},
+						]}
+					>
 						<Input
 							className={styles.input}
 							size="large"
@@ -75,7 +94,22 @@ const Login = () => {
 						/>
 					</Form.Item>
 
-					<Form.Item name="password" rules={PASSWORD_RULES}>
+					<Form.Item
+						name="password"
+						rules={[
+							{ required: true, message: "请输入密码" },
+							{
+								min: PASSWORD_MIN_LENGTH,
+								max: PASSWORD_MAX_LENGTH,
+								message: "密码长度必须在5到20个字符之间",
+							},
+							{
+								pattern: PASSWORD_PATTERN,
+								message:
+									"仅支持字母、数字及常见符号 !@#$%^&*._-",
+							},
+						]}
+					>
 						<Input.Password
 							className={styles.input}
 							size="large"

@@ -1,6 +1,31 @@
 import type { LoginFormValues } from "./interface";
 
 /**
+ * 用户账号最大字符数。
+ */
+export const USERNAME_MAX_LENGTH = 30;
+
+/**
+ * 密码最小字符数。
+ */
+export const PASSWORD_MIN_LENGTH = 5;
+
+/**
+ * 密码最大字符数。
+ */
+export const PASSWORD_MAX_LENGTH = 20;
+
+/**
+ * 账号允许字符：字母、数字、@。
+ */
+export const USERNAME_PATTERN = /^[A-Za-z0-9@]+$/;
+
+/**
+ * 密码允许字符：字母、数字及常见符号。
+ */
+export const PASSWORD_PATTERN = /^[A-Za-z0-9!@#$%^&*._-]+$/;
+
+/**
  * localStorage 中「记住我」表单数据的存储键。
  */
 const REMEMBER_ME_KEY = "remember_me";
