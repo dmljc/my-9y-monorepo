@@ -1,7 +1,8 @@
 import { Switch } from "antd";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import iconBack from "@/assets/device-control/icon-back.webp";
 import tabIndicator from "@/assets/device-control/tab-indicator.webp";
+import { getPageMenuTitle } from "@/layout/menuConfig";
 import UserDropdown from "@/layout/UserDropdown";
 import styles from "./BuildingPageHeader.module.css";
 
@@ -40,6 +41,8 @@ const BuildingPageHeader = ({
 	onMasterChange,
 }: BuildingPageHeaderProps) => {
 	const navigate = useNavigate();
+	const location = useLocation();
+	const pageTitle = getPageMenuTitle(location.pathname);
 
 	const handleBack = () => {
 		navigate("/home");
@@ -60,9 +63,7 @@ const BuildingPageHeader = ({
 					aria-hidden
 					draggable={false}
 				/>
-				<span className={styles.brand}>
-					{import.meta.env.VITE_APP_TITLE}
-				</span>
+				<span className={styles.brand}>{pageTitle}</span>
 			</button>
 
 			<nav className={styles.tabs} aria-label="厂房切换">

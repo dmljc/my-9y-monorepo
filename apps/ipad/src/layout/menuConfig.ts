@@ -1,4 +1,27 @@
 /**
+ * 一级菜单标题（按路由前缀匹配）。
+ */
+const PAGE_MENU_TITLES: { prefix: string; title: string }[] = [
+	{ prefix: "/device-control", title: "设备控制" },
+	{ prefix: "/sample-config", title: "取样配置" },
+	{ prefix: "/add-device", title: "添加设备" },
+	{ prefix: "/pipeline-config", title: "管道配置" },
+];
+
+/**
+ * 按路径返回业务页一级菜单标题（顶栏展示）。
+ *
+ * @param {string} - 当前路由 pathname。
+ * @returns {string} - 一级菜单标题；未匹配时返回空串。
+ */
+export const getPageMenuTitle = (pathname: string): string => {
+	const matched = PAGE_MENU_TITLES.find((item) =>
+		pathname.startsWith(item.prefix),
+	);
+	return matched?.title ?? "";
+};
+
+/**
  * 按路径返回文档标题（对外标题须脱敏）。
  *
  * @param {string} - 当前路由 pathname。
@@ -9,17 +32,9 @@ export const getDocumentTitle = (pathname: string): string => {
 	if (pathname.startsWith("/login")) {
 		return `登录 - ${appTitle}`;
 	}
-	if (pathname.startsWith("/device-control")) {
-		return `设备控制 - ${appTitle}`;
-	}
-	if (pathname.startsWith("/sample-config")) {
-		return `取样配置 - ${appTitle}`;
-	}
-	if (pathname.startsWith("/add-device")) {
-		return `添加设备 - ${appTitle}`;
-	}
-	if (pathname.startsWith("/pipeline-config")) {
-		return `管道配置 - ${appTitle}`;
+	const menuTitle = getPageMenuTitle(pathname);
+	if (menuTitle) {
+		return `${menuTitle} - ${appTitle}`;
 	}
 	if (pathname.startsWith("/home")) {
 		return appTitle;
