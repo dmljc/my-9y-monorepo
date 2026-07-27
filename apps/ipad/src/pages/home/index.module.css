@@ -27,7 +27,7 @@
 	font-display: swap;
 }
 
-/* 标题：680×98 / 字号 80 / letter-spacing 5；顶 225、左 37.5 */
+/* 标题：680×98 / 字号 40 / letter-spacing 5；顶 225、左 37.5 */
 .header {
 	position: absolute;
 	top: calc(225 / 1400 * 100cqw);
@@ -44,11 +44,10 @@
 	font-family:
 		"AlimamaShuHeiTi", "PingFang SC", "Microsoft YaHei", sans-serif;
 	font-weight: bold;
-	font-size: calc(80 / 1400 * 100cqw);
+	font-size: calc(40 / 1400 * 100cqw);
 	font-style: normal;
 	line-height: calc(98 / 1400 * 100cqw);
 	letter-spacing: calc(5 / 1400 * 100cqw);
-	text-align: center;
 	white-space: nowrap;
 }
 
