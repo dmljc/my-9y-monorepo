@@ -5,26 +5,26 @@ import BuildingPageHeader from "@/layout/BuildingPageHeader";
 import AddDeviceModal from "./AddDeviceModal";
 import styles from "./index.module.css";
 import {
-	type AddDevice,
-	type AddDeviceFormValues,
 	BUILDING_TABS,
-	getAddDevicesByBuilding,
+	type Device,
+	type FormValues,
+	getDevicesByBuilding,
 	STATUS_LABEL,
 } from "./utils";
 
-const AddDevicePage = () => {
+const AddDevice = () => {
 	const { message, modal } = App.useApp();
 	const pageRef = useRef<HTMLDivElement>(null);
 	const [buildingKey, setBuildingKey] = useState(BUILDING_TABS[0].key);
-	const [devices, setDevices] = useState<AddDevice[]>(() =>
-		getAddDevicesByBuilding(BUILDING_TABS[0].key),
+	const [devices, setDevices] = useState<Device[]>(() =>
+		getDevicesByBuilding(BUILDING_TABS[0].key),
 	);
 	const [masterOn, setMasterOn] = useState(true);
 	const [modalOpen, setModalOpen] = useState(false);
-	const [editingRecord, setEditingRecord] = useState<AddDevice | null>(null);
+	const [editingRecord, setEditingRecord] = useState<Device | null>(null);
 
 	useEffect(() => {
-		setDevices(getAddDevicesByBuilding(buildingKey));
+		setDevices(getDevicesByBuilding(buildingKey));
 	}, [buildingKey]);
 
 	const handleMasterChange = (checked: boolean) => {
@@ -39,12 +39,12 @@ const AddDevicePage = () => {
 		setModalOpen(true);
 	};
 
-	const handleEdit = (record: AddDevice) => {
+	const handleEdit = (record: Device) => {
 		setEditingRecord(record);
 		setModalOpen(true);
 	};
 
-	const handleDelete = (record: AddDevice) => {
+	const handleDelete = (record: Device) => {
 		modal.confirm({
 			title: "确认删除",
 			content: `确定要删除设备「${record.deviceName}」吗？`,
@@ -63,16 +63,20 @@ const AddDevicePage = () => {
 		});
 	};
 
-	const handleModalSubmit = async (values: AddDeviceFormValues) => {
+	const handleModalSubmit = async (values: FormValues) => {
+		const deviceCode = values.deviceCode.trim();
+		const deviceName = values.deviceName.trim();
+		const manufacturer = values.manufacturer.trim();
+
 		if (editingRecord) {
 			setDevices((prev) =>
 				prev.map((item) =>
 					item.id === editingRecord.id
 						? {
 								...item,
-								deviceCode: values.deviceCode,
-								deviceName: values.deviceName,
-								manufacturer: values.manufacturer,
+								deviceCode,
+								deviceName,
+								manufacturer,
 							}
 						: item,
 				),
@@ -81,11 +85,11 @@ const AddDevicePage = () => {
 			return;
 		}
 
-		const newItem: AddDevice = {
+		const newItem: Device = {
 			id: `${buildingKey}-add-${Date.now()}`,
-			deviceCode: values.deviceCode,
-			deviceName: values.deviceName,
-			manufacturer: values.manufacturer,
+			deviceCode,
+			deviceName,
+			manufacturer,
 			sampleRoom: "—",
 			status: "closed",
 			buildingKey,
@@ -94,7 +98,7 @@ const AddDevicePage = () => {
 		message.success("新增成功");
 	};
 
-	const columns: ColumnsType<AddDevice> = [
+	const columns: ColumnsType<Device> = [
 		{
 			title: "设备编码",
 			dataIndex: "deviceCode",
@@ -117,8 +121,7 @@ const AddDevicePage = () => {
 			title: "状态",
 			dataIndex: "status",
 			key: "status",
-			width: "12%",
-			render: (status: AddDevice["status"]) => (
+			render: (status: Device["status"]) => (
 				<span
 					className={
 						status === "running"
@@ -133,7 +136,6 @@ const AddDevicePage = () => {
 		{
 			title: "操作",
 			key: "actions",
-			width: "14%",
 			render: (_, record) => {
 				if (record.status === "running") {
 					return <span className={styles.actionDash}>—</span>;
@@ -183,7 +185,7 @@ const AddDevicePage = () => {
 								viewBox="0 0 24 24"
 								aria-hidden
 							>
-								<title>添加</title>
+								<title>添加设备</title>
 								<path
 									d="M12 5v14M5 12h14"
 									fill="none"
@@ -219,4 +221,4 @@ const AddDevicePage = () => {
 	);
 };
 
-export default AddDevicePage;
+export default AddDevice;

@@ -1,28 +1,42 @@
 import type { InputProps } from "antd";
 import { Form, Input, Modal } from "antd";
+import type { Rule } from "antd/es/form";
 import { useEffect, useState } from "react";
-import {
-	deviceCodeRules,
-	deviceNameRules,
-	manufacturerRules,
-} from "./formRules";
 import styles from "./index.module.css";
-import type { AddDevice, AddDeviceFormValues } from "./utils";
+import { type Device, type FormValues, MAX_LENGTH_40 } from "./utils";
+
+/** 设备编码校验。 */
+const deviceCodeRules: Rule[] = [
+	{ required: true, whitespace: true, message: "请输入编码" },
+	{ max: MAX_LENGTH_40, message: `最多输入${MAX_LENGTH_40}个字符` },
+];
+
+/** 设备名称校验。 */
+const deviceNameRules: Rule[] = [
+	{ required: true, whitespace: true, message: "请输入设备名称" },
+	{ max: MAX_LENGTH_40, message: `最多输入${MAX_LENGTH_40}个字符` },
+];
+
+/** 设备厂家校验。 */
+const manufacturerRules: Rule[] = [
+	{ required: true, whitespace: true, message: "请输入设备厂家" },
+	{ max: MAX_LENGTH_40, message: `最多输入${MAX_LENGTH_40}个字符` },
+];
 
 /**
- * 添加 / 编辑设备弹窗 props。
+ * 新增 / 编辑设备弹窗 props。
  */
 interface AddDeviceModalProps {
 	/** 是否打开。 */
 	open: boolean;
 	/** 编辑中的记录；新增时为 null。 */
-	editingRecord: AddDevice | null;
+	editingRecord: Device | null;
 	/** 弹窗挂载容器（页面根，便于 cqw 缩放）。 */
 	getContainer: () => HTMLElement;
 	/** 取消。 */
 	onCancel: () => void;
 	/** 确定提交。 */
-	onOk: (values: AddDeviceFormValues) => Promise<void>;
+	onOk: (values: FormValues) => Promise<void>;
 }
 
 /**
@@ -49,16 +63,16 @@ const FormInput = ({
 };
 
 /**
- * 添加 / 编辑设备弹窗（蓝湖：添加设备）。
+ * 新增 / 编辑设备弹窗（蓝湖：添加设备）。
  */
 const AddDeviceModal = ({
 	open,
 	editingRecord,
 	getContainer,
 	onCancel,
-	onOk,
+	onOk: onOkProp,
 }: AddDeviceModalProps) => {
-	const [form] = Form.useForm<AddDeviceFormValues>();
+	const [form] = Form.useForm<FormValues>();
 	const [loading, setLoading] = useState(false);
 	const isEdit = editingRecord !== null;
 
@@ -66,22 +80,18 @@ const AddDeviceModal = ({
 		if (!open) return;
 
 		if (editingRecord) {
-			form.setFieldsValue({
-				deviceCode: editingRecord.deviceCode,
-				deviceName: editingRecord.deviceName,
-				manufacturer: editingRecord.manufacturer,
-			});
+			form.setFieldsValue(editingRecord);
 			return;
 		}
 
 		form.resetFields();
 	}, [open, editingRecord]);
 
-	const handleOk = async () => {
+	const onOk = async () => {
 		try {
 			const values = await form.validateFields();
 			setLoading(true);
-			await onOk(values);
+			await onOkProp(values);
 			onCancel();
 		} catch (err) {
 			if (err && typeof err === "object" && "errorFields" in err) return;
@@ -94,9 +104,9 @@ const AddDeviceModal = ({
 		<Modal
 			className={styles.modal}
 			rootClassName={styles.modalRoot}
-			title={isEdit ? "编辑" : "添加设备"}
+			title={isEdit ? "编辑设备" : "添加设备"}
 			open={open}
-			onOk={handleOk}
+			onOk={onOk}
 			onCancel={onCancel}
 			confirmLoading={loading}
 			destroyOnHidden
@@ -119,7 +129,7 @@ const AddDeviceModal = ({
 				>
 					<FormInput
 						fallbackPlaceholder="请输入编码"
-						maxLength={40}
+						maxLength={MAX_LENGTH_40}
 					/>
 				</Form.Item>
 				<Form.Item
@@ -130,7 +140,7 @@ const AddDeviceModal = ({
 				>
 					<FormInput
 						fallbackPlaceholder="请输入设备名称"
-						maxLength={40}
+						maxLength={MAX_LENGTH_40}
 					/>
 				</Form.Item>
 				<Form.Item
@@ -142,7 +152,7 @@ const AddDeviceModal = ({
 					{/* 蓝湖稿占位为「请输入设备名称」 */}
 					<FormInput
 						fallbackPlaceholder="请输入设备名称"
-						maxLength={40}
+						maxLength={MAX_LENGTH_40}
 					/>
 				</Form.Item>
 			</Form>
