@@ -21,6 +21,8 @@
 .panel {
 	height: 100%;
 	overflow: auto;
+	/* 行数变化时预留滚动条槽，避免内容区左右抖动 */
+	scrollbar-gutter: stable;
 	padding: calc(20 / 1400 * 100cqw) calc(16 / 1400 * 100cqw)
 		calc(24 / 1400 * 100cqw);
 	border-radius: calc(16 / 1400 * 100cqw);
@@ -129,6 +131,7 @@
 		"Microsoft YaHei", sans-serif;
 	font-size: calc(19 / 1400 * 100cqw);
 	color: #000000;
+	table-layout: fixed;
 }
 
 .table :global(.ant-table-container) {

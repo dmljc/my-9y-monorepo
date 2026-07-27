@@ -1,12 +1,6 @@
 import { App, Input, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import {
-	type Dispatch,
-	type SetStateAction,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { type Dispatch, type SetStateAction, useRef, useState } from "react";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
 import EditModal from "./EditModal";
 import styles from "./index.module.css";
@@ -49,12 +43,6 @@ const PipelineConfig = () => {
 		Record<string, string>
 	>({});
 
-	useEffect(() => {
-		setPipelines(getPipelinesByBuilding(buildingKey, configType));
-		setPipeNoErrors({});
-		setFlowRateErrors({});
-	}, [buildingKey, configType]);
-
 	const clearFieldError = (
 		setter: Dispatch<SetStateAction<Record<string, string>>>,
 		id: string,
@@ -65,6 +53,26 @@ const PipelineConfig = () => {
 			delete next[id];
 			return next;
 		});
+	};
+
+	/** 切换厂房 / 配置类型时同步换表数据，避免列先变、数据后到造成表格跳动。 */
+	const resetList = (
+		nextBuildingKey: string,
+		nextConfigType: PipelineConfigType,
+	) => {
+		setPipelines(getPipelinesByBuilding(nextBuildingKey, nextConfigType));
+		setPipeNoErrors({});
+		setFlowRateErrors({});
+	};
+
+	const handleBuildingChange = (key: string) => {
+		setBuildingKey(key);
+		resetList(key, configType);
+	};
+
+	const handleConfigTypeChange = (key: PipelineConfigType) => {
+		setConfigType(key);
+		resetList(buildingKey, key);
 	};
 
 	const handleMasterChange = (checked: boolean) => {
@@ -401,7 +409,7 @@ const PipelineConfig = () => {
 			<BuildingPageHeader
 				buildingKey={buildingKey}
 				buildings={BUILDING_TABS}
-				onBuildingChange={setBuildingKey}
+				onBuildingChange={handleBuildingChange}
 				masterOn={masterOn}
 				onMasterChange={handleMasterChange}
 			/>
@@ -421,7 +429,9 @@ const PipelineConfig = () => {
 											? styles.segmentItemActive
 											: ""
 									}`}
-									onClick={() => setConfigType(item.key)}
+									onClick={() =>
+										handleConfigTypeChange(item.key)
+									}
 								>
 									{item.label}
 								</button>
@@ -453,6 +463,7 @@ const PipelineConfig = () => {
 						</button>
 					</div>
 					<Table
+						key={configType}
 						className={styles.table}
 						columns={columns}
 						dataSource={pipelines}
