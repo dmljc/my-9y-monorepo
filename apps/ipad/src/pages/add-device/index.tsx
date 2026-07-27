@@ -2,7 +2,7 @@ import { App, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
-import AddDeviceModal from "./AddDeviceModal";
+import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import {
 	BUILDING_TABS,
@@ -210,7 +210,7 @@ const AddDevice = () => {
 				</div>
 			</div>
 
-			<AddDeviceModal
+			<CreateModal
 				open={modalOpen}
 				editingRecord={editingRecord}
 				getContainer={() => pageRef.current ?? document.body}

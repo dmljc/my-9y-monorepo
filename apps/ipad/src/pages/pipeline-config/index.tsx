@@ -2,7 +2,7 @@ import { App, Input, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { type Dispatch, type SetStateAction, useRef, useState } from "react";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
-import EditModal from "./EditModal";
+import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import {
 	BUILDING_TABS,
@@ -476,7 +476,7 @@ const PipelineConfig = () => {
 				</div>
 			</div>
 
-			<EditModal
+			<CreateModal
 				open={modalOpen}
 				configType={configType}
 				editingRecord={editingRecord}

@@ -69,7 +69,7 @@ const flowRateRules: Rule[] = [
 /**
  * 新增 / 编辑管道配置弹窗 props。
  */
-interface EditModalProps {
+interface CreateModalProps {
 	/** 是否打开。 */
 	open: boolean;
 	/** 当前配置类型（房间 / 设备）。 */
@@ -110,14 +110,14 @@ const FormInput = ({
 /**
  * 新增 / 编辑管道配置弹窗（样式对齐添加设备弹窗）。
  */
-const EditModal = ({
+const CreateModal = ({
 	open,
 	configType,
 	editingRecord,
 	getContainer,
 	onCancel,
 	onOk: onOkProp,
-}: EditModalProps) => {
+}: CreateModalProps) => {
 	const [form] = Form.useForm<PipelineFormValues>();
 	const [loading, setLoading] = useState(false);
 	const isEdit = editingRecord !== null;
@@ -257,4 +257,4 @@ const EditModal = ({
 	);
 };
 
-export default EditModal;
+export default CreateModal;

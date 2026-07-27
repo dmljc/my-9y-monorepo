@@ -26,7 +26,7 @@ const manufacturerRules: Rule[] = [
 /**
  * 新增 / 编辑设备弹窗 props。
  */
-interface AddDeviceModalProps {
+interface CreateModalProps {
 	/** 是否打开。 */
 	open: boolean;
 	/** 编辑中的记录；新增时为 null。 */
@@ -65,13 +65,13 @@ const FormInput = ({
 /**
  * 新增 / 编辑设备弹窗（蓝湖：添加设备）。
  */
-const AddDeviceModal = ({
+const CreateModal = ({
 	open,
 	editingRecord,
 	getContainer,
 	onCancel,
 	onOk: onOkProp,
-}: AddDeviceModalProps) => {
+}: CreateModalProps) => {
 	const [form] = Form.useForm<FormValues>();
 	const [loading, setLoading] = useState(false);
 	const isEdit = editingRecord !== null;
@@ -159,4 +159,4 @@ const AddDeviceModal = ({
 	);
 };
 
-export default AddDeviceModal;
+export default CreateModal;
