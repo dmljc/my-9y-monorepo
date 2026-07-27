@@ -185,11 +185,13 @@
 	text-align: center;
 }
 
-/* 一级设备：距设备名 8px，距监控房 68px */
+/* 完整设备名：距标签 8px，距监控房 68px；左侧列表截断，此处完整展示 */
 .deviceNameValue {
 	flex: none;
+	max-width: none;
 	margin-left: calc(8 / 1400 * 100cqw);
 	margin-right: calc(68 / 1400 * 100cqw);
+	overflow: visible;
 	font-family:
 		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
 		"Microsoft YaHei", sans-serif;
@@ -198,6 +200,8 @@
 	line-height: calc(22 / 1400 * 100cqw);
 	color: #ffffff;
 	text-align: center;
+	white-space: nowrap;
+	text-overflow: clip;
 }
 
 /* 蓝湖：监控房 / 19px / 白 80% */

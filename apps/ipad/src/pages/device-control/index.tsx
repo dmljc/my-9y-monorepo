@@ -107,7 +107,7 @@ const DeviceControl = () => {
 										设备名称
 									</span>
 									<span className={styles.deviceNameValue}>
-										{selected.levelLabel}
+										{selected.name}
 									</span>
 									<span className={styles.roomLabel}>
 										监控房
