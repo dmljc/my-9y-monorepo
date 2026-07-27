@@ -1,3 +1,4 @@
+import type { InputProps } from "antd";
 import { Form, Input, Modal } from "antd";
 import { useEffect, useState } from "react";
 import {
@@ -23,6 +24,29 @@ interface AddDeviceModalProps {
 	/** 确定提交。 */
 	onOk: (values: AddDeviceFormValues) => Promise<void>;
 }
+
+/**
+ * 表单输入框：校验错误文案展示在输入框内（placeholder），不撑高 Form.Item。
+ */
+const FormInput = ({
+	fallbackPlaceholder,
+	className,
+	...rest
+}: InputProps & { fallbackPlaceholder: string }) => {
+	const { status, errors } = Form.Item.useStatus();
+	const errorText =
+		status === "error" && typeof errors[0] === "string" ? errors[0] : "";
+	const hasError = Boolean(errorText);
+
+	return (
+		<Input
+			{...rest}
+			status={hasError ? "error" : undefined}
+			placeholder={hasError ? errorText : fallbackPlaceholder}
+			className={`${className ?? ""} ${hasError ? styles.formInputError : ""}`.trim()}
+		/>
+	);
+};
 
 /**
  * 添加 / 编辑设备弹窗（蓝湖：添加设备）。
@@ -51,7 +75,7 @@ const AddDeviceModal = ({
 		}
 
 		form.resetFields();
-	}, [open, editingRecord, form]);
+	}, [open, editingRecord]);
 
 	const handleOk = async () => {
 		try {
@@ -74,8 +98,6 @@ const AddDeviceModal = ({
 			open={open}
 			onOk={handleOk}
 			onCancel={onCancel}
-			okText="确定"
-			cancelText="取消"
 			confirmLoading={loading}
 			destroyOnHidden
 			centered
@@ -93,23 +115,35 @@ const AddDeviceModal = ({
 					name="deviceCode"
 					label="设备编码"
 					rules={deviceCodeRules}
+					help=""
 				>
-					<Input placeholder="请输入编码" maxLength={40} />
+					<FormInput
+						fallbackPlaceholder="请输入编码"
+						maxLength={40}
+					/>
 				</Form.Item>
 				<Form.Item
 					name="deviceName"
 					label="设备名称"
 					rules={deviceNameRules}
+					help=""
 				>
-					<Input placeholder="请输入设备名称" maxLength={40} />
+					<FormInput
+						fallbackPlaceholder="请输入设备名称"
+						maxLength={40}
+					/>
 				</Form.Item>
 				<Form.Item
 					name="manufacturer"
 					label="设备厂家"
 					rules={manufacturerRules}
+					help=""
 				>
 					{/* 蓝湖稿占位为「请输入设备名称」 */}
-					<Input placeholder="请输入设备名称" maxLength={40} />
+					<FormInput
+						fallbackPlaceholder="请输入设备名称"
+						maxLength={40}
+					/>
 				</Form.Item>
 			</Form>
 		</Modal>
