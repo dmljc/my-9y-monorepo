@@ -50,12 +50,15 @@ const DeviceControl = () => {
 
 	const handleClean = () => {
 		if (!selected) return;
+		const nextCleaning = !selected.cleaning;
 		setDevices((prev) =>
 			prev.map((item) =>
-				item.id === selected.id ? { ...item, cleaning: true } : item,
+				item.id === selected.id
+					? { ...item, cleaning: nextCleaning }
+					: item,
 			),
 		);
-		message.success("已下发设备清洗指令");
+		message.success(nextCleaning ? "已下发设备清洗指令" : "已取消设备清洗");
 	};
 
 	return (
@@ -131,10 +134,11 @@ const DeviceControl = () => {
 
 							<div className={styles.detailBody}>
 								{selected.cleaning ? (
-									<div
+									<button
+										type="button"
 										className={styles.cleaningStatus}
-										role="status"
-										aria-live="polite"
+										onClick={handleClean}
+										aria-label="取消设备清洗"
 									>
 										<svg
 											className={styles.cleaningIcon}
@@ -190,7 +194,7 @@ const DeviceControl = () => {
 										<span className={styles.cleaningText}>
 											清洗中
 										</span>
-									</div>
+									</button>
 								) : (
 									<button
 										type="button"

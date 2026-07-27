@@ -327,7 +327,7 @@
 	text-align: center;
 }
 
-/* 蓝湖「清洗中」：140×44 / #E2FBFF / 描边·文案 #0099AF / 圆角 8 */
+/* 蓝湖「清洗中」：140×44 / #E2FBFF / 描边·文案 #0099AF / 圆角 8；可点击取消清洗 */
 .cleaningStatus {
 	display: inline-flex;
 	align-items: center;
@@ -340,6 +340,7 @@
 	border: 1px solid #0099af;
 	border-radius: calc(8 / 1400 * 100cqw);
 	background: #e2fbff;
+	cursor: pointer;
 	box-sizing: border-box;
 }
 
