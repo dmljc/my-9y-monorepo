@@ -13,7 +13,7 @@ import {
 } from "./utils";
 
 const AddDevicePage = () => {
-	const { message } = App.useApp();
+	const { message, modal } = App.useApp();
 	const pageRef = useRef<HTMLDivElement>(null);
 	const [buildingKey, setBuildingKey] = useState(BUILDING_TABS[0].key);
 	const [devices, setDevices] = useState<AddDevice[]>(() =>
@@ -44,8 +44,23 @@ const AddDevicePage = () => {
 		setModalOpen(true);
 	};
 
-	const handleSave = (record: AddDevice) => {
-		message.success(`“${record.deviceName}”已保存`);
+	const handleDelete = (record: AddDevice) => {
+		modal.confirm({
+			title: "确认删除",
+			content: `确定要删除设备「${record.deviceName}」吗？`,
+			okText: "删除",
+			okButtonProps: { danger: true },
+			onOk: () => {
+				setDevices((prev) =>
+					prev.filter((item) => item.id !== record.id),
+				);
+				if (editingRecord?.id === record.id) {
+					setModalOpen(false);
+					setEditingRecord(null);
+				}
+				message.success("删除成功");
+			},
+		});
 	};
 
 	const handleModalSubmit = async (values: AddDeviceFormValues) => {
@@ -135,9 +150,9 @@ const AddDevicePage = () => {
 						<button
 							type="button"
 							className={styles.actionBtn}
-							onClick={() => handleSave(record)}
+							onClick={() => handleDelete(record)}
 						>
-							保存
+							删除
 						</button>
 					</div>
 				);
