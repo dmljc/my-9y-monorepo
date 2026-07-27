@@ -191,8 +191,8 @@
 .modal :global(.ant-modal-close) {
 	top: calc(18 / 1400 * 100cqw);
 	inset-inline-end: calc(20 / 1400 * 100cqw);
-	width: calc(22 / 1400 * 100cqw);
-	height: calc(22 / 1400 * 100cqw);
+	width: 24px;
+	height: 24px;
 	color: #999999;
 }
 
@@ -201,11 +201,12 @@
 	background: transparent;
 }
 
-.modal :global(.ant-modal-close .ant-modal-close-x) {
+.modal :global(.ant-modal-close .ant-modal-close-x),
+.modal :global(.ant-modal-close .ant-modal-close-icon) {
 	width: 100%;
 	height: 100%;
-	font-size: calc(14 / 1400 * 100cqw);
-	line-height: calc(22 / 1400 * 100cqw);
+	font-size: 24px;
+	line-height: 24px;
 }
 
 .modal :global(.ant-modal-body) {
