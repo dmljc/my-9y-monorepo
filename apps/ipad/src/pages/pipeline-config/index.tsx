@@ -446,7 +446,10 @@ const PipelineConfig = () => {
 									strokeLinecap="round"
 								/>
 							</svg>
-							<span>新增</span>
+							<span>
+								新增{configType === "room" ? "房间" : "设备"}
+								管道
+							</span>
 						</button>
 					</div>
 					<Table
