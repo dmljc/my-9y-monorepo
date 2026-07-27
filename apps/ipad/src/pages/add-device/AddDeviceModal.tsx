@@ -111,7 +111,7 @@ const AddDeviceModal = ({
 			confirmLoading={loading}
 			destroyOnHidden
 			centered
-			width="calc(730 / 1400 * 100cqw)"
+			width="calc(600 / 1400 * 100cqw)"
 			getContainer={getContainer}
 		>
 			<Form
