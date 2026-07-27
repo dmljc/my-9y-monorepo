@@ -204,6 +204,73 @@
 	color: #959595;
 }
 
+.pipeInText {
+	display: inline-block;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	vertical-align: middle;
+}
+
+.pipeInCell {
+	display: inline-flex;
+	align-items: center;
+	gap: calc(12 / 1400 * 100cqw);
+	max-width: 100%;
+	vertical-align: middle;
+}
+
+.pipeInInput {
+	flex: none;
+	width: calc(200 / 1400 * 100cqw);
+	max-width: 100%;
+}
+
+.pipeInInput:global(.ant-input) {
+	height: calc(36 / 1400 * 100cqw);
+	padding: 0 calc(12 / 1400 * 100cqw);
+	border-radius: calc(6 / 1400 * 100cqw);
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+}
+
+.pipeInInputError:global(.ant-input),
+.pipeInInputError:global(.ant-input-status-error) {
+	border-color: #ff4d4f;
+}
+
+.pipeInError {
+	flex: none;
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(16 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #ff4d4f;
+	white-space: nowrap;
+}
+
+.saveBtn {
+	padding: 0;
+	border: none;
+	background: transparent;
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #0984ff;
+	cursor: pointer;
+}
+
+.saveBtn:hover {
+	color: #0670db;
+}
+
 /* —— 编辑弹窗（对齐添加设备弹窗尺寸与样式） —— */
 .modalRoot :global(.ant-modal-mask) {
 	background: rgba(0, 0, 0, 0.45);

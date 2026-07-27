@@ -131,7 +131,7 @@
 			"roomLabel": "101",
 			"enabled": true,
 			"temperature": 34.2,
-			"flowRate": 28.0,
+			"flowRate": 28,
 			"buildingKey": "x03",
 			"cleaning": false
 		},
@@ -143,7 +143,7 @@
 			"roomLabel": "102",
 			"enabled": false,
 			"temperature": 34.2,
-			"flowRate": 28.0,
+			"flowRate": 28,
 			"buildingKey": "x03",
 			"cleaning": false
 		},
@@ -155,7 +155,7 @@
 			"roomLabel": "103",
 			"enabled": false,
 			"temperature": 34.2,
-			"flowRate": 28.0,
+			"flowRate": 28,
 			"buildingKey": "x03",
 			"cleaning": false
 		},
@@ -167,7 +167,7 @@
 			"roomLabel": "104",
 			"enabled": true,
 			"temperature": 34.2,
-			"flowRate": 28.0,
+			"flowRate": 28,
 			"buildingKey": "x03",
 			"cleaning": false
 		},
@@ -178,7 +178,7 @@
 			"levelLabel": "一级设备",
 			"roomLabel": "101",
 			"enabled": false,
-			"temperature": 36.0,
+			"temperature": 36,
 			"flowRate": 30.5,
 			"buildingKey": "x06",
 			"cleaning": false
@@ -190,7 +190,7 @@
 			"levelLabel": "一级设备",
 			"roomLabel": "102",
 			"enabled": true,
-			"temperature": 36.0,
+			"temperature": 36,
 			"flowRate": 30.5,
 			"buildingKey": "x06",
 			"cleaning": false
@@ -202,7 +202,7 @@
 			"levelLabel": "一级设备",
 			"roomLabel": "103",
 			"enabled": false,
-			"temperature": 36.0,
+			"temperature": 36,
 			"flowRate": 30.5,
 			"buildingKey": "x06",
 			"cleaning": false
@@ -214,7 +214,7 @@
 			"levelLabel": "一级设备",
 			"roomLabel": "104",
 			"enabled": false,
-			"temperature": 36.0,
+			"temperature": 36,
 			"flowRate": 30.5,
 			"buildingKey": "x06",
 			"cleaning": false
@@ -489,66 +489,73 @@
 	"pipelineConfigs": [
 		{
 			"id": "x12-room-1",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "R-101",
+			"deviceName": "房间101",
+			"sampleRoom": "101",
 			"status": "running",
 			"buildingKey": "x12",
-			"configType": "room"
+			"configType": "room",
+			"pipeIn": "1001"
 		},
 		{
 			"id": "x12-room-2",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "R-102",
+			"deviceName": "房间102",
+			"sampleRoom": "102",
 			"status": "running",
 			"buildingKey": "x12",
-			"configType": "room"
+			"configType": "room",
+			"pipeIn": "1002"
 		},
 		{
 			"id": "x12-room-3",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "R-103",
+			"deviceName": "房间103",
+			"sampleRoom": "103",
 			"status": "closed",
 			"buildingKey": "x12",
-			"configType": "room"
+			"configType": "room",
+			"pipeIn": "1003"
 		},
 		{
 			"id": "x12-room-4",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "R-104",
+			"deviceName": "房间104",
+			"sampleRoom": "104",
 			"status": "closed",
 			"buildingKey": "x12",
-			"configType": "room"
+			"configType": "room",
+			"pipeIn": "1004"
 		},
 		{
 			"id": "x12-room-5",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "R-105",
+			"deviceName": "房间105",
+			"sampleRoom": "105",
 			"status": "closed",
 			"buildingKey": "x12",
-			"configType": "room"
+			"configType": "room",
+			"pipeIn": "1005"
 		},
 		{
 			"id": "x12-room-6",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "R-106",
+			"deviceName": "房间106",
+			"sampleRoom": "106",
 			"status": "closed",
 			"buildingKey": "x12",
-			"configType": "room"
+			"configType": "room",
+			"pipeIn": "1006"
 		},
 		{
 			"id": "x12-room-7",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "R-107",
+			"deviceName": "房间107",
+			"sampleRoom": "107",
 			"status": "closed",
 			"buildingKey": "x12",
-			"configType": "room"
+			"configType": "room",
+			"pipeIn": "1007"
 		},
 		{
 			"id": "x12-device-1",
@@ -557,7 +564,8 @@
 			"sampleRoom": "ASD",
 			"status": "running",
 			"buildingKey": "x12",
-			"configType": "device"
+			"configType": "device",
+			"pipeIn": "08"
 		},
 		{
 			"id": "x12-device-2",
@@ -566,7 +574,8 @@
 			"sampleRoom": "ASD",
 			"status": "closed",
 			"buildingKey": "x12",
-			"configType": "device"
+			"configType": "device",
+			"pipeIn": "09"
 		},
 		{
 			"id": "x12-device-3",
@@ -575,16 +584,18 @@
 			"sampleRoom": "ASD",
 			"status": "closed",
 			"buildingKey": "x12",
-			"configType": "device"
+			"configType": "device",
+			"pipeIn": "10"
 		},
 		{
 			"id": "x03-room-1",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "R-201",
+			"deviceName": "房间201",
+			"sampleRoom": "201",
 			"status": "closed",
 			"buildingKey": "x03",
-			"configType": "room"
+			"configType": "room",
+			"pipeIn": "1008"
 		},
 		{
 			"id": "x03-device-1",
@@ -593,16 +604,18 @@
 			"sampleRoom": "ASD",
 			"status": "running",
 			"buildingKey": "x03",
-			"configType": "device"
+			"configType": "device",
+			"pipeIn": "12"
 		},
 		{
 			"id": "x06-room-1",
-			"deviceCode": "ASD",
-			"deviceName": "ASD",
-			"sampleRoom": "ASD",
+			"deviceCode": "R-202",
+			"deviceName": "房间202",
+			"sampleRoom": "202",
 			"status": "closed",
 			"buildingKey": "x06",
-			"configType": "room"
+			"configType": "room",
+			"pipeIn": "1009"
 		},
 		{
 			"id": "x06-device-1",
@@ -611,7 +624,8 @@
 			"sampleRoom": "ASD",
 			"status": "closed",
 			"buildingKey": "x06",
-			"configType": "device"
+			"configType": "device",
+			"pipeIn": "14"
 		}
 	]
 }

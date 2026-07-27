@@ -1,8 +1,9 @@
-import { App, Table } from "antd";
+import { App, Input, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
 import EditModal from "./EditModal";
+import { MAX_LENGTH_40 } from "./formRules";
 import styles from "./index.module.css";
 import {
 	BUILDING_TABS,
@@ -12,6 +13,8 @@ import {
 	type PipelineFormValues,
 	type PipelineItem,
 	STATUS_LABEL,
+	sanitizePipeInInput,
+	validateRoomPipeIn,
 } from "./utils";
 
 const PipelineConfig = () => {
@@ -27,9 +30,14 @@ const PipelineConfig = () => {
 	const [editingRecord, setEditingRecord] = useState<PipelineItem | null>(
 		null,
 	);
+	/** 房间管道配置：行级管道号错误文案。 */
+	const [pipeInErrors, setPipeInErrors] = useState<Record<string, string>>(
+		{},
+	);
 
 	useEffect(() => {
 		setPipelines(getPipelinesByBuilding(buildingKey, configType));
+		setPipeInErrors({});
 	}, [buildingKey, configType]);
 
 	const handleMasterChange = (checked: boolean) => {
@@ -49,11 +57,79 @@ const PipelineConfig = () => {
 		setModalOpen(true);
 	};
 
+	const handlePipeInChange = (id: string, raw: string) => {
+		const pipeIn = sanitizePipeInInput(raw);
+		setPipelines((prev) =>
+			prev.map((item) => (item.id === id ? { ...item, pipeIn } : item)),
+		);
+		setPipeInErrors((prev) => {
+			if (!prev[id]) return prev;
+			const next = { ...prev };
+			delete next[id];
+			return next;
+		});
+	};
+
 	const handleSave = (record: PipelineItem) => {
+		if (configType === "room") {
+			const error = validateRoomPipeIn(
+				record.pipeIn,
+				record.id,
+				pipelines,
+			);
+			if (error) {
+				setPipeInErrors((prev) => ({ ...prev, [record.id]: error }));
+				return;
+			}
+			setPipeInErrors((prev) => {
+				const next = { ...prev };
+				delete next[record.id];
+				return next;
+			});
+			message.success("保存成功");
+			return;
+		}
 		message.success(`“${record.deviceName}”已保存`);
 	};
 
-	const handleModalSubmit = async (values: PipelineFormValues) => {
+	const handleModalSubmit = async (
+		values: PipelineFormValues,
+	): Promise<boolean | undefined> => {
+		if (configType === "room") {
+			const sampleRoom = values.sampleRoom.trim();
+			const pipeIn = sanitizePipeInInput(values.pipeIn);
+			const tempId = editingRecord?.id ?? "__new__";
+			const error = validateRoomPipeIn(pipeIn, tempId, pipelines);
+			if (error) {
+				message.error(error);
+				return false;
+			}
+			if (editingRecord) {
+				setPipelines((prev) =>
+					prev.map((item) =>
+						item.id === editingRecord.id
+							? { ...item, sampleRoom, pipeIn }
+							: item,
+					),
+				);
+				message.success("编辑成功");
+				return;
+			}
+			const newItem: PipelineItem = {
+				id: `${buildingKey}-room-${Date.now()}`,
+				deviceCode: "",
+				deviceName: "",
+				sampleRoom,
+				pipeIn,
+				status: "closed",
+				buildingKey,
+				configType,
+			};
+			setPipelines((prev) => [newItem, ...prev]);
+			message.success("新增成功");
+			return;
+		}
+
 		if (editingRecord) {
 			setPipelines((prev) =>
 				prev.map((item) =>
@@ -76,6 +152,7 @@ const PipelineConfig = () => {
 			deviceCode: values.deviceCode.trim(),
 			deviceName: values.deviceName.trim(),
 			sampleRoom: values.sampleRoom.trim(),
+			pipeIn: "",
 			status: "closed",
 			buildingKey,
 			configType,
@@ -84,7 +161,56 @@ const PipelineConfig = () => {
 		message.success("新增成功");
 	};
 
-	const columns: ColumnsType<PipelineItem> = [
+	const roomColumns: ColumnsType<PipelineItem> = [
+		{
+			title: "房间号",
+			dataIndex: "sampleRoom",
+			key: "sampleRoom",
+			ellipsis: true,
+		},
+		{
+			title: "管道号（IN）",
+			dataIndex: "pipeIn",
+			key: "pipeIn",
+			render: (pipeIn: string, record) => {
+				const error = pipeInErrors[record.id];
+				return (
+					<div className={styles.pipeInCell}>
+						<Input
+							className={`${styles.pipeInInput} ${error ? styles.pipeInInputError : ""}`}
+							value={pipeIn}
+							status={error ? "error" : undefined}
+							maxLength={MAX_LENGTH_40}
+							inputMode="numeric"
+							placeholder="请输入管道号"
+							onChange={(e) =>
+								handlePipeInChange(record.id, e.target.value)
+							}
+						/>
+						{error ? (
+							<span className={styles.pipeInError}>{error}</span>
+						) : null}
+					</div>
+				);
+			},
+		},
+		{
+			title: "操作",
+			key: "actions",
+			width: "14%",
+			render: (_, record) => (
+				<button
+					type="button"
+					className={styles.saveBtn}
+					onClick={() => handleSave(record)}
+				>
+					保存
+				</button>
+			),
+		},
+	];
+
+	const deviceColumns: ColumnsType<PipelineItem> = [
 		{
 			title: "设备编码",
 			dataIndex: "deviceCode",
@@ -149,6 +275,8 @@ const PipelineConfig = () => {
 			},
 		},
 	];
+
+	const columns = configType === "room" ? roomColumns : deviceColumns;
 
 	return (
 		<div
@@ -222,6 +350,7 @@ const PipelineConfig = () => {
 
 			<EditModal
 				open={modalOpen}
+				configType={configType}
 				editingRecord={editingRecord}
 				getContainer={() => pageRef.current ?? document.body}
 				onCancel={() => setModalOpen(false)}
