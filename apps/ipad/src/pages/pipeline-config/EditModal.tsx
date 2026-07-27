@@ -167,7 +167,6 @@ const EditModal = ({
 				layout="vertical"
 				preserve={false}
 				className={styles.form}
-				requiredMark={false}
 			>
 				{isRoom ? (
 					<>

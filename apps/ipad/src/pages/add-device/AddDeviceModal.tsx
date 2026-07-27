@@ -119,7 +119,6 @@ const AddDeviceModal = ({
 				layout="vertical"
 				preserve={false}
 				className={styles.form}
-				requiredMark={false}
 			>
 				<Form.Item
 					name="deviceCode"
