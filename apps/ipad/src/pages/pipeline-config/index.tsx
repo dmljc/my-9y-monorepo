@@ -9,13 +9,13 @@ import {
 } from "react";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
 import EditModal from "./EditModal";
-import { MAX_LENGTH_40 } from "./formRules";
 import styles from "./index.module.css";
 import {
 	BUILDING_TABS,
 	CONFIG_TYPE_OPTIONS,
 	FLOW_RATE_REQUIRED_MSG,
 	getPipelinesByBuilding,
+	MAX_LENGTH_40,
 	PIPE_NO_REQUIRED_MSG,
 	type PipelineConfigType,
 	type PipelineFormValues,

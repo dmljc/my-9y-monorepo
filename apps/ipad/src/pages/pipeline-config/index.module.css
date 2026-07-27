@@ -183,50 +183,6 @@
 	background: #f6f9ff;
 }
 
-.statusRunning {
-	color: #ff3636;
-}
-
-.statusClosed {
-	color: #959595;
-}
-
-.actions {
-	display: inline-flex;
-	align-items: center;
-	gap: calc(16 / 1400 * 100cqw);
-}
-
-.actionBtn {
-	padding: 0;
-	border: none;
-	background: transparent;
-	font-family:
-		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
-		"Microsoft YaHei", sans-serif;
-	font-size: calc(19 / 1400 * 100cqw);
-	line-height: calc(22 / 1400 * 100cqw);
-	color: #0984ff;
-	cursor: pointer;
-}
-
-.actionBtn:hover {
-	color: #0670db;
-}
-
-.actionDash {
-	color: #959595;
-}
-
-.pipeInText {
-	display: inline-block;
-	max-width: 100%;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	vertical-align: middle;
-}
-
 .pipeFieldCell {
 	position: relative;
 	display: inline-flex;

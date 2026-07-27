@@ -67,12 +67,9 @@ export const CONFIG_TYPE_OPTIONS: {
 ];
 
 /**
- * 状态展示文案。
+ * 设备编码 / 名称 / 房间号 / 管道号最大长度。
  */
-export const STATUS_LABEL: Record<PipelineStatus, string> = {
-	running: "进行中",
-	closed: "已关闭",
-};
+export const MAX_LENGTH_40 = 40;
 
 /**
  * 系统中已存在的管道号（mock 白名单，仅数字；IN / OUT 共用）。
