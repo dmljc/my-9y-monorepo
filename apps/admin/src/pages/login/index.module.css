@@ -1,51 +1,63 @@
-/* 蓝湖设计稿基准：2800×1840（按 @2x → 1400×920 逻辑像素） */
-
 .login {
-	position: relative;
 	height: 100dvh;
 	display: flex;
-	align-items: center;
-	justify-content: flex-end;
 	overflow: hidden;
-	padding-right: clamp(24px, 4.43vw, 62px);
-	background: #d1e2f8;
+	background: #fff;
 }
 
-.bgImage {
-	position: absolute;
-	inset: 0;
-	width: 100%;
-	height: 100%;
+.heroImage {
+	flex: 1 1 58%;
+	min-width: 0;
+	align-self: stretch;
 	object-fit: cover;
 	object-position: left center;
 	pointer-events: none;
 	user-select: none;
+	background: linear-gradient(
+		90deg,
+		rgb(249, 248, 253) 0%,
+		rgb(234, 240, 254) 100%
+	);
 }
 
 .panel {
-	position: relative;
-	z-index: 1;
-	box-sizing: border-box;
-	width: min(503px, calc(100vw - 48px));
-	padding: 72px 52px 70px;
-	border-radius: 24px;
-	background: rgba(255, 255, 255, 0.78);
-	border: 1px solid rgba(255, 255, 255, 0.9);
-	box-shadow: 0 12px 48px rgba(80, 130, 200, 0.16);
-	backdrop-filter: blur(24px);
-	-webkit-backdrop-filter: blur(24px);
+	flex: 0 0 42%;
+	min-width: 360px;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: clamp(24px, 6.67vh, 48px) 40px;
+	overflow-y: auto;
+	background: #fff;
+}
+
+.title,
+.subtitle,
+.form {
+	width: 100%;
+	max-width: 480px;
 }
 
 .title {
-	margin: 0 0 33px;
-	font-size: 26px;
-	font-weight: 600;
-	line-height: 36px;
-	color: #000;
+	margin: 0 0 8px;
+	font-size: clamp(24px, 4.44vh, 32px);
+	font-weight: 500;
+	line-height: clamp(36px, 6.67vh, 48px);
+	color: #1b1b1b;
+}
+
+.subtitle {
+	display: block;
+	margin-bottom: clamp(20px, 5.56vh, 56px);
+	font-size: clamp(16px, 2.78vh, 20px);
+	line-height: clamp(24px, 3.89vh, 28px);
+	color: #5185be;
 }
 
 .form :global(.ant-form-item) {
-	margin-bottom: 24px;
+	margin-bottom: clamp(12px, 4.03vh, 29px);
 }
 
 .form :global(.ant-form-item-explain-error) {
@@ -53,20 +65,20 @@
 }
 
 .input {
-	height: 50px;
-	border: none;
-	border-radius: 24px;
-	background: #fff;
+	height: clamp(48px, 8.33vh, 60px);
+	border: 1px solid transparent;
+	border-radius: 5px;
+	background: #f6f6f6;
 	font-size: 16px;
-	box-shadow: 0 2px 10px rgba(120, 160, 210, 0.12);
+	box-shadow: none;
 }
 
 .input:hover,
 .input:focus,
 .input:focus-within {
-	background: #fff;
+	background: #f6f6f6;
 	border-color: transparent;
-	box-shadow: 0 2px 12px rgba(120, 160, 210, 0.18);
+	box-shadow: none;
 }
 
 .input :global(.ant-input),
@@ -88,43 +100,69 @@
 
 .input :global(.ant-input-prefix) {
 	margin-inline-end: 12px;
-	color: #ccc;
-	font-size: 16px;
+	color: #666;
+	font-size: 18px;
 }
 
 .input :global(.ant-input-suffix) {
-	color: #ccc;
+	color: #666;
 }
 
 .options {
-	margin-bottom: 65px;
+	margin-bottom: clamp(12px, 4.03vh, 29px);
 }
 
 .remember :global(.ant-checkbox-label) {
-	color: #7b7e81;
-	font-size: 14px;
-}
-
-.remember :global(.ant-checkbox-inner) {
-	border-radius: 2px;
-	border-color: #979797;
+	color: #666;
+	font-size: 20px;
 }
 
 .submit {
-	height: 50px;
-	border-radius: 24px;
-	font-size: 16px;
-	font-weight: 500;
-	background: #75b7fc;
-	border-color: #75b7fc;
+	height: clamp(48px, 8.33vh, 60px);
+	border-radius: 8px;
+	font-size: 17px;
+	font-weight: 600;
+	background: #0984ff;
+	border-color: #0984ff;
 	box-shadow: none;
 }
 
 .submit:hover {
-	background: #5fa8f5;
-	border-color: #5fa8f5;
+	background: #0076eb;
+	border-color: #0076eb;
 }
 
 .submitItem {
 	margin-bottom: 0;
+}
+
+@media (max-width: 992px) {
+	.login {
+		flex-direction: column;
+	}
+
+	.heroImage {
+		display: none;
+	}
+
+	.panel {
+		flex: 1 1 auto;
+		min-width: 0;
+		padding: 40px 24px;
+	}
+
+	.title {
+		font-size: 28px;
+		line-height: 40px;
+	}
+
+	.subtitle {
+		margin-bottom: 40px;
+		font-size: 18px;
+		line-height: 26px;
+	}
+
+	.remember :global(.ant-checkbox-label) {
+		font-size: 16px;
+	}
 }

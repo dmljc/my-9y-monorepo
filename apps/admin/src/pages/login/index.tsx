@@ -2,7 +2,7 @@ import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { Button, Checkbox, Form, Input, Typography } from "antd";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import loginBg from "@/assets/login/login-bg.webp";
+import loginHero from "@/assets/login/login-hero.webp";
 import { getDefaultPathForTop } from "@/layout/menuConfig";
 import { useMenuStore } from "@/layout/menuStore";
 import {
@@ -43,8 +43,8 @@ const Login = () => {
 	return (
 		<div className={styles.login} data-page="login">
 			<img
-				className={styles.bgImage}
-				src={loginBg}
+				className={styles.heroImage}
+				src={loginHero}
 				alt=""
 				aria-hidden
 				draggable={false}
@@ -52,8 +52,11 @@ const Login = () => {
 
 			<div className={styles.panel}>
 				<Typography.Title level={2} className={styles.title}>
-					{import.meta.env.VITE_APP_TITLE}
+					欢迎回来
 				</Typography.Title>
+				<Typography.Text className={styles.subtitle}>
+					请使用您的账号登录系统
+				</Typography.Text>
 
 				<Form<LoginFormValues>
 					form={form}
