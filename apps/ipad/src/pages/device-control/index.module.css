@@ -1,7 +1,7 @@
 /*
   蓝湖自定义画布：1400×920 → 标注即 CSS 逻辑像素
   缩放统一：calc(n / 1400 * 100cqw)；宽高同基准，勿混用 2800/1840 或 cqh
-  设备卡面：active-bg / un-active-bg（设计稿 152×80）
+  设备卡面：active_bg / un_active_bg（设计稿 152×80）
 */
 .deviceControl {
 	width: 100%;
@@ -67,7 +67,7 @@
 
 .sidebar {
 	flex: none;
-	width: calc(370 / 1400 * 100cqw);
+	width: calc(370 / 1400 * 100%);
 	overflow: auto;
 	padding: calc(20 / 1400 * 100cqw) calc(24 / 1400 * 100cqw);
 	border-radius: calc(16 / 1400 * 100cqw);
@@ -110,7 +110,7 @@
 	box-sizing: border-box;
 }
 
-/* 选中态直接换 active-bg（稿面已含描边） */
+/* 选中态直接换 active_bg（稿面已含描边） */
 .deviceCardActive .deviceThumb {
 	background-image: var(--thumb-bg-active);
 }
