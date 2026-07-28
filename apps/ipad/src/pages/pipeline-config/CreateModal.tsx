@@ -1,4 +1,3 @@
-import type { InputProps } from "antd";
 import { Form, Input, Modal } from "antd";
 import type { Rule } from "antd/es/form";
 import { useEffect, useState } from "react";
@@ -85,29 +84,6 @@ interface CreateModalProps {
 }
 
 /**
- * 表单输入框：校验错误文案展示在输入框内（placeholder），不撑高 Form.Item。
- */
-const FormInput = ({
-	fallbackPlaceholder,
-	className,
-	...rest
-}: InputProps & { fallbackPlaceholder: string }) => {
-	const { status, errors } = Form.Item.useStatus();
-	const errorText =
-		status === "error" && typeof errors[0] === "string" ? errors[0] : "";
-	const hasError = Boolean(errorText);
-
-	return (
-		<Input
-			{...rest}
-			status={hasError ? "error" : undefined}
-			placeholder={hasError ? errorText : fallbackPlaceholder}
-			className={`${className ?? ""} ${hasError ? styles.formInputError : ""}`.trim()}
-		/>
-	);
-};
-
-/**
  * 新增 / 编辑管道配置弹窗（样式对齐添加设备弹窗）。
  */
 const CreateModal = ({
@@ -174,10 +150,9 @@ const CreateModal = ({
 							name="sampleRoom"
 							label="房间号"
 							rules={sampleRoomRules}
-							help=""
 						>
-							<FormInput
-								fallbackPlaceholder="请输入房间号"
+							<Input
+								placeholder="请输入房间号"
 								maxLength={MAX_LENGTH_40}
 							/>
 						</Form.Item>
@@ -185,13 +160,12 @@ const CreateModal = ({
 							name="pipeIn"
 							label="管道号（IN）"
 							rules={pipeInRules}
-							help=""
 							getValueFromEvent={(e) =>
 								sanitizePipeNoInput(e.target.value)
 							}
 						>
-							<FormInput
-								fallbackPlaceholder="请输入管道号"
+							<Input
+								placeholder="请输入管道号"
 								maxLength={MAX_LENGTH_40}
 								inputMode="numeric"
 							/>
@@ -203,10 +177,9 @@ const CreateModal = ({
 							name="deviceCode"
 							label="设备编码"
 							rules={deviceCodeRules}
-							help=""
 						>
-							<FormInput
-								fallbackPlaceholder="请输入编码"
+							<Input
+								placeholder="请输入编码"
 								maxLength={MAX_LENGTH_40}
 							/>
 						</Form.Item>
@@ -214,10 +187,9 @@ const CreateModal = ({
 							name="deviceName"
 							label="设备名称"
 							rules={deviceNameRules}
-							help=""
 						>
-							<FormInput
-								fallbackPlaceholder="请输入设备名称"
+							<Input
+								placeholder="请输入设备名称"
 								maxLength={MAX_LENGTH_40}
 							/>
 						</Form.Item>
@@ -225,13 +197,12 @@ const CreateModal = ({
 							name="pipeOut"
 							label="管道号（OUT）"
 							rules={pipeOutRules}
-							help=""
 							getValueFromEvent={(e) =>
 								sanitizePipeNoInput(e.target.value)
 							}
 						>
-							<FormInput
-								fallbackPlaceholder="请输入管道号"
+							<Input
+								placeholder="请输入管道号"
 								maxLength={MAX_LENGTH_40}
 								inputMode="numeric"
 							/>
@@ -240,13 +211,12 @@ const CreateModal = ({
 							name="flowRate"
 							label="流量（L/min）"
 							rules={flowRateRules}
-							help=""
 							getValueFromEvent={(e) =>
 								sanitizeFlowRateInput(e.target.value)
 							}
 						>
-							<FormInput
-								fallbackPlaceholder="请输入流量"
+							<Input
+								placeholder="请输入流量"
 								inputMode="decimal"
 							/>
 						</Form.Item>

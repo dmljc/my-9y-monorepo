@@ -385,23 +385,7 @@
 }
 
 .form :global(.ant-form-item) {
-	margin-bottom: calc(21 / 1400 * 100cqw);
-}
-
-/* 校验前后保持同一外边距，避免 with-help 导致高度跳动 */
-.form :global(.ant-form-item-with-help) {
-	margin-bottom: calc(21 / 1400 * 100cqw);
-}
-
-.form :global(.ant-form-item:last-child),
-.form :global(.ant-form-item-with-help:last-child) {
-	margin-bottom: 0;
-}
-
-/* 错误文案改在输入框内展示，隐藏下方 explain 占位 */
-.form :global(.ant-form-item-explain),
-.form :global(.ant-form-item-extra) {
-	display: none;
+	margin-bottom: 28px;
 }
 
 .form :global(.ant-form-item-label) {
@@ -416,6 +400,13 @@
 	font-size: calc(16 / 1400 * 100cqw);
 	line-height: calc(22 / 1400 * 100cqw);
 	color: #000000;
+}
+
+.form :global(.ant-form-item-explain-error) {
+	font-family:
+		"HarmonyOS_Sans_SC", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(14 / 1400 * 100cqw);
 }
 
 .form :global(.ant-input) {
@@ -436,26 +427,9 @@
 	font-size: 15px;
 }
 
-.formInputError:global(.ant-input),
-.formInputError:global(.ant-input-status-error) {
-	border-color: #ff4d4f;
-}
-
-.formInputError:global(.ant-input::placeholder) {
-	color: #ff4d4f;
-	font-size: 15px;
-}
-
 .form :global(.ant-input:hover),
 .form :global(.ant-input:focus),
 .form :global(.ant-input-focused) {
 	border-color: #0984ff;
-	box-shadow: none;
-}
-
-.formInputError:global(.ant-input:hover),
-.formInputError:global(.ant-input:focus),
-.formInputError:global(.ant-input-focused) {
-	border-color: #ff4d4f;
 	box-shadow: none;
 }

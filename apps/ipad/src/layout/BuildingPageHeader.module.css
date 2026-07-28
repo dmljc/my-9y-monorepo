@@ -54,7 +54,9 @@
 .tab {
 	position: relative;
 	box-sizing: content-box;
-	width: calc(44 / 1400 * 100cqw);
+	/* 蓝湖稿约 44，按文案自适应，避免长厂房名溢出重叠 */
+	min-width: calc(44 / 1400 * 100cqw);
+	width: auto;
 	height: calc(28 / 1400 * 100cqw);
 	padding: 0 0 calc(12 / 1400 * 100cqw);
 	border: none;

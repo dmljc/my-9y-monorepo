@@ -76,6 +76,72 @@
 	width: 100%;
 }
 
+.table :global(.ant-table-pagination.ant-pagination) {
+	margin: calc(20 / 1400 * 100cqw) 0 0;
+}
+
+.table :global(.ant-pagination) {
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(16 / 1400 * 100cqw);
+	color: #000000;
+}
+
+.table :global(.ant-pagination .ant-pagination-item),
+.table :global(.ant-pagination .ant-pagination-prev),
+.table :global(.ant-pagination .ant-pagination-next),
+.table :global(.ant-pagination .ant-pagination-jump-prev),
+.table :global(.ant-pagination .ant-pagination-jump-next) {
+	min-width: calc(32 / 1400 * 100cqw);
+	height: calc(32 / 1400 * 100cqw);
+	line-height: calc(30 / 1400 * 100cqw);
+	margin-inline-end: calc(8 / 1400 * 100cqw);
+	border-radius: calc(6 / 1400 * 100cqw);
+	font-size: calc(16 / 1400 * 100cqw);
+}
+
+.table :global(.ant-pagination .ant-pagination-item a) {
+	padding: 0 calc(6 / 1400 * 100cqw);
+	color: #000000;
+}
+
+.table :global(.ant-pagination .ant-pagination-item-active) {
+	border-color: #0984ff;
+	background: #fff;
+}
+
+.table :global(.ant-pagination .ant-pagination-item-active a) {
+	color: #0984ff;
+}
+
+.table :global(.ant-pagination .ant-pagination-options) {
+	margin-inline-start: calc(12 / 1400 * 100cqw);
+}
+
+.table :global(.ant-pagination .ant-select-selector) {
+	height: calc(32 / 1400 * 100cqw);
+	border-radius: calc(6 / 1400 * 100cqw);
+	font-size: calc(16 / 1400 * 100cqw);
+}
+
+.table :global(.ant-pagination .ant-select-selection-item) {
+	line-height: calc(30 / 1400 * 100cqw);
+}
+
+.table :global(.ant-pagination .ant-pagination-options-quick-jumper input) {
+	width: calc(50 / 1400 * 100cqw);
+	height: calc(32 / 1400 * 100cqw);
+	margin-inline: calc(8 / 1400 * 100cqw);
+	border-radius: calc(6 / 1400 * 100cqw);
+	font-size: calc(16 / 1400 * 100cqw);
+}
+
+.table :global(.ant-pagination .ant-pagination-total-text) {
+	margin-inline-end: calc(12 / 1400 * 100cqw);
+	color: #666666;
+}
+
 .table :global(.ant-table) {
 	background: transparent;
 	font-family:
@@ -210,8 +276,7 @@
 }
 
 .modal :global(.ant-modal-body) {
-	padding: calc(24 / 1400 * 100cqw) calc(24 / 1400 * 100cqw)
-		calc(51 / 1400 * 100cqw);
+	padding: calc(24 / 1400 * 100cqw);
 }
 
 .modal :global(.ant-modal-footer) {
@@ -261,24 +326,12 @@
 }
 
 .form :global(.ant-form-item) {
-	margin-bottom: calc(21 / 1400 * 100cqw);
+	margin-bottom: 28px;
 }
 
-/* 校验前后保持同一外边距，避免 with-help 导致高度跳动 */
-.form :global(.ant-form-item-with-help) {
-	margin-bottom: calc(21 / 1400 * 100cqw);
-}
-
-.form :global(.ant-form-item:last-child),
-.form :global(.ant-form-item-with-help:last-child) {
+/* .form :global(.ant-form-item:last-child) {
 	margin-bottom: 0;
-}
-
-/* 错误文案改在输入框内展示，隐藏下方 explain 占位 */
-.form :global(.ant-form-item-explain),
-.form :global(.ant-form-item-extra) {
-	display: none;
-}
+} */
 
 .form :global(.ant-form-item-label) {
 	padding: 0 0 calc(15 / 1400 * 100cqw);
@@ -292,6 +345,13 @@
 	font-size: calc(16 / 1400 * 100cqw);
 	line-height: calc(22 / 1400 * 100cqw);
 	color: #000000;
+}
+
+.form :global(.ant-form-item-explain-error) {
+	font-family:
+		"HarmonyOS_Sans_SC", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(14 / 1400 * 100cqw);
 }
 
 .form :global(.ant-input) {
@@ -312,26 +372,9 @@
 	font-size: 15px;
 }
 
-.formInputError:global(.ant-input),
-.formInputError:global(.ant-input-status-error) {
-	border-color: #ff4d4f;
-}
-
-.formInputError:global(.ant-input::placeholder) {
-	color: #ff4d4f;
-	font-size: 15px;
-}
-
 .form :global(.ant-input:hover),
 .form :global(.ant-input:focus),
 .form :global(.ant-input-focused) {
 	border-color: #0984ff;
-	box-shadow: none;
-}
-
-.formInputError:global(.ant-input:hover),
-.formInputError:global(.ant-input:focus),
-.formInputError:global(.ant-input-focused) {
-	border-color: #ff4d4f;
 	box-shadow: none;
 }

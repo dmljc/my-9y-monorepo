@@ -1,0 +1,67 @@
+import { request } from "@/utils";
+import type { TabletDevicePayload } from "./interface";
+
+/**
+ * 查询厂房列表。
+ */
+export const listBuildings = (): Promise<any> => {
+	return request.get("/iiot/alarm/buildings");
+};
+
+/**
+ * 按厂房查询设备列表（buildingId 必填）。
+ *
+ * @param {number} - 厂房 ID。
+ */
+export const list = (buildingId: number): Promise<any> => {
+	return request.get("/iiot/tablet/ledger/list", {
+		params: { buildingId },
+	});
+};
+
+/**
+ * 根据设备编码查询台账（新增时自动填充）。
+ *
+ * @param {string} - 设备编码。
+ */
+export const lookup = (deviceCode: string): Promise<any> => {
+	return request.get("/iiot/tablet/ledger/lookup", {
+		params: { deviceCode },
+	});
+};
+
+/**
+ * 新增设备。
+ *
+ * @param {TabletDevicePayload} - 提交体。
+ */
+export const create = (data: TabletDevicePayload): Promise<any> => {
+	return request.post("/iiot/tablet/ledger", data);
+};
+
+/**
+ * 编辑设备（仅已关闭可编辑）。
+ *
+ * @param {TabletDevicePayload} - 含 id 的提交体。
+ */
+export const update = (data: TabletDevicePayload): Promise<any> => {
+	return request.put("/iiot/tablet/ledger", data);
+};
+
+/**
+ * 删除设备（仅已关闭可删除）。
+ *
+ * @param {string} - 设备 id，多个用逗号分隔。
+ */
+export const remove = (ids: string): Promise<any> => {
+	return request.delete(`/iiot/tablet/ledger/${ids}`);
+};
+
+/**
+ * 切换设备运行状态（运行中 / 已关闭）。
+ *
+ * @param {number} - 设备 id。
+ */
+export const toggleStatus = (id: number): Promise<any> => {
+	return request.put(`/iiot/tablet/ledger/${id}/status`);
+};
