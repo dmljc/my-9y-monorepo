@@ -3,7 +3,6 @@ import type { MenuProps } from "antd";
 import { Avatar, Button, Dropdown, Space } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/user";
-import { clearToken } from "@/utils";
 import styles from "./UserDropdown.module.css";
 
 const userMenuItems: MenuProps["items"] = [
@@ -16,14 +15,12 @@ const userMenuItems: MenuProps["items"] = [
 
 const UserDropdown = () => {
 	const navigate = useNavigate();
-	const clearUser = useUserStore((state) => state.clearUser);
+	const logout = useUserStore((state) => state.logout);
 
-	const onMenuClick: MenuProps["onClick"] = ({ key }) => {
-		if (key === "logout") {
-			clearToken();
-			clearUser();
-			navigate("/login");
-		}
+	const onMenuClick: MenuProps["onClick"] = async ({ key }) => {
+		if (key !== "logout") return;
+		await logout();
+		navigate("/login");
 	};
 
 	return (

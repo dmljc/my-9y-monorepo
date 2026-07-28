@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { clearToken, setToken } from "@/utils";
-import { getInfo, login as loginApi } from "./api";
+import { getInfo, login as loginApi, logout as logoutApi } from "./api";
 import type { LoginParams, UserInfo } from "./interface";
 
 /** localStorage 中缓存用户信息的键名。 */
@@ -42,6 +42,7 @@ interface UserState {
 	roles: string[];
 	loading: boolean;
 	login: (params: LoginParams) => Promise<boolean>;
+	logout: () => Promise<void>;
 	fetchUserInfo: () => Promise<boolean>;
 	restoreUser: () => boolean;
 	clearUser: () => void;
@@ -85,6 +86,23 @@ export const useUserStore = create<UserState>((set, get) => ({
 			return false;
 		} finally {
 			set({ loading: false });
+		}
+	},
+	/**
+	 * 退出登录：调用登出接口使服务端 token 失效，并清空本地 token 与用户缓存。
+	 * 接口失败时仍清理本地状态，保证用户可退出。
+	 *
+	 * @returns {void} - 无返回值。
+	 */
+	logout: async () => {
+		try {
+			await logoutApi();
+		} catch {
+			// 接口失败仍清理本地态
+		} finally {
+			clearToken();
+			clearUserCache();
+			set(defaultUserState);
 		}
 	},
 	/**

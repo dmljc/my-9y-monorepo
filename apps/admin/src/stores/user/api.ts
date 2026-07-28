@@ -8,3 +8,7 @@ export const login = (data: LoginParams): Promise<LoginResponse> => {
 export const getInfo = (): Promise<GetInfoResponse> => {
 	return request.get("/getInfo");
 };
+
+export const logout = (): Promise<void> => {
+	return request.post("/logout");
+};

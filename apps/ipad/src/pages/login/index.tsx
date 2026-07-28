@@ -1,5 +1,5 @@
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { App, Button, Checkbox, Form, Input, Typography } from "antd";
+import { Button, Checkbox, Form, Input, Typography } from "antd";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import loginBg from "@/assets/login/login-bg.webp";
@@ -19,7 +19,6 @@ import {
 
 const Login = () => {
 	const navigate = useNavigate();
-	const { message } = App.useApp();
 	const [form] = Form.useForm<LoginFormValues>();
 	const login = useUserStore((state) => state.login);
 	const loading = useUserStore((state) => state.loading);
@@ -34,10 +33,7 @@ const Login = () => {
 	const onFinish = async (values: LoginFormValues) => {
 		const { username, password } = values;
 		const ok = await login({ username, password });
-		if (!ok) {
-			message.error("登录失败，请重试");
-			return;
-		}
+		if (!ok) return;
 
 		setRememberMe(values);
 		navigate(DEFAULT_HOME_PATH);
