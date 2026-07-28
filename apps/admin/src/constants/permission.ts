@@ -1,6 +1,5 @@
 /** 警告列表 - 按钮权限码。 */
 export const PERM_WARNING_LIST = {
-	VIEW_DATA: "warning:list:view-data",
 	RESOLVE: "warning:list:resolve",
 } as const;
 

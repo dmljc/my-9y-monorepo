@@ -4,7 +4,6 @@ export type TopMenuKey =
 	| "statistics"
 	| "warning"
 	| "device"
-	| "historicalData"
 	| "modelData"
 	| "reverseControl"
 	| "system";
@@ -63,7 +62,6 @@ const TOP_ROUTE_CONFIGS: RouteConfig[] = [
 		path: "/device",
 		defaultPath: "/device/inspection-ledger",
 	},
-	{ key: "historicalData", label: "历史数据", path: "/historical-data" },
 	{ key: "modelData", label: "物模型数据", path: "/model-data" },
 	{ key: "reverseControl", label: "设备反控", path: "/reverse-control" },
 	{

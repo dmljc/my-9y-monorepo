@@ -2,7 +2,6 @@ import { App, Button, DatePicker, Select, Table, Tag } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import cardBlueCircleImg from "@/assets/warning/card-blue-circle.png";
 import cardGreenCircleImg from "@/assets/warning/card-green-circle.png";
 import cardOrangeCircleImg from "@/assets/warning/card-orange-circle.png";
@@ -14,7 +13,6 @@ import { PERM_WARNING_LIST } from "@/constants/permission";
 import { list, processWarning, toListParams } from "@/pages/warning/api";
 import {
 	buildStatCards,
-	buildWarningDeviceDataPath,
 	LEVEL_COLOR,
 	LEVEL_LABEL,
 	STATUS_LABEL,
@@ -64,7 +62,6 @@ function StatCardView({ card }: { card: StatCard }) {
 
 const WarningList = () => {
 	const { message } = App.useApp();
-	const navigate = useNavigate();
 
 	const [dateRange, setDateRange] = useState<[string, string] | null>(null);
 	const [status, setStatus] = useState<StatusFilter>("all");
@@ -211,17 +208,6 @@ const WarningList = () => {
 			fixed: "right",
 			render: (_: unknown, record: WarningItem) => (
 				<div className={styles.actions}>
-					<Access code={PERM_WARNING_LIST.VIEW_DATA}>
-						<Button
-							type="link"
-							size="small"
-							onClick={() =>
-								navigate(buildWarningDeviceDataPath(record))
-							}
-						>
-							查看前后15分钟数据
-						</Button>
-					</Access>
 					{record.status === "unprocessed" ? (
 						<Access code={PERM_WARNING_LIST.RESOLVE}>
 							<Button
