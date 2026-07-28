@@ -3,6 +3,7 @@ import { BarChart as BarChartSeries } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
+import { useMemo } from "react";
 import { useEchartsInit } from "../hooks/useEchartsInit";
 import styles from "./BarChart.module.css";
 
@@ -138,7 +139,41 @@ function buildBarChartOption({
 }
 
 const BarChart = (props: BarChartProps) => {
-	const chartRef = useEchartsInit(buildBarChartOption(resolveProps(props)));
+	const {
+		xAxisData,
+		yAxisData,
+		yAxis,
+		barColor = DEFAULT_BAR_COLOR,
+		barWidth = DEFAULT_BAR_WIDTH,
+		valueFormatter = defaultValueFormatter,
+	} = props;
+
+	// 依赖用 yAxis 标量字段，避免父组件每次 buildBarYAxis() 新建对象导致 option 失效
+	const option = useMemo(
+		() =>
+			buildBarChartOption(
+				resolveProps({
+					xAxisData,
+					yAxisData,
+					yAxis,
+					barColor,
+					barWidth,
+					valueFormatter,
+				}),
+			),
+		[
+			xAxisData,
+			yAxisData,
+			yAxis.min,
+			yAxis.max,
+			yAxis.interval,
+			barColor,
+			barWidth,
+			valueFormatter,
+		],
+	);
+
+	const chartRef = useEchartsInit(option);
 
 	return <div ref={chartRef} className={styles.container} />;
 };
