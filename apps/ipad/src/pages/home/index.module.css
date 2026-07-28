@@ -27,10 +27,10 @@
 	font-display: swap;
 }
 
-/* 标题：680×98 / 字号 40 / letter-spacing 5；顶 225、左 37.5 */
+/* 标题：680×98 / 字号 40 / letter-spacing 5；顶 190、左 37.5 */
 .header {
 	position: absolute;
-	top: calc(225 / 1400 * 100cqw);
+	top: calc(190 / 1400 * 100cqw);
 	left: calc(37.5 / 1400 * 100cqw);
 	width: calc(680 / 1400 * 100cqw);
 	height: calc(98 / 1400 * 100cqw);

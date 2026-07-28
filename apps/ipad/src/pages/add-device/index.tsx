@@ -7,6 +7,7 @@ import {
 	list,
 	listBuildings,
 	remove,
+	switchBuilding,
 	toggleStatus,
 	update,
 } from "./api";
@@ -17,6 +18,7 @@ import {
 	buildCreatePayload,
 	buildUpdatePayload,
 	DEFAULT_PAGE_SIZE,
+	deriveMasterOn,
 	mapRowToDevice,
 	normalizeBuildingTabs,
 	PAGE_SIZE_OPTIONS,
@@ -46,6 +48,7 @@ const AddDevice = () => {
 			const data = await list(buildingId);
 			const rows = parseDeviceList(data).map(mapRowToDevice);
 			setDevices(rows);
+			setMasterOn(deriveMasterOn(rows));
 			setPageNum((prev) => {
 				const maxPage = Math.max(
 					1,
@@ -92,13 +95,21 @@ const AddDevice = () => {
 		setPageSize(pagination.pageSize ?? DEFAULT_PAGE_SIZE);
 	};
 
-	const handleMasterChange = (checked: boolean) => {
-		// 厂房总开关后端当前不可用，先保留本地态与提示。
-		setMasterOn(checked);
-		const name = currentBuilding?.label ?? "厂房";
-		message.success(
-			checked ? `“${name}”总开关已开启` : `“${name}”总开关已关闭`,
+	const handleMasterChange = async (checked: boolean) => {
+		if (!currentBuilding) {
+			message.warning("暂无可用厂房");
+			return;
+		}
+		const name = currentBuilding.label;
+		await switchBuilding(
+			currentBuilding.buildingId,
+			checked ? "on" : "off",
 		);
+		setMasterOn(checked);
+		message.success(
+			checked ? `“${name}”厂房总开关已开启` : `“${name}”厂房总开关已关闭`,
+		);
+		await loadDevices(currentBuilding.buildingId);
 	};
 
 	const handleAdd = () => {

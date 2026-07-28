@@ -108,6 +108,17 @@ export const parseDeviceList = (data: unknown): TabletDeviceRow[] => {
 };
 
 /**
+ * 根据设备列表推断厂房总开关状态：全部已关闭视为关，否则为开。
+ *
+ * @param {Device[]} - 当前厂房设备列表。
+ * @returns {boolean} - 总开关是否开启。
+ */
+export const deriveMasterOn = (devices: Device[]): boolean => {
+	if (!devices.length) return true;
+	return devices.some((item) => item.status === "running");
+};
+
+/**
  * 组装新增请求体。
  *
  * @param {DeviceFormValues} - 表单值。

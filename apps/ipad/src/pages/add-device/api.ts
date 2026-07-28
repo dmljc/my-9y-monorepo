@@ -65,3 +65,18 @@ export const remove = (ids: string): Promise<any> => {
 export const toggleStatus = (id: number): Promise<any> => {
 	return request.put(`/iiot/tablet/ledger/${id}/status`);
 };
+
+/**
+ * 厂房总开关（on / off），会联动该厂房设备状态。
+ *
+ * @param {number} - 厂房 ID。
+ * @param {"on" | "off"} - 开关动作。
+ */
+export const switchBuilding = (
+	buildingId: number,
+	action: "on" | "off",
+): Promise<any> => {
+	return request.put(`/iiot/tablet/device/building/${buildingId}/switch`, {
+		action,
+	});
+};
