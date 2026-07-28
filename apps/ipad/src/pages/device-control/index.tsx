@@ -19,17 +19,40 @@ const DeviceControl = () => {
 	const [devices, setDevices] = useState<DeviceItem[]>(() =>
 		getDevicesByBuilding(BUILDING_TABS[0].key),
 	);
-	const [selectedId, setSelectedId] = useState(devices[0]?.id ?? "");
+	/** 各厂房上次选中的设备 id，切 Tab 回来时恢复，避免总是落到第一个房间。 */
+	const [selectedIdByBuilding, setSelectedIdByBuilding] = useState<
+		Record<string, string>
+	>(() => {
+		const initialKey = BUILDING_TABS[0].key;
+		const initial = getDevicesByBuilding(initialKey)[0];
+		return initial ? { [initialKey]: initial.id } : {};
+	});
 	const [masterOn, setMasterOn] = useState(true);
 
+	const selectedId = selectedIdByBuilding[buildingKey] ?? "";
 	const selected =
 		devices.find((item) => item.id === selectedId) ?? devices[0];
 
 	useEffect(() => {
 		const next = getDevicesByBuilding(buildingKey);
 		setDevices(next);
-		setSelectedId(next[0]?.id ?? "");
+		setSelectedIdByBuilding((prev) => {
+			const remembered = prev[buildingKey];
+			if (remembered && next.some((item) => item.id === remembered)) {
+				return prev;
+			}
+			const fallback = next[0]?.id;
+			if (!fallback) return prev;
+			return { ...prev, [buildingKey]: fallback };
+		});
 	}, [buildingKey]);
+
+	const handleSelectDevice = (id: string) => {
+		setSelectedIdByBuilding((prev) => ({
+			...prev,
+			[buildingKey]: id,
+		}));
+	};
 
 	const handleMasterChange = (checked: boolean) => {
 		setMasterOn(checked);
@@ -85,7 +108,9 @@ const DeviceControl = () => {
 									key={device.id}
 									type="button"
 									className={`${styles.deviceCard} ${active ? styles.deviceCardActive : ""}`}
-									onClick={() => setSelectedId(device.id)}
+									onClick={() =>
+										handleSelectDevice(device.id)
+									}
 								>
 									<div className={styles.deviceThumb}>
 										<span className={styles.deviceCode}>
