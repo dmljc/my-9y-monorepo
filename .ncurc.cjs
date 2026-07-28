@@ -11,9 +11,11 @@
  * 注意：
  *   - `pnpm ncu` 仅输出可升级版本，不修改文件
  *   - `pnpm ncu:update` 会写回 package.json / catalog，可能丢失 YAML 部分注释，升级后请 diff
+ *   - typescript 暂钉 6.0.3（6.x 最新稳定版），不跟 ncu 升到 7，待生态就绪后再迁
  */
 
 module.exports = {
 	workspaces: true,
 	dep: "prod,dev,peer,catalog",
+	reject: ["typescript"],
 };
