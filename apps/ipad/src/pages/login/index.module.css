@@ -56,19 +56,40 @@
 	color: #000;
 }
 
-/* 输入框间距：48 → 24 */
+/* 输入框间距：48 → 28 */
 .form :global(.ant-form-item) {
-	margin-bottom: calc(24 / 1400 * 100cqw);
+	margin-bottom: calc(28 / 1400 * 100cqw);
 }
 
 .form :global(.ant-form-item-explain-error) {
 	margin-top: calc(4 / 1400 * 100cqw);
+	font-size: calc(14 / 1400 * 100cqw);
+	line-height: calc(20 / 1400 * 100cqw);
 }
 
-/* 输入：800×100 / radius 24 → 400×50 / radius 12 */
+/* 关闭报错文案切换时的折叠/位移动画，避免「请输入密码」与长度提示互切时跳动 */
+.form :global(.ant-form-show-help) {
+	transition: none;
+}
+
+.form :global(.ant-form-show-help-item) {
+	height: auto;
+	opacity: 1;
+	transform: none;
+	overflow: visible;
+	transition: none;
+}
+
+.form :global(.ant-form-show-help-item-leave),
+.form :global(.ant-form-show-help-item-leave-active) {
+	display: none;
+}
+
+/* 输入：800×100 / radius 24 → 400×50 / radius 12
+   用 transparent 1px 边框占位，避免清空触发校验后 error 边框把 placeholder 挤偏 */
 .input {
 	height: calc(50 / 1400 * 100cqw);
-	border: none;
+	border: 1px solid transparent;
 	border-radius: calc(12 / 1400 * 100cqw);
 	background: #fff;
 	font-size: calc(19 / 1400 * 100cqw);
@@ -83,6 +104,18 @@
 	border-color: transparent;
 	box-shadow: 0 calc(2 / 1400 * 100cqw) calc(12 / 1400 * 100cqw)
 		rgba(120, 160, 210, 0.18);
+}
+
+.input:global(.ant-input-status-error),
+.input:global(.ant-input-affix-wrapper-status-error),
+.input:global(.ant-input-status-error):hover,
+.input:global(.ant-input-affix-wrapper-status-error):hover,
+.input:global(.ant-input-status-error):focus,
+.input:global(.ant-input-affix-wrapper-status-error):focus,
+.input:global(.ant-input-status-error):focus-within,
+.input:global(.ant-input-affix-wrapper-status-error):focus-within {
+	background: #fff;
+	border-color: transparent;
 }
 
 .input :global(.ant-input),
@@ -103,9 +136,16 @@
 }
 
 .input :global(.ant-input-prefix) {
+	flex: none;
 	margin-inline-end: calc(12 / 1400 * 100cqw);
 	color: #ccc;
 	font-size: calc(20 / 1400 * 100cqw);
+}
+
+.input :global(input.ant-input) {
+	flex: 1;
+	min-width: 0;
+	padding: 0;
 }
 
 .input :global(.ant-input-suffix) {

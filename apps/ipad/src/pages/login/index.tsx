@@ -68,6 +68,7 @@ const Login = () => {
 				>
 					<Form.Item
 						name="username"
+						validateFirst
 						rules={[
 							{
 								required: true,
@@ -96,6 +97,7 @@ const Login = () => {
 
 					<Form.Item
 						name="password"
+						validateFirst
 						rules={[
 							{ required: true, message: "请输入密码" },
 							{
