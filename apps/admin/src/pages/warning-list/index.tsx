@@ -70,7 +70,7 @@ const WarningList = () => {
 	const [dataSource, setDataSource] = useState<WarningItem[]>([]);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
-	const [pageSize, setPageSize] = useState(10);
+	const [pageSize, setPageSize] = useState(20);
 	const [stats, setStats] = useState<WarningStats>({
 		totalToday: 0,
 		solvedToday: 0,
@@ -286,6 +286,7 @@ const WarningList = () => {
 						pageSize,
 						total,
 						showSizeChanger: true,
+						pageSizeOptions: ["10", "15", "20", "25", "50", "100"],
 						showQuickJumper: true,
 						showTotal: (count) => `共 ${count} 条`,
 					}}

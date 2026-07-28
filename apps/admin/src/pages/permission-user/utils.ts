@@ -74,7 +74,7 @@ export interface UserListResult {
 // ---------------------------------------------------------------------------
 
 /** 默认每页条数 */
-export const DEFAULT_PAGE_SIZE = 15;
+export const DEFAULT_PAGE_SIZE = 25;
 
 /** 姓名筛选时一次拉取的上限（后端 nickName 未生效，需客户端过滤） */
 const MAX_FETCH_PAGE_SIZE = 10_000;

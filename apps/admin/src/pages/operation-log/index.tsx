@@ -35,7 +35,7 @@ const OperationLog = () => {
 	const [dataSource, setDataSource] = useState<SysOperLog[]>([]);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
-	const [pageSize, setPageSize] = useState(15);
+	const [pageSize, setPageSize] = useState(25);
 
 	const buildQuery = (
 		p: number,
@@ -249,7 +249,7 @@ const OperationLog = () => {
 					pageSize,
 					total,
 					showSizeChanger: true,
-					pageSizeOptions: ["10", "15", "20", "50", "100"],
+					pageSizeOptions: ["10", "15", "20", "25", "50", "100"],
 					showQuickJumper: true,
 					showTotal: (count) => `共 ${count} 条`,
 				}}

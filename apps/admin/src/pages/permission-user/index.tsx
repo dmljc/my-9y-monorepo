@@ -243,7 +243,7 @@ const PermissionUser = () => {
 					pageSize,
 					total,
 					showSizeChanger: true,
-					pageSizeOptions: ["10", "15", "20", "50", "100"],
+					pageSizeOptions: ["10", "15", "20", "25", "50", "100"],
 					showQuickJumper: true,
 					showTotal: (count) => `共 ${count} 条`,
 				}}

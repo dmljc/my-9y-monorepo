@@ -74,7 +74,7 @@ const InspectionLedger = () => {
 	const [dataSource, setDataSource] = useState<DeviceLedger[]>([]);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
-	const [pageSize, setPageSize] = useState(15);
+	const [pageSize, setPageSize] = useState(20);
 	const [stats, setStats] = useState<DeviceLedgerStats>(EMPTY_STATS);
 
 	const [modalOpen, setModalOpen] = useState(false);
@@ -314,7 +314,7 @@ const InspectionLedger = () => {
 						pageSize,
 						total,
 						showSizeChanger: true,
-						pageSizeOptions: ["10", "15", "20", "50", "100"],
+						pageSizeOptions: ["10", "15", "20", "25", "50", "100"],
 						showQuickJumper: true,
 						showTotal: (count) => `共 ${count} 条`,
 					}}
