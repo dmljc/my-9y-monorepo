@@ -14,7 +14,7 @@ export interface DeviceDataSnapshot {
 }
 
 /**
- * 设备数据列表查询参数。
+ * 设备数据列表查询参数（GET /iiot/device-data/list）。
  */
 export interface DeviceDataListQuery {
 	pageNum: number;

@@ -95,9 +95,9 @@ const ModelData = () => {
 				(pageNum - 1) * pageSize + index + 1,
 		},
 		{
-			title: "物模型ID",
-			dataIndex: "modelId",
-			key: "modelId",
+			title: "物实例ID",
+			dataIndex: "thingId",
+			key: "thingId",
 			ellipsis: true,
 		},
 		{
@@ -139,6 +139,7 @@ const ModelData = () => {
 		{
 			title: "操作",
 			key: "actions",
+			width: 100,
 			render: (_: unknown, record) => (
 				<div className={styles.actions}>
 					<Access code={PERM_MODEL_DATA.DELETE}>
