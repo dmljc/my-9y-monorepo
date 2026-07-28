@@ -1,3 +1,7 @@
+import cardAddDevice from "@/assets/home/add-device.webp";
+import cardDeviceControl from "@/assets/home/device-control.webp";
+import cardPipelineConfig from "@/assets/home/pipeline-config.webp";
+
 /**
  * 首页标题中需高亮的固定文案（对齐设计稿）。
  */
@@ -38,35 +42,35 @@ export const splitTitle = (title: string): TitleParts => {
  */
 export interface NavItem {
 	/** 导航唯一键。 */
-	key: "device-control" | "sample" | "pipeline" | "add-device";
+	key: "device-control" | "pipeline" | "add-device";
 	/** 展示文案。 */
 	label: string;
+	/** 卡片背景切图。 */
+	card: string;
 	/** 已实现功能的路由；未实现时留空。 */
 	path?: string;
 }
 
 /**
- * 首页四宫格导航（对齐蓝湖稿）。
+ * 首页三列导航（assets/home 卡片切图）。
  */
 export const NAV_ITEMS: NavItem[] = [
 	{
 		key: "device-control",
 		label: "设备控制",
+		card: cardDeviceControl,
 		path: "/device-control",
-	},
-	{
-		key: "sample",
-		label: "取样配置",
-		path: "/sample-config",
 	},
 	{
 		key: "pipeline",
 		label: "管道配置",
+		card: cardPipelineConfig,
 		path: "/pipeline-config",
 	},
 	{
 		key: "add-device",
 		label: "添加设备",
+		card: cardAddDevice,
 		path: "/add-device",
 	},
 ];

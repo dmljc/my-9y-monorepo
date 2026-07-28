@@ -1,0 +1,97 @@
+---
+description: ipad 全部页面 MatePad / 电脑浏览器等比适配（1400×920 contain 舞台）
+globs: apps/ipad/src/**/*
+alwaysApply: false
+---
+
+# ipad 端视口等比适配（全站强制）
+
+适用于 **`apps/ipad` 下所有页面**（首页、登录、设备控制、管道配置、添加设备、取样配置等，无一例外）。现场机为 **HUAWEI MatePad 横屏**；客户也会在 **电脑浏览器** 打开，须保证 **内容完整、与平板等比例**，禁止电脑端底部/侧边被裁切。
+
+## 基准
+
+| 项 | 值 |
+|----|-----|
+| 蓝湖逻辑画布 | **1400 × 920** |
+| 宽高比 | **3 : 2** |
+| 现场机参考 | MatePad 横屏约 **2800 × 1840**（2x） |
+| 关键尺寸写法 | `calc(n / 1400 * 100cqw)`（分母只认 1400；宽高同用 `cqw`，禁止拆 `cqw`/`cqh`） |
+
+蓝湖切图：优先 **Android xhdpi（2800×1840）** 或等价 **2x** WebP；电脑共用同一套资源。
+
+## 问题
+
+只按容器宽度用 `100cqw` 换算宽高时：MatePad（≈3:2）正常；**电脑更宽更矮**时高度超出视口，底部被裁切。
+
+## 强制做法：每页（或统一壳层）必须有 1400×920 contain 舞台
+
+外层铺满视口并居中；内层 `.stage` 固定 **1400:920**，在视口内 **contain**。舞台内再设 `container-type: size`，页面构图与 `calc(n / 1400 * 100cqw)` **全部写在舞台内**。
+
+**优先**：在 `apps/ipad/src/layout`（或路由壳）做一次舞台，子页面只填内容，避免每页重复。若某页独立全屏（如登录、首页无 layout），则该页自己套舞台。
+
+**参考实现**：`apps/ipad/src/pages/home/index.tsx` + `index.module.css`。
+
+```tsx
+<div className={styles.page}>
+  <div className={styles.stage}>{/* 本页全部 UI */}</div>
+</div>
+```
+
+```css
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #f4f9ff; /* 留白区同页底色 */
+  container-type: size;
+}
+
+.stage {
+  position: relative;
+  width: min(100cqw, calc(100cqh * 1400 / 920));
+  height: min(100cqh, calc(100cqw * 920 / 1400));
+  overflow: hidden;
+  background: #f4f9ff;
+  container-type: size;
+}
+```
+
+| 视口 | 表现 |
+|------|------|
+| ≈3:2（MatePad） | 舞台铺满 |
+| 更宽（常见电脑） | 按高度缩放，左右留白，内容完整 |
+| 更高 | 按宽度缩放，上下留白 |
+
+## 约束（硬性）
+
+- **所有页面**都必须落在 contain 舞台内；**禁止**以「列表页 / 业务页不是整页插画」为由跳过。
+- **不要**为电脑端写第二套 `@media` 或竖屏布局；只做横屏 + 等比 contain。
+- **不要**在舞台外用裸 `100vw` / `100cqw` 做关键页绝对定位或大块高度（易再次裁切）。
+- 模块间距仍 **16px**（或 `calc(16 / 1400 * 100cqw)`）；与 `admin-frontend.mdc` 的 ipad 尺寸约定一致，本文件强调 **全站平板/电脑等比适配**。
+- 新增或改版页面时：先确认舞台（壳层或本页），再写 `cqw` 样式；验收须同时看 MatePad 横屏与电脑宽屏，电脑端不得裁切。
+
+## 电脑端裁切的高风险点（务必避免）
+
+当电脑端宽屏导致高度更矮时，若内部仍用真实视口高度（或最小高度）会在舞台缩放后“超出舞台”，从而出现底部/侧边显示不完整。
+
+请全局遵守：
+
+1. **禁止**在 `apps/ipad` 的页面/组件布局中直接使用：
+   - `height: 100vh` / `height: 100dvh`
+   - `min-height: 100vh` / `min-height: 100dvh`
+   - `style={{ minHeight: "100vh" }}` 等等价写法
+2. 在舞台内的布局优先使用：
+   - `height: 100%`（由舞台决定实际像素）
+   - flex 布局时补 `min-height: 0`（避免子容器撑开导致溢出裁切）
+
+## 壳层建议（优先）
+
+为避免“舞台不生效/页面还在按真实视口算高度”，建议把 contain 舞台放到统一壳层：
+
+- `apps/ipad/src/layout/index.tsx`：在壳层中把 `Outlet` 包在 `.stage` 内（与 home 的舞台实现一致）
+- `apps/ipad/src/layout/index.module.css`：外层容器用 `height: 100%`（不要再依赖 `100dvh` 来决定内容高度）
+- 全局 loading/兜底（例如 `RouteLoading`）避免 `minHeight: 100vh`，改用 `minHeight: 100%` 或继承舞台高度
+如果某页必须独立全屏（例如不进入壳层或专用壳），才允许使用 `100vh/100dvh`，但需明确该页不在 contain 舞台内。

@@ -5,6 +5,7 @@ import type {
 	DeviceStatus,
 	TabletDevicePayload,
 	TabletDeviceRow,
+	ThingOption,
 } from "./interface";
 
 /** 设备编码最大长度（后端约束）。 */
@@ -61,12 +62,37 @@ export const mapRowToDevice = (row: TabletDeviceRow): Device => {
 		deviceCode: row.deviceCode ?? "",
 		deviceName: row.deviceName ?? "",
 		manufacturer: row.manufacturer ?? "",
+		thingId: row.thingId ?? "",
 		sampleRoom: formatSampleRoom(row.room),
 		status: toDeviceStatus(row.deviceStatus),
 		buildingId: Number(row.buildingId ?? 0),
 		deviceType: row.deviceType,
 		deviceStatus: row.deviceStatus ?? "0",
 	};
+};
+
+/**
+ * 将设备数据列表转为物实例下拉选项（按 thingId 去重）。
+ *
+ * @param {unknown} - `/iiot/device-data/list` 解包后的 data。
+ * @returns {ThingOption[]} - 下拉选项。
+ */
+export const toThingOptions = (data: unknown): ThingOption[] => {
+	if (!data || typeof data !== "object") return [];
+	const list = (data as { list?: unknown }).list;
+	if (!Array.isArray(list)) return [];
+
+	const map = new Map<string, string>();
+	for (const item of list) {
+		if (!item || typeof item !== "object") continue;
+		const row = item as Record<string, unknown>;
+		const thingId = String(row.thingId ?? "").trim();
+		if (!thingId || map.has(thingId)) continue;
+		const modelName = String(row.modelName ?? "").trim();
+		map.set(thingId, modelName ? `${modelName}（${thingId}）` : thingId);
+	}
+
+	return [...map.entries()].map(([value, label]) => ({ value, label }));
 };
 
 /**
@@ -133,6 +159,7 @@ export const buildCreatePayload = (
 		deviceCode: values.deviceCode.trim(),
 		deviceName: values.deviceName.trim(),
 		manufacturer: values.manufacturer.trim(),
+		thingId: values.thingId.trim(),
 		buildingId: building.buildingId,
 		building: building.building,
 	};
@@ -152,11 +179,13 @@ export const buildUpdatePayload = (
 	building: BuildingTab | null,
 ): TabletDevicePayload => {
 	const manufacturer = values.manufacturer.trim();
+	const thingId = values.thingId.trim();
 	return {
 		id: record.id,
 		deviceCode: values.deviceCode.trim(),
 		deviceName: values.deviceName.trim(),
 		...(manufacturer ? { manufacturer } : {}),
+		...(thingId ? { thingId } : {}),
 		buildingId: record.buildingId || building?.buildingId || 0,
 		building: building?.building,
 		deviceStatus: record.deviceStatus,

@@ -1,10 +1,10 @@
-import { Form, Input, Modal } from "antd";
+import { Form, Input, Modal, Select } from "antd";
 import type { Rule } from "antd/es/form";
 import { useEffect, useState } from "react";
-import { lookup } from "./api";
+import { detail, listThings, lookup } from "./api";
 import styles from "./index.module.css";
-import type { Device, DeviceFormValues } from "./interface";
-import { MAX_LENGTH_12, MAX_LENGTH_20 } from "./utils";
+import type { Device, DeviceFormValues, ThingOption } from "./interface";
+import { MAX_LENGTH_12, MAX_LENGTH_20, toThingOptions } from "./utils";
 
 /** 设备编码校验。 */
 const deviceCodeRules: Rule[] = [
@@ -17,6 +17,9 @@ const deviceNameRules: Rule[] = [
 	{ required: true, whitespace: true, message: "请输入设备名称" },
 	{ max: MAX_LENGTH_12, message: `最多输入${MAX_LENGTH_12}个字符` },
 ];
+
+/** 选择实例校验。 */
+const thingIdRules: Rule[] = [{ required: true, message: "请选择实例" }];
 
 /**
  * 新增 / 编辑设备弹窗 props。
@@ -46,6 +49,7 @@ const CreateModal = ({
 }: CreateModalProps) => {
 	const [form] = Form.useForm<DeviceFormValues>();
 	const [loading, setLoading] = useState(false);
+	const [thingOptions, setThingOptions] = useState<ThingOption[]>([]);
 	const isEdit = editingRecord !== null;
 
 	/** 厂家：新增必填；列表不回传厂家，编辑改为选填。 */
@@ -62,17 +66,46 @@ const CreateModal = ({
 	useEffect(() => {
 		if (!open) return;
 
-		if (editingRecord) {
-			form.setFieldsValue({
-				deviceCode: editingRecord.deviceCode,
-				deviceName: editingRecord.deviceName,
-				manufacturer: editingRecord.manufacturer,
-			});
-			return;
-		}
+		const initModal = async () => {
+			try {
+				const thingsData = await listThings();
+				setThingOptions(toThingOptions(thingsData));
+			} catch {
+				setThingOptions([]);
+			}
 
-		form.resetFields();
-	}, [open, editingRecord, form]);
+			if (editingRecord) {
+				form.setFieldsValue(editingRecord);
+				try {
+					const data = await detail(editingRecord.id);
+					if (!data || typeof data !== "object") return;
+					const thingId = String(data.thingId ?? "").trim();
+					const manufacturer = String(data.manufacturer ?? "").trim();
+					const next: Partial<DeviceFormValues> = {};
+					if (thingId) next.thingId = thingId;
+					if (manufacturer) next.manufacturer = manufacturer;
+					if (Object.keys(next).length) form.setFieldsValue(next);
+					if (thingId) {
+						setThingOptions((prev) => {
+							if (prev.some((item) => item.value === thingId))
+								return prev;
+							return [
+								...prev,
+								{ value: thingId, label: thingId },
+							];
+						});
+					}
+				} catch {
+					// 详情失败时保留列表行回显，不阻断编辑。
+				}
+				return;
+			}
+
+			form.resetFields();
+		};
+
+		initModal();
+	}, [open, editingRecord]);
 
 	const handleLookup = async () => {
 		if (isEdit) return;
@@ -137,7 +170,7 @@ const CreateModal = ({
 						maxLength={MAX_LENGTH_20}
 						disabled={isEdit}
 						onBlur={() => {
-							void handleLookup();
+							handleLookup();
 						}}
 					/>
 				</Form.Item>
@@ -159,6 +192,15 @@ const CreateModal = ({
 					<Input
 						placeholder="请输入设备厂家"
 						maxLength={MAX_LENGTH_12}
+					/>
+				</Form.Item>
+				<Form.Item name="thingId" label="选择实例" rules={thingIdRules}>
+					<Select
+						className={styles.thingSelect}
+						showSearch={{ optionFilterProp: "label" }}
+						placeholder="请选择实例"
+						options={thingOptions}
+						allowClear
 					/>
 				</Form.Item>
 			</Form>

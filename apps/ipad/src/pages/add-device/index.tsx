@@ -205,7 +205,6 @@ const AddDevice = () => {
 			title: "状态",
 			dataIndex: "status",
 			key: "status",
-			width: 120,
 			render: (status: Device["status"]) => (
 				<span
 					className={
@@ -222,7 +221,6 @@ const AddDevice = () => {
 			title: "操作",
 			key: "actions",
 			align: "center",
-			width: 200,
 			render: (_, record) => {
 				if (record.status === "running") {
 					return (

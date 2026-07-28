@@ -31,6 +31,24 @@ export const lookup = (deviceCode: string): Promise<any> => {
 };
 
 /**
+ * 获取设备详情（编辑回显物实例等精简列表未返回字段）。
+ *
+ * @param {number} - 设备 id。
+ */
+export const detail = (id: number): Promise<any> => {
+	return request.get(`/iiot/tablet/ledger/${id}`);
+};
+
+/**
+ * 查询物实例候选（从设备数据列表去重 thingId）。
+ */
+export const listThings = (): Promise<any> => {
+	return request.get("/iiot/device-data/list", {
+		params: { pageNum: 1, pageSize: 1000 },
+	});
+};
+
+/**
  * 新增设备。
  *
  * @param {TabletDevicePayload} - 提交体。
