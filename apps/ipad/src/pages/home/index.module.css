@@ -7,6 +7,7 @@
 	height: 100%;
 	overflow: hidden;
 	background: #f4f9ff;
+	position: relative;
 	container-type: size;
 }
 
@@ -19,8 +20,9 @@
 	width: min(100cqw, calc(100cqh * 1400 / 920));
 	height: min(100cqh, calc(100cqw * 920 / 1400));
 	overflow: hidden;
-	background: #f4f9ff;
+	background: transparent;
 	container-type: size;
+	z-index: 1;
 }
 
 .bg {
@@ -42,11 +44,11 @@
 	font-display: swap;
 }
 
-/* 标题：680×98 / 字号 40 / letter-spacing 5；顶 190、左 37.5 */
+/* 标题：与首卡「设备控制」左边缘对齐；三卡总宽 1094，居中后左 = (1400-1094)/2 = 153 */
 .header {
 	position: absolute;
 	top: calc(190 / 1400 * 100cqw);
-	left: calc(37.5 / 1400 * 100cqw);
+	left: calc(153 / 1400 * 100cqw);
 	width: calc(680 / 1400 * 100cqw);
 	height: calc(98 / 1400 * 100cqw);
 	z-index: 2;

@@ -19,16 +19,17 @@ const Home = () => {
 
 	return (
 		<div className={styles.home} data-page="home">
+			{/* 背景图铺满视口；内容等比由舞台 `.stage` 控制，避免裁切 */}
+			<img
+				className={styles.bg}
+				src={homeBg}
+				alt=""
+				aria-hidden
+				draggable={false}
+			/>
+
 			{/* 1400×920 等比舞台：在任意视口内 contain，保证内容完整显示 */}
 			<div className={styles.stage}>
-				<img
-					className={styles.bg}
-					src={homeBg}
-					alt=""
-					aria-hidden
-					draggable={false}
-				/>
-
 				<header className={styles.header}>
 					<h1 className={styles.title}>
 						<span className={styles.titleMain}>
