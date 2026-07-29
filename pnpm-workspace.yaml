@@ -29,7 +29,7 @@ catalog:
   dayjs: ^1.11.21
 
   # Router
-  react-router-dom: ^7.18.1
+  react-router-dom: ^7.18.2
 
   # 构建
   vite: ^8.1.5
