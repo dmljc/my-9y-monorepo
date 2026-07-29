@@ -31,14 +31,22 @@
 .body {
 	flex: 1;
 	min-height: 0;
+	/* 平板：四边模块间距 16；电脑宽屏见下方 @media */
 	padding: calc(16 / 1400 * 100cqw);
+}
+
+/* 电脑端宽屏（宽高比明显大于 MatePad 3:2）：仅保留上下间距 */
+@media (min-aspect-ratio: 16 / 10) {
+	.body {
+		padding: calc(16 / 1400 * 100cqw) 0;
+	}
 }
 
 .panel {
 	height: 100%;
 	overflow: auto;
 	padding: calc(24 / 1400 * 100cqw) calc(32 / 1400 * 100cqw);
-	border-radius: calc(16 / 1400 * 100cqw);
+	border-radius: calc(12 / 1400 * 100cqw);
 	background: #fff;
 	box-sizing: border-box;
 }
