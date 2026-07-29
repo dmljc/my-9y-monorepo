@@ -21,7 +21,6 @@ export interface WarningListParams {
 export interface WarningListResult {
 	list: WarningItem[];
 	total: number;
-	stats: WarningStats;
 	pageNum: number;
 	pageSize: number;
 }
@@ -157,19 +156,23 @@ function parseStats(data: unknown): WarningStats {
 export async function list(
 	params: WarningListParams,
 ): Promise<WarningListResult> {
-	const [listData, statsData] = await Promise.all([
-		request.get("/iiot/alarm/list", { params: toQuery(params) }),
-		request.get("/iiot/alarm/stats"),
-	]);
+	const listData = await request.get("/iiot/alarm/list", {
+		params: toQuery(params),
+	});
 	const { rows, total } = parseRows(listData);
 	const { pageNum, pageSize } = params;
 	return {
 		list: rows.map(toWarningItem),
 		total,
-		stats: parseStats(statsData),
 		pageNum,
 		pageSize,
 	};
+}
+
+/** 获取今日告警统计。 */
+export async function getStats(): Promise<WarningStats> {
+	const data = await request.get("/iiot/alarm/stats");
+	return parseStats(data);
 }
 
 /** 标记告警为已解决 */

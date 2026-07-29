@@ -236,18 +236,18 @@ export function toWarningRule(
  * 构建报警规则列表分页结果。
  *
  * @param {unknown} - 报警规则列表接口 data 字段。
- * @param {unknown} - 报警等级列表接口 data 字段。
+ * @param {RuleLevelOption[]} - 已缓存的报警等级下拉选项。
  * @param {number} - 当前页码。
  * @param {number} - 每页条数。
  * @returns {RuleListResult} - 页面表格使用的分页结果。
  */
 export function buildRuleListResult(
 	data: unknown,
-	levelData: unknown,
+	levelOptions: RuleLevelOption[],
 	pageNum: number,
 	pageSize: number,
 ): RuleListResult {
-	const levelMap = buildLevelMap(toLevelOptions(levelData));
+	const levelMap = buildLevelMap(levelOptions);
 	const { rows, total } = parseRows<AlarmRule>(data);
 	return {
 		list: rows.map((rule) => toWarningRule(rule, levelMap)),

@@ -1,6 +1,5 @@
 import { Form, Input, InputNumber, Modal, Select, Switch } from "antd";
 import { useEffect, useState } from "react";
-import { listLevels } from "./api";
 import styles from "./index.module.css";
 import type { RuleFormValues, RuleLevelOption, WarningRule } from "./utils";
 import {
@@ -11,12 +10,12 @@ import {
 	ROOM_OPTIONS,
 	THRESHOLD_MAX,
 	THRESHOLD_MIN,
-	toLevelOptions,
 } from "./utils";
 
 interface CreateModalProps {
 	open: boolean;
 	editingRecord: WarningRule | null;
+	levelOptions: RuleLevelOption[];
 	onCancel: () => void;
 	onSubmit: (values: RuleFormValues) => Promise<void>;
 }
@@ -24,22 +23,16 @@ interface CreateModalProps {
 const CreateModal = ({
 	open,
 	editingRecord,
+	levelOptions,
 	onCancel,
 	onSubmit,
 }: CreateModalProps) => {
 	const [form] = Form.useForm<RuleFormValues>();
 	const [loading, setLoading] = useState(false);
-	const [levelOptions, setLevelOptions] = useState<RuleLevelOption[]>([]);
 	const isEdit = editingRecord !== null;
 
 	useEffect(() => {
 		if (!open) return;
-
-		const init = async () => {
-			const data = await listLevels();
-			setLevelOptions(toLevelOptions(data));
-		};
-		init();
 
 		if (editingRecord) {
 			form.setFieldsValue(editingRecord);

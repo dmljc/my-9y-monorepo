@@ -10,7 +10,12 @@ import statTotalTodayImg from "@/assets/warning/stat-total-today.png";
 import statUnsolvedTodayImg from "@/assets/warning/stat-unsolved-today.png";
 import Access from "@/components/Access";
 import { PERM_WARNING_LIST } from "@/constants/permission";
-import { list, processWarning, toListParams } from "@/pages/warning/api";
+import {
+	getStats,
+	list,
+	processWarning,
+	toListParams,
+} from "@/pages/warning/api";
 import {
 	buildStatCards,
 	LEVEL_COLOR,
@@ -95,11 +100,15 @@ const WarningList = () => {
 			setTotal(result.total);
 			setPageNum(result.pageNum);
 			setPageSize(result.pageSize);
-			setStats(result.stats);
 		} catch {
 		} finally {
 			setLoading(false);
 		}
+	};
+
+	const loadStats = async () => {
+		const result = await getStats();
+		setStats(result);
 	};
 
 	const initRef = useRef(false);
@@ -107,6 +116,7 @@ const WarningList = () => {
 		if (!initRef.current) {
 			initRef.current = true;
 			loadData(1, pageSize);
+			loadStats();
 		}
 	}, []);
 
@@ -131,7 +141,7 @@ const WarningList = () => {
 		try {
 			await processWarning(record.id);
 			message.success("已标记为已解决");
-			loadData(pageNum, pageSize);
+			await Promise.all([loadData(pageNum, pageSize), loadStats()]);
 		} catch {
 		} finally {
 			setProcessingId(null);

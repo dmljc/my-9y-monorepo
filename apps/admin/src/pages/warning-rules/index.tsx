@@ -17,7 +17,9 @@ import {
 	buildRuleListResult,
 	formatThresholdRange,
 	type RuleFormValues,
+	type RuleLevelOption,
 	toAlarmRulePayload,
+	toLevelOptions,
 	type WarningRule,
 } from "./utils";
 
@@ -34,19 +36,22 @@ const WarningRules = () => {
 	const [pageSize, setPageSize] = useState(25);
 	const [togglingId, setTogglingId] = useState<string | null>(null);
 	const [name, setName] = useState("");
+	const [levelOptions, setLevelOptions] = useState<RuleLevelOption[]>([]);
 
-	const loadData = async (p: number, ps: number, keyword = name) => {
+	const loadData = async (
+		p: number,
+		ps: number,
+		keyword = name,
+		options = levelOptions,
+	) => {
 		setLoading(true);
 		try {
-			const [data, levelData] = await Promise.all([
-				fetchRuleList({
-					pageNum: p,
-					pageSize: ps,
-					ruleName: keyword.trim(),
-				}),
-				listLevels(),
-			]);
-			const result = buildRuleListResult(data, levelData, p, ps);
+			const data = await fetchRuleList({
+				pageNum: p,
+				pageSize: ps,
+				ruleName: keyword.trim(),
+			});
+			const result = buildRuleListResult(data, options, p, ps);
 			setDataSource(result.list);
 			setTotal(result.total);
 			setPageNum(result.pageNum);
@@ -54,6 +59,13 @@ const WarningRules = () => {
 		} finally {
 			setLoading(false);
 		}
+	};
+
+	const loadLevelOptions = async (): Promise<RuleLevelOption[]> => {
+		const data = await listLevels();
+		const options = toLevelOptions(data);
+		setLevelOptions(options);
+		return options;
 	};
 
 	const handleSearch = () => {
@@ -71,7 +83,11 @@ const WarningRules = () => {
 	useEffect(() => {
 		if (!initRef.current) {
 			initRef.current = true;
-			loadData(pageNum, pageSize);
+			const init = async () => {
+				const options = await loadLevelOptions();
+				await loadData(pageNum, pageSize, name, options);
+			};
+			init();
 		}
 	}, []);
 
@@ -285,6 +301,7 @@ const WarningRules = () => {
 			<CreateModal
 				open={modalOpen}
 				editingRecord={editingRecord}
+				levelOptions={levelOptions}
 				onCancel={() => setModalOpen(false)}
 				onSubmit={handleModalSubmit}
 			/>
