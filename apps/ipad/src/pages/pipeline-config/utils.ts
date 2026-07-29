@@ -284,6 +284,9 @@ export const validateRoomPipeIn = (
 	list: PipelineItem[],
 	existingPipes: Set<string>,
 ): string => {
+	if (!pipeIn.trim()) {
+		return "";
+	}
 	return validatePipeNo(pipeIn, recordId, list, "pipeIn", existingPipes);
 };
 

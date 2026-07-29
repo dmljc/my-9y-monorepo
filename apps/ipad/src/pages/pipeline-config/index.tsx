@@ -200,15 +200,21 @@ const PipelineConfig = () => {
 		}
 
 		if (configType === "room") {
-			const error = validateRoomPipeIn(
-				record.pipeIn,
-				record.id,
-				pipelines,
-				existingPipes,
-			);
-			if (error) {
-				setPipeNoErrors((prev) => ({ ...prev, [record.id]: error }));
-				return;
+			const pipeIn = record.pipeIn.trim();
+			if (pipeIn) {
+				const error = validateRoomPipeIn(
+					pipeIn,
+					record.id,
+					pipelines,
+					existingPipes,
+				);
+				if (error) {
+					setPipeNoErrors((prev) => ({
+						...prev,
+						[record.id]: error,
+					}));
+					return;
+				}
 			}
 			if (!record.roomId) {
 				message.error("缺少房间信息，无法保存");
@@ -220,7 +226,7 @@ const PipelineConfig = () => {
 				buildingId: currentBuilding.buildingId,
 				roomId: record.roomId,
 				room: record.sampleRoom,
-				pipelineId: record.pipeIn.trim(),
+				pipelineId: pipeIn,
 			});
 			message.success("保存成功");
 			await loadRoomList(currentBuilding.buildingId);
@@ -267,6 +273,29 @@ const PipelineConfig = () => {
 		await loadDeviceList(currentBuilding.buildingId);
 	};
 
+	const renderRoomPipeSelect = (value: string, record: PipelineItem) => {
+		const error = pipeNoErrors[record.id];
+		return (
+			<div className={styles.pipeFieldCell}>
+				<Select
+					className={`${styles.pipeFieldSelect} ${error ? styles.pipeFieldSelectError : ""}`}
+					value={value || undefined}
+					status={error ? "error" : undefined}
+					placeholder="请选择"
+					options={pipeOptions}
+					showSearch={{ optionFilterProp: "label" }}
+					allowClear
+					onChange={(next) =>
+						handlePipeInChange(record.id, next ?? "")
+					}
+				/>
+				{error ? (
+					<span className={styles.pipeFieldError}>{error}</span>
+				) : null}
+			</div>
+		);
+	};
+
 	const renderPipeSelect = (
 		value: string,
 		record: PipelineItem,
@@ -311,7 +340,7 @@ const PipelineConfig = () => {
 			dataIndex: "pipeIn",
 			key: "pipeIn",
 			render: (pipeIn: string, record) =>
-				renderPipeSelect(pipeIn, record, handlePipeInChange),
+				renderRoomPipeSelect(pipeIn, record),
 		},
 		{
 			title: "操作",
