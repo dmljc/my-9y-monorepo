@@ -223,7 +223,7 @@ const PipelineConfig = () => {
 				pipelineId: record.pipeIn.trim(),
 			});
 			message.success("保存成功");
-			await loadList(currentBuilding.buildingId, "room");
+			await loadRoomList(currentBuilding.buildingId);
 			return;
 		}
 
@@ -264,7 +264,7 @@ const PipelineConfig = () => {
 			...(flowRate ? { flowRate: Number(flowRate) } : {}),
 		});
 		message.success("保存成功");
-		await loadList(currentBuilding.buildingId, "device");
+		await loadDeviceList(currentBuilding.buildingId);
 	};
 
 	const renderPipeSelect = (
