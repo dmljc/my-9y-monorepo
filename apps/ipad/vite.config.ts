@@ -1,5 +1,6 @@
 import path from "node:path";
 import react from "@vitejs/plugin-react-swc";
+import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig, loadEnv } from "vite";
 
 /**
@@ -24,12 +25,32 @@ export default defineConfig(({ mode }) => {
 		},
 	};
 
+	const enableBundleVisualizer =
+		process.env.VITE_BUNDLE_VISUALIZER === "true";
+	const enableSourceMap = process.env.VITE_SOURCEMAP === "true";
+
+	const visualizerPlugins = enableBundleVisualizer
+		? [
+				visualizer({
+					filename: path.resolve(__dirname, "dist/bundle-stats.html"),
+					gzipSize: true,
+					brotliSize: true,
+				}),
+			]
+		: [];
+
 	return {
 		plugins: [react()],
 		resolve: {
 			alias: {
 				"@": path.resolve(__dirname, "./src"),
 				"@utils": path.resolve(__dirname, "../../utils"),
+			},
+		},
+		build: {
+			sourcemap: enableSourceMap,
+			rollupOptions: {
+				plugins: visualizerPlugins,
 			},
 		},
 		server: {

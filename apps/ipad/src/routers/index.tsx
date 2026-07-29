@@ -1,10 +1,10 @@
 import { lazy } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
-import RequireAuth from "@/components/RequireAuth";
-import RouteError from "@/components/RouteError";
 import { DEFAULT_HOME_PATH } from "@/layout/menuConfig";
 
 const Layout = lazy(() => import("@/layout"));
+const RequireAuth = lazy(() => import("@/components/RequireAuth"));
+const RouteError = lazy(() => import("@/components/RouteError"));
 const Login = lazy(() => import("@/pages/login"));
 const Home = lazy(() => import("@/pages/home"));
 const DeviceControl = lazy(() => import("@/pages/device-control"));

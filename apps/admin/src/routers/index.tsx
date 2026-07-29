@@ -1,9 +1,9 @@
 import { lazy } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
-import RequireAuth from "@/components/RequireAuth";
-import RouteError from "@/components/RouteError";
 import { getDefaultPathForTop } from "@/layout/menuConfig";
 
+const RequireAuth = lazy(() => import("@/components/RequireAuth"));
+const RouteError = lazy(() => import("@/components/RouteError"));
 const Layout = lazy(() => import("@/layout"));
 const Login = lazy(() => import("@/pages/login"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
