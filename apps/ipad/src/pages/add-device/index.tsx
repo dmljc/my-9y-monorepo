@@ -188,6 +188,7 @@ const AddDevice = () => {
 			dataIndex: "deviceCode",
 			key: "deviceCode",
 			ellipsis: true,
+			width: "28%",
 		},
 		{
 			title: "设备名称",
@@ -196,7 +197,7 @@ const AddDevice = () => {
 			ellipsis: true,
 		},
 		{
-			title: "取样房间号",
+			title: "取样房间",
 			dataIndex: "sampleRoom",
 			key: "sampleRoom",
 			ellipsis: true,

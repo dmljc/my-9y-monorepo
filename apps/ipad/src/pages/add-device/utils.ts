@@ -40,7 +40,7 @@ export const toDeviceStatus = (deviceStatus?: string): DeviceStatus => {
 };
 
 /**
- * 格式化取样房间号展示。
+ * 格式化取样房间展示。
  *
  * @param {string | undefined} - 后端 room。
  * @returns {string} - 展示文案。
