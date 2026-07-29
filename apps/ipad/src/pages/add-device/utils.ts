@@ -72,27 +72,33 @@ export const mapRowToDevice = (row: TabletDeviceRow): Device => {
 };
 
 /**
- * 将设备数据列表转为物实例下拉选项（按 thingId 去重）。
+ * 将物实例列表转为下拉选项。
  *
- * @param {unknown} - `/iiot/device-data/list` 解包后的 data。
+ * @param {unknown} - `/iiot/device-control/things` 解包后的 data。
  * @returns {ThingOption[]} - 下拉选项。
  */
 export const toThingOptions = (data: unknown): ThingOption[] => {
 	if (!data || typeof data !== "object") return [];
-	const list = (data as { list?: unknown }).list;
-	if (!Array.isArray(list)) return [];
+	const things = (data as { things?: unknown }).things;
+	if (!Array.isArray(things)) return [];
 
-	const map = new Map<string, string>();
-	for (const item of list) {
+	const options: ThingOption[] = [];
+	for (const item of things) {
 		if (!item || typeof item !== "object") continue;
 		const row = item as Record<string, unknown>;
-		const thingId = String(row.thingId ?? "").trim();
-		if (!thingId || map.has(thingId)) continue;
-		const modelName = String(row.modelName ?? "").trim();
-		map.set(thingId, modelName ? `${modelName}（${thingId}）` : thingId);
+		const thingId = String(row.thing_id ?? "").trim();
+		if (!thingId) continue;
+		const thingName = String(row.thing_name ?? "").trim();
+		const modelName = String(row.model_name ?? "").trim();
+		let label = thingId;
+		if (thingName && thingName !== thingId) {
+			label = `${thingName}（${thingId}）`;
+		} else if (modelName) {
+			label = `${modelName}（${thingId}）`;
+		}
+		options.push({ value: thingId, label });
 	}
-
-	return [...map.entries()].map(([value, label]) => ({ value, label }));
+	return options;
 };
 
 /**

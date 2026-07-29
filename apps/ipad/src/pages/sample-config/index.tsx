@@ -90,26 +90,28 @@ const SampleConfig = () => {
 
 	return (
 		<div className={styles.sampleConfig} data-page="sample-config">
-			<BuildingPageHeader
-				buildingKey={buildingKey}
-				buildings={BUILDING_TABS}
-				onBuildingChange={setBuildingKey}
-				masterOn={masterOn}
-				onMasterChange={handleMasterChange}
-			/>
+			<div className={styles.stage}>
+				<BuildingPageHeader
+					buildingKey={buildingKey}
+					buildings={BUILDING_TABS}
+					onBuildingChange={setBuildingKey}
+					masterOn={masterOn}
+					onMasterChange={handleMasterChange}
+				/>
 
-			<div className={styles.body}>
-				<div className={styles.panel}>
-					<Table
-						className={styles.table}
-						columns={columns}
-						dataSource={devices}
-						rowKey="id"
-						pagination={false}
-						rowClassName={(_, index) =>
-							index % 2 === 1 ? styles.rowStripe : ""
-						}
-					/>
+				<div className={styles.body}>
+					<div className={styles.panel}>
+						<Table
+							className={styles.table}
+							columns={columns}
+							dataSource={devices}
+							rowKey="id"
+							pagination={false}
+							rowClassName={(_, index) =>
+								index % 2 === 1 ? styles.rowStripe : ""
+							}
+						/>
+					</div>
 				</div>
 			</div>
 		</div>

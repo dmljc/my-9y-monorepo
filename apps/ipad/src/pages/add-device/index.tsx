@@ -265,70 +265,72 @@ const AddDevice = () => {
 	];
 
 	return (
-		<div ref={pageRef} className={styles.addDevice} data-page="add-device">
-			<BuildingPageHeader
-				buildingKey={buildingKey}
-				buildings={buildings}
-				onBuildingChange={handleBuildingChange}
-				masterOn={masterOn}
-				onMasterChange={handleMasterChange}
-			/>
+		<div className={styles.addDevice} data-page="add-device">
+			<div ref={pageRef} className={styles.stage}>
+				<BuildingPageHeader
+					buildingKey={buildingKey}
+					buildings={buildings}
+					onBuildingChange={handleBuildingChange}
+					masterOn={masterOn}
+					onMasterChange={handleMasterChange}
+				/>
 
-			<div className={styles.body}>
-				<div className={styles.panel}>
-					<div className={styles.toolbar}>
-						<button
-							type="button"
-							className={styles.addBtn}
-							onClick={handleAdd}
-						>
-							<svg
-								className={styles.addBtnPlus}
-								viewBox="0 0 24 24"
-								aria-hidden
+				<div className={styles.body}>
+					<div className={styles.panel}>
+						<div className={styles.toolbar}>
+							<button
+								type="button"
+								className={styles.addBtn}
+								onClick={handleAdd}
 							>
-								<title>添加设备</title>
-								<path
-									d="M12 5v14M5 12h14"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2.5"
-									strokeLinecap="round"
-								/>
-							</svg>
-							<span>添加设备</span>
-						</button>
+								<svg
+									className={styles.addBtnPlus}
+									viewBox="0 0 24 24"
+									aria-hidden
+								>
+									<title>添加设备</title>
+									<path
+										d="M12 5v14M5 12h14"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2.5"
+										strokeLinecap="round"
+									/>
+								</svg>
+								<span>添加设备</span>
+							</button>
+						</div>
+						<Table
+							className={styles.table}
+							columns={columns}
+							dataSource={devices}
+							loading={loading}
+							rowKey="id"
+							pagination={{
+								current: pageNum,
+								pageSize,
+								total: devices.length,
+								showSizeChanger: true,
+								pageSizeOptions: PAGE_SIZE_OPTIONS,
+								showQuickJumper: true,
+								showTotal: (count) => `共 ${count} 条`,
+							}}
+							onChange={handleTableChange}
+							rowClassName={(_, index) =>
+								index % 2 === 1 ? styles.rowStripe : ""
+							}
+						/>
 					</div>
-					<Table
-						className={styles.table}
-						columns={columns}
-						dataSource={devices}
-						loading={loading}
-						rowKey="id"
-						pagination={{
-							current: pageNum,
-							pageSize,
-							total: devices.length,
-							showSizeChanger: true,
-							pageSizeOptions: PAGE_SIZE_OPTIONS,
-							showQuickJumper: true,
-							showTotal: (count) => `共 ${count} 条`,
-						}}
-						onChange={handleTableChange}
-						rowClassName={(_, index) =>
-							index % 2 === 1 ? styles.rowStripe : ""
-						}
-					/>
 				</div>
-			</div>
 
-			<CreateModal
-				open={modalOpen}
-				editingRecord={editingRecord}
-				getContainer={() => pageRef.current ?? document.body}
-				onCancel={() => setModalOpen(false)}
-				onOk={handleModalSubmit}
-			/>
+				<CreateModal
+					open={modalOpen}
+					editingRecord={editingRecord}
+					getContainer={() => pageRef.current ?? document.body}
+					onCancel={() => setModalOpen(false)}
+					onOk={handleModalSubmit}
+				/>
+			</div>
 		</div>
 	);
 };

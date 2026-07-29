@@ -40,11 +40,16 @@ export const detail = (id: number): Promise<any> => {
 };
 
 /**
- * 查询物实例候选（从设备数据列表去重 thingId）。
+ * 查询物实例列表（支持 keyword 模糊查询）。
+ *
+ * @param {string} - 模糊关键词（thing_id / thing_name 等）。
  */
-export const listThings = (): Promise<any> => {
-	return request.get("/iiot/device-data/list", {
-		params: { pageNum: 1, pageSize: 1000 },
+export const listThings = (keyword?: string): Promise<any> => {
+	const trimmed = keyword?.trim();
+	return request.get("/iiot/device-control/things", {
+		params: {
+			...(trimmed ? { keyword: trimmed } : {}),
+		},
 	});
 };
 

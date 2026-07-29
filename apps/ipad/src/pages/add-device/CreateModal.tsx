@@ -1,10 +1,13 @@
 import { Form, Input, Modal, Select } from "antd";
 import type { Rule } from "antd/es/form";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { detail, listThings, lookup } from "./api";
 import styles from "./index.module.css";
 import type { Device, DeviceFormValues, ThingOption } from "./interface";
 import { MAX_LENGTH_12, MAX_LENGTH_20, toThingOptions } from "./utils";
+
+/** 物实例远程搜索防抖间隔（毫秒）。 */
+const THING_SEARCH_DEBOUNCE_MS = 300;
 
 /** 设备编码校验。 */
 const deviceCodeRules: Rule[] = [
@@ -49,7 +52,11 @@ const CreateModal = ({
 }: CreateModalProps) => {
 	const [form] = Form.useForm<DeviceFormValues>();
 	const [loading, setLoading] = useState(false);
+	const [thingLoading, setThingLoading] = useState(false);
 	const [thingOptions, setThingOptions] = useState<ThingOption[]>([]);
+	const thingSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+		null,
+	);
 	const isEdit = editingRecord !== null;
 
 	/** 厂家：新增必填；列表不回传厂家，编辑改为选填。 */
@@ -63,16 +70,32 @@ const CreateModal = ({
 				},
 			];
 
+	const loadThings = async (keyword = "") => {
+		setThingLoading(true);
+		try {
+			const thingsData = await listThings(keyword);
+			setThingOptions(toThingOptions(thingsData));
+		} catch {
+			setThingOptions([]);
+		} finally {
+			setThingLoading(false);
+		}
+	};
+
+	const handleThingSearch = (value: string) => {
+		if (thingSearchTimerRef.current) {
+			clearTimeout(thingSearchTimerRef.current);
+		}
+		thingSearchTimerRef.current = setTimeout(() => {
+			loadThings(value);
+		}, THING_SEARCH_DEBOUNCE_MS);
+	};
+
 	useEffect(() => {
 		if (!open) return;
 
 		const initModal = async () => {
-			try {
-				const thingsData = await listThings();
-				setThingOptions(toThingOptions(thingsData));
-			} catch {
-				setThingOptions([]);
-			}
+			await loadThings();
 
 			if (editingRecord) {
 				form.setFieldsValue(editingRecord);
@@ -105,6 +128,12 @@ const CreateModal = ({
 		};
 
 		initModal();
+
+		return () => {
+			if (thingSearchTimerRef.current) {
+				clearTimeout(thingSearchTimerRef.current);
+			}
+		};
 	}, [open, editingRecord]);
 
 	const handleLookup = async () => {
@@ -197,7 +226,10 @@ const CreateModal = ({
 				<Form.Item name="thingId" label="选择实例" rules={thingIdRules}>
 					<Select
 						className={styles.thingSelect}
-						showSearch={{ optionFilterProp: "label" }}
+						showSearch
+						filterOption={false}
+						onSearch={handleThingSearch}
+						loading={thingLoading}
 						placeholder="请选择实例"
 						options={thingOptions}
 						allowClear

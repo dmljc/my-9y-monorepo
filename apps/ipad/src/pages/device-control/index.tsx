@@ -90,179 +90,189 @@ const DeviceControl = () => {
 			data-page="device-control"
 			style={THUMB_BG}
 		>
-			<BuildingPageHeader
-				buildingKey={buildingKey}
-				buildings={BUILDING_TABS}
-				onBuildingChange={setBuildingKey}
-				masterOn={masterOn}
-				onMasterChange={handleMasterChange}
-			/>
+			<div className={styles.stage}>
+				<BuildingPageHeader
+					buildingKey={buildingKey}
+					buildings={BUILDING_TABS}
+					onBuildingChange={setBuildingKey}
+					masterOn={masterOn}
+					onMasterChange={handleMasterChange}
+				/>
 
-			<div className={styles.body}>
-				<aside className={styles.sidebar}>
-					<div className={styles.deviceGrid}>
-						{devices.map((device) => {
-							const active = selected?.id === device.id;
-							return (
-								<button
-									key={device.id}
-									type="button"
-									className={`${styles.deviceCard} ${active ? styles.deviceCardActive : ""}`}
-									onClick={() =>
-										handleSelectDevice(device.id)
-									}
-								>
-									<div className={styles.deviceThumb}>
-										<span className={styles.deviceCode}>
-											{device.code}
-										</span>
-									</div>
-									<span className={styles.deviceName}>
-										{device.name}
-									</span>
-								</button>
-							);
-						})}
-					</div>
-				</aside>
-
-				<section className={styles.detail}>
-					{selected ? (
-						<>
-							<div className={styles.detailHeader}>
-								<div className={styles.detailHeaderMain}>
-									<span className={styles.deviceNameLabel}>
-										设备名称
-									</span>
-									<span className={styles.deviceNameValue}>
-										{selected.name}
-									</span>
-									<span className={styles.roomLabel}>
-										监控房
-									</span>
-									<span className={styles.roomValue}>
-										{selected.roomLabel}
-									</span>
-								</div>
-								<div className={styles.detailSwitch}>
-									<span className={styles.switchLabel}>
-										开关
-									</span>
-									<Switch
-										checked={selected.enabled}
-										onChange={handleDeviceSwitch}
-										className={styles.controlSwitch}
-										aria-label="开关"
-									/>
-								</div>
-							</div>
-
-							<div className={styles.detailBody}>
-								{selected.cleaning ? (
+				<div className={styles.body}>
+					<aside className={styles.sidebar}>
+						<div className={styles.deviceGrid}>
+							{devices.map((device) => {
+								const active = selected?.id === device.id;
+								return (
 									<button
+										key={device.id}
 										type="button"
-										className={styles.cleaningStatus}
-										onClick={handleClean}
-										aria-label="取消设备清洗"
+										className={`${styles.deviceCard} ${active ? styles.deviceCardActive : ""}`}
+										onClick={() =>
+											handleSelectDevice(device.id)
+										}
 									>
-										<svg
-											className={styles.cleaningIcon}
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 18 18"
-											fill="none"
-											aria-hidden
+										<div className={styles.deviceThumb}>
+											<span className={styles.deviceCode}>
+												{device.code}
+											</span>
+										</div>
+										<span className={styles.deviceName}>
+											{device.name}
+										</span>
+									</button>
+								);
+							})}
+						</div>
+					</aside>
+
+					<section className={styles.detail}>
+						{selected ? (
+							<>
+								<div className={styles.detailHeader}>
+									<div className={styles.detailHeaderMain}>
+										<span
+											className={styles.deviceNameLabel}
 										>
-											<title>清洗中</title>
-											<g fill="#0099AF">
-												<circle
-													cx="9"
-													cy="2.2"
-													r="1.7"
-												/>
-												<circle
-													cx="13.8"
-													cy="4.2"
-													r="1.55"
-												/>
-												<circle
-													cx="15.8"
-													cy="9"
-													r="1.35"
-												/>
-												<circle
-													cx="13.8"
-													cy="13.8"
-													r="1.15"
-												/>
-												<circle
-													cx="9"
-													cy="15.8"
-													r="1"
-												/>
-												<circle
-													cx="4.2"
-													cy="13.8"
-													r="0.85"
-												/>
-												<circle
-													cx="2.2"
-													cy="9"
-													r="0.7"
-												/>
-												<circle
-													cx="4.2"
-													cy="4.2"
-													r="0.55"
-												/>
-											</g>
-										</svg>
-										<span className={styles.cleaningText}>
-											清洗中
+											设备名称
 										</span>
-									</button>
-								) : (
-									<button
-										type="button"
-										className={styles.cleanBtn}
-										onClick={handleClean}
-									>
-										<ClearOutlined
-											className={styles.cleanIcon}
-										/>
-										<span className={styles.cleanText}>
-											设备清洗
+										<span
+											className={styles.deviceNameValue}
+										>
+											{selected.name}
 										</span>
-									</button>
-								)}
-
-								<div className={styles.metricRow}>
-									<div className={styles.metricCard}>
-										<div className={styles.metricValue}>
-											{selected.temperature.toFixed(1)}
-										</div>
-										<div className={styles.metricUnit}>
-											℃
-										</div>
-										<div className={styles.metricLabel}>
-											温度
-										</div>
+										<span className={styles.roomLabel}>
+											监控房
+										</span>
+										<span className={styles.roomValue}>
+											{selected.roomLabel}
+										</span>
 									</div>
-									<div className={styles.metricCard}>
-										<div className={styles.metricValue}>
-											{selected.flowRate.toFixed(1)}
+									<div className={styles.detailSwitch}>
+										<span className={styles.switchLabel}>
+											开关
+										</span>
+										<Switch
+											checked={selected.enabled}
+											onChange={handleDeviceSwitch}
+											className={styles.controlSwitch}
+											aria-label="开关"
+										/>
+									</div>
+								</div>
+
+								<div className={styles.detailBody}>
+									{selected.cleaning ? (
+										<button
+											type="button"
+											className={styles.cleaningStatus}
+											onClick={handleClean}
+											aria-label="取消设备清洗"
+										>
+											<svg
+												className={styles.cleaningIcon}
+												xmlns="http://www.w3.org/2000/svg"
+												viewBox="0 0 18 18"
+												fill="none"
+												aria-hidden
+											>
+												<title>清洗中</title>
+												<g fill="#0099AF">
+													<circle
+														cx="9"
+														cy="2.2"
+														r="1.7"
+													/>
+													<circle
+														cx="13.8"
+														cy="4.2"
+														r="1.55"
+													/>
+													<circle
+														cx="15.8"
+														cy="9"
+														r="1.35"
+													/>
+													<circle
+														cx="13.8"
+														cy="13.8"
+														r="1.15"
+													/>
+													<circle
+														cx="9"
+														cy="15.8"
+														r="1"
+													/>
+													<circle
+														cx="4.2"
+														cy="13.8"
+														r="0.85"
+													/>
+													<circle
+														cx="2.2"
+														cy="9"
+														r="0.7"
+													/>
+													<circle
+														cx="4.2"
+														cy="4.2"
+														r="0.55"
+													/>
+												</g>
+											</svg>
+											<span
+												className={styles.cleaningText}
+											>
+												清洗中
+											</span>
+										</button>
+									) : (
+										<button
+											type="button"
+											className={styles.cleanBtn}
+											onClick={handleClean}
+										>
+											<ClearOutlined
+												className={styles.cleanIcon}
+											/>
+											<span className={styles.cleanText}>
+												设备清洗
+											</span>
+										</button>
+									)}
+
+									<div className={styles.metricRow}>
+										<div className={styles.metricCard}>
+											<div className={styles.metricValue}>
+												{selected.temperature.toFixed(
+													1,
+												)}
+											</div>
+											<div className={styles.metricUnit}>
+												℃
+											</div>
+											<div className={styles.metricLabel}>
+												温度
+											</div>
 										</div>
-										<div className={styles.metricUnit}>
-											L/min
-										</div>
-										<div className={styles.metricLabel}>
-											流量
+										<div className={styles.metricCard}>
+											<div className={styles.metricValue}>
+												{selected.flowRate.toFixed(1)}
+											</div>
+											<div className={styles.metricUnit}>
+												L/min
+											</div>
+											<div className={styles.metricLabel}>
+												流量
+											</div>
 										</div>
 									</div>
 								</div>
-							</div>
-						</>
-					) : null}
-				</section>
+							</>
+						) : null}
+					</section>
+				</div>
 			</div>
 		</div>
 	);
