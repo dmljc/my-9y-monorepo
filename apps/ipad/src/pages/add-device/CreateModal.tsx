@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { detail, listThings, lookup } from "./api";
 import styles from "./index.module.css";
 import type { Device, DeviceFormValues, ThingOption } from "./interface";
-import { MAX_LENGTH_12, MAX_LENGTH_20, toThingOptions } from "./utils";
+import { MAX_LENGTH_12, MAX_LENGTH_100, toThingOptions } from "./utils";
 
 /** 物实例远程搜索防抖间隔（毫秒）。 */
 const THING_SEARCH_DEBOUNCE_MS = 300;
@@ -12,7 +12,7 @@ const THING_SEARCH_DEBOUNCE_MS = 300;
 /** 设备编码校验。 */
 const deviceCodeRules: Rule[] = [
 	{ required: true, whitespace: true, message: "请输入编码" },
-	{ max: MAX_LENGTH_20, message: `最多输入${MAX_LENGTH_20}个字符` },
+	{ max: MAX_LENGTH_100, message: `最多输入${MAX_LENGTH_100}个字符` },
 ];
 
 /** 设备名称校验。 */
@@ -196,8 +196,7 @@ const CreateModal = ({
 				>
 					<Input
 						placeholder="请输入编码"
-						maxLength={MAX_LENGTH_20}
-						disabled={isEdit}
+						maxLength={MAX_LENGTH_100}
 						onBlur={() => {
 							handleLookup();
 						}}

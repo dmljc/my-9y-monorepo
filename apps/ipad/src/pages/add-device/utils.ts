@@ -10,7 +10,7 @@ import type {
 } from "./interface";
 
 /** 设备编码最大长度（后端约束）。 */
-export const MAX_LENGTH_20 = 20;
+export const MAX_LENGTH_100 = 100;
 
 /** 设备名称、厂家最大长度（后端约束）。 */
 export const MAX_LENGTH_12 = 12;
