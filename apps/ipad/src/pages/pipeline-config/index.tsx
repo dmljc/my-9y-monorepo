@@ -1,20 +1,35 @@
 import { App, Input, Select, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { type Dispatch, type SetStateAction, useRef, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
-import CreateModal from "./CreateModal";
-import styles from "./index.module.css";
 import {
-	BUILDING_TABS,
+	listBuildings,
+	listDevicePipelines,
+	listPipelineOptions,
+	listRoomPipelines,
+	saveDevicePipeline,
+	saveRoomPipeline,
+	switchBuilding,
+} from "./api";
+import styles from "./index.module.css";
+import type {
+	BuildingTab,
+	DevicePipelineRow,
+	PipelineConfigType,
+	PipelineItem,
+	PipeOption,
+} from "./interface";
+import {
+	buildPipeOptionsFromData,
 	CONFIG_TYPE_OPTIONS,
 	FLOW_RATE_REQUIRED_MSG,
-	getPipelinesByBuilding,
 	getRoomByPipeNo,
+	mapDeviceRowToItem,
+	mapRoomRowToItem,
+	normalizeBuildingTabs,
 	PIPE_NO_REQUIRED_MSG,
-	PIPE_OPTIONS,
-	type PipelineConfigType,
-	type PipelineFormValues,
-	type PipelineItem,
+	parseArrayData,
+	parseRoomPipelineList,
 	sanitizeFlowRateInput,
 	validateDevicePipeOut,
 	validateFlowRate,
@@ -23,29 +38,30 @@ import {
 
 const PipelineConfig = () => {
 	const { message } = App.useApp();
-	const pageRef = useRef<HTMLDivElement>(null);
-	const [buildingKey, setBuildingKey] = useState(BUILDING_TABS[0].key);
-	const [configType, setConfigType] = useState<PipelineConfigType>("room");
-	const [pipelines, setPipelines] = useState<PipelineItem[]>(() =>
-		getPipelinesByBuilding(BUILDING_TABS[0].key, "room"),
-	);
+	const [buildings, setBuildings] = useState<BuildingTab[]>([]);
+	const [buildingKey, setBuildingKey] = useState("");
+	const [configType, setConfigType] = useState<PipelineConfigType>("device");
+	const [pipelines, setPipelines] = useState<PipelineItem[]>([]);
+	const [loading, setLoading] = useState(false);
 	const [masterOn, setMasterOn] = useState(true);
-	const [modalOpen, setModalOpen] = useState(false);
-	const [editingRecord, setEditingRecord] = useState<PipelineItem | null>(
-		null,
-	);
+	const [pipeOptions, setPipeOptions] = useState<PipeOption[]>([]);
+	const [roomByPipe, setRoomByPipe] = useState<Record<string, string>>({});
 	/** 行级管道号错误文案（房间 IN / 设备 OUT）。 */
-	const [pipeNoErrors, setPipeNoErrors] = useState<Record<string, string>>(
+	const [pipeNoErrors, setPipeNoErrors] = useState<Record<number, string>>(
 		{},
 	);
 	/** 设备配置：行级流量错误文案。 */
 	const [flowRateErrors, setFlowRateErrors] = useState<
-		Record<string, string>
+		Record<number, string>
 	>({});
 
+	const currentBuilding =
+		buildings.find((item) => item.key === buildingKey) ?? null;
+	const existingPipes = new Set(pipeOptions.map((item) => item.value));
+
 	const clearFieldError = (
-		setter: Dispatch<SetStateAction<Record<string, string>>>,
-		id: string,
+		setter: Dispatch<SetStateAction<Record<number, string>>>,
+		id: number,
 	) => {
 		setter((prev) => {
 			if (!prev[id]) return prev;
@@ -55,47 +71,112 @@ const PipelineConfig = () => {
 		});
 	};
 
-	/** 切换厂房 / 配置类型时同步换表数据，避免列先变、数据后到造成表格跳动。 */
-	const resetList = (
-		nextBuildingKey: string,
-		nextConfigType: PipelineConfigType,
-	) => {
-		setPipelines(getPipelinesByBuilding(nextBuildingKey, nextConfigType));
+	const clearRowErrors = () => {
 		setPipeNoErrors({});
 		setFlowRateErrors({});
 	};
 
+	const loadPipeOptions = async (buildingId: number) => {
+		const data = await listPipelineOptions(buildingId);
+		const { options, roomByPipe: nextMap } = buildPipeOptionsFromData(data);
+		setPipeOptions(options);
+		setRoomByPipe(nextMap);
+	};
+
+	const loadRoomList = async (buildingId: number) => {
+		const listData = await listRoomPipelines(buildingId);
+		const rows = parseRoomPipelineList(listData)
+			.map((row) => mapRoomRowToItem(row, buildingId))
+			.filter((item): item is PipelineItem => item !== null);
+		setPipelines(rows);
+	};
+
+	const loadDeviceList = async (buildingId: number) => {
+		const data = await listDevicePipelines(buildingId);
+		const rows = parseArrayData<DevicePipelineRow>(data)
+			.map((row) => mapDeviceRowToItem(row, buildingId))
+			.filter((item): item is PipelineItem => item !== null);
+		setPipelines(rows);
+	};
+
+	const loadList = async (
+		buildingId: number,
+		nextConfigType: PipelineConfigType,
+	) => {
+		setLoading(true);
+		clearRowErrors();
+		try {
+			await loadPipeOptions(buildingId);
+			if (nextConfigType === "room") {
+				await loadRoomList(buildingId);
+			} else {
+				await loadDeviceList(buildingId);
+			}
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const loadBuildings = async () => {
+		const buildingsData = await listBuildings();
+		const tabs = normalizeBuildingTabs(buildingsData);
+		setBuildings(tabs);
+		if (!tabs.length) {
+			setBuildingKey("");
+			setPipelines([]);
+			setPipeOptions([]);
+			setRoomByPipe({});
+			return;
+		}
+		const nextKey =
+			tabs.some((item) => item.key === buildingKey) && buildingKey
+				? buildingKey
+				: tabs[0].key;
+		setBuildingKey(nextKey);
+		const tab = tabs.find((item) => item.key === nextKey);
+		if (tab) await loadList(tab.buildingId, configType);
+	};
+
+	useEffect(() => {
+		loadBuildings();
+	}, []);
+
 	const handleBuildingChange = (key: string) => {
 		setBuildingKey(key);
-		resetList(key, configType);
+		const tab = buildings.find((item) => item.key === key);
+		if (tab) loadList(tab.buildingId, configType);
 	};
 
 	const handleConfigTypeChange = (key: PipelineConfigType) => {
 		setConfigType(key);
-		resetList(buildingKey, key);
+		if (currentBuilding) loadList(currentBuilding.buildingId, key);
 	};
 
-	const handleMasterChange = (checked: boolean) => {
+	const handleMasterChange = async (checked: boolean) => {
+		if (!currentBuilding) {
+			message.warning("暂无可用厂房");
+			return;
+		}
+		const name = currentBuilding.label;
+		await switchBuilding(
+			currentBuilding.buildingId,
+			checked ? "on" : "off",
+		);
 		setMasterOn(checked);
 		message.success(
-			checked ? "“厂房名称”总开关已开启" : "“厂房名称”总开关已关闭",
+			checked ? `“${name}”厂房总开关已开启` : `“${name}”厂房总开关已关闭`,
 		);
 	};
 
-	const handleAdd = () => {
-		setEditingRecord(null);
-		setModalOpen(true);
-	};
-
-	const handlePipeInChange = (id: string, pipeIn: string) => {
+	const handlePipeInChange = (id: number, pipeIn: string) => {
 		setPipelines((prev) =>
 			prev.map((item) => (item.id === id ? { ...item, pipeIn } : item)),
 		);
 		clearFieldError(setPipeNoErrors, id);
 	};
 
-	const handlePipeOutChange = (id: string, pipeOut: string) => {
-		const sampleRoom = getRoomByPipeNo(pipeOut);
+	const handlePipeOutChange = (id: number, pipeOut: string) => {
+		const sampleRoom = getRoomByPipeNo(pipeOut, roomByPipe);
 		setPipelines((prev) =>
 			prev.map((item) =>
 				item.id === id ? { ...item, pipeOut, sampleRoom } : item,
@@ -104,7 +185,7 @@ const PipelineConfig = () => {
 		clearFieldError(setPipeNoErrors, id);
 	};
 
-	const handleFlowRateChange = (id: string, raw: string) => {
+	const handleFlowRateChange = (id: number, raw: string) => {
 		const flowRate = sanitizeFlowRateInput(raw);
 		setPipelines((prev) =>
 			prev.map((item) => (item.id === id ? { ...item, flowRate } : item)),
@@ -112,19 +193,37 @@ const PipelineConfig = () => {
 		clearFieldError(setFlowRateErrors, id);
 	};
 
-	const handleSave = (record: PipelineItem) => {
+	const handleSave = async (record: PipelineItem) => {
+		if (!currentBuilding) {
+			message.warning("暂无可用厂房");
+			return;
+		}
+
 		if (configType === "room") {
 			const error = validateRoomPipeIn(
 				record.pipeIn,
 				record.id,
 				pipelines,
+				existingPipes,
 			);
 			if (error) {
 				setPipeNoErrors((prev) => ({ ...prev, [record.id]: error }));
 				return;
 			}
+			if (!record.roomId) {
+				message.error("缺少房间信息，无法保存");
+				return;
+			}
 			clearFieldError(setPipeNoErrors, record.id);
+			await saveRoomPipeline({
+				id: record.configId ?? record.id,
+				buildingId: currentBuilding.buildingId,
+				roomId: record.roomId,
+				room: record.sampleRoom,
+				pipelineId: record.pipeIn.trim(),
+			});
 			message.success("保存成功");
+			await loadList(currentBuilding.buildingId, "room");
 			return;
 		}
 
@@ -132,8 +231,12 @@ const PipelineConfig = () => {
 			record.pipeOut,
 			record.id,
 			pipelines,
+			existingPipes,
 		);
-		const flowError = validateFlowRate(record.flowRate);
+		const pipeOut = record.pipeOut.trim();
+		const flowRate = record.flowRate.trim();
+		const flowError =
+			pipeOut || flowRate ? validateFlowRate(flowRate || "") : "";
 		if (pipeError || flowError) {
 			if (pipeError) {
 				setPipeNoErrors((prev) => ({
@@ -155,101 +258,19 @@ const PipelineConfig = () => {
 		}
 		clearFieldError(setPipeNoErrors, record.id);
 		clearFieldError(setFlowRateErrors, record.id);
+		await saveDevicePipeline({
+			deviceId: record.deviceId ?? record.id,
+			pipelineId: pipeOut,
+			...(flowRate ? { flowRate: Number(flowRate) } : {}),
+		});
 		message.success("保存成功");
-	};
-
-	const handleModalSubmit = async (
-		values: PipelineFormValues,
-	): Promise<boolean | undefined> => {
-		if (configType === "room") {
-			const sampleRoom = values.sampleRoom.trim();
-			const pipeIn = (values.pipeIn ?? "").trim();
-			const tempId = editingRecord?.id ?? "__new__";
-			const error = validateRoomPipeIn(pipeIn, tempId, pipelines);
-			if (error) {
-				message.error(error);
-				return false;
-			}
-			if (editingRecord) {
-				setPipelines((prev) =>
-					prev.map((item) =>
-						item.id === editingRecord.id
-							? { ...item, sampleRoom, pipeIn }
-							: item,
-					),
-				);
-				message.success("编辑成功");
-				return;
-			}
-			const newItem: PipelineItem = {
-				id: `${buildingKey}-room-${Date.now()}`,
-				deviceCode: "",
-				deviceName: "",
-				sampleRoom,
-				pipeIn,
-				pipeOut: "",
-				flowRate: "",
-				status: "closed",
-				buildingKey,
-				configType,
-			};
-			setPipelines((prev) => [newItem, ...prev]);
-			message.success("新增成功");
-			return;
-		}
-
-		const deviceCode = values.deviceCode.trim();
-		const deviceName = values.deviceName.trim();
-		const pipeOut = (values.pipeOut ?? "").trim();
-		const sampleRoom = values.sampleRoom.trim() || getRoomByPipeNo(pipeOut);
-		const flowRate = sanitizeFlowRateInput(values.flowRate ?? "");
-		const tempId = editingRecord?.id ?? "__new__";
-		const pipeError = validateDevicePipeOut(pipeOut, tempId, pipelines);
-		const flowError = validateFlowRate(flowRate);
-		if (pipeError || flowError) {
-			message.error(pipeError || flowError);
-			return false;
-		}
-
-		if (editingRecord) {
-			setPipelines((prev) =>
-				prev.map((item) =>
-					item.id === editingRecord.id
-						? {
-								...item,
-								deviceCode,
-								deviceName,
-								pipeOut,
-								sampleRoom,
-								flowRate,
-							}
-						: item,
-				),
-			);
-			message.success("编辑成功");
-			return;
-		}
-
-		const newItem: PipelineItem = {
-			id: `${buildingKey}-device-${Date.now()}`,
-			deviceCode,
-			deviceName,
-			sampleRoom,
-			pipeIn: "",
-			pipeOut,
-			flowRate,
-			status: "closed",
-			buildingKey,
-			configType,
-		};
-		setPipelines((prev) => [newItem, ...prev]);
-		message.success("新增成功");
+		await loadList(currentBuilding.buildingId, "device");
 	};
 
 	const renderPipeSelect = (
 		value: string,
 		record: PipelineItem,
-		onChange: (id: string, next: string) => void,
+		onChange: (id: number, next: string) => void,
 		extraClassName?: string,
 	) => {
 		const error = pipeNoErrors[record.id];
@@ -266,7 +287,7 @@ const PipelineConfig = () => {
 					placeholder={
 						requiredError ? PIPE_NO_REQUIRED_MSG : "请选择管道号"
 					}
-					options={PIPE_OPTIONS}
+					options={pipeOptions}
 					showSearch={{ optionFilterProp: "label" }}
 					allowClear
 					onChange={(next) => onChange(record.id, next ?? "")}
@@ -393,10 +414,10 @@ const PipelineConfig = () => {
 
 	return (
 		<div className={styles.pipelineConfig} data-page="pipeline-config">
-			<div ref={pageRef} className={styles.stage}>
+			<div className={styles.stage}>
 				<BuildingPageHeader
 					buildingKey={buildingKey}
-					buildings={BUILDING_TABS}
+					buildings={buildings}
 					onBuildingChange={handleBuildingChange}
 					masterOn={masterOn}
 					onMasterChange={handleMasterChange}
@@ -425,31 +446,6 @@ const PipelineConfig = () => {
 									</button>
 								))}
 							</div>
-							<button
-								type="button"
-								className={styles.addBtn}
-								onClick={handleAdd}
-							>
-								<svg
-									className={styles.addBtnPlus}
-									viewBox="0 0 24 24"
-									aria-hidden
-								>
-									<title>新增</title>
-									<path
-										d="M12 5v14M5 12h14"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth="2.5"
-										strokeLinecap="round"
-									/>
-								</svg>
-								<span>
-									新增
-									{configType === "room" ? "房间" : "设备"}
-									管道
-								</span>
-							</button>
 						</div>
 						<Table
 							key={configType}
@@ -457,6 +453,7 @@ const PipelineConfig = () => {
 							columns={columns}
 							dataSource={pipelines}
 							rowKey="id"
+							loading={loading}
 							pagination={false}
 							rowClassName={(_, index) =>
 								index % 2 === 1 ? styles.rowStripe : ""
@@ -464,15 +461,6 @@ const PipelineConfig = () => {
 						/>
 					</div>
 				</div>
-
-				<CreateModal
-					open={modalOpen}
-					configType={configType}
-					editingRecord={editingRecord}
-					getContainer={() => pageRef.current ?? document.body}
-					onCancel={() => setModalOpen(false)}
-					onOk={handleModalSubmit}
-				/>
 			</div>
 		</div>
 	);

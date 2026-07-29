@@ -1,59 +1,12 @@
-import mockdata from "@/mock/mockdata.json";
-
-/**
- * 厂房 Tab。
- */
-export interface BuildingTab {
-	key: string;
-	label: string;
-}
-
-/**
- * 管道配置 Tab 类型（房间 / 设备）。
- */
-export type PipelineConfigType = "room" | "device";
-
-/**
- * 管道配置列表行状态。
- */
-export type PipelineStatus = "running" | "closed";
-
-/**
- * 管道配置列表行。
- */
-export interface PipelineItem {
-	id: string;
-	deviceCode: string;
-	deviceName: string;
-	/** 房间号（房间配置）/ 取样房间号（设备配置，兼容旧字段）。 */
-	sampleRoom: string;
-	/** 管道号（IN），房间配置使用。 */
-	pipeIn: string;
-	/** 管道号（OUT），设备配置使用。 */
-	pipeOut: string;
-	/** 流量（L/min），设备配置使用；以字符串便于受控输入。 */
-	flowRate: string;
-	status: PipelineStatus;
-	buildingKey: string;
-	configType: PipelineConfigType;
-}
-
-/**
- * 编辑管道配置表单值。
- */
-export interface PipelineFormValues {
-	deviceCode: string;
-	deviceName: string;
-	sampleRoom: string;
-	pipeIn: string;
-	pipeOut: string;
-	flowRate: string;
-}
-
-/**
- * 厂房 Tab 列表。
- */
-export const BUILDING_TABS: BuildingTab[] = mockdata.buildings;
+import type {
+	BuildingTab,
+	DevicePipelineRow,
+	PipelineConfigType,
+	PipelineItem,
+	PipelineOptionRow,
+	PipeOption,
+	RoomPipelineRow,
+} from "./interface";
 
 /**
  * 管道配置分段选项。
@@ -62,48 +15,9 @@ export const CONFIG_TYPE_OPTIONS: {
 	key: PipelineConfigType;
 	label: string;
 }[] = [
-	{ key: "room", label: "房间管道配置" },
 	{ key: "device", label: "设备管道配置" },
+	{ key: "room", label: "房间管道配置" },
 ];
-
-/**
- * 设备编码 / 名称 / 房间号 / 管道号最大长度。
- */
-export const MAX_LENGTH_40 = 40;
-
-/**
- * 管路对应关系（客户提供，写死；管道号 → 房间号）。
- */
-export const PIPELINE_ROOM_MAP: Record<string, string> = {
-	"03": "102",
-	"14": "211",
-	"17": "302",
-	"19": "314",
-};
-
-/**
- * 管道号下拉选项（与管路对应关系表一致）。
- */
-export const PIPE_OPTIONS = Object.keys(PIPELINE_ROOM_MAP).map((pipeNo) => ({
-	label: pipeNo,
-	value: pipeNo,
-}));
-
-/**
- * 系统中已存在的管道号（对应关系表白名单；IN / OUT 共用）。
- */
-export const EXISTING_PIPE_NO_SET = new Set(Object.keys(PIPELINE_ROOM_MAP));
-
-/**
- * 根据管道号取对应房间号。
- *
- * @param {string} - 管道号。
- * @returns {string} - 房间号；未命中时为空串。
- */
-export const getRoomByPipeNo = (pipeNo: string): string => {
-	const key = pipeNo.trim();
-	return PIPELINE_ROOM_MAP[key] ?? "";
-};
 
 /** 管道号不存在提示。 */
 export const PIPE_NO_NOT_FOUND_MSG = "管道号不存在";
@@ -127,13 +41,173 @@ export const FLOW_RATE_MIN = 0;
 export const FLOW_RATE_MAX = 999999.99;
 
 /**
- * 仅保留数字字符（管道号）。
+ * 将厂房接口响应转为顶栏 Tab。
  *
- * @param {string} - 原始输入。
- * @returns {string} - 过滤后的数字串。
+ * @param {unknown} - `/iiot/alarm/buildings` 解包后的 data。
+ * @returns {BuildingTab[]} - 厂房 Tab 列表。
  */
-export const sanitizePipeNoInput = (value: string): string => {
-	return value.replace(/\D/g, "");
+export const normalizeBuildingTabs = (data: unknown): BuildingTab[] => {
+	if (!Array.isArray(data)) return [];
+
+	const tabs: BuildingTab[] = [];
+	for (const item of data) {
+		if (!item || typeof item !== "object") continue;
+		const record = item as Record<string, unknown>;
+		const buildingId = Number(record.id ?? record.buildingId ?? 0);
+		const building = String(record.building ?? "").trim();
+		if (!buildingId || !building) continue;
+		tabs.push({
+			key: String(buildingId),
+			label: building,
+			buildingId,
+			building,
+		});
+	}
+	return tabs;
+};
+
+/**
+ * 解析房间管道 list 接口 data.list。
+ *
+ * @param {unknown} - list 接口解包后的 data。
+ * @returns {RoomPipelineRow[]} - 行数组。
+ */
+export const parseRoomPipelineList = (data: unknown): RoomPipelineRow[] => {
+	if (Array.isArray(data)) return data as RoomPipelineRow[];
+	if (!data || typeof data !== "object") return [];
+	const list = (data as { list?: unknown }).list;
+	return Array.isArray(list) ? (list as RoomPipelineRow[]) : [];
+};
+
+/**
+ * 解析设备管道 list / options 数组。
+ *
+ * @param {unknown} - 接口解包后的 data。
+ * @returns {T[]} - 行数组。
+ */
+export const parseArrayData = <T>(data: unknown): T[] => {
+	return Array.isArray(data) ? (data as T[]) : [];
+};
+
+/**
+ * 格式化房间号展示。
+ *
+ * @param {string | undefined} - 后端 room。
+ * @returns {string} - 展示文案。
+ */
+export const formatRoom = (room?: string): string => {
+	const value = room?.trim();
+	if (!value || value === "-") return "";
+	return value;
+};
+
+/**
+ * 流量转受控输入字符串。
+ *
+ * @param {number | string | null | undefined} - 后端 flowRate。
+ * @returns {string} - 输入框值。
+ */
+export const formatFlowRate = (flowRate?: number | string | null): string => {
+	if (flowRate === undefined || flowRate === null || flowRate === "") {
+		return "";
+	}
+	return String(flowRate);
+};
+
+/**
+ * 将房间管道配置行映射为表格行。
+ *
+ * @param {RoomPipelineRow} - 接口行。
+ * @param {number} - 当前厂房 ID。
+ * @returns {PipelineItem | null} - 表格行；缺 id 时跳过。
+ */
+export const mapRoomRowToItem = (
+	row: RoomPipelineRow,
+	buildingId: number,
+): PipelineItem | null => {
+	const id = Number(row.id ?? 0);
+	const roomId = Number(row.roomId ?? 0);
+	if (!id || !roomId) return null;
+	return {
+		id,
+		configId: id,
+		roomId,
+		deviceCode: "",
+		deviceName: "",
+		sampleRoom: formatRoom(row.room),
+		pipeIn: String(row.pipelineId ?? "").trim(),
+		pipeOut: "",
+		flowRate: "",
+		buildingId: Number(row.buildingId ?? buildingId),
+		configType: "room",
+	};
+};
+
+/**
+ * 将设备管道配置行映射为表格行。
+ *
+ * @param {DevicePipelineRow} - 接口行。
+ * @param {number} - 当前厂房 ID。
+ * @returns {PipelineItem | null} - 表格行；缺 id 时跳过。
+ */
+export const mapDeviceRowToItem = (
+	row: DevicePipelineRow,
+	buildingId: number,
+): PipelineItem | null => {
+	const id = Number(row.id ?? 0);
+	if (!id) return null;
+	return {
+		id,
+		deviceId: id,
+		deviceCode: row.deviceCode ?? "",
+		deviceName: row.deviceName ?? "",
+		sampleRoom: formatRoom(row.room),
+		pipeIn: "",
+		pipeOut: String(row.pipelineId ?? "").trim(),
+		flowRate: formatFlowRate(row.flowRate),
+		buildingId,
+		configType: "device",
+	};
+};
+
+/**
+ * 由管道 options 构建下拉选项与「管道号 → 房间号」映射。
+ *
+ * @param {unknown} - options 接口解包后的 data。
+ * @returns {{ options: PipeOption[]; roomByPipe: Record<string, string> }} - 下拉与映射。
+ */
+export const buildPipeOptionsFromData = (
+	data: unknown,
+): { options: PipeOption[]; roomByPipe: Record<string, string> } => {
+	const rows = parseArrayData<PipelineOptionRow>(data);
+	const roomByPipe: Record<string, string> = {};
+	const options: PipeOption[] = [];
+	const seen = new Set<string>();
+
+	for (const row of rows) {
+		const pipeNo = String(row.pipelineId ?? "").trim();
+		if (!pipeNo || seen.has(pipeNo)) continue;
+		seen.add(pipeNo);
+		roomByPipe[pipeNo] = formatRoom(row.room);
+		options.push({ label: pipeNo, value: pipeNo });
+	}
+
+	return { options, roomByPipe };
+};
+
+/**
+ * 根据管道号取对应房间号。
+ *
+ * @param {string} - 管道号。
+ * @param {Record<string, string>} - 管道号 → 房间号映射。
+ * @returns {string} - 房间号；未命中时为空串。
+ */
+export const getRoomByPipeNo = (
+	pipeNo: string,
+	roomByPipe: Record<string, string>,
+): string => {
+	const key = pipeNo.trim();
+	return roomByPipe[key] ?? "";
 };
 
 /**
@@ -162,25 +236,27 @@ export const sanitizeFlowRateInput = (value: string): string => {
 };
 
 /**
- * 校验管道号：必填、存在性、列表内同字段不重复。
+ * 校验管道号：允许为空；有值时校验存在性、列表内同字段不重复。
  *
  * @param {string} - 待校验管道号。
- * @param {string} - 当前行 id（排除自身做重复校验）。
+ * @param {number} - 当前行 id（排除自身做重复校验）。
  * @param {PipelineItem[]} - 当前列表。
  * @param {"pipeIn" | "pipeOut"} - 校验字段。
+ * @param {Set<string>} - 合法管道号集合。
  * @returns {string} - 错误文案；通过时为空串。
  */
 export const validatePipeNo = (
 	pipeNo: string,
-	recordId: string,
+	recordId: number,
 	list: PipelineItem[],
 	field: "pipeIn" | "pipeOut",
+	existingPipes: Set<string>,
 ): string => {
 	const value = pipeNo.trim();
 	if (!value) {
-		return PIPE_NO_REQUIRED_MSG;
+		return "";
 	}
-	if (!EXISTING_PIPE_NO_SET.has(value)) {
+	if (existingPipes.size > 0 && !existingPipes.has(value)) {
 		return PIPE_NO_NOT_FOUND_MSG;
 	}
 	const duplicated = list.some(
@@ -196,32 +272,36 @@ export const validatePipeNo = (
  * 校验房间管道号（IN）。
  *
  * @param {string} - 待校验管道号。
- * @param {string} - 当前行 id。
+ * @param {number} - 当前行 id。
  * @param {PipelineItem[]} - 当前列表。
+ * @param {Set<string>} - 合法管道号集合。
  * @returns {string} - 错误文案；通过时为空串。
  */
 export const validateRoomPipeIn = (
 	pipeIn: string,
-	recordId: string,
+	recordId: number,
 	list: PipelineItem[],
+	existingPipes: Set<string>,
 ): string => {
-	return validatePipeNo(pipeIn, recordId, list, "pipeIn");
+	return validatePipeNo(pipeIn, recordId, list, "pipeIn", existingPipes);
 };
 
 /**
  * 校验设备管道号（OUT）。
  *
  * @param {string} - 待校验管道号。
- * @param {string} - 当前行 id。
+ * @param {number} - 当前行 id。
  * @param {PipelineItem[]} - 当前列表。
+ * @param {Set<string>} - 合法管道号集合。
  * @returns {string} - 错误文案；通过时为空串。
  */
 export const validateDevicePipeOut = (
 	pipeOut: string,
-	recordId: string,
+	recordId: number,
 	list: PipelineItem[],
+	existingPipes: Set<string>,
 ): string => {
-	return validatePipeNo(pipeOut, recordId, list, "pipeOut");
+	return validatePipeNo(pipeOut, recordId, list, "pipeOut", existingPipes);
 };
 
 /**
@@ -243,40 +323,4 @@ export const validateFlowRate = (flowRate: string): string => {
 		return FLOW_RATE_RANGE_MSG;
 	}
 	return "";
-};
-
-/**
- * 按厂房与配置类型读取管道配置列表（浅拷贝，便于页面内编辑）。
- *
- * @param {string} - 厂房 key。
- * @param {PipelineConfigType} - 房间 / 设备配置类型。
- * @returns {PipelineItem[]} - 该厂房下对应类型的管道配置列表。
- */
-export const getPipelinesByBuilding = (
-	buildingKey: string,
-	configType: PipelineConfigType,
-): PipelineItem[] => {
-	return mockdata.pipelineConfigs
-		.filter(
-			(item) =>
-				item.buildingKey === buildingKey &&
-				item.configType === configType,
-		)
-		.map((item) => {
-			const raw = item as PipelineItem & {
-				pipeOut?: string;
-				flowRate?: string | number;
-			};
-			return {
-				...item,
-				pipeIn: sanitizePipeNoInput(raw.pipeIn ?? ""),
-				pipeOut: sanitizePipeNoInput(raw.pipeOut ?? ""),
-				flowRate:
-					raw.flowRate === undefined || raw.flowRate === null
-						? ""
-						: String(raw.flowRate),
-				status: item.status as PipelineStatus,
-				configType: item.configType as PipelineConfigType,
-			};
-		});
 };
