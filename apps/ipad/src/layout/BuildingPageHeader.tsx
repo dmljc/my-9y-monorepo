@@ -31,7 +31,7 @@ export interface BuildingPageHeaderProps {
 }
 
 /**
- * 设备控制 / 取样配置等页共用顶栏：返回、厂房 Tab（选中微笑弧线）、总开关、头像。
+ * 业务页共用顶栏：返回、厂房 Tab（选中微笑弧线）、总开关、头像。
  */
 const BuildingPageHeader = ({
 	buildingKey,
