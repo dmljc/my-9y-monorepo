@@ -1,4 +1,5 @@
 import mockdata from "@/mock/mockdata.json";
+import { sortBuildingTabs } from "@/utils/buildingTabs";
 
 /**
  * 厂房 Tab。
@@ -31,7 +32,9 @@ export interface SampleDevice {
 /**
  * 厂房 Tab 列表。
  */
-export const BUILDING_TABS: BuildingTab[] = mockdata.buildings;
+export const BUILDING_TABS: BuildingTab[] = sortBuildingTabs(
+	mockdata.buildings,
+);
 
 /**
  * 房间号下拉选项。

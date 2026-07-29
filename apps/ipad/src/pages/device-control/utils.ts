@@ -1,4 +1,5 @@
 import mockdata from "@/mock/mockdata.json";
+import { sortBuildingTabs } from "@/utils/buildingTabs";
 
 /**
  * 厂房 Tab（脱敏编码）。
@@ -28,7 +29,9 @@ export interface DeviceItem {
 /**
  * 厂房 Tab 列表（来自 mockdata.json）。
  */
-export const BUILDING_TABS: BuildingTab[] = mockdata.buildings;
+export const BUILDING_TABS: BuildingTab[] = sortBuildingTabs(
+	mockdata.buildings,
+);
 
 /**
  * 根据字符串生成稳定哈希，用于 mock 名称长度。

@@ -1,3 +1,4 @@
+import { sortBuildingTabs } from "@/utils/buildingTabs";
 import type {
 	BuildingTab,
 	Device,
@@ -124,7 +125,7 @@ export const normalizeBuildingTabs = (data: unknown): BuildingTab[] => {
 			building,
 		});
 	}
-	return tabs;
+	return sortBuildingTabs(tabs);
 };
 
 /**
