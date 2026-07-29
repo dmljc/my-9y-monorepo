@@ -1,4 +1,4 @@
-import { Form, Input, Modal } from "antd";
+import { Form, Input, Modal, Select } from "antd";
 import type { Rule } from "antd/es/form";
 import { useEffect, useState } from "react";
 import styles from "./index.module.css";
@@ -6,12 +6,13 @@ import {
 	FLOW_RATE_MAX,
 	FLOW_RATE_MIN,
 	FLOW_RATE_RANGE_MSG,
+	getRoomByPipeNo,
 	MAX_LENGTH_40,
+	PIPE_OPTIONS,
 	type PipelineConfigType,
 	type PipelineFormValues,
 	type PipelineItem,
 	sanitizeFlowRateInput,
-	sanitizePipeNoInput,
 } from "./utils";
 
 /** 设备编码校验。 */
@@ -26,20 +27,16 @@ const deviceNameRules: Rule[] = [
 	{ max: MAX_LENGTH_40, message: `最多输入${MAX_LENGTH_40}个字符` },
 ];
 
-/** 取样房间号 / 房间号校验。 */
+/** 取样房间号 / 房间号校验（房间配置可编辑）。 */
 const sampleRoomRules: Rule[] = [
 	{ required: true, whitespace: true, message: "请输入房间号" },
 	{ max: MAX_LENGTH_40, message: `最多输入${MAX_LENGTH_40}个字符` },
 ];
 
-/** 管道号（IN）校验（弹窗：必填 + 仅数字）。 */
-const pipeInRules: Rule[] = [
-	{ required: true, whitespace: true, message: "请输入管道号" },
-	{ pattern: /^\d+$/, message: "管道号仅支持数字" },
-	{ max: MAX_LENGTH_40, message: `最多输入${MAX_LENGTH_40}个字符` },
-];
+/** 管道号（IN）校验。 */
+const pipeInRules: Rule[] = [{ required: true, message: "请选择管道号" }];
 
-/** 管道号（OUT）校验（弹窗：必填 + 仅数字）。 */
+/** 管道号（OUT）校验。 */
 const pipeOutRules: Rule[] = pipeInRules;
 
 /** 流量校验（弹窗：必填 + 0.00～999999.99）。 */
@@ -103,12 +100,26 @@ const CreateModal = ({
 		if (!open) return;
 
 		if (editingRecord) {
-			form.setFieldsValue(editingRecord);
+			form.setFieldsValue({
+				...editingRecord,
+				sampleRoom:
+					editingRecord.sampleRoom ||
+					getRoomByPipeNo(
+						isRoom ? editingRecord.pipeIn : editingRecord.pipeOut,
+					),
+			});
 			return;
 		}
 
 		form.resetFields();
-	}, [open, editingRecord]);
+	}, [open, editingRecord, isRoom]);
+
+	const handlePipeOutChange = (pipeOut: string) => {
+		form.setFieldsValue({
+			pipeOut,
+			sampleRoom: getRoomByPipeNo(pipeOut),
+		});
+	};
 
 	const onOk = async () => {
 		try {
@@ -160,14 +171,12 @@ const CreateModal = ({
 							name="pipeIn"
 							label="管道号（IN）"
 							rules={pipeInRules}
-							getValueFromEvent={(e) =>
-								sanitizePipeNoInput(e.target.value)
-							}
 						>
-							<Input
-								placeholder="请输入管道号"
-								maxLength={MAX_LENGTH_40}
-								inputMode="numeric"
+							<Select
+								showSearch={{ optionFilterProp: "label" }}
+								placeholder="请选择管道号"
+								options={PIPE_OPTIONS}
+								allowClear
 							/>
 						</Form.Item>
 					</>
@@ -197,15 +206,17 @@ const CreateModal = ({
 							name="pipeOut"
 							label="管道号（OUT）"
 							rules={pipeOutRules}
-							getValueFromEvent={(e) =>
-								sanitizePipeNoInput(e.target.value)
-							}
 						>
-							<Input
-								placeholder="请输入管道号"
-								maxLength={MAX_LENGTH_40}
-								inputMode="numeric"
+							<Select
+								showSearch={{ optionFilterProp: "label" }}
+								placeholder="请选择管道号"
+								options={PIPE_OPTIONS}
+								allowClear
+								onChange={handlePipeOutChange}
 							/>
+						</Form.Item>
+						<Form.Item name="sampleRoom" label="房间号">
+							<Input placeholder="选择管道后自动带出" disabled />
 						</Form.Item>
 						<Form.Item
 							name="flowRate"

@@ -72,32 +72,38 @@ export const CONFIG_TYPE_OPTIONS: {
 export const MAX_LENGTH_40 = 40;
 
 /**
- * 系统中已存在的管道号（mock 白名单，仅数字；IN / OUT 共用）。
+ * 管路对应关系（客户提供，写死；管道号 → 房间号）。
  */
-export const EXISTING_PIPE_NO_SET = new Set([
-	"1001",
-	"1002",
-	"1003",
-	"1004",
-	"1005",
-	"1006",
-	"1007",
-	"1008",
-	"1009",
-	"1010",
-	"1011",
-	"1012",
-	"1013",
-	"1014",
-	"2001",
-	"2002",
-	"2003",
-	"3001",
-	"3002",
-	"3003",
-	"3004",
-	"3005",
-]);
+export const PIPELINE_ROOM_MAP: Record<string, string> = {
+	"03": "102",
+	"14": "211",
+	"17": "302",
+	"19": "314",
+};
+
+/**
+ * 管道号下拉选项（与管路对应关系表一致）。
+ */
+export const PIPE_OPTIONS = Object.keys(PIPELINE_ROOM_MAP).map((pipeNo) => ({
+	label: pipeNo,
+	value: pipeNo,
+}));
+
+/**
+ * 系统中已存在的管道号（对应关系表白名单；IN / OUT 共用）。
+ */
+export const EXISTING_PIPE_NO_SET = new Set(Object.keys(PIPELINE_ROOM_MAP));
+
+/**
+ * 根据管道号取对应房间号。
+ *
+ * @param {string} - 管道号。
+ * @returns {string} - 房间号；未命中时为空串。
+ */
+export const getRoomByPipeNo = (pipeNo: string): string => {
+	const key = pipeNo.trim();
+	return PIPELINE_ROOM_MAP[key] ?? "";
+};
 
 /** 管道号不存在提示。 */
 export const PIPE_NO_NOT_FOUND_MSG = "管道号不存在";
@@ -105,8 +111,8 @@ export const PIPE_NO_NOT_FOUND_MSG = "管道号不存在";
 /** 管道号重复提示。 */
 export const PIPE_NO_DUPLICATE_MSG = "管道号重复";
 
-/** 管道号必填提示（展示在输入框内）。 */
-export const PIPE_NO_REQUIRED_MSG = "请输入管道号";
+/** 管道号必填提示（展示在选择框内）。 */
+export const PIPE_NO_REQUIRED_MSG = "请选择管道号";
 
 /** 流量必填提示（展示在输入框内）。 */
 export const FLOW_RATE_REQUIRED_MSG = "请输入流量";

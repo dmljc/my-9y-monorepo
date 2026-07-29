@@ -1,4 +1,4 @@
-import { App, Input, Table } from "antd";
+import { App, Input, Select, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { type Dispatch, type SetStateAction, useRef, useState } from "react";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
@@ -9,13 +9,13 @@ import {
 	CONFIG_TYPE_OPTIONS,
 	FLOW_RATE_REQUIRED_MSG,
 	getPipelinesByBuilding,
-	MAX_LENGTH_40,
+	getRoomByPipeNo,
 	PIPE_NO_REQUIRED_MSG,
+	PIPE_OPTIONS,
 	type PipelineConfigType,
 	type PipelineFormValues,
 	type PipelineItem,
 	sanitizeFlowRateInput,
-	sanitizePipeNoInput,
 	validateDevicePipeOut,
 	validateFlowRate,
 	validateRoomPipeIn,
@@ -87,18 +87,19 @@ const PipelineConfig = () => {
 		setModalOpen(true);
 	};
 
-	const handlePipeInChange = (id: string, raw: string) => {
-		const pipeIn = sanitizePipeNoInput(raw);
+	const handlePipeInChange = (id: string, pipeIn: string) => {
 		setPipelines((prev) =>
 			prev.map((item) => (item.id === id ? { ...item, pipeIn } : item)),
 		);
 		clearFieldError(setPipeNoErrors, id);
 	};
 
-	const handlePipeOutChange = (id: string, raw: string) => {
-		const pipeOut = sanitizePipeNoInput(raw);
+	const handlePipeOutChange = (id: string, pipeOut: string) => {
+		const sampleRoom = getRoomByPipeNo(pipeOut);
 		setPipelines((prev) =>
-			prev.map((item) => (item.id === id ? { ...item, pipeOut } : item)),
+			prev.map((item) =>
+				item.id === id ? { ...item, pipeOut, sampleRoom } : item,
+			),
 		);
 		clearFieldError(setPipeNoErrors, id);
 	};
@@ -162,7 +163,7 @@ const PipelineConfig = () => {
 	): Promise<boolean | undefined> => {
 		if (configType === "room") {
 			const sampleRoom = values.sampleRoom.trim();
-			const pipeIn = sanitizePipeNoInput(values.pipeIn ?? "");
+			const pipeIn = (values.pipeIn ?? "").trim();
 			const tempId = editingRecord?.id ?? "__new__";
 			const error = validateRoomPipeIn(pipeIn, tempId, pipelines);
 			if (error) {
@@ -199,7 +200,8 @@ const PipelineConfig = () => {
 
 		const deviceCode = values.deviceCode.trim();
 		const deviceName = values.deviceName.trim();
-		const pipeOut = sanitizePipeNoInput(values.pipeOut ?? "");
+		const pipeOut = (values.pipeOut ?? "").trim();
+		const sampleRoom = values.sampleRoom.trim() || getRoomByPipeNo(pipeOut);
 		const flowRate = sanitizeFlowRateInput(values.flowRate ?? "");
 		const tempId = editingRecord?.id ?? "__new__";
 		const pipeError = validateDevicePipeOut(pipeOut, tempId, pipelines);
@@ -218,6 +220,7 @@ const PipelineConfig = () => {
 								deviceCode,
 								deviceName,
 								pipeOut,
+								sampleRoom,
 								flowRate,
 							}
 						: item,
@@ -231,7 +234,7 @@ const PipelineConfig = () => {
 			id: `${buildingKey}-device-${Date.now()}`,
 			deviceCode,
 			deviceName,
-			sampleRoom: "",
+			sampleRoom,
 			pipeIn: "",
 			pipeOut,
 			flowRate,
@@ -241,6 +244,38 @@ const PipelineConfig = () => {
 		};
 		setPipelines((prev) => [newItem, ...prev]);
 		message.success("新增成功");
+	};
+
+	const renderPipeSelect = (
+		value: string,
+		record: PipelineItem,
+		onChange: (id: string, next: string) => void,
+		extraClassName?: string,
+	) => {
+		const error = pipeNoErrors[record.id];
+		const requiredError = error === PIPE_NO_REQUIRED_MSG;
+		const sideError = error && !requiredError ? error : "";
+		return (
+			<div
+				className={`${styles.pipeFieldCell} ${extraClassName ?? ""}`.trim()}
+			>
+				<Select
+					className={`${styles.pipeFieldSelect} ${error ? styles.pipeFieldSelectError : ""}`}
+					value={value || undefined}
+					status={error ? "error" : undefined}
+					placeholder={
+						requiredError ? PIPE_NO_REQUIRED_MSG : "请选择管道号"
+					}
+					options={PIPE_OPTIONS}
+					showSearch={{ optionFilterProp: "label" }}
+					allowClear
+					onChange={(next) => onChange(record.id, next ?? "")}
+				/>
+				{sideError ? (
+					<span className={styles.pipeFieldError}>{sideError}</span>
+				) : null}
+			</div>
+		);
 	};
 
 	const roomColumns: ColumnsType<PipelineItem> = [
@@ -254,35 +289,8 @@ const PipelineConfig = () => {
 			title: "管道号（IN）",
 			dataIndex: "pipeIn",
 			key: "pipeIn",
-			render: (pipeIn: string, record) => {
-				const error = pipeNoErrors[record.id];
-				const requiredError = error === PIPE_NO_REQUIRED_MSG;
-				const sideError = error && !requiredError ? error : "";
-				return (
-					<div className={styles.pipeFieldCell}>
-						<Input
-							className={`${styles.pipeFieldInput} ${error ? styles.pipeFieldInputError : ""}`}
-							value={pipeIn}
-							status={error ? "error" : undefined}
-							maxLength={MAX_LENGTH_40}
-							inputMode="numeric"
-							placeholder={
-								requiredError
-									? PIPE_NO_REQUIRED_MSG
-									: "请输入管道号"
-							}
-							onChange={(e) =>
-								handlePipeInChange(record.id, e.target.value)
-							}
-						/>
-						{sideError ? (
-							<span className={styles.pipeFieldError}>
-								{sideError}
-							</span>
-						) : null}
-					</div>
-				);
-			},
+			render: (pipeIn: string, record) =>
+				renderPipeSelect(pipeIn, record, handlePipeInChange),
 		},
 		{
 			title: "操作",
@@ -317,37 +325,20 @@ const PipelineConfig = () => {
 			title: "管道号（OUT）",
 			dataIndex: "pipeOut",
 			key: "pipeOut",
-			render: (pipeOut: string, record) => {
-				const error = pipeNoErrors[record.id];
-				const requiredError = error === PIPE_NO_REQUIRED_MSG;
-				const sideError = error && !requiredError ? error : "";
-				return (
-					<div
-						className={`${styles.pipeFieldCell} ${styles.pipeOutCell}`}
-					>
-						<Input
-							className={`${styles.pipeFieldInput} ${styles.pipeOutInput} ${error ? styles.pipeFieldInputError : ""}`}
-							value={pipeOut}
-							status={error ? "error" : undefined}
-							maxLength={MAX_LENGTH_40}
-							inputMode="numeric"
-							placeholder={
-								requiredError
-									? PIPE_NO_REQUIRED_MSG
-									: "请输入管道号"
-							}
-							onChange={(e) =>
-								handlePipeOutChange(record.id, e.target.value)
-							}
-						/>
-						{sideError ? (
-							<span className={styles.pipeFieldError}>
-								{sideError}
-							</span>
-						) : null}
-					</div>
-				);
-			},
+			render: (pipeOut: string, record) =>
+				renderPipeSelect(
+					pipeOut,
+					record,
+					handlePipeOutChange,
+					styles.pipeOutCell,
+				),
+		},
+		{
+			title: "房间号",
+			dataIndex: "sampleRoom",
+			key: "sampleRoom",
+			ellipsis: true,
+			render: (sampleRoom: string) => sampleRoom || "—",
 		},
 		{
 			title: "流量（L/min）",
@@ -401,89 +392,88 @@ const PipelineConfig = () => {
 	const columns = configType === "room" ? roomColumns : deviceColumns;
 
 	return (
-		<div
-			ref={pageRef}
-			className={styles.pipelineConfig}
-			data-page="pipeline-config"
-		>
-			<BuildingPageHeader
-				buildingKey={buildingKey}
-				buildings={BUILDING_TABS}
-				onBuildingChange={handleBuildingChange}
-				masterOn={masterOn}
-				onMasterChange={handleMasterChange}
-			/>
+		<div className={styles.pipelineConfig} data-page="pipeline-config">
+			<div ref={pageRef} className={styles.stage}>
+				<BuildingPageHeader
+					buildingKey={buildingKey}
+					buildings={BUILDING_TABS}
+					onBuildingChange={handleBuildingChange}
+					masterOn={masterOn}
+					onMasterChange={handleMasterChange}
+				/>
 
-			<div className={styles.body}>
-				<div className={styles.panel}>
-					<div className={styles.panelHeader}>
-						<div className={styles.segment} role="tablist">
-							{CONFIG_TYPE_OPTIONS.map((item) => (
-								<button
-									key={item.key}
-									type="button"
-									role="tab"
-									aria-selected={configType === item.key}
-									className={`${styles.segmentItem} ${
-										configType === item.key
-											? styles.segmentItemActive
-											: ""
-									}`}
-									onClick={() =>
-										handleConfigTypeChange(item.key)
-									}
-								>
-									{item.label}
-								</button>
-							))}
-						</div>
-						<button
-							type="button"
-							className={styles.addBtn}
-							onClick={handleAdd}
-						>
-							<svg
-								className={styles.addBtnPlus}
-								viewBox="0 0 24 24"
-								aria-hidden
+				<div className={styles.body}>
+					<div className={styles.panel}>
+						<div className={styles.panelHeader}>
+							<div className={styles.segment} role="tablist">
+								{CONFIG_TYPE_OPTIONS.map((item) => (
+									<button
+										key={item.key}
+										type="button"
+										role="tab"
+										aria-selected={configType === item.key}
+										className={`${styles.segmentItem} ${
+											configType === item.key
+												? styles.segmentItemActive
+												: ""
+										}`}
+										onClick={() =>
+											handleConfigTypeChange(item.key)
+										}
+									>
+										{item.label}
+									</button>
+								))}
+							</div>
+							<button
+								type="button"
+								className={styles.addBtn}
+								onClick={handleAdd}
 							>
-								<title>新增</title>
-								<path
-									d="M12 5v14M5 12h14"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2.5"
-									strokeLinecap="round"
-								/>
-							</svg>
-							<span>
-								新增{configType === "room" ? "房间" : "设备"}
-								管道
-							</span>
-						</button>
+								<svg
+									className={styles.addBtnPlus}
+									viewBox="0 0 24 24"
+									aria-hidden
+								>
+									<title>新增</title>
+									<path
+										d="M12 5v14M5 12h14"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2.5"
+										strokeLinecap="round"
+									/>
+								</svg>
+								<span>
+									新增
+									{configType === "room" ? "房间" : "设备"}
+									管道
+								</span>
+							</button>
+						</div>
+						<Table
+							key={configType}
+							className={styles.table}
+							columns={columns}
+							dataSource={pipelines}
+							rowKey="id"
+							pagination={false}
+							rowClassName={(_, index) =>
+								index % 2 === 1 ? styles.rowStripe : ""
+							}
+						/>
 					</div>
-					<Table
-						key={configType}
-						className={styles.table}
-						columns={columns}
-						dataSource={pipelines}
-						rowKey="id"
-						pagination={false}
-						rowClassName={(_, index) =>
-							index % 2 === 1 ? styles.rowStripe : ""
-						}
-					/>
 				</div>
-			</div>
 
-			<CreateModal
-				open={modalOpen}
-				configType={configType}
-				editingRecord={editingRecord}
-				getContainer={() => pageRef.current ?? document.body}
-				onCancel={() => setModalOpen(false)}
-				onOk={handleModalSubmit}
-			/>
+				<CreateModal
+					open={modalOpen}
+					configType={configType}
+					editingRecord={editingRecord}
+					getContainer={() => pageRef.current ?? document.body}
+					onCancel={() => setModalOpen(false)}
+					onOk={handleModalSubmit}
+				/>
+			</div>
 		</div>
 	);
 };
