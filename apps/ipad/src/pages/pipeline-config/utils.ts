@@ -309,7 +309,7 @@ export const validateDevicePipeOut = (
 };
 
 /**
- * 校验流量：必填、0.00～999999.99、最多两位小数。
+ * 校验流量：可选（允许为空）、0.00～999999.99、最多两位小数。
  *
  * @param {string} - 待校验流量。
  * @returns {string} - 错误文案；通过时为空串。
@@ -317,7 +317,7 @@ export const validateDevicePipeOut = (
 export const validateFlowRate = (flowRate: string): string => {
 	const value = flowRate.trim();
 	if (!value) {
-		return FLOW_RATE_REQUIRED_MSG;
+		return "";
 	}
 	if (!/^\d+(\.\d{1,2})?$/.test(value)) {
 		return FLOW_RATE_RANGE_MSG;

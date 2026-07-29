@@ -38,14 +38,14 @@ export const listDevicePipelines = (buildingId: number): Promise<any> => {
 };
 
 /**
- * 设备-保存管道配置（query 参数）。
+ * 设备-保存管道配置（JSON body）。
  *
  * @param {DevicePipelineSaveParams} - deviceId / pipelineId / flowRate。
  */
 export const saveDevicePipeline = (
-	params: DevicePipelineSaveParams,
+	payload: DevicePipelineSaveParams,
 ): Promise<any> => {
-	return request.post("/iiot/tablet/pipeline/device/save", null, { params });
+	return request.post("/iiot/tablet/pipeline/device/save", payload);
 };
 
 /**

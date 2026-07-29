@@ -270,8 +270,8 @@ const PipelineConfig = () => {
 			);
 			const pipeOut = record.pipeOut.trim();
 			const flowRate = record.flowRate.trim();
-			const flowError =
-				pipeOut || flowRate ? validateFlowRate(flowRate || "") : "";
+			// 流量字段允许为空：只有在用户填写了流量时才校验其格式/范围。
+			const flowError = flowRate ? validateFlowRate(flowRate) : "";
 			if (pipeError || flowError) {
 				if (pipeError) {
 					setPipeNoErrors((prev) => ({
@@ -296,7 +296,7 @@ const PipelineConfig = () => {
 			await saveDevicePipeline({
 				deviceId: record.deviceId ?? record.id,
 				pipelineId: pipeOut,
-				...(flowRate ? { flowRate: Number(flowRate) } : {}),
+				flowRate: flowRate ? Number(flowRate) : null,
 			});
 			message.success("保存成功");
 			await loadDeviceList(currentBuilding.buildingId);

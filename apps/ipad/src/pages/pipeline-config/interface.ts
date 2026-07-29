@@ -94,10 +94,15 @@ export interface DevicePipelineRow {
 }
 
 /**
- * 设备-保存管道配置 query 参数。
+ * 设备-保存管道配置请求体（方案3：用 JSON body 传参）。
  */
 export interface DevicePipelineSaveParams {
 	deviceId: number;
 	pipelineId?: string;
-	flowRate?: number;
+	/**
+	 * 流量。
+	 * - 传 number：保存该流量
+	 * - 传 null：清空已有流量
+	 */
+	flowRate?: number | null;
 }
