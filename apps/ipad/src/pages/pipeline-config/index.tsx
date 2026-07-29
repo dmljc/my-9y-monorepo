@@ -335,6 +335,7 @@ const PipelineConfig = () => {
 			dataIndex: "deviceCode",
 			key: "deviceCode",
 			ellipsis: true,
+			width: "28%",
 		},
 		{
 			title: "设备名称",
@@ -359,6 +360,7 @@ const PipelineConfig = () => {
 			dataIndex: "sampleRoom",
 			key: "sampleRoom",
 			ellipsis: true,
+			width: "10%",
 			render: (sampleRoom: string) => sampleRoom || "—",
 		},
 		{
