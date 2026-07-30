@@ -1,4 +1,4 @@
-import { Checkbox, Empty, Modal, Spin, Table, Tabs } from "antd";
+import { App, Checkbox, Modal, Spin, Table, Tabs } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useState } from "react";
 import { getAssignDetail } from "./api";
@@ -12,6 +12,7 @@ import {
 	getActionKeys,
 	hiddenIdsByPage,
 	parseAssignDetailResponse,
+	TABLET_PERMISSION_MODULES,
 } from "./utils";
 
 interface AssignModalProps {
@@ -32,10 +33,16 @@ const AssignModal = ({
 	onCancel,
 	onOk: onOkProp,
 }: AssignModalProps) => {
+	const { message } = App.useApp();
+	const tabletTableRows = buildAssignRows(TABLET_PERMISSION_MODULES);
 	const [loading, setLoading] = useState(false);
 	const [detailLoading, setDetailLoading] = useState(false);
+	const [activePermissionTab, setActivePermissionTab] = useState("admin");
 	const [adminTableRows, setAdminTableRows] = useState<AssignRow[]>([]);
 	const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
+	const [tabletCheckedKeys, setTabletCheckedKeys] = useState<string[]>(() =>
+		extractCheckedKeys(TABLET_PERMISSION_MODULES),
+	);
 	const [hiddenMenuIdsByPage, setHiddenMenuIdsByPage] = useState<
 		Record<string, number[]>
 	>({});
@@ -47,6 +54,8 @@ const AssignModal = ({
 		if (!open || role?.roleId === undefined) {
 			setAdminTableRows([]);
 			setCheckedKeys([]);
+			setTabletCheckedKeys(extractCheckedKeys(TABLET_PERMISSION_MODULES));
+			setActivePermissionTab("admin");
 			setHiddenMenuIdsByPage({});
 			setAllHiddenIdsByPage({});
 			return;
@@ -92,8 +101,6 @@ const AssignModal = ({
 			cancelled = true;
 		};
 	}, [open, role?.roleId, role?.menuIds]);
-
-	const isPageChecked = (pageKey: string) => checkedKeys.includes(pageKey);
 
 	const updateCheckedKeys = (updater: (keys: Set<string>) => void) => {
 		setCheckedKeys((prev) => {
@@ -156,8 +163,54 @@ const AssignModal = ({
 		});
 	};
 
-	const renderActionGroup = (record: AssignableRow) => {
-		const pageChecked = isPageChecked(record.pageKey);
+	const handleTabletPageChange = (
+		record: AssignableRow,
+		checked: boolean,
+	) => {
+		setTabletCheckedKeys((prev) => {
+			const next = new Set(prev);
+			if (checked) {
+				next.add(record.pageKey);
+			} else {
+				next.delete(record.pageKey);
+				for (const actionKey of getActionKeys(
+					record.pageKey,
+					tabletTableRows,
+				)) {
+					next.delete(actionKey);
+				}
+			}
+			return [...next];
+		});
+	};
+
+	const handleTabletActionChange = (
+		record: AssignableRow,
+		actionKey: string,
+		checked: boolean,
+	) => {
+		setTabletCheckedKeys((prev) => {
+			const next = new Set(prev);
+			if (checked) {
+				next.add(record.pageKey);
+				next.add(actionKey);
+			} else {
+				next.delete(actionKey);
+			}
+			return [...next];
+		});
+	};
+
+	const renderActionGroup = (
+		record: AssignableRow,
+		keys: string[],
+		onChange: (
+			record: AssignableRow,
+			actionKey: string,
+			checked: boolean,
+		) => void,
+	) => {
+		const pageChecked = keys.includes(record.pageKey);
 
 		return (
 			<div
@@ -166,14 +219,10 @@ const AssignModal = ({
 				{record.actions.map((action) => (
 					<Checkbox
 						key={action.key}
-						checked={checkedKeys.includes(action.key)}
+						checked={keys.includes(action.key)}
 						disabled={!pageChecked}
 						onChange={(event) =>
-							handleActionChange(
-								record,
-								action.key,
-								event.target.checked,
-							)
+							onChange(record, action.key, event.target.checked)
 						}
 					>
 						{action.title}
@@ -185,6 +234,10 @@ const AssignModal = ({
 
 	const onOk = async () => {
 		if (!role) return;
+		if (activePermissionTab === "tablet") {
+			message.info("平板端权限为模拟数据，暂不支持保存");
+			return;
+		}
 		try {
 			setLoading(true);
 			const menuIds = collectMenuIds(
@@ -201,7 +254,21 @@ const AssignModal = ({
 		}
 	};
 
-	const buildColumns = (rows: AssignRow[]): ColumnsType<AssignRow> => [
+	const buildColumns = (
+		rows: AssignRow[],
+		keys: string[],
+		onPageChange: (
+			record: AssignableRow,
+			checked: boolean,
+			rows: AssignRow[],
+		) => void,
+		onActionChange: (
+			record: AssignableRow,
+			actionKey: string,
+			checked: boolean,
+		) => void,
+		scopeTitle = "页面权限",
+	): ColumnsType<AssignRow> => [
 		{
 			title: "功能模块",
 			dataIndex: "moduleTitle",
@@ -211,15 +278,15 @@ const AssignModal = ({
 			}),
 		},
 		{
-			title: "页面权限",
+			title: scopeTitle,
 			key: "page",
 			render: (_: unknown, record) => {
-				const checked = isPageChecked(record.pageKey);
+				const checked = keys.includes(record.pageKey);
 				return (
 					<Checkbox
 						checked={checked}
 						onChange={(event) =>
-							handlePageChange(record, event.target.checked, rows)
+							onPageChange(record, event.target.checked, rows)
 						}
 					>
 						{record.pageTitle}
@@ -230,7 +297,8 @@ const AssignModal = ({
 		{
 			title: "按钮权限",
 			key: "actions",
-			render: (_: unknown, record) => renderActionGroup(record),
+			render: (_: unknown, record) =>
+				renderActionGroup(record, keys, onActionChange),
 		},
 	];
 
@@ -242,10 +310,12 @@ const AssignModal = ({
 			onCancel={onCancel}
 			confirmLoading={loading}
 			destroyOnHidden
-			width="60vw"
+			width="35vw"
 		>
 			<Spin spinning={detailLoading}>
 				<Tabs
+					activeKey={activePermissionTab}
+					onChange={setActivePermissionTab}
 					items={[
 						{
 							key: "admin",
@@ -253,7 +323,12 @@ const AssignModal = ({
 							children: (
 								<Table
 									size="small"
-									columns={buildColumns(adminTableRows)}
+									columns={buildColumns(
+										adminTableRows,
+										checkedKeys,
+										handlePageChange,
+										handleActionChange,
+									)}
 									dataSource={adminTableRows}
 									rowKey="rowKey"
 									pagination={false}
@@ -264,9 +339,21 @@ const AssignModal = ({
 						{
 							key: "tablet",
 							label: "平板端",
-							disabled: true,
 							children: (
-								<Empty description="平板端权限暂未开放" />
+								<Table
+									size="small"
+									columns={buildColumns(
+										tabletTableRows,
+										tabletCheckedKeys,
+										handleTabletPageChange,
+										handleTabletActionChange,
+										"厂房权限",
+									)}
+									dataSource={tabletTableRows}
+									rowKey="rowKey"
+									pagination={false}
+									bordered
+								/>
 							),
 						},
 					]}

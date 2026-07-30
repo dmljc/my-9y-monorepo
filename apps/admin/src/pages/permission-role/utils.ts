@@ -57,6 +57,195 @@ export function formatActionTitle(permName: string): string {
 /** 超级管理员角色编码（与后端 roleKey 一致） */
 export const SUPER_ADMIN_ROLE_CODE = "admin";
 
+/**
+ * 平板端权限配置模拟树。
+ *
+ * 后端平板端权限树接口尚未开放，暂用此数据展示角色权限分配界面；
+ * menuId 与权限码仅供前端联调，后端接口完成后须替换为真实返回值。
+ */
+export const TABLET_PERMISSION_MODULES: RolePermissionModule[] = [
+	{
+		moduleId: 8000,
+		moduleName: "设备控制",
+		subModules: [
+			{
+				subModuleId: 8001,
+				subModuleName: "X12",
+				checked: true,
+				permissions: [
+					{
+						menuId: 80011,
+						permName: "厂房总开关",
+						perms: "iiot:tablet:device-control:x12:building-switch",
+						checked: true,
+					},
+					{
+						menuId: 80012,
+						permName: "设备开关",
+						perms: "iiot:tablet:device-control:x12:device-switch",
+						checked: true,
+					},
+					{
+						menuId: 80013,
+						permName: "设备清洗",
+						perms: "iiot:tablet:device-control:x12:clean",
+						checked: true,
+					},
+				],
+			},
+			{
+				subModuleId: 8002,
+				subModuleName: "X03",
+				checked: true,
+				permissions: [
+					{
+						menuId: 80021,
+						permName: "厂房总开关",
+						perms: "iiot:tablet:device-control:x03:building-switch",
+						checked: true,
+					},
+					{
+						menuId: 80022,
+						permName: "设备开关",
+						perms: "iiot:tablet:device-control:x03:device-switch",
+						checked: true,
+					},
+					{
+						menuId: 80023,
+						permName: "设备清洗",
+						perms: "iiot:tablet:device-control:x03:clean",
+						checked: true,
+					},
+				],
+			},
+		],
+	},
+	{
+		moduleId: 8100,
+		moduleName: "管道配置",
+		subModules: [
+			{
+				subModuleId: 8101,
+				subModuleName: "X12",
+				checked: true,
+				permissions: [
+					{
+						menuId: 81011,
+						permName: "设备配置保存",
+						perms: "iiot:tablet:pipeline:x12:device-save",
+						checked: true,
+					},
+					{
+						menuId: 81012,
+						permName: "房间配置保存",
+						perms: "iiot:tablet:pipeline:x12:room-save",
+						checked: true,
+					},
+				],
+			},
+			{
+				subModuleId: 8102,
+				subModuleName: "X03",
+				checked: true,
+				permissions: [
+					{
+						menuId: 81021,
+						permName: "设备配置保存",
+						perms: "iiot:tablet:pipeline:x03:device-save",
+						checked: true,
+					},
+					{
+						menuId: 81022,
+						permName: "房间配置保存",
+						perms: "iiot:tablet:pipeline:x03:room-save",
+						checked: true,
+					},
+				],
+			},
+		],
+	},
+	{
+		moduleId: 8200,
+		moduleName: "添加设备",
+		subModules: [
+			{
+				subModuleId: 8201,
+				subModuleName: "X12",
+				checked: true,
+				permissions: [
+					{
+						menuId: 82011,
+						permName: "新增",
+						perms: "iiot:tablet:device:x12:add",
+						checked: true,
+					},
+					{
+						menuId: 82012,
+						permName: "编辑",
+						perms: "iiot:tablet:device:x12:edit",
+						checked: true,
+					},
+					{
+						menuId: 82013,
+						permName: "开启",
+						perms: "iiot:tablet:device:x12:enable",
+						checked: true,
+					},
+					{
+						menuId: 82014,
+						permName: "关闭",
+						perms: "iiot:tablet:device:x12:disable",
+						checked: true,
+					},
+					{
+						menuId: 82015,
+						permName: "删除",
+						perms: "iiot:tablet:device:x12:remove",
+						checked: true,
+					},
+				],
+			},
+			{
+				subModuleId: 8202,
+				subModuleName: "X03",
+				checked: true,
+				permissions: [
+					{
+						menuId: 82021,
+						permName: "新增",
+						perms: "iiot:tablet:device:x03:add",
+						checked: true,
+					},
+					{
+						menuId: 82022,
+						permName: "编辑",
+						perms: "iiot:tablet:device:x03:edit",
+						checked: true,
+					},
+					{
+						menuId: 82023,
+						permName: "开启",
+						perms: "iiot:tablet:device:x03:enable",
+						checked: true,
+					},
+					{
+						menuId: 82024,
+						permName: "关闭",
+						perms: "iiot:tablet:device:x03:disable",
+						checked: true,
+					},
+					{
+						menuId: 82025,
+						permName: "删除",
+						perms: "iiot:tablet:device:x03:remove",
+						checked: true,
+					},
+				],
+			},
+		],
+	},
+];
+
 /** 角色名称最大字符数 */
 export const ROLE_NAME_MAX_LENGTH = 20;
 
