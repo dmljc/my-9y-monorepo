@@ -4,8 +4,8 @@ import { type CSSProperties, useEffect, useRef, useState } from "react";
 import activeBg from "@/assets/device-control/active-bg.webp";
 import unActiveBg from "@/assets/device-control/un-active-bg.webp";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
+import { subscribeTabletWs } from "@/utils";
 import {
-	getRealtime,
 	listBuildings,
 	listRooms,
 	switchBuilding,
@@ -18,10 +18,11 @@ import {
 	deriveMasterOn,
 	formatMetric,
 	getDisplayMetrics,
-	mapRealtimeMetrics,
+	getTabletWsDevices,
+	mapRuntimeParams,
 	normalizeBuildingTabs,
 	parseDevicesFromRooms,
-	REALTIME_POLL_MS,
+	parseTabletWsMessage,
 } from "./utils";
 
 /** 设备卡背景：选中 active-bg，未选中 un-active-bg（均为设计稿 304×160）。 */
@@ -45,8 +46,8 @@ const DeviceControl = () => {
 	const [selectedIdByBuilding, setSelectedIdByBuilding] = useState<
 		Record<string, number>
 	>({});
-	const selectedIdRef = useRef<number | null>(null);
-	const selectionRequestRef = useRef(0);
+	/** WebSocket 推送的指标缓存，切厂房重拉列表时立刻合并。 */
+	const wsMetricsRef = useRef<Map<number, DeviceItem["metrics"]>>(new Map());
 
 	const currentBuilding =
 		buildings.find((item) => item.key === buildingKey) ?? null;
@@ -58,8 +59,6 @@ const DeviceControl = () => {
 			selected.metrics.length === 0 &&
 			!realtimeLoadedIds[selected.id],
 	);
-
-	selectedIdRef.current = selected?.id ?? null;
 
 	const applyDevices = (
 		buildingKeyNext: string,
@@ -77,8 +76,22 @@ const DeviceControl = () => {
 			);
 			return devicesNext.map((item) => ({
 				...item,
-				metrics: metricsById.get(item.id) ?? item.metrics,
+				metrics:
+					wsMetricsRef.current.get(item.id) ??
+					metricsById.get(item.id) ??
+					item.metrics,
 			}));
+		});
+		setRealtimeLoadedIds((prev) => {
+			let changed = false;
+			const next = { ...prev };
+			for (const item of devicesNext) {
+				if (wsMetricsRef.current.has(item.id) && !next[item.id]) {
+					next[item.id] = true;
+					changed = true;
+				}
+			}
+			return changed ? next : prev;
 		});
 		setMasterOn(
 			forceEnabled !== undefined
@@ -138,44 +151,46 @@ const DeviceControl = () => {
 		void loadBuildings();
 	}, []);
 
-	/** 选中设备变化时拉取实时指标，并定时轮询。 */
+	/** 订阅项目级平板 WebSocket，消费 runtimeParams 更新当前页指标。 */
 	useEffect(() => {
-		if (!selected?.id) return;
+		return subscribeTabletWs((raw) => {
+			const devicesFromWs = getTabletWsDevices(parseTabletWsMessage(raw));
+			if (!devicesFromWs.length) return;
 
-		let cancelled = false;
-		const deviceId = selected.id;
-
-		const pullRealtime = async () => {
-			try {
-				const data = await getRealtime(deviceId);
-				if (cancelled || selectedIdRef.current !== deviceId) return;
-				const metrics = mapRealtimeMetrics(data);
-				setDevices((prev) =>
-					prev.map((item) =>
-						item.id === deviceId ? { ...item, metrics } : item,
-					),
-				);
-			} catch {
-				/* 错误由 request.onError 提示；轮询中断单次即可 */
-			} finally {
-				if (!cancelled && selectedIdRef.current === deviceId) {
-					setRealtimeLoadedIds((prev) =>
-						prev[deviceId] ? prev : { ...prev, [deviceId]: true },
-					);
-				}
+			const metricsById = new Map<
+				number,
+				ReturnType<typeof mapRuntimeParams>
+			>();
+			const loadedIds: number[] = [];
+			for (const row of devicesFromWs) {
+				const id = Number(row.deviceId ?? 0);
+				if (!id) continue;
+				const metrics = mapRuntimeParams(row.runtimeParams);
+				metricsById.set(id, metrics);
+				wsMetricsRef.current.set(id, metrics);
+				loadedIds.push(id);
 			}
-		};
+			if (!metricsById.size) return;
 
-		void pullRealtime();
-		const timer = window.setInterval(() => {
-			void pullRealtime();
-		}, REALTIME_POLL_MS);
-
-		return () => {
-			cancelled = true;
-			window.clearInterval(timer);
-		};
-	}, [selected?.id]);
+			setDevices((prev) =>
+				prev.map((item) => {
+					const metrics = metricsById.get(item.id);
+					return metrics ? { ...item, metrics } : item;
+				}),
+			);
+			setRealtimeLoadedIds((prev) => {
+				let changed = false;
+				const next = { ...prev };
+				for (const id of loadedIds) {
+					if (!next[id]) {
+						next[id] = true;
+						changed = true;
+					}
+				}
+				return changed ? next : prev;
+			});
+		});
+	}, []);
 
 	const handleBuildingChange = (key: string) => {
 		setBuildingKey(key);
@@ -183,34 +198,7 @@ const DeviceControl = () => {
 		if (tab) void loadDevices(tab.buildingId, key);
 	};
 
-	const handleSelectDevice = async (id: number) => {
-		const requestId = ++selectionRequestRef.current;
-		const target = devices.find((item) => item.id === id);
-		if (!target) return;
-
-		/*
-		 * 先为目标设备准备首轮实时数据，再切换详情。
-		 * 否则详情会先渲染默认指标、随后被实时指标替换，产生视觉跳动。
-		 */
-		if (target.metrics.length === 0) {
-			try {
-				const data = await getRealtime(id);
-				if (requestId !== selectionRequestRef.current) return;
-				const metrics = mapRealtimeMetrics(data);
-				setDevices((prev) =>
-					prev.map((item) =>
-						item.id === id ? { ...item, metrics } : item,
-					),
-				);
-				setRealtimeLoadedIds((prev) =>
-					prev[id] ? prev : { ...prev, [id]: true },
-				);
-			} catch {
-				/* 请求错误由 request.onError 提示，仍允许用户切换设备。 */
-			}
-		}
-
-		if (requestId !== selectionRequestRef.current) return;
+	const handleSelectDevice = (id: number) => {
 		setSelectedIdByBuilding((prev) => ({
 			...prev,
 			[buildingKey]: id,
@@ -310,9 +298,7 @@ const DeviceControl = () => {
 											type="button"
 											className={`${styles.deviceCard} ${active ? styles.deviceCardActive : ""}`}
 											onClick={() => {
-												void handleSelectDevice(
-													device.id,
-												);
+												handleSelectDevice(device.id);
 											}}
 										>
 											<div className={styles.deviceThumb}>

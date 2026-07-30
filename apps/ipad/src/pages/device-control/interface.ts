@@ -40,13 +40,37 @@ export interface RoomDeviceRow {
 }
 
 /**
- * 实时传感器点。
+ * WebSocket `/api/ws/tablet` 推送的运行参数。
  */
-export interface RealtimeSensor {
-	propertyId?: string;
-	propertyName?: string;
+export interface RuntimeParam {
+	displayField?: string;
+	label?: string;
 	value?: string | number;
-	dataType?: string;
+	unit?: string;
+}
+
+/**
+ * WebSocket 推送中的单台设备。
+ */
+export interface TabletWsDevice {
+	deviceId?: number;
+	deviceCode?: string;
+	deviceName?: string;
+	/** 0 运行中 / 1 已关闭。 */
+	deviceStatus?: string | number;
+	/** 0 空闲 / 1 清洗中。 */
+	cleanStatus?: string | number;
+	runtimeParams?: RuntimeParam[];
+}
+
+/**
+ * WebSocket 消息体（tablet_init / tablet_data）。
+ */
+export interface TabletWsMessage {
+	topic?: string;
+	data?: {
+		devices?: TabletWsDevice[];
+	};
 }
 
 /**
@@ -73,6 +97,6 @@ export interface DeviceItem {
 	cleaning: boolean;
 	buildingId: number;
 	thingId: string;
-	/** 实时指标（来自 /realtime）。 */
+	/** 实时指标（来自 WebSocket runtimeParams）。 */
 	metrics: DeviceMetric[];
 }

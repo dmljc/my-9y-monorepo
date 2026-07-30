@@ -56,12 +56,3 @@ export const switchDevice = (
 export const toggleClean = (deviceId: number): Promise<any> => {
 	return request.post(`/iiot/tablet/device/${deviceId}/clean`);
 };
-
-/**
- * 单设备实时传感器数据。
- *
- * @param {number} - 设备 ID。
- */
-export const getRealtime = (deviceId: number): Promise<any> => {
-	return request.get(`/iiot/tablet/device/${deviceId}/realtime`);
-};

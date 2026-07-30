@@ -3,13 +3,12 @@ import type {
 	BuildingTab,
 	DeviceItem,
 	DeviceMetric,
-	RealtimeSensor,
 	RoomDeviceItem,
 	RoomDeviceRow,
+	RuntimeParam,
+	TabletWsDevice,
+	TabletWsMessage,
 } from "./interface";
-
-/** 实时数据轮询间隔（毫秒）。 */
-export const REALTIME_POLL_MS = 5000;
 
 /** 无实时数据时的占位指标（对齐稿面两卡）。 */
 export const DEFAULT_METRICS: DeviceMetric[] = [
@@ -123,68 +122,60 @@ export const deriveMasterOn = (devices: DeviceItem[]): boolean => {
 };
 
 /**
- * 解析 realtime 接口数组。
+ * 将 WebSocket runtimeParams 转为详情指标卡。
  *
- * @param {unknown} - getRealtime 解包后的 data。
- * @returns {RealtimeSensor[]} - 传感器点。
- */
-export const parseRealtimeSensors = (data: unknown): RealtimeSensor[] => {
-	return Array.isArray(data) ? (data as RealtimeSensor[]) : [];
-};
-
-/**
- * 根据属性推断展示名与单位。
- *
- * @param {string} - propertyId。
- * @param {string} - propertyName。
- * @returns {{ label: string; unit: string }} - 展示元信息。
- */
-const resolveMetricMeta = (
-	propertyId: string,
-	propertyName: string,
-): { label: string; unit: string } => {
-	const text = `${propertyId} ${propertyName}`;
-	if (/temp|温度|temprature/i.test(text)) {
-		return { label: propertyName || "温度", unit: "℃" };
-	}
-	if (/flow|流量|flow_rate|flowRate/i.test(text)) {
-		return { label: propertyName || "流量", unit: "L/min" };
-	}
-	if (/conc|浓度|beta_act/i.test(text)) {
-		return { label: propertyName || "浓度", unit: "" };
-	}
-	if (/level|液位/i.test(text)) {
-		return { label: propertyName || "液位", unit: "" };
-	}
-	return { label: propertyName || propertyId || "指标", unit: "" };
-};
-
-/**
- * 将 realtime 传感器列表转为详情指标卡数据。
- *
- * @param {unknown} - getRealtime 解包后的 data。
+ * @param {RuntimeParam[] | undefined} - 运行参数列表。
  * @returns {DeviceMetric[]} - 有数值的指标；最多取前 2 个对齐双卡布局。
  */
-export const mapRealtimeMetrics = (data: unknown): DeviceMetric[] => {
-	const sensors = parseRealtimeSensors(data);
-	const metrics: DeviceMetric[] = [];
+export const mapRuntimeParams = (
+	params: RuntimeParam[] | undefined,
+): DeviceMetric[] => {
+	if (!Array.isArray(params)) return [];
 
-	for (const item of sensors) {
+	const metrics: DeviceMetric[] = [];
+	for (const item of params) {
 		const num = Number(item.value);
 		if (!Number.isFinite(num)) continue;
-		const propertyId = String(item.propertyId ?? "").trim();
-		const propertyName = String(item.propertyName ?? "").trim();
-		const { label, unit } = resolveMetricMeta(propertyId, propertyName);
+		const key = String(item.displayField ?? "").trim();
+		const label = String(item.label ?? "").trim();
 		metrics.push({
-			key: propertyId || propertyName || `metric-${metrics.length}`,
-			label,
+			key: key || label || `metric-${metrics.length}`,
+			label: label || key || "指标",
 			value: num,
-			unit,
+			unit: String(item.unit ?? "").trim(),
 		});
 		if (metrics.length >= 2) break;
 	}
-
 	return metrics;
+};
+
+/**
+ * 解析平板 WebSocket 文本消息。
+ *
+ * @param {string} - 原始消息。
+ * @returns {TabletWsMessage | null} - 合法消息；解析失败为 null。
+ */
+export const parseTabletWsMessage = (raw: string): TabletWsMessage | null => {
+	try {
+		const parsed = JSON.parse(raw) as TabletWsMessage;
+		if (!parsed || typeof parsed !== "object") return null;
+		return parsed;
+	} catch {
+		return null;
+	}
+};
+
+/**
+ * 从 WebSocket 消息提取设备列表。
+ *
+ * @param {TabletWsMessage | null} - 消息。
+ * @returns {TabletWsDevice[]} - 设备数组。
+ */
+export const getTabletWsDevices = (
+	message: TabletWsMessage | null,
+): TabletWsDevice[] => {
+	const list = message?.data?.devices;
+	return Array.isArray(list) ? list : [];
 };
 
 /**
