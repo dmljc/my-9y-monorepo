@@ -4,7 +4,7 @@ import type { SysOperLog } from "./interface";
 /**
  * 操作日志快捷时间范围。
  */
-export type QuickRange = "24h" | "7d" | "30d";
+export type QuickRange = "24h" | "7d" | "15d" | "30d";
 
 /** 默认快捷时间范围。 */
 export const DEFAULT_QUICK_RANGE: QuickRange = "24h";
@@ -18,6 +18,7 @@ export const DATE_TIME_FORMAT = "YYYY-MM-DD HH:mm:ss";
 export const QUICK_RANGE_OPTIONS = [
 	{ label: "近24小时", value: "24h" },
 	{ label: "近7天", value: "7d" },
+	{ label: "近15天", value: "15d" },
 	{ label: "近30天", value: "30d" },
 ];
 
@@ -48,6 +49,7 @@ export function getQuickRangeDates(range: QuickRange): [Dayjs, Dayjs] {
 	const amountMap: Record<QuickRange, number> = {
 		"24h": 1,
 		"7d": 7,
+		"15d": 15,
 		"30d": 30,
 	};
 	return [end.subtract(amountMap[range], "day"), end];

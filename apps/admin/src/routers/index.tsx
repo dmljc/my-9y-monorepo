@@ -15,6 +15,7 @@ const WarningLevels = lazy(() => import("@/pages/warning-levels"));
 const Device = lazy(() => import("@/pages/device"));
 const InspectionLedger = lazy(() => import("@/pages/inspection-ledger"));
 const ModelData = lazy(() => import("@/pages/model-data"));
+const HistoricalData = lazy(() => import("@/pages/historical-data"));
 const ReverseControl = lazy(() => import("@/pages/reverse-control"));
 const Permission = lazy(() => import("@/pages/permission"));
 const PermissionRole = lazy(() => import("@/pages/permission-role"));
@@ -111,6 +112,10 @@ const routes: RouteObject[] = [
 								],
 							},
 							{ path: "/model-data", element: <ModelData /> },
+							{
+								path: "/model-data/history",
+								element: <HistoricalData />,
+							},
 							{
 								path: "/reverse-control",
 								element: <ReverseControl />,

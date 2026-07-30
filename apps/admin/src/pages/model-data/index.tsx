@@ -1,6 +1,7 @@
 import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Access from "@/components/Access";
 import { PERM_MODEL_DATA } from "@/constants/permission";
 import { list, remove } from "./api";
@@ -13,6 +14,7 @@ interface ModelDataFilters {
 }
 
 const ModelData = () => {
+	const navigate = useNavigate();
 	const { message, modal } = App.useApp();
 	const [modelName, setModelName] = useState("");
 	const [propertyName, setPropertyName] = useState("");
@@ -85,6 +87,13 @@ const ModelData = () => {
 		loadData(pagination.current ?? 1, pagination.pageSize ?? pageSize);
 	};
 
+	const handleHistoryQuery = (record: DeviceDataSnapshot) => {
+		const searchParams = new URLSearchParams();
+		searchParams.set("thingId", record.thingId ?? "");
+		searchParams.set("propertyId", record.propertyId ?? "");
+		navigate(`/model-data/history?${searchParams.toString()}`);
+	};
+
 	const columns: ColumnsType<DeviceDataSnapshot> = [
 		{
 			title: "序号",
@@ -139,9 +148,18 @@ const ModelData = () => {
 		{
 			title: "操作",
 			key: "actions",
-			width: 100,
+			width: 180,
 			render: (_: unknown, record) => (
 				<div className={styles.actions}>
+					{/* <Access code={PERM_MODEL_DATA.HISTORY}> */}
+					<Button
+						type="link"
+						size="small"
+						onClick={() => handleHistoryQuery(record)}
+					>
+						历史数据查询
+					</Button>
+					{/* </Access> */}
 					<Access code={PERM_MODEL_DATA.DELETE}>
 						<Button
 							type="link"

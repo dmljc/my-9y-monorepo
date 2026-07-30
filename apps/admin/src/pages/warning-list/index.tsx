@@ -2,6 +2,7 @@ import { App, Button, DatePicker, Select, Table, Tag } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import cardBlueCircleImg from "@/assets/warning/card-blue-circle.png";
 import cardGreenCircleImg from "@/assets/warning/card-green-circle.png";
 import cardOrangeCircleImg from "@/assets/warning/card-orange-circle.png";
@@ -73,6 +74,7 @@ function StatCardView({ card }: { card: StatCard }) {
 }
 
 const WarningList = () => {
+	const _navigate = useNavigate();
 	const { message } = App.useApp();
 
 	const [dateRange, setDateRange] = useState<[string, string] | null>(null);
@@ -155,6 +157,24 @@ const WarningList = () => {
 		}
 	};
 
+	const handleHistoryQuery = (record: WarningItem) => {
+		const warningTime = dayjs(record.time);
+		if (!warningTime.isValid()) {
+			message.warning("告警时间无效，无法查询历史数据");
+			return;
+		}
+		const searchParams = new URLSearchParams({
+			startTime: warningTime
+				.subtract(15, "minute")
+				.format("YYYY-MM-DD HH:mm:ss"),
+			endTime: warningTime
+				.add(15, "minute")
+				.format("YYYY-MM-DD HH:mm:ss"),
+		});
+		if (record.thingId) searchParams.set("thingId", record.thingId);
+		// navigate(`/model-data/history?${searchParams.toString()}`);
+	};
+
 	const columns: ColumnsType<WarningItem> = [
 		{
 			title: "序号",
@@ -225,6 +245,15 @@ const WarningList = () => {
 			fixed: "right",
 			render: (_: unknown, record: WarningItem) => (
 				<div className={styles.actions}>
+					{/* <Access code={PERM_WARNING_LIST.HISTORY}> */}
+					<Button
+						type="link"
+						size="small"
+						onClick={() => handleHistoryQuery(record)}
+					>
+						前后15分钟数据
+					</Button>
+					{/* </Access> */}
 					{record.status === "unprocessed" ? (
 						<Access code={PERM_WARNING_LIST.RESOLVE}>
 							<Button

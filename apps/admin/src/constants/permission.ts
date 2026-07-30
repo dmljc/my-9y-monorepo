@@ -1,6 +1,7 @@
 /** 警告列表 - 按钮权限码。 */
 export const PERM_WARNING_LIST = {
 	RESOLVE: "warning:list:resolve",
+	HISTORY: "warning:list:history",
 } as const;
 
 /** 警告规则 - 按钮权限码。 */
@@ -28,6 +29,7 @@ export const PERM_INSPECTION_LEDGER = {
 /** 物模型数据 - 按钮权限码（SYNC 对应「同步」，前端暂无该按钮）。 */
 export const PERM_MODEL_DATA = {
 	SYNC: "model-data:sync",
+	HISTORY: "model-data:history",
 	DELETE: "model-data:delete",
 } as const;
 
