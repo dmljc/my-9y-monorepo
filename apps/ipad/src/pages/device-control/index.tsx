@@ -37,17 +37,27 @@ const DeviceControl = () => {
 	const [devices, setDevices] = useState<DeviceItem[]>([]);
 	const [masterOn, setMasterOn] = useState(true);
 	const [actionLoading, setActionLoading] = useState(false);
+	/** 已完成首轮实时数据请求的设备，避免切换时短暂渲染默认指标。 */
+	const [realtimeLoadedIds, setRealtimeLoadedIds] = useState<
+		Record<number, true>
+	>({});
 	/** 各厂房上次选中的设备 id，切 Tab 回来时恢复。 */
 	const [selectedIdByBuilding, setSelectedIdByBuilding] = useState<
 		Record<string, number>
 	>({});
 	const selectedIdRef = useRef<number | null>(null);
+	const selectionRequestRef = useRef(0);
 
 	const currentBuilding =
 		buildings.find((item) => item.key === buildingKey) ?? null;
 	const selectedId = selectedIdByBuilding[buildingKey] ?? null;
 	const selected =
 		devices.find((item) => item.id === selectedId) ?? devices[0] ?? null;
+	const isRealtimePending = Boolean(
+		selected &&
+			selected.metrics.length === 0 &&
+			!realtimeLoadedIds[selected.id],
+	);
 
 	selectedIdRef.current = selected?.id ?? null;
 
@@ -123,6 +133,12 @@ const DeviceControl = () => {
 				);
 			} catch {
 				/* 错误由 request.onError 提示；轮询中断单次即可 */
+			} finally {
+				if (!cancelled && selectedIdRef.current === deviceId) {
+					setRealtimeLoadedIds((prev) =>
+						prev[deviceId] ? prev : { ...prev, [deviceId]: true },
+					);
+				}
 			}
 		};
 
@@ -143,7 +159,34 @@ const DeviceControl = () => {
 		if (tab) void loadDevices(tab.buildingId, key);
 	};
 
-	const handleSelectDevice = (id: number) => {
+	const handleSelectDevice = async (id: number) => {
+		const requestId = ++selectionRequestRef.current;
+		const target = devices.find((item) => item.id === id);
+		if (!target) return;
+
+		/*
+		 * 先为目标设备准备首轮实时数据，再切换详情。
+		 * 否则详情会先渲染默认指标、随后被实时指标替换，产生视觉跳动。
+		 */
+		if (target.metrics.length === 0) {
+			try {
+				const data = await getRealtime(id);
+				if (requestId !== selectionRequestRef.current) return;
+				const metrics = mapRealtimeMetrics(data);
+				setDevices((prev) =>
+					prev.map((item) =>
+						item.id === id ? { ...item, metrics } : item,
+					),
+				);
+				setRealtimeLoadedIds((prev) =>
+					prev[id] ? prev : { ...prev, [id]: true },
+				);
+			} catch {
+				/* 请求错误由 request.onError 提示，仍允许用户切换设备。 */
+			}
+		}
+
+		if (requestId !== selectionRequestRef.current) return;
 		setSelectedIdByBuilding((prev) => ({
 			...prev,
 			[buildingKey]: id,
@@ -232,9 +275,11 @@ const DeviceControl = () => {
 											key={device.id}
 											type="button"
 											className={`${styles.deviceCard} ${active ? styles.deviceCardActive : ""}`}
-											onClick={() =>
-												handleSelectDevice(device.id)
-											}
+											onClick={() => {
+												void handleSelectDevice(
+													device.id,
+												);
+											}}
 										>
 											<div className={styles.deviceThumb}>
 												<span
@@ -382,38 +427,71 @@ const DeviceControl = () => {
 									)}
 
 									<div className={styles.metricRow}>
-										{getDisplayMetrics(
-											selected.metrics,
-										).map((metric) => (
-											<div
-												key={metric.key}
-												className={styles.metricCard}
-											>
-												<div
-													className={
-														styles.metricValue
-													}
-												>
-													{formatMetric(metric.value)}
-												</div>
-												{metric.unit ? (
+										{isRealtimePending
+											? [0].map((index) => (
 													<div
+														key={`metric-${index}`}
+														className={`${styles.metricCard} ${styles.metricCardSkeleton}`}
+														aria-hidden
+													>
+														<div
+															className={
+																styles.metricValue
+															}
+														>
+															—
+														</div>
+														<div
+															className={
+																styles.metricUnit
+															}
+														>
+															{"\u00A0"}
+														</div>
+														<div
+															className={
+																styles.metricLabel
+															}
+														>
+															{"\u00A0"}
+														</div>
+													</div>
+												))
+											: getDisplayMetrics(
+													selected.metrics,
+												).map((metric, index) => (
+													<div
+														key={`metric-${index}`}
 														className={
-															styles.metricUnit
+															styles.metricCard
 														}
 													>
-														{metric.unit}
+														<div
+															className={
+																styles.metricValue
+															}
+														>
+															{formatMetric(
+																metric.value,
+															)}
+														</div>
+														<div
+															className={
+																styles.metricUnit
+															}
+														>
+															{metric.unit ||
+																"\u00A0"}
+														</div>
+														<div
+															className={
+																styles.metricLabel
+															}
+														>
+															{metric.label}
+														</div>
 													</div>
-												) : null}
-												<div
-													className={
-														styles.metricLabel
-													}
-												>
-													{metric.label}
-												</div>
-											</div>
-										))}
+												))}
 									</div>
 								</div>
 							</>

@@ -425,6 +425,7 @@
 	border-radius: calc(10 / 1400 * 100cqw);
 	background: #f6f9fe;
 	box-sizing: border-box;
+	flex-shrink: 0;
 }
 
 /* 蓝湖：height 28 / Medium 24 / #003C78 / 行高 29 */
@@ -441,9 +442,10 @@
 	text-align: center;
 }
 
-/* 蓝湖：height 22 / 19 / #292929 / 行高 22；距数值约 10 */
+/* 蓝湖：height 22 / 19 / #292929 / 行高 22；距数值约 10；始终占位避免无单位时布局跳动 */
 .metricUnit {
 	margin-top: calc(10 / 1400 * 100cqw);
+	min-height: calc(22 / 1400 * 100cqw);
 	height: calc(22 / 1400 * 100cqw);
 	font-family:
 		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
@@ -467,4 +469,24 @@
 	line-height: calc(22 / 1400 * 100cqw);
 	color: #000000;
 	text-align: center;
+}
+
+/* 首轮实时数据返回前只保留一张静态占位卡，避免内容与卡片数量切换。 */
+.metricCardSkeleton {
+	pointer-events: none;
+}
+
+.metricCardSkeleton .metricValue,
+.metricCardSkeleton .metricLabel {
+	color: transparent;
+	background: rgba(0, 60, 120, 0.08);
+	border-radius: calc(4 / 1400 * 100cqw);
+}
+
+.metricCardSkeleton .metricValue {
+	width: calc(56 / 1400 * 100cqw);
+}
+
+.metricCardSkeleton .metricLabel {
+	width: calc(72 / 1400 * 100cqw);
 }
