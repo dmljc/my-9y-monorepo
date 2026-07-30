@@ -13,20 +13,20 @@ alwaysApply: false
 ## 卡片结构
 
 ```tsx
-<div className={`${styles.summaryCard} ${styles.summaryCardBlue}`} style={{ backgroundImage: `url(${bg})` }}>
+<div className={`${styles.summaryCard} ${styles.summaryCardBlue}`}>
+  <img className={styles.summaryCardBg} src={bg} alt="" aria-hidden draggable={false} />
   <div className={styles.summaryCardTitle}>{title}</div>
   <div className={styles.summaryCardValue}>{value}</div>
   <img className={styles.summaryCardIllustration} src={image} alt="" draggable={false} />
 </div>
 ```
-
 ## 关键样式
 
 | 类名 | 要点 |
 |------|------|
 | `.summaryCards` | `grid-template-columns: repeat(3, 1fr); gap: 12px` |
 | `.summaryCard` | `height: 148px; padding: 24px 0 0 20px; position: relative; overflow: hidden` |
-| `.summaryCard` 背景装饰 | `background-position: right -24px center; background-size: auto 118%` |
+| `.summaryCard` 背景装饰 | **整卡竖向浅色渐变**（对齐蓝湖取样）+ `<img class="summaryCardBg">` 始终 `mix-blend-mode: multiply`（消切图白底）。**≤1920**：`width:106%; height:118%` 居中铺满。**>1920**：贴右 `height:118%; width:auto` + 左侧 mask。**禁止**无 multiply 的硬接切图；**禁止**双轴 `%` 拉伸圆 |
 | `.summaryCardIllustration` | 见下方插图定位 |
 
 ## 插图定位（已验证）

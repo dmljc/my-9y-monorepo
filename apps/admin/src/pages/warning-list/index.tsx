@@ -51,8 +51,15 @@ function StatCardView({ card }: { card: StatCard }) {
 	return (
 		<div
 			className={`${styles.summaryCard} ${STAT_CARD_TONE_CLASS[card.tone]}`}
-			style={{ backgroundImage: `url(${card.background})` }}
 		>
+			{/* 圆切图 multiply 消白底；≤1920 铺满，>1920 贴右等比 */}
+			<img
+				className={styles.summaryCardBg}
+				src={card.background}
+				alt=""
+				aria-hidden
+				draggable={false}
+			/>
 			<div className={styles.summaryCardTitle}>{card.title}</div>
 			<div className={styles.summaryCardValue}>{card.value}</div>
 			<img

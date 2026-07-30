@@ -25,21 +25,72 @@
 	padding: 24px 0 0 20px;
 	border-radius: 4px;
 	overflow: hidden;
-	background-color: #fff;
+	/* multiply 仅与卡片渐变混合，不穿透页面底色 */
+	isolation: isolate;
 	box-shadow: 0 1px 4px rgba(15, 35, 52, 0.06);
-	background-repeat: no-repeat;
-	background-position: center;
-	/* 略放大，由 overflow:hidden 裁掉 PNG 自带描边 */
-	background-size: 106% 118%;
 }
 
-.summaryCardBlue,
-.summaryCardGreen,
+/**
+ * 装饰圆切图（含白底）：multiply 让白底透出下方渐变，只留光斑/圆。
+ * ≤1920：略放大铺满，对齐设计稿 1920×1080。
+ * >1920：见 @media，改为贴右等比，避免圆被拉扁。
+ */
+.summaryCardBg {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	z-index: 0;
+	width: 106%;
+	height: 118%;
+	transform: translate(-50%, -50%);
+	pointer-events: none;
+	-webkit-user-select: none;
+	user-select: none;
+	mix-blend-mode: multiply;
+}
+
+/* 整卡连续浅色竖向渐变（对齐蓝湖 1920 稿取样，左右无色差） */
+.summaryCardBlue {
+	background: linear-gradient(180deg, #cee6ff 0%, #dbeeff 42%, #f4f8fd 100%);
+}
+
+.summaryCardGreen {
+	background: linear-gradient(180deg, #e0faf9 0%, #e8fcfb 42%, #f5fffe 100%);
+}
+
 .summaryCardOrange {
-	background-color: #fff;
+	background: linear-gradient(180deg, #fff7f0 0%, #fff9f3 42%, #fffcf8 100%);
+}
+
+/* 宽于设计稿：圆不跟卡片拉宽，贴右锁定比例；略溢出右侧裁掉切图描边白边 */
+@media (min-width: 1921px) {
+	.summaryCardBg {
+		left: auto;
+		/* 负值推出右缘，由 overflow:hidden 裁掉 PNG 自带描边 */
+		right: -24px;
+		width: auto;
+		height: 118%;
+		transform: translateY(-50%);
+		-webkit-mask-image: linear-gradient(
+			to right,
+			transparent 0%,
+			rgba(0, 0, 0, 0.4) 28%,
+			#000 55%,
+			#000 100%
+		);
+		mask-image: linear-gradient(
+			to right,
+			transparent 0%,
+			rgba(0, 0, 0, 0.4) 28%,
+			#000 55%,
+			#000 100%
+		);
+	}
 }
 
 .summaryCardTitle {
+	position: relative;
+	z-index: 1;
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -71,6 +122,8 @@
 }
 
 .summaryCardValue {
+	position: relative;
+	z-index: 1;
 	font-size: 22px;
 	font-weight: 600;
 	line-height: 30px;
@@ -80,9 +133,10 @@
 
 .summaryCardIllustration {
 	position: absolute;
-	top: 34px;
+	top: 10px;
 	right: 40px;
-	height: calc(100% - 48px);
+	z-index: 1;
+	height: calc(100% - 48px); /* 上 10 + 下 38 */
 	width: auto;
 	object-fit: contain;
 	object-position: right center;
