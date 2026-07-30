@@ -10,6 +10,7 @@ const Dashboard = lazy(() => import("@/pages/dashboard"));
 const Statistics = lazy(() => import("@/pages/statistics"));
 const Warning = lazy(() => import("@/pages/warning"));
 const WarningList = lazy(() => import("@/pages/warning-list"));
+const WarningHistory = lazy(() => import("@/pages/warning-history"));
 const WarningRules = lazy(() => import("@/pages/warning-rules"));
 const WarningLevels = lazy(() => import("@/pages/warning-levels"));
 const Device = lazy(() => import("@/pages/device"));
@@ -80,6 +81,10 @@ const routes: RouteObject[] = [
 										),
 									},
 									{ path: "list", element: <WarningList /> },
+									{
+										path: "history",
+										element: <WarningHistory />,
+									},
 									{
 										path: "rules",
 										element: <WarningRules />,

@@ -74,7 +74,7 @@ function StatCardView({ card }: { card: StatCard }) {
 }
 
 const WarningList = () => {
-	const _navigate = useNavigate();
+	const navigate = useNavigate();
 	const { message } = App.useApp();
 
 	const [dateRange, setDateRange] = useState<[string, string] | null>(null);
@@ -163,16 +163,15 @@ const WarningList = () => {
 			message.warning("告警时间无效，无法查询历史数据");
 			return;
 		}
+		if (!record.thingId) {
+			message.warning("物实例ID为空，无法查询历史数据");
+			return;
+		}
 		const searchParams = new URLSearchParams({
-			startTime: warningTime
-				.subtract(15, "minute")
-				.format("YYYY-MM-DD HH:mm:ss"),
-			endTime: warningTime
-				.add(15, "minute")
-				.format("YYYY-MM-DD HH:mm:ss"),
+			alarmTime: warningTime.format("YYYY-MM-DD HH:mm:ss"),
+			thingId: record.thingId,
 		});
-		if (record.thingId) searchParams.set("thingId", record.thingId);
-		// navigate(`/model-data/history?${searchParams.toString()}`);
+		navigate(`/warning/history?${searchParams.toString()}`);
 	};
 
 	const columns: ColumnsType<WarningItem> = [
