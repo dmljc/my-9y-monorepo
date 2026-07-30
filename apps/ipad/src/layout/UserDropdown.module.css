@@ -1,18 +1,43 @@
-.trigger {
+.profile {
+	display: inline-flex;
+	align-items: center;
+	flex-shrink: 0;
+	gap: calc(12 / 1400 * 100cqw);
+}
+
+.trigger:global(.ant-btn) {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	flex-shrink: 0;
 	width: calc(48 / 1400 * 100cqw);
 	height: calc(48 / 1400 * 100cqw);
+	min-width: calc(48 / 1400 * 100cqw);
 	padding: 0;
+	border: none;
 	border-radius: 50%;
+	line-height: 1;
 }
 
-.avatar {
+.avatar:global(.ant-avatar) {
+	flex-shrink: 0;
 	width: calc(48 / 1400 * 100cqw);
 	height: calc(48 / 1400 * 100cqw);
+	aspect-ratio: 1;
 	background: #0984ff;
 	color: #fff;
 	font-size: calc(24 / 1400 * 100cqw);
-	line-height: 1;
+	line-height: calc(48 / 1400 * 100cqw);
+}
+
+.nickname {
+	flex-shrink: 0;
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	font-weight: 400;
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #2d2d2d;
+	white-space: nowrap;
 }
