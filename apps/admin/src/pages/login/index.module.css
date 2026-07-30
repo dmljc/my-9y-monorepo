@@ -1,3 +1,11 @@
+/**
+ * 登录页 — 蓝湖 1920×1080 标注还原
+ * https://lanhuapp.com/.../image_id=61e629c3-29ea-45d7-97d2-562b9c42a73d
+ *
+ * 画布 1920 | 左图 1120 | 右栏 800 | 表单宽 480
+ * 右栏内边距：左 191 / 右 129（随右栏宽度等比）
+ * 表单块垂直居中（上下各约 324）
+ */
 .login {
 	height: 100dvh;
 	display: flex;
@@ -6,7 +14,9 @@
 }
 
 .heroImage {
-	flex: 1 1 58%;
+	/* 1120 / 1920 ≈ 58% */
+	flex: 0 0 58%;
+	width: 58%;
 	min-width: 0;
 	align-self: stretch;
 	object-fit: cover;
@@ -21,14 +31,21 @@
 }
 
 .panel {
+	/*
+	 * 800 / 1920 ≈ 42%；padding 的百分比基准是父容器，故须按整张画布换算。
+	 * border-box 确保左右内边距包含在右栏宽度内。
+	 */
 	flex: 0 0 42%;
-	min-width: 360px;
+	width: 42%;
+	box-sizing: border-box;
+	min-width: 0;
 	min-height: 0;
 	display: flex;
 	flex-direction: column;
-	align-items: center;
+	align-items: stretch;
 	justify-content: center;
-	padding: clamp(24px, 6.67vh, 48px) 40px;
+	/* 左 191 / 右 129 → 约 10% / 7% */
+	padding: 0 7% 0 10%;
 	overflow-y: auto;
 	background: #fff;
 }
@@ -37,35 +54,45 @@
 .subtitle,
 .form {
 	width: 100%;
-	max-width: 480px;
 }
 
 .title {
 	margin: 0 0 8px;
-	font-size: clamp(24px, 4.44vh, 32px);
+	font-size: 32px;
 	font-weight: 500;
-	line-height: clamp(36px, 6.67vh, 48px);
+	line-height: 48px;
 	color: #1b1b1b;
 }
 
 .subtitle {
 	display: block;
-	margin-bottom: clamp(20px, 5.56vh, 56px);
-	font-size: clamp(16px, 2.78vh, 20px);
-	line-height: clamp(24px, 3.89vh, 28px);
+	/* 稿：副标题底 ~393 → 首输入顶 442 ≈ 49 */
+	margin-bottom: 49px;
+	font-size: 20px;
+	line-height: 28px;
 	color: #5185be;
 }
 
 .form :global(.ant-form-item) {
-	margin-bottom: clamp(12px, 4.03vh, 29px);
+	/* 稿：两输入框间距 30（501→531） */
+	margin-bottom: 30px;
 }
 
 .form :global(.ant-form-item-explain-error) {
 	margin-top: 4px;
 }
 
+.form :global(.ant-form-item).options {
+	/* 稿：记住我底 ~629 → 按钮顶 697 ≈ 68；需压过通用 form-item */
+	margin-bottom: 68px;
+}
+
+.form :global(.ant-form-item).submitItem {
+	margin-bottom: 0;
+}
+
 .input {
-	height: clamp(48px, 8.33vh, 60px);
+	height: 60px;
 	border: 1px solid transparent;
 	border-radius: 5px;
 	background: #f6f6f6;
@@ -108,17 +135,13 @@
 	color: #666;
 }
 
-.options {
-	margin-bottom: clamp(12px, 4.03vh, 29px);
-}
-
 .remember :global(.ant-checkbox-label) {
 	color: #666;
-	font-size: 20px;
+	font-size: 16px;
 }
 
 .submit {
-	height: clamp(48px, 8.33vh, 60px);
+	height: 60px;
 	border-radius: 8px;
 	font-size: 17px;
 	font-weight: 600;
@@ -132,10 +155,6 @@
 	border-color: #0076eb;
 }
 
-.submitItem {
-	margin-bottom: 0;
-}
-
 @media (max-width: 992px) {
 	.login {
 		flex-direction: column;
@@ -147,6 +166,7 @@
 
 	.panel {
 		flex: 1 1 auto;
+		width: auto;
 		min-width: 0;
 		padding: 40px 24px;
 	}
@@ -160,6 +180,10 @@
 		margin-bottom: 40px;
 		font-size: 18px;
 		line-height: 26px;
+	}
+
+	.form :global(.ant-form-item).options {
+		margin-bottom: 40px;
 	}
 
 	.remember :global(.ant-checkbox-label) {
