@@ -28,7 +28,7 @@ export const PASSWORD_PATTERN = /^[A-Za-z0-9!@#$%^&*._-]+$/;
 /**
  * localStorage 中「记住我」表单数据的存储键。
  */
-const REMEMBER_ME_KEY = "remember_me";
+const REMEMBER_ME_KEY = "ipad_remember_me";
 
 /**
  * 读取 localStorage 中「记住我」表单数据，供登录页回显。

@@ -6,12 +6,15 @@ export const requestMessageApi: { current: MessageInstance | null } = {
 	current: null,
 };
 
+/** localStorage 中 token 的存储键。 */
+const TOKEN_KEY = "admin_token";
+
 /**
  * 读取已保存的 access token。
  *
  * @returns {string | null} - 已保存的 token；未登录时返回 null。
  */
-export const getToken = (): string | null => localStorage.getItem("token");
+export const getToken = (): string | null => localStorage.getItem(TOKEN_KEY);
 
 /**
  * 持久化 access token。
@@ -24,7 +27,7 @@ export const setToken = (token: string | undefined) => {
 		clearToken();
 		return;
 	}
-	localStorage.setItem("token", token);
+	localStorage.setItem(TOKEN_KEY, token);
 };
 
 /**
@@ -33,7 +36,7 @@ export const setToken = (token: string | undefined) => {
  * @returns {void} - 无返回值。
  */
 export const clearToken = () => {
-	localStorage.removeItem("token");
+	localStorage.removeItem(TOKEN_KEY);
 };
 
 /**

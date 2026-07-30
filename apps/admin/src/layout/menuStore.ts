@@ -7,7 +7,7 @@ import {
 } from "./menuConfig";
 
 /** localStorage 中缓存菜单数据的键名。 */
-const MENU_CACHE_KEY = "app_menus";
+const MENU_CACHE_KEY = "admin_menus";
 
 /** 从 localStorage 读取缓存的菜单数据。 */
 const getMenuCache = (): TopMenuItem[] => {

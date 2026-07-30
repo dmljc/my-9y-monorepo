@@ -32,7 +32,7 @@
 .topMenu {
 	flex: 1;
 	min-width: 0;
-	justify-content: center;
+	justify-content: flex-start;
 	border-bottom: none;
 	background: transparent;
 }
