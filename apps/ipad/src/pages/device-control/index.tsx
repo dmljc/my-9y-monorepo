@@ -61,23 +61,39 @@ const DeviceControl = () => {
 
 	selectedIdRef.current = selected?.id ?? null;
 
-	const applyDevices = (buildingKeyNext: string, next: DeviceItem[]) => {
+	const applyDevices = (
+		buildingKeyNext: string,
+		next: DeviceItem[],
+		/** 总开关操作后传入，避免 rooms 延迟导致 UI 被旧状态盖回 */
+		forceEnabled?: boolean,
+	) => {
+		const devicesNext =
+			forceEnabled === undefined
+				? next
+				: next.map((item) => ({ ...item, enabled: forceEnabled }));
 		setDevices((prev) => {
 			const metricsById = new Map(
 				prev.map((item) => [item.id, item.metrics]),
 			);
-			return next.map((item) => ({
+			return devicesNext.map((item) => ({
 				...item,
 				metrics: metricsById.get(item.id) ?? item.metrics,
 			}));
 		});
-		setMasterOn(deriveMasterOn(next));
+		setMasterOn(
+			forceEnabled !== undefined
+				? forceEnabled
+				: deriveMasterOn(devicesNext),
+		);
 		setSelectedIdByBuilding((prev) => {
 			const remembered = prev[buildingKeyNext];
-			if (remembered && next.some((item) => item.id === remembered)) {
+			if (
+				remembered &&
+				devicesNext.some((item) => item.id === remembered)
+			) {
 				return prev;
 			}
-			const fallback = next[0]?.id;
+			const fallback = devicesNext[0]?.id;
 			if (!fallback) {
 				const cleared = { ...prev };
 				delete cleared[buildingKeyNext];
@@ -87,9 +103,17 @@ const DeviceControl = () => {
 		});
 	};
 
-	const loadDevices = async (buildingId: number, buildingKeyNext: string) => {
+	const loadDevices = async (
+		buildingId: number,
+		buildingKeyNext: string,
+		forceEnabled?: boolean,
+	) => {
 		const data = await listRooms(buildingId);
-		applyDevices(buildingKeyNext, parseDevicesFromRooms(data));
+		applyDevices(
+			buildingKeyNext,
+			parseDevicesFromRooms(data),
+			forceEnabled,
+		);
 	};
 
 	const loadBuildings = async () => {
@@ -205,12 +229,17 @@ const DeviceControl = () => {
 				currentBuilding.buildingId,
 				checked ? "on" : "off",
 			);
-			await loadDevices(currentBuilding.buildingId, buildingKey);
+			/* 接口成功后先同步 UI；rooms 重拉可能有延迟，避免总开关被旧状态盖回 */
+			setMasterOn(checked);
+			setDevices((prev) =>
+				prev.map((item) => ({ ...item, enabled: checked })),
+			);
 			message.success(
 				checked
 					? `“${name}”厂房总开关已开启`
 					: `“${name}”厂房总开关已关闭`,
 			);
+			await loadDevices(currentBuilding.buildingId, buildingKey, checked);
 		} finally {
 			setActionLoading(false);
 		}
@@ -221,8 +250,13 @@ const DeviceControl = () => {
 		setActionLoading(true);
 		try {
 			await switchDevice(selected.id, checked ? "on" : "off");
-			await loadDevices(currentBuilding.buildingId, buildingKey);
+			const nextDevices = devices.map((item) =>
+				item.id === selected.id ? { ...item, enabled: checked } : item,
+			);
+			setDevices(nextDevices);
+			setMasterOn(deriveMasterOn(nextDevices));
 			message.success(checked ? "设备开关已开启" : "设备开关已关闭");
+			await loadDevices(currentBuilding.buildingId, buildingKey);
 		} finally {
 			setActionLoading(false);
 		}

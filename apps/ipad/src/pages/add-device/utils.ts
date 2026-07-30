@@ -35,8 +35,10 @@ export const STATUS_LABEL: Record<DeviceStatus, string> = {
  * @param {string | undefined} - 后端状态码。
  * @returns {DeviceStatus} - 页面状态。
  */
-export const toDeviceStatus = (deviceStatus?: string): DeviceStatus => {
-	return deviceStatus === "1" ? "closed" : "running";
+export const toDeviceStatus = (
+	deviceStatus?: string | number,
+): DeviceStatus => {
+	return String(deviceStatus ?? "") === "1" ? "closed" : "running";
 };
 
 /**

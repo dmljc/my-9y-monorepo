@@ -84,8 +84,9 @@ export const mapRoomDeviceToItem = (
 		code: String(device.deviceCode ?? "").trim() || `设备${id}`,
 		name: String(device.deviceName ?? "").trim() || `设备${id}`,
 		roomLabel: formatRoomLabel(room.room),
-		enabled: device.deviceStatus !== "1",
-		cleaning: device.cleanStatus === "1",
+		/* 后端可能回 number / string；仅 "1" 表示已关闭 */
+		enabled: String(device.deviceStatus ?? "") !== "1",
+		cleaning: String(device.cleanStatus ?? "") === "1",
 		buildingId: Number(room.buildingId ?? 0),
 		thingId: String(device.thingId ?? "").trim(),
 		metrics: [],
