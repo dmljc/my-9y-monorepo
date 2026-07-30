@@ -97,6 +97,53 @@
 }
 
 /*
+ * 退出登录：蓝湖 1400×920 → top 64 / right 38；图标 18 + 文案 17。
+ */
+.logoutBtn {
+	position: absolute;
+	top: calc(64 / 1400 * 100cqw);
+	right: calc(38 / 1400 * 100cqw);
+	z-index: 3;
+	display: inline-flex;
+	align-items: center;
+	gap: calc(8 / 1400 * 100cqw);
+	padding: 0;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+}
+
+.logoutBtn:focus-visible {
+	outline: 2px solid #1677ff;
+	outline-offset: calc(4 / 1400 * 100cqw);
+	border-radius: calc(4 / 1400 * 100cqw);
+}
+
+.logoutBtn:active {
+	opacity: 0.85;
+}
+
+.logoutIcon {
+	width: calc(18 / 1400 * 100cqw);
+	height: calc(18 / 1400 * 100cqw);
+	flex-shrink: 0;
+	object-fit: contain;
+	pointer-events: none;
+	user-select: none;
+}
+
+.logoutText {
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(17 / 1400 * 100cqw);
+	font-weight: 400;
+	line-height: calc(18 / 1400 * 100cqw);
+	color: #333333;
+	white-space: nowrap;
+}
+
+/*
  * 三列导航：切图 676×660（2x）→ 逻辑 338×330；
  * 间距 40，总宽 3×338+2×40=1094，水平居中。
  */

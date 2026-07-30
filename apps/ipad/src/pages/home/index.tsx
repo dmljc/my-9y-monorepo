@@ -1,12 +1,15 @@
 import { App } from "antd";
 import { useNavigate } from "react-router-dom";
 import homeBg from "@/assets/home/home-bg.webp";
+import iconLogout from "@/assets/home/logout.svg";
+import { useUserStore } from "@/stores/user";
 import styles from "./index.module.css";
 import { NAV_ITEMS, splitTitle } from "./utils";
 
 const Home = () => {
 	const navigate = useNavigate();
 	const { message } = App.useApp();
+	const logout = useUserStore((state) => state.logout);
 	const titleParts = splitTitle(import.meta.env.VITE_APP_TITLE);
 
 	const handleNavClick = (path?: string) => {
@@ -15,6 +18,11 @@ const Home = () => {
 			return;
 		}
 		message.info("功能开发中");
+	};
+
+	const handleLogout = async () => {
+		await logout();
+		navigate("/login");
 	};
 
 	return (
@@ -55,6 +63,24 @@ const Home = () => {
 						) : null}
 					</h1>
 				</header>
+
+				<button
+					type="button"
+					className={styles.logoutBtn}
+					onClick={() => {
+						void handleLogout();
+					}}
+					aria-label="退出登录"
+				>
+					<img
+						className={styles.logoutIcon}
+						src={iconLogout}
+						alt=""
+						aria-hidden
+						draggable={false}
+					/>
+					<span className={styles.logoutText}>退出登录</span>
+				</button>
 
 				<nav className={styles.navGrid} aria-label="功能入口">
 					{NAV_ITEMS.map((item) => (
