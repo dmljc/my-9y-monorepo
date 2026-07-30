@@ -225,6 +225,23 @@
 	font-size: calc(15 / 1400 * 100cqw);
 }
 
+/* 非必填报错（重复 / 不存在 / 流量超限）：绝对定位在输入框右侧，不撑高行 */
+.pipeFieldError {
+	position: absolute;
+	left: calc(100% + (8 / 1400 * 100cqw));
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 2;
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(15 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #ff4d4f;
+	white-space: nowrap;
+	pointer-events: none;
+}
+
 /* 管道号（OUT）：下拉收窄，匀给右侧「管道号重复」文案区 */
 .pipeOutCell {
 	min-width: calc((200 + 8 + 90) / 1400 * 100cqw);
@@ -265,23 +282,6 @@
 .pipeFieldInputError:global(.ant-input::placeholder) {
 	color: #ff4d4f;
 	font-size: calc(15 / 1400 * 100cqw);
-}
-
-/* 非必填报错（重复 / 不存在 / 流量超限）：绝对定位在输入框右侧，不撑高行 */
-.pipeFieldError {
-	position: absolute;
-	left: calc(100% + (8 / 1400 * 100cqw));
-	top: 50%;
-	transform: translateY(-50%);
-	z-index: 2;
-	font-family:
-		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
-		"Microsoft YaHei", sans-serif;
-	font-size: calc(15 / 1400 * 100cqw);
-	line-height: calc(22 / 1400 * 100cqw);
-	color: #ff4d4f;
-	white-space: nowrap;
-	pointer-events: none;
 }
 
 .saveBtn {
