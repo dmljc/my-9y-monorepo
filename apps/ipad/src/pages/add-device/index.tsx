@@ -7,7 +7,6 @@ import {
 	list,
 	listBuildings,
 	remove,
-	switchBuilding,
 	toggleStatus,
 	update,
 } from "./api";
@@ -18,7 +17,6 @@ import {
 	buildCreatePayload,
 	buildUpdatePayload,
 	DEFAULT_PAGE_SIZE,
-	deriveMasterOn,
 	mapRowToDevice,
 	normalizeBuildingTabs,
 	PAGE_SIZE_OPTIONS,
@@ -35,7 +33,6 @@ const AddDevice = () => {
 	const [loading, setLoading] = useState(false);
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-	const [masterOn, setMasterOn] = useState(true);
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingRecord, setEditingRecord] = useState<Device | null>(null);
 
@@ -48,7 +45,6 @@ const AddDevice = () => {
 			const data = await list(buildingId);
 			const rows = parseDeviceList(data).map(mapRowToDevice);
 			setDevices(rows);
-			setMasterOn(deriveMasterOn(rows));
 			setPageNum((prev) => {
 				const maxPage = Math.max(
 					1,
@@ -93,23 +89,6 @@ const AddDevice = () => {
 	const handleTableChange = (pagination: TablePaginationConfig) => {
 		setPageNum(pagination.current ?? 1);
 		setPageSize(pagination.pageSize ?? DEFAULT_PAGE_SIZE);
-	};
-
-	const handleMasterChange = async (checked: boolean) => {
-		if (!currentBuilding) {
-			message.warning("暂无可用厂房");
-			return;
-		}
-		const name = currentBuilding.label;
-		await switchBuilding(
-			currentBuilding.buildingId,
-			checked ? "on" : "off",
-		);
-		setMasterOn(checked);
-		message.success(
-			checked ? `“${name}”厂房总开关已开启` : `“${name}”厂房总开关已关闭`,
-		);
-		await loadDevices(currentBuilding.buildingId);
 	};
 
 	const handleAdd = () => {
@@ -272,8 +251,6 @@ const AddDevice = () => {
 					buildingKey={buildingKey}
 					buildings={buildings}
 					onBuildingChange={handleBuildingChange}
-					masterOn={masterOn}
-					onMasterChange={handleMasterChange}
 				/>
 
 				<div className={styles.body}>

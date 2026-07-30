@@ -24,14 +24,15 @@ export interface BuildingPageHeaderProps {
 	buildings: BuildingTab[];
 	/** 切换厂房。 */
 	onBuildingChange: (key: string) => void;
-	/** 厂房总开关状态。 */
-	masterOn: boolean;
-	/** 厂房总开关变更。 */
-	onMasterChange: (checked: boolean) => void;
+	/** 厂房总开关状态；仅设备控制页传入。 */
+	masterOn?: boolean;
+	/** 厂房总开关变更；仅设备控制页传入。 */
+	onMasterChange?: (checked: boolean) => void;
 }
 
 /**
- * 业务页共用顶栏：返回、厂房 Tab（选中微笑弧线）、总开关、头像。
+ * 业务页共用顶栏：返回、厂房 Tab（选中微笑弧线）、头像。
+ * 厂房总开关仅在设备控制页按需显示。
  */
 const BuildingPageHeader = ({
 	buildingKey,
@@ -89,12 +90,16 @@ const BuildingPageHeader = ({
 			</nav>
 
 			<div className={styles.headerRight}>
-				<span className={styles.masterLabel}>厂房总开关</span>
-				<Switch
-					checked={masterOn}
-					onChange={onMasterChange}
-					className={`${styles.controlSwitch} ${styles.masterSwitch}`}
-				/>
+				{onMasterChange ? (
+					<>
+						<span className={styles.masterLabel}>厂房总开关</span>
+						<Switch
+							checked={masterOn}
+							onChange={onMasterChange}
+							className={`${styles.controlSwitch} ${styles.masterSwitch}`}
+						/>
+					</>
+				) : null}
 				<UserDropdown />
 			</div>
 		</header>

@@ -16,7 +16,6 @@ import {
 	listRoomPipelines,
 	saveDevicePipeline,
 	saveRoomPipeline,
-	switchBuilding,
 } from "./api";
 import styles from "./index.module.css";
 import type {
@@ -50,7 +49,6 @@ const PipelineConfig = () => {
 	const [configType, setConfigType] = useState<PipelineConfigType>("device");
 	const [pipelines, setPipelines] = useState<PipelineItem[]>([]);
 	const [loading, setLoading] = useState(false);
-	const [masterOn, setMasterOn] = useState(true);
 	const [pipeOptions, setPipeOptions] = useState<PipeOption[]>([]);
 	const [roomByPipe, setRoomByPipe] = useState<Record<string, string>>({});
 	/** 行级管道号错误文案（房间 IN / 设备 OUT）。 */
@@ -165,22 +163,6 @@ const PipelineConfig = () => {
 	const handleConfigTypeChange = (key: PipelineConfigType) => {
 		setConfigType(key);
 		if (currentBuilding) loadList(currentBuilding.buildingId, key);
-	};
-
-	const handleMasterChange = async (checked: boolean) => {
-		if (!currentBuilding) {
-			message.warning("暂无可用厂房");
-			return;
-		}
-		const name = currentBuilding.label;
-		await switchBuilding(
-			currentBuilding.buildingId,
-			checked ? "on" : "off",
-		);
-		setMasterOn(checked);
-		message.success(
-			checked ? `“${name}”厂房总开关已开启` : `“${name}”厂房总开关已关闭`,
-		);
 	};
 
 	const handlePipeInChange = useCallback(
@@ -516,8 +498,6 @@ const PipelineConfig = () => {
 					buildingKey={buildingKey}
 					buildings={buildings}
 					onBuildingChange={handleBuildingChange}
-					masterOn={masterOn}
-					onMasterChange={handleMasterChange}
 				/>
 
 				<div className={styles.body}>
