@@ -4,6 +4,8 @@ import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
 import Access from "@/components/Access";
 import { PERM_ROLE } from "@/constants/permission";
+import { useMenuStore } from "@/layout/menuStore";
+import { useUserStore } from "@/stores/user";
 import AssignModal from "./AssignModal";
 import {
 	create as createRole,
@@ -20,6 +22,8 @@ import { formatPermissionCount } from "./utils";
 
 const PermissionRole = () => {
 	const { message, modal } = App.useApp();
+	const fetchUserInfo = useUserStore((state) => state.fetchUserInfo);
+	const fetchMenus = useMenuStore((state) => state.fetchMenus);
 	const [loading, setLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<SysRole[]>([]);
 	const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -110,6 +114,8 @@ const PermissionRole = () => {
 			roleId: assigningRecord.roleId,
 			menuIds,
 		});
+		await fetchUserInfo();
+		await fetchMenus({ force: true });
 		message.success("权限分配成功");
 		await loadData(pageNum, pageSize);
 	};
