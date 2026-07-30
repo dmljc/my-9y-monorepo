@@ -92,10 +92,21 @@
 .sidebar {
 	flex: none;
 	width: calc(370 / 1400 * 100cqw);
+	display: flex;
+	flex-direction: column;
 	overflow: auto;
 	padding: calc(20 / 1400 * 100cqw) calc(24 / 1400 * 100cqw);
 	border-radius: calc(12 / 1400 * 100cqw);
 	background: #fff;
+}
+
+.emptyWrap {
+	flex: 1;
+	min-height: calc(200 / 1400 * 100cqw);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: calc(24 / 1400 * 100cqw);
 }
 
 .deviceGrid {
