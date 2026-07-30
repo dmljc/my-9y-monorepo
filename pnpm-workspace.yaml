@@ -22,7 +22,7 @@ catalog:
   "@ant-design/icons": ^6.3.2
 
   # HTTP
-  axios: ^1.18.1
+  axios: ^1.19.0
 
   # Charts & Date
   echarts: ^6.1.0
