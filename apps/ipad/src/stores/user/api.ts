@@ -1,5 +1,5 @@
 import { request } from "@/utils";
-import type { LoginParams, LoginResponse } from "./interface";
+import type { GetInfoResponse, LoginParams, LoginResponse } from "./interface";
 
 /**
  * 登录（与 admin 相同：POST /login）。
@@ -9,6 +9,15 @@ import type { LoginParams, LoginResponse } from "./interface";
  */
 export const login = (data: LoginParams): Promise<LoginResponse> => {
 	return request.post("/login", data);
+};
+
+/**
+ * 获取当前登录用户信息（与 admin 相同：GET /getInfo）。
+ *
+ * @returns {Promise<GetInfoResponse>} - 用户、权限与角色。
+ */
+export const getInfo = (): Promise<GetInfoResponse> => {
+	return request.get("/getInfo");
 };
 
 /**

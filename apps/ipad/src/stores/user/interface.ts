@@ -16,7 +16,7 @@ export interface LoginResponse {
 }
 
 /**
- * 用户基本信息（ipad 登录不调 getInfo，仅用登录账号填充展示字段）。
+ * 用户基本信息。
  */
 export interface UserInfo {
 	userId: number;
@@ -25,4 +25,15 @@ export interface UserInfo {
 	email?: string;
 	phonenumber?: string;
 	avatar?: string | null;
+}
+
+/**
+ * getInfo 接口响应。
+ */
+export interface GetInfoResponse {
+	code: number;
+	msg?: string;
+	permissions: string[];
+	roles: string[];
+	user: UserInfo;
 }

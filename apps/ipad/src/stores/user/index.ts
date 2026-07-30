@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { clearToken, setToken } from "@/utils";
-import { login as loginApi, logout as logoutApi } from "./api";
+import { getInfo, login as loginApi, logout as logoutApi } from "./api";
 import type { LoginParams, UserInfo } from "./interface";
 
 /** localStorage 中缓存用户信息的键名。 */
@@ -34,21 +34,6 @@ const clearUserCache = (): void => {
 };
 
 /**
- * 由登录账号构造本地会话用户（ipad 不调用 getInfo）。
- *
- * @param {string} - 登录用户名。
- * @returns {UserInfo} - 本地会话用户。
- */
-const buildSessionUser = (username: string): UserInfo => {
-	const userName = username.trim();
-	return {
-		userId: 0,
-		userName,
-		nickName: userName,
-	};
-};
-
-/**
  * 用户 store 状态与操作方法。
  */
 interface UserState {
@@ -58,6 +43,7 @@ interface UserState {
 	loading: boolean;
 	login: (params: LoginParams) => Promise<boolean>;
 	logout: () => Promise<void>;
+	fetchUserInfo: () => Promise<boolean>;
 	restoreUser: () => boolean;
 	clearUser: () => void;
 }
@@ -72,13 +58,13 @@ const defaultUserState = {
 	loading: false,
 };
 
-export const useUserStore = create<UserState>((set) => ({
+export const useUserStore = create<UserState>((set, get) => ({
 	...defaultUserState,
 	/**
-	 * 登录：仅调用 POST /login，持久化 token，并用登录账号写入本地会话（不调 getInfo / getRouters）。
+	 * 登录并拉取用户信息：调用登录接口、持久化 token、再请求 getInfo。
 	 *
 	 * @param {LoginParams} - 账号与密码。
-	 * @returns {boolean} - 登录成功时返回 true，否则 false。
+	 * @returns {boolean} - 登录且用户信息加载成功时返回 true，否则 false。
 	 */
 	login: async (params) => {
 		set({ loading: true });
@@ -89,18 +75,11 @@ export const useUserStore = create<UserState>((set) => ({
 				return false;
 			}
 			setToken(data.token);
-			const user = buildSessionUser(params.username);
-			setUserCache({
-				user,
-				permissions: [],
-				roles: [],
-			});
-			set({
-				user,
-				permissions: [],
-				roles: [],
-			});
-			return true;
+			const ok = await get().fetchUserInfo();
+			if (!ok) {
+				clearToken();
+			}
+			return ok;
 		} catch {
 			clearToken();
 			set(defaultUserState);
@@ -124,6 +103,37 @@ export const useUserStore = create<UserState>((set) => ({
 			clearToken();
 			clearUserCache();
 			set(defaultUserState);
+		}
+	},
+	/**
+	 * 根据当前 token 拉取用户信息、权限与角色，成功后写入 localStorage 缓存。
+	 *
+	 * @returns {boolean} - 获取成功时返回 true，否则 false。
+	 */
+	fetchUserInfo: async () => {
+		set({ loading: true });
+		try {
+			const data = await getInfo();
+			if (data.code !== 200 || !data.user) {
+				set(defaultUserState);
+				return false;
+			}
+			setUserCache({
+				user: data.user,
+				permissions: data.permissions ?? [],
+				roles: data.roles ?? [],
+			});
+			set({
+				user: data.user,
+				permissions: data.permissions ?? [],
+				roles: data.roles ?? [],
+			});
+			return true;
+		} catch {
+			set(defaultUserState);
+			return false;
+		} finally {
+			set({ loading: false });
 		}
 	},
 	/**

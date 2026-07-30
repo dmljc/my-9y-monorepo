@@ -1,22 +1,35 @@
-.profile {
+.trigger:global(.ant-btn) {
 	display: inline-flex;
 	align-items: center;
 	flex-shrink: 0;
 	gap: calc(12 / 1400 * 100cqw);
+	height: auto;
+	min-height: calc(48 / 1400 * 100cqw);
+	padding: calc(4 / 1400 * 100cqw) calc(8 / 1400 * 100cqw);
+	border: 1px solid transparent;
+	border-radius: calc(8 / 1400 * 100cqw);
+	line-height: 1;
+	outline: none;
+	box-shadow: none;
 }
 
-.trigger:global(.ant-btn) {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
-	width: calc(48 / 1400 * 100cqw);
-	height: calc(48 / 1400 * 100cqw);
-	min-width: calc(48 / 1400 * 100cqw);
-	padding: 0;
-	border: none;
-	border-radius: 50%;
-	line-height: 1;
+.trigger:global(.ant-btn):hover {
+	background: rgba(0, 0, 0, 0.04);
+}
+
+/* 去掉 iPad 点击后的黑边/聚焦环，并保持尺寸不变避免抖动 */
+.trigger:global(.ant-btn):focus,
+.trigger:global(.ant-btn):active,
+.trigger:global(.ant-btn):focus-visible,
+.trigger:global(.ant-btn):global(.ant-dropdown-open) {
+	outline: none;
+	box-shadow: none;
+	border-color: transparent;
+	background: rgba(0, 0, 0, 0.04);
+}
+
+.trigger:global(.ant-btn)::after {
+	display: none;
 }
 
 .avatar:global(.ant-avatar) {
@@ -40,4 +53,11 @@
 	line-height: calc(22 / 1400 * 100cqw);
 	color: #2d2d2d;
 	white-space: nowrap;
+}
+
+.dropdownOverlay :global(.ant-dropdown-menu-item):focus,
+.dropdownOverlay :global(.ant-dropdown-menu-item):active,
+.dropdownOverlay :global(.ant-dropdown-menu-item):focus-visible {
+	outline: none;
+	background: rgba(0, 0, 0, 0.04);
 }
