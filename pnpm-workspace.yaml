@@ -32,13 +32,13 @@ catalog:
   react-router-dom: ^7.18.2
 
   # 构建
-  vite: ^8.1.5
-  "@vitejs/plugin-react-swc": ^4.3.2
+  vite: ^8.2.0
+  "@vitejs/plugin-react-swc": ^4.3.3
   typescript: 6.0.3
 
   # 类型
-  "@types/react": ^19.2.17
-  "@types/react-dom": ^19.2.3
+  "@types/react": ^19.2.18
+  "@types/react-dom": ^19.2.4
 
 # 允许 @swc/core、esbuild 执行安装脚本（详见根 package.json → pnpm.onlyBuiltDependencies）
 allowBuilds:

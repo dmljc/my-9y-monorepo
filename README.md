@@ -1,4 +1,4 @@
-# frontend-project-template
+# my-9y-project
 
 **pnpm Monorepo** 前端项目模板
 
