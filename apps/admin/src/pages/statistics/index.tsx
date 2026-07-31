@@ -115,7 +115,10 @@ const Statistics = () => {
 			<div className={styles.chartArea}>
 				<Spin
 					spinning={loading}
-					classNames={{ root: styles.chartSpin }}
+					classNames={{
+						root: styles.chartSpin,
+						container: styles.chartSpinContainer,
+					}}
 				>
 					<div className={styles.chartGrid}>
 						<ChartCard

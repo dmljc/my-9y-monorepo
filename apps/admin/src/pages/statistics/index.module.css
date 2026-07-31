@@ -40,14 +40,15 @@
 	flex-direction: column;
 }
 
-.chartSpin:global(.ant-spin-nested-loading) {
+/* antd 6 Spin：classNames.root / container，不再有 ant-spin-nested-loading */
+.chartSpin {
 	flex: 1;
 	min-height: 0;
 	display: flex;
 	flex-direction: column;
 }
 
-.chartSpin :global(.ant-spin-container) {
+.chartSpinContainer {
 	flex: 1;
 	min-height: 0;
 	display: flex;
@@ -60,12 +61,14 @@
 	gap: 24px;
 	flex: 1;
 	min-height: 0;
+	height: 100%;
 }
 
 .chartCard {
 	display: flex;
 	flex-direction: column;
 	min-height: 0;
+	height: 100%;
 	padding: 20px 24px 24px;
 	border-radius: 4px;
 	background: #fff;
@@ -73,7 +76,7 @@
 
 .chartBody {
 	flex: 1;
-	min-height: 200px;
+	min-height: 0;
 	display: flex;
 	flex-direction: column;
 }
@@ -83,11 +86,11 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	min-height: 200px;
+	min-height: 0;
 }
 
 .chartCardLarge {
-	flex: 1.15;
+	flex: 1;
 }
 
 .bottomCharts {
@@ -95,6 +98,7 @@
 	min-height: 0;
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: minmax(0, 1fr);
 	gap: 24px;
 }
 
