@@ -4,7 +4,7 @@
  * 约定：
  * - 请求：自动注入 token、语言头
  * - 响应：解包 { code, data, message | msg }，成功返回 data，失败 reject Error
- * - 401：触发 onUnauthorized，便于应用层处理登出
+ * - 401：HTTP 状态 401，或业务体 code === 401（token 过期）时触发 onUnauthorized
  */
 import axios, { type AxiosError } from "axios";
 import type {
@@ -68,17 +68,24 @@ function getErrorMessage(error: AxiosError<ApiResponse>): string {
 	return error.message || "网络异常，请稍后重试";
 }
 
+/** 业务鉴权失败码（若依等：HTTP 200 + body.code === 401） */
+const UNAUTHORIZED_CODE = 401;
+
 /**
  * 处理业务响应体：成功时解包 data 或原样返回；失败时 reject。
  *
  * HTTP 状态为 2xx 但响应体不是约定的 `{ code, data }` envelope 时
  * （如反向代理/隧道异常返回的 HTML 页面），同样视为失败并 reject，
  * 避免调用方拿到非预期结构（如 HTML 字符串）却误判为成功。
+ *
+ * 业务 code === 401（token 过期/无效）走 onUnauthorized，不弹 onError，
+ * 与 HTTP 401 行为一致。
  */
 function unwrapBusinessBody(
 	body: unknown,
 	successCode: number,
 	onError?: (error: Error) => void,
+	onUnauthorized?: (error: Error) => void,
 ): unknown {
 	if (!isBusinessEnvelope(body)) {
 		const err = new Error("服务响应异常，请稍后重试");
@@ -95,6 +102,14 @@ function unwrapBusinessBody(
 			return undefined;
 		}
 		return body;
+	}
+
+	if (code === UNAUTHORIZED_CODE) {
+		const err = new Error(
+			getBusinessMessage(body) || "登录状态已失效，请重新登录",
+		);
+		onUnauthorized?.(err);
+		throw err;
 	}
 
 	const err = new Error(getBusinessMessage(body) || "请求失败");
@@ -166,12 +181,21 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
 				response.data,
 				successCode,
 				onError,
+				onUnauthorized,
 			) as typeof response.data;
 		},
 		(error: AxiosError<ApiResponse>) => {
-			const isUnauthorized = error.response?.status === 401;
+			const status = error.response?.status;
+			const body = error.response?.data;
+			const businessCode = isBusinessEnvelope(body)
+				? getBusinessCode(body)
+				: null;
+			const isUnauthorized =
+				status === UNAUTHORIZED_CODE ||
+				businessCode === UNAUTHORIZED_CODE;
+
 			if (isUnauthorized) {
-				onUnauthorized?.();
+				onUnauthorized?.(new Error(getErrorMessage(error)));
 			}
 
 			const err = new Error(getErrorMessage(error));

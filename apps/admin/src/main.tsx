@@ -7,22 +7,24 @@ import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import UnauthorizedModal from "@/components/UnauthorizedModal";
 import { requestMessageApi } from "@/utils/request";
 import App from "./App";
 import "./styles/global.css";
 
-const setMessageApi = (api: MessageInstance | null) => {
-	requestMessageApi.current = api;
+const setMessageApi = (message: MessageInstance | null) => {
+	requestMessageApi.current = message;
 };
 
-/** 将 App.useApp().message 注入 request 全局 onError。 */
+/** 将 App.useApp() 注入 request 全局反馈。 */
 const RequestMessageBridge = () => {
 	const { message } = AntApp.useApp();
 
+	setMessageApi(message);
+
 	useEffect(() => {
-		setMessageApi(message);
 		return () => setMessageApi(null);
-	}, [message]);
+	}, []);
 
 	return null;
 };
@@ -37,8 +39,9 @@ createRoot(rootEl).render(
 	// <StrictMode>
 	<ConfigProvider locale={zhCN}>
 		<AntApp>
-			<RequestMessageBridge />
 			<BrowserRouter>
+				<RequestMessageBridge />
+				<UnauthorizedModal />
 				<ErrorBoundary>
 					<App />
 				</ErrorBoundary>

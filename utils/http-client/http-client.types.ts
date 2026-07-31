@@ -27,9 +27,12 @@ export interface HttpClientOptions {
 	getLang?: () => string | null;
 	/** 语言请求头名称，默认 x-custom-lang */
 	langHeaderName?: string;
-	/** HTTP 401 时回调（如清除登录态、跳转登录页） */
-	onUnauthorized?: () => void;
-	/** 请求失败时全局回调（401 除外，避免与 onUnauthorized 重复提示） */
+	/**
+	 * 鉴权失败回调（HTTP 401，或业务体 code === 401）。
+	 * 用于展示失效提示、清除登录态并跳转登录页；不会再走 onError，避免重复 toast。
+	 */
+	onUnauthorized?: (error: Error) => void;
+	/** 请求失败时全局回调（鉴权失败除外，避免与 onUnauthorized 重复提示） */
 	onError?: (error: Error) => void;
 	/** 业务成功 code，与 ApiResponse.code 比对，默认 200 */
 	successCode?: number;
