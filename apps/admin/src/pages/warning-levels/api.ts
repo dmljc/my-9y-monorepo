@@ -52,7 +52,7 @@ function toAlarmLevelPayload(
 	return {
 		id: id ? Number(id) : undefined,
 		levelName: values.name.trim(),
-		color: values.color,
+		color: values.color.trim().toUpperCase(),
 	};
 }
 
