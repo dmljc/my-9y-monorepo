@@ -5,8 +5,9 @@ import type { RuleFormValues, RuleLevelOption, WarningRule } from "./utils";
 import {
 	BUILDING_OPTIONS,
 	DEVICE_OPTIONS,
+	INSTANCE_OPTIONS,
 	MAX_LENGTH_12,
-	PROPERTY_OPTIONS,
+	POINT_OPTIONS,
 	ROOM_OPTIONS,
 	THRESHOLD_MAX,
 	THRESHOLD_MIN,
@@ -70,13 +71,15 @@ const CreateModal = ({
 
 	return (
 		<Modal
-			title={isEdit ? "编辑" : "新增"}
+			title={isEdit ? "编辑规则" : "新增规则"}
 			open={open}
 			onOk={handleOk}
 			onCancel={onCancel}
 			confirmLoading={loading}
 			destroyOnHidden
 			width={560}
+			okText={isEdit ? "确定" : "创建规则"}
+			cancelText="取消"
 			classNames={{ footer: styles.ruleModalFooter }}
 		>
 			<Form
@@ -98,7 +101,7 @@ const CreateModal = ({
 						},
 						{
 							max: MAX_LENGTH_12,
-							message: `最多输入${MAX_LENGTH_12}个字符`,
+							message: `最多输入${MAX_LENGTH_12}个汉字`,
 						},
 					]}
 				>
@@ -110,7 +113,7 @@ const CreateModal = ({
 				</Form.Item>
 
 				<Form.Item label="所属房间" required>
-					<div className={styles.thresholdRange}>
+					<div className={styles.roomSelects}>
 						<Form.Item
 							name="buildingNames"
 							noStyle
@@ -119,7 +122,7 @@ const CreateModal = ({
 									required: true,
 									type: "array",
 									min: 1,
-									message: "请至少选择一个厂房",
+									message: "请选择厂房",
 								},
 							]}
 						>
@@ -138,7 +141,7 @@ const CreateModal = ({
 									required: true,
 									type: "array",
 									min: 1,
-									message: "请至少选择一个房间",
+									message: "请选择房间",
 								},
 							]}
 						>
@@ -160,7 +163,7 @@ const CreateModal = ({
 							required: true,
 							type: "array",
 							min: 1,
-							message: "请至少选择一个设备",
+							message: "请选择设备",
 						},
 					]}
 				>
@@ -173,21 +176,45 @@ const CreateModal = ({
 				</Form.Item>
 
 				<Form.Item
-					name="propertyKeys"
-					label="物模型属性"
+					name="instanceNames"
+					label="实例名称"
 					rules={[
 						{
 							required: true,
 							type: "array",
 							min: 1,
-							message: "请至少选择一个属性",
+							message: "请选择实例",
 						},
 					]}
 				>
 					<Select
 						mode="multiple"
-						placeholder="请选择物模型属性"
-						options={PROPERTY_OPTIONS}
+						showSearch
+						optionFilterProp="label"
+						placeholder="请选择实例"
+						options={INSTANCE_OPTIONS}
+						allowClear
+					/>
+				</Form.Item>
+
+				<Form.Item
+					name="pointNames"
+					label="点位名称"
+					rules={[
+						{
+							required: true,
+							type: "array",
+							min: 1,
+							message: "请选择点位",
+						},
+					]}
+				>
+					<Select
+						mode="multiple"
+						showSearch
+						optionFilterProp="label"
+						placeholder="请选择点位"
+						options={POINT_OPTIONS}
 						allowClear
 					/>
 				</Form.Item>
@@ -245,7 +272,7 @@ const CreateModal = ({
 					label="绑定等级"
 					rules={[{ required: true, message: "请选择报警等级" }]}
 				>
-					<Select options={levelOptions} />
+					<Select placeholder="请选择等级" options={levelOptions} />
 				</Form.Item>
 
 				<Form.Item
@@ -253,7 +280,7 @@ const CreateModal = ({
 					label="是否启用"
 					valuePropName="checked"
 				>
-					<Switch checkedChildren="启用" unCheckedChildren="停用" />
+					<Switch />
 				</Form.Item>
 			</Form>
 		</Modal>

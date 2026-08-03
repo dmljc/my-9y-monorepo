@@ -14,10 +14,11 @@ export interface AlarmRule {
 	id?: number;
 	ruleName?: string;
 	monitorType?: string;
-	buildingName?: string;
-	roomName?: string;
+	building?: string;
+	room?: string;
 	deviceName?: string;
 	thingId?: string;
+	thingName?: string;
 	propertyName?: string;
 	propertyId?: string;
 	thresholdMin?: string;

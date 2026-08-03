@@ -161,36 +161,48 @@ const WarningRules = () => {
 			ellipsis: true,
 		},
 		{
-			title: "所属房间",
-			key: "roomNames",
-			render: (_: unknown, record: WarningRule) => {
-				const buildings = record.buildingNames.join("、");
-				const rooms = record.roomNames.join("、");
-				return [buildings, rooms].filter(Boolean).join(" / ");
-			},
-		},
-		{
 			title: "设备名称",
 			key: "deviceNames",
 			render: (_: unknown, record: WarningRule) =>
-				record.deviceNames.join("、"),
+				record.deviceNames.join("、") || "-",
 			ellipsis: true,
 		},
 		{
-			title: "物模型属性",
-			key: "propertyKeys",
+			title: "实例名称",
+			key: "instanceNames",
 			render: (_: unknown, record: WarningRule) =>
-				record.propertyKeys.join("、"),
+				record.instanceNames.join("、") || "-",
 			ellipsis: true,
 		},
 		{
-			title: "报警阈值",
+			title: "点位名称",
+			key: "pointNames",
+			render: (_: unknown, record: WarningRule) =>
+				record.pointNames.join("、") || "-",
+			ellipsis: true,
+		},
+		{
+			title: "所属厂房",
+			key: "building",
+			render: (_: unknown, record: WarningRule) =>
+				record.buildingNames.join("、") || "-",
+			ellipsis: true,
+		},
+		{
+			title: "房间",
+			key: "room",
+			render: (_: unknown, record: WarningRule) =>
+				record.roomNames.join("、") || "-",
+			ellipsis: true,
+		},
+		{
+			title: "阈值范围",
 			key: "thresholdRange",
 			render: (_: unknown, record: WarningRule) =>
 				formatThresholdRange(record.thresholdMin, record.thresholdMax),
 		},
 		{
-			title: "绑定等级",
+			title: "等级",
 			dataIndex: "levelName",
 			key: "levelName",
 			render: (_: unknown, record) => (
@@ -200,7 +212,7 @@ const WarningRules = () => {
 			),
 		},
 		{
-			title: "是否启用",
+			title: "状态",
 			dataIndex: "enabled",
 			key: "enabled",
 			render: (enabled: boolean, record: WarningRule) => (

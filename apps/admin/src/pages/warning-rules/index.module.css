@@ -61,6 +61,13 @@
 	width: 100%;
 }
 
+.roomSelects {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+	width: 100%;
+}
+
 .thresholdInput {
 	flex: 1;
 	min-width: 0;
@@ -69,4 +76,10 @@
 .thresholdDivider {
 	flex: none;
 	color: #86909c;
+}
+
+.ruleModalFooter {
+	display: flex;
+	justify-content: center;
+	gap: 12px;
 }
