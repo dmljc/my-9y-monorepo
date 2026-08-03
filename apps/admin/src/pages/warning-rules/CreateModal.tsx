@@ -48,6 +48,7 @@ const CreateModal = ({
 	const [roomLoading, setRoomLoading] = useState(false);
 	const [roomOptions, setRoomOptions] = useState<SelectOption[]>([]);
 	const [deviceLoading, setDeviceLoading] = useState(false);
+	const [deviceList, setDeviceList] = useState<unknown>([]);
 	const [deviceOptions, setDeviceOptions] = useState<SelectOption[]>([]);
 	const [instanceLoading, setInstanceLoading] = useState(false);
 	const [instanceOptions, setInstanceOptions] = useState<SelectOption[]>([]);
@@ -62,6 +63,7 @@ const CreateModal = ({
 		if (!open) {
 			setBuildingOptions([]);
 			setRoomOptions([]);
+			setDeviceList([]);
 			setDeviceOptions([]);
 			setInstanceOptions([]);
 			setPointOptions([]);
@@ -152,48 +154,53 @@ const CreateModal = ({
 		};
 	}, [open, buildingId, editingRecord]);
 
+	/** 设备台账只按厂房拉取；房间变更仅做前端过滤，不再请求 ledger/list。 */
 	useEffect(() => {
 		if (!open) return;
 		if (!buildingId) {
-			setDeviceOptions([]);
+			setDeviceList([]);
 			return;
 		}
 
 		let ignore = false;
-		const loadDeviceOptions = async () => {
+		const loadDevices = async () => {
 			setDeviceLoading(true);
 			try {
 				const data = await listDevices(buildingId);
 				if (ignore) return;
-				const sameBuilding =
-					editingRecord?.buildingId === buildingId
-						? editingRecord
-						: null;
-				const roomName =
-					sameBuilding && sameBuilding.room === room
-						? room
-						: room || undefined;
-				let options = normalizeDeviceOptions(data, roomName);
-				if (roomName && options.length === 0) {
-					options = normalizeDeviceOptions(data);
-				}
-				setDeviceOptions(
-					mergeOption(
-						options,
-						sameBuilding?.deviceName,
-						sameBuilding?.deviceName,
-					),
-				);
+				setDeviceList(data);
 			} finally {
 				if (!ignore) setDeviceLoading(false);
 			}
 		};
 
-		loadDeviceOptions();
+		loadDevices();
 		return () => {
 			ignore = true;
 		};
-	}, [open, buildingId, room, editingRecord]);
+	}, [open, buildingId]);
+
+	useEffect(() => {
+		if (!open || !buildingId) {
+			setDeviceOptions([]);
+			return;
+		}
+
+		const sameBuilding =
+			editingRecord?.buildingId === buildingId ? editingRecord : null;
+		const roomName = room || undefined;
+		let options = normalizeDeviceOptions(deviceList, roomName);
+		if (roomName && options.length === 0) {
+			options = normalizeDeviceOptions(deviceList);
+		}
+		setDeviceOptions(
+			mergeOption(
+				options,
+				sameBuilding?.deviceName,
+				sameBuilding?.deviceName,
+			),
+		);
+	}, [open, buildingId, room, deviceList, editingRecord]);
 
 	useEffect(() => {
 		if (!open) return;

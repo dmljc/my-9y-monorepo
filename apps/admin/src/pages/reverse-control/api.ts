@@ -29,6 +29,10 @@ export const getThings = (): Promise<any> => {
 	return request.get("/iiot/device-control/things");
 };
 
+/** 按物实例查询可控点位（thingId 常带前导 `/`；Tomcat 禁 `//` 与 `%2F`，路径段须去掉前导斜杠）。 */
 export const getControllable = (thingId: string): Promise<any> => {
-	return request.get(`/iiot/device-control/controllable/${thingId}`);
+	const id = thingId.trim().replace(/^\/+/, "");
+	return request.get(
+		`/iiot/device-control/controllable/${encodeURIComponent(id)}`,
+	);
 };
