@@ -2463,33 +2463,15 @@ export function formValuesToLedger(values: DeviceFormValues): DeviceLedger { /* 
 **✅ 推荐**
 
 ```tsx
-// index.tsx
 const handleEdit = (record: User) => {
   setEditingRecord(record);
   setModalOpen(true);
 };
 
-// CreateModal.tsx
 useEffect(() => {
   if (!open) return;
-
-  const loadMeta = async () => {
-    const [tree, roles] = await Promise.all([getDeptTree(), getRoleOptions()]);
-    setDeptTree(tree);
-    setRoleOptions(roles);
-  };
-
-  loadMeta();
-
-  if (editingRecord) {
-    form.setFieldsValue({
-      ...editingRecord,
-      lastInspection: normalizeDateValue(editingRecord.lastInspection),
-    });
-    return;
-  }
-
-  form.resetFields();
+  if (editingRecord) form.setFieldsValue(editingRecord);
+  else form.resetFields();
 }, [open, editingRecord]);
 ```
 
@@ -2502,7 +2484,52 @@ if (editingRecord) {
 }
 ```
 
-**边界**：列表行**缺少**编辑必填字段（复杂嵌套、富文本等）时，才在打开弹窗时调详情；权限分配等非标准编辑弹窗，若列表不含完整业务字段（如 `permissionIds`），可单独调专用接口；弹窗 open 时仍可并行拉取**元数据**（组织树、角色选项等下拉数据源），但**主表单回显字段**不调详情。
+**边界**：列表行**缺少**编辑必填字段时，才在**弹窗打开后**异步调详情；权限分配等若列表不含完整字段，可单独调专用接口。开窗与下拉请求的关系见下一节。
+
+### 弹窗先打开，下拉数据异步请求
+
+**做什么**：点击「新增 / 编辑」**直接打开弹框**，不要受选项接口限制（不要先 `await` 再开窗）。弹框打开后，再在 `CreateModal` 的 `useEffect` 里异步请求下拉列表数据即可；保持简单，不要为这件事加 `setTimeout`、预先 seed 选项等复杂逻辑。
+
+**为什么**：开窗与拉选项解耦，弹窗响应快；下拉数据在打开后再请求就够用。
+
+**✅ 推荐**
+
+```tsx
+// index.tsx
+const handleAdd = () => {
+  setEditingRecord(null);
+  setModalOpen(true);
+};
+
+const handleEdit = (record: WarningRule) => {
+  setEditingRecord(record);
+  setModalOpen(true);
+};
+
+// CreateModal.tsx — open 后再异步拉下拉
+useEffect(() => {
+  if (!open) return;
+  if (editingRecord) form.setFieldsValue(editingRecord);
+  else {
+    form.resetFields();
+    form.setFieldsValue({ enabled: true });
+  }
+  loadBuildings();
+  loadInstances();
+}, [open, editingRecord]);
+```
+
+**❌ 避免**
+
+```tsx
+const handleAdd = async () => {
+  await fetchBuildings();
+  await getThings();
+  setModalOpen(true);
+};
+```
+
+**边界**：页面级元数据（如报警等级）可进页时加载；弹窗内联动下拉（厂房 → 房间/设备、实例 → 点位）在打开后再请求。**参考实现**：`apps/admin/src/pages/warning-rules/`。
 
 ### Modal / confirm 按钮文案
 

@@ -120,8 +120,7 @@ const CreateModal = ({
 	}, [open, editingRecord]);
 
 	useEffect(() => {
-		if (!open) return;
-		if (!buildingId) {
+		if (!open || !buildingId) {
 			setRoomOptions([]);
 			return;
 		}
@@ -154,10 +153,8 @@ const CreateModal = ({
 		};
 	}, [open, buildingId, editingRecord]);
 
-	/** 设备台账只按厂房拉取；房间变更仅做前端过滤，不再请求 ledger/list。 */
 	useEffect(() => {
-		if (!open) return;
-		if (!buildingId) {
+		if (!open || !buildingId) {
 			setDeviceList([]);
 			return;
 		}
@@ -188,9 +185,8 @@ const CreateModal = ({
 
 		const sameBuilding =
 			editingRecord?.buildingId === buildingId ? editingRecord : null;
-		const roomName = room || undefined;
-		let options = normalizeDeviceOptions(deviceList, roomName);
-		if (roomName && options.length === 0) {
+		let options = normalizeDeviceOptions(deviceList, room || undefined);
+		if (room && options.length === 0) {
 			options = normalizeDeviceOptions(deviceList);
 		}
 		setDeviceOptions(
@@ -203,8 +199,7 @@ const CreateModal = ({
 	}, [open, buildingId, room, deviceList, editingRecord]);
 
 	useEffect(() => {
-		if (!open) return;
-		if (!instanceName) {
+		if (!open || !instanceName) {
 			setPointOptions([]);
 			return;
 		}
