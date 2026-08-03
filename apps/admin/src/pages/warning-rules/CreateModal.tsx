@@ -216,12 +216,16 @@ const CreateModal = ({
 					/>
 				</Form.Item>
 
-				<Form.Item label="所属房间" required>
+				<Form.Item
+					label="所属房间"
+					required
+					className={styles.compositeFormItem}
+				>
 					<div className={styles.roomSelects}>
 						<Form.Item
 							name="buildingId"
-							noStyle
 							rules={[{ required: true, message: "请选择厂房" }]}
+							className={styles.inlineFormItem}
 						>
 							<Select
 								showSearch
@@ -238,8 +242,8 @@ const CreateModal = ({
 						</Form.Item>
 						<Form.Item
 							name="roomId"
-							noStyle
 							rules={[{ required: true, message: "请选择房间" }]}
+							className={styles.inlineFormItem}
 						>
 							<Select
 								showSearch
@@ -300,11 +304,14 @@ const CreateModal = ({
 					/>
 				</Form.Item>
 
-				<Form.Item label="报警阈值" required>
+				<Form.Item
+					label="报警阈值"
+					required
+					className={styles.compositeFormItem}
+				>
 					<div className={styles.thresholdRange}>
 						<Form.Item
 							name="thresholdMin"
-							noStyle
 							rules={[
 								{ required: true, message: "请输入下限" },
 								{
@@ -314,10 +321,11 @@ const CreateModal = ({
 									message: `请输入${THRESHOLD_MIN}-${THRESHOLD_MAX}之间的数字`,
 								},
 							]}
+							className={styles.inlineFormItem}
 						>
 							<InputNumber
 								className={styles.thresholdInput}
-								placeholder="下限"
+								placeholder="请输入下限"
 								min={THRESHOLD_MIN}
 								max={THRESHOLD_MAX}
 								precision={2}
@@ -326,7 +334,6 @@ const CreateModal = ({
 						<span className={styles.thresholdDivider}>-</span>
 						<Form.Item
 							name="thresholdMax"
-							noStyle
 							rules={[
 								{ required: true, message: "请输入上限" },
 								{
@@ -336,10 +343,11 @@ const CreateModal = ({
 									message: `请输入${THRESHOLD_MIN}-${THRESHOLD_MAX}之间的数字`,
 								},
 							]}
+							className={styles.inlineFormItem}
 						>
 							<InputNumber
 								className={styles.thresholdInput}
-								placeholder="上限"
+								placeholder="请输入上限"
 								min={THRESHOLD_MIN}
 								max={THRESHOLD_MAX}
 								precision={2}
@@ -351,9 +359,12 @@ const CreateModal = ({
 				<Form.Item
 					name="levelId"
 					label="绑定等级"
-					rules={[{ required: true, message: "请选择报警等级" }]}
+					rules={[{ required: true, message: "请选择绑定等级" }]}
 				>
-					<Select placeholder="请选择等级" options={levelOptions} />
+					<Select
+						placeholder="请选择绑定等级"
+						options={levelOptions}
+					/>
 				</Form.Item>
 
 				<Form.Item
