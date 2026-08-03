@@ -40,8 +40,13 @@
 	margin-top: 16px;
 }
 
+/**
+ * 校验前预留下边距，与校验后一致。
+ * Ant Design 会在出现错误时用 additional.minHeight + margin-offset
+ * 抵消该 margin，避免整块再被撑高。
+ */
 .ruleForm :global(.ant-form-item) {
-	margin-bottom: 14px;
+	margin-bottom: 24px;
 }
 
 .sectionLabel {
@@ -96,9 +101,9 @@
 		) 32px;
 }
 
-.ruleRow :global(.ant-form-item),
-.actionRow :global(.ant-form-item) {
-	margin-bottom: 0;
+.ruleRow :global(.ant-form-item:not(.ant-form-item-hidden)),
+.actionRow :global(.ant-form-item:not(.ant-form-item-hidden)) {
+	margin-bottom: 24px;
 	min-width: 0;
 }
 

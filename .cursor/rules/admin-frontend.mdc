@@ -10,6 +10,16 @@ alwaysApply: false
 
 **两应用共用本文件全部约定**（组件形态、事件命名、CRUD 文案、搜索区、api/utils 分层、Ant Design、列表页扁平化、Form / Modal / Table、HTTP 错误处理等）。下文补充 **银河麒麟断网运行**；未单独说明的一律按 admin 写法执行。**ipad 专属**（目录落位、横屏设备、16px 边距、1400 蓝湖尺寸、contain 舞台等）见 `.cursor/rules/ipad.mdc`。顶部统计卡片结构见 `.cursor/rules/admin-stat-cards.mdc`（两应用共用；ipad 落盘见 `ipad.mdc`）。
 
+## Commit Message
+
+- 生成或撰写 commit message 时，**必须使用简体中文**
+- 可用 Conventional Commits 前缀（如 `feat` / `fix`），说明部分用中文
+
+```text
+feat(apps/admin): 规范 things 数据解析，设备下拉展示中文名称
+fix(apps/admin): 修复告警等级颜色提交为小写的问题
+```
+
 ## 银河麒麟断网运行（交付约束）
 
 **做什么**：保证 `apps/admin` / `apps/ipad` 在 **银河麒麟 + 断网 + Node 24 + Chrome ≥ 145** 下可正常 **启动（dev）与打包（build）**。Mac / Windows **有网**开发按常规 `pnpm install` 即可，**不为**这两端单独做断网或跨系统拷贝兼容。
@@ -1975,7 +1985,7 @@ pages/inspection-ledger/
   utils.ts          # ❌ export ledgerToFormValues / formValuesToLedger / maxLengthRule 仅服务 CreateModal
 ```
 
-**边界**：下文「Form.Item 校验规则」「formRules」「Form 布局配置」「setFieldsValue 编辑回显」「表单字段映射」等是对上表各行的细化，**有冲突时以「确有跨文件复用 / 复杂编排」为准**才抽离；Login 引用 `permission-user/formRules.ts`、权限分配等跨模块场景属例外。**参考实现**：inline — `inspection-ledger/`；跨页 rules — `permission-user/formRules.ts`。
+**边界**：下文「Form.Item 校验规则」「Form.Item 底部边距」「formRules」「Form 布局配置」「setFieldsValue 编辑回显」「表单字段映射」等是对上表各行的细化，**有冲突时以「确有跨文件复用 / 复杂编排」为准**才抽离；Login 引用 `permission-user/formRules.ts`、权限分配等跨模块场景属例外。**参考实现**：inline — `inspection-ledger/`；跨页 rules — `permission-user/formRules.ts`。
 
 ### Form.Item 校验规则
 
@@ -2088,6 +2098,35 @@ const skipEditPasswordPlaceholder = (value: string) =>
 ```
 
 **边界**：多条 `rules` 按顺序执行；`transform` 只影响**当前 rule** 的校验值，需在多条规则上重复时提取为同一函数（如 `skipEditPasswordPlaceholder`）；远程唯一性校验、与 `getFieldValue` 联动的确认密码等**必须**用 `validator`；Login 等未走页面 `utils.ts` 的简单页，常量仍可局部定义，但规则写法遵循本节约束。**参考实现**：`apps/admin/src/pages/permission-user/CreateModal.tsx`（跨页共用规则见 `permission-user/formRules.ts`）。
+
+### Form.Item 底部边距：校验前后高度一致
+
+**做什么**：校验文案显示前后，`Form.Item` 占用高度必须一致，避免布局上下跳动。
+
+**做法**：
+
+- 校验前预留足够的 `margin-bottom`（推荐 **24px**，与 Ant Design 默认一致）
+- 依赖 Ant Design 内置补偿：出现错误时读取该 `margin-bottom`，用 `additional.minHeight` + `margin-offset` 抵消，总高度不变
+- **不要**把有校验的 `Form.Item` 设为 `margin-bottom: 0`（含条件行、并排字段）
+- **不要**用绝对定位把 `.ant-form-item-additional` / explain 提出文档流
+
+```css
+/* ✅ */
+.ruleForm :global(.ant-form-item) {
+	margin-bottom: 24px;
+}
+
+.ruleRow :global(.ant-form-item:not(.ant-form-item-hidden)) {
+	margin-bottom: 24px;
+}
+
+/* ❌ 有校验却清掉下边距 */
+.ruleRow :global(.ant-form-item) {
+	margin-bottom: 0;
+}
+```
+
+**例外**：无校验文案的项（`hidden`、仅展示的 Radio 关系行）可以 `margin-bottom: 0`；`noStyle` 子项本身不占边距，外层组合项勿与内层同时叠加多余 `margin-bottom`。**参考实现**：`apps/admin/src/pages/reverse-control/index.module.css`。
 
 ### formRules：非特殊不单独抽文件
 
