@@ -60,12 +60,13 @@ export const formatSampleRoom = (room?: string): string => {
  * @returns {Device} - 列表行。
  */
 export const mapRowToDevice = (row: TabletDeviceRow): Device => {
+	const thingIds = parseThingIds(row.thingIds ?? row.thingId);
 	return {
 		id: Number(row.id),
 		deviceCode: row.deviceCode ?? "",
 		deviceName: row.deviceName ?? "",
 		manufacturer: row.manufacturer ?? "",
-		thingId: row.thingId ?? "",
+		thingId: joinThingIds(thingIds) || row.thingId || "",
 		sampleRoom: formatSampleRoom(row.room),
 		status: toDeviceStatus(row.deviceStatus),
 		buildingId: Number(row.buildingId ?? 0),
@@ -75,25 +76,35 @@ export const mapRowToDevice = (row: TabletDeviceRow): Device => {
 };
 
 /**
- * 将后端 thingId（逗号 / 中文逗号分隔）解析为多选值。
+ * 将后端物实例字段解析为多选值（兼容逗号串 / 字符串数组）。
  *
- * @param {string | undefined} - 后端 thingId。
+ * @param {unknown} - thingId 字符串、thingIds 数组，或其它。
  * @returns {string[]} - 物实例 ID 列表。
  */
-export const parseThingIds = (thingId?: string): string[] => {
-	if (!thingId?.trim()) return [];
-	return [
-		...new Set(
-			thingId
-				.split(/[,，]/)
-				.map((item) => item.trim())
-				.filter(Boolean),
-		),
-	];
+export const parseThingIds = (value?: unknown): string[] => {
+	if (Array.isArray(value)) {
+		return [
+			...new Set(
+				value.map((item) => String(item ?? "").trim()).filter(Boolean),
+			),
+		];
+	}
+	if (typeof value === "string") {
+		if (!value.trim()) return [];
+		return [
+			...new Set(
+				value
+					.split(/[,，]/)
+					.map((item) => item.trim())
+					.filter(Boolean),
+			),
+		];
+	}
+	return [];
 };
 
 /**
- * 将多选物实例 ID 序列化为后端 thingId。
+ * 将多选物实例 ID 序列化为后端 thingId（逗号分隔，兼容旧字段）。
  *
  * @param {string[] | undefined} - 物实例 ID 列表。
  * @returns {string} - 逗号分隔字符串。
@@ -106,24 +117,55 @@ export const joinThingIds = (thingIds?: string[]): string => {
 };
 
 /**
+ * 规范化 things 接口返回为物实例数组。
+ *
+ * @param {unknown} - `/iiot/device-control/things` 解包后的 data。
+ * @returns {Record<string, unknown>[]} - 物实例列表。
+ */
+export const normalizeThingsList = (
+	data: unknown,
+): Record<string, unknown>[] => {
+	if (Array.isArray(data)) return data as Record<string, unknown>[];
+	if (!data || typeof data !== "object") return [];
+	const record = data as Record<string, unknown>;
+	if (Array.isArray(record.things)) {
+		return record.things as Record<string, unknown>[];
+	}
+	if (Array.isArray(record.list)) {
+		return record.list as Record<string, unknown>[];
+	}
+	if (record.data && typeof record.data === "object") {
+		const nested = record.data as Record<string, unknown>;
+		if (Array.isArray(nested.things)) {
+			return nested.things as Record<string, unknown>[];
+		}
+		if (Array.isArray(record.data)) {
+			return record.data as Record<string, unknown>[];
+		}
+	}
+	return [];
+};
+
+/**
  * 将物实例列表转为下拉选项。
  *
  * @param {unknown} - `/iiot/device-control/things` 解包后的 data。
  * @returns {ThingOption[]} - 下拉选项。
  */
 export const toThingOptions = (data: unknown): ThingOption[] => {
-	if (!data || typeof data !== "object") return [];
-	const things = (data as { things?: unknown }).things;
-	if (!Array.isArray(things)) return [];
-
 	const options: ThingOption[] = [];
-	for (const item of things) {
+	for (const item of normalizeThingsList(data)) {
 		if (!item || typeof item !== "object") continue;
-		const row = item as Record<string, unknown>;
-		const thingId = String(row.thing_id ?? "").trim();
+		const thingId = String(
+			item.thing_id ?? item.thingId ?? item.id ?? "",
+		).trim();
 		if (!thingId) continue;
-		const thingName = String(row.thing_name ?? "").trim();
-		const modelName = String(row.model_name ?? "").trim();
+		const thingName = String(
+			item.thing_name ?? item.thingName ?? "",
+		).trim();
+		const modelName = String(
+			item.model_name ?? item.modelName ?? "",
+		).trim();
 		let label = thingId;
 		if (thingName && thingName !== thingId) {
 			label = `${thingName}（${thingId}）`;
@@ -133,6 +175,33 @@ export const toThingOptions = (data: unknown): ThingOption[] => {
 		options.push({ value: thingId, label });
 	}
 	return options;
+};
+
+/**
+ * 解析设备详情（兼容 `{ device, thingIds }` 与扁平旧结构）。
+ *
+ * @param {unknown} - `/iiot/tablet/ledger/{id}` 解包后的 data。
+ * @returns {{ device: TabletDeviceRow; thingIds: string[] }} - 设备字段与物实例列表。
+ */
+export const parseDeviceDetail = (
+	data: unknown,
+): { device: TabletDeviceRow; thingIds: string[] } => {
+	if (!data || typeof data !== "object") {
+		return { device: {}, thingIds: [] };
+	}
+	const record = data as Record<string, unknown>;
+	const nestedDevice =
+		record.device && typeof record.device === "object"
+			? (record.device as TabletDeviceRow)
+			: null;
+	const device = nestedDevice ?? (record as TabletDeviceRow);
+	const thingIds = parseThingIds(
+		record.thingIds ??
+			record.thingId ??
+			nestedDevice?.thingId ??
+			(device as { thingIds?: unknown }).thingIds,
+	);
+	return { device, thingIds };
 };
 
 /**
@@ -195,11 +264,13 @@ export const buildCreatePayload = (
 	values: DeviceFormValues,
 	building: BuildingTab,
 ): TabletDevicePayload => {
+	const thingIds = parseThingIds(values.thingIds);
 	return {
 		deviceCode: values.deviceCode.trim(),
 		deviceName: values.deviceName.trim(),
 		manufacturer: values.manufacturer.trim(),
-		thingId: joinThingIds(values.thingIds),
+		thingIds,
+		thingId: joinThingIds(thingIds),
 		buildingId: building.buildingId,
 		building: building.building,
 	};
@@ -219,13 +290,15 @@ export const buildUpdatePayload = (
 	building: BuildingTab | null,
 ): TabletDevicePayload => {
 	const manufacturer = values.manufacturer.trim();
-	const thingId = joinThingIds(values.thingIds);
+	const thingIds = parseThingIds(values.thingIds);
 	return {
 		id: record.id,
 		deviceCode: values.deviceCode.trim(),
 		deviceName: values.deviceName.trim(),
 		...(manufacturer ? { manufacturer } : {}),
-		...(thingId ? { thingId } : {}),
+		...(thingIds.length
+			? { thingIds, thingId: joinThingIds(thingIds) }
+			: {}),
 		buildingId: record.buildingId || building?.buildingId || 0,
 		building: building?.building,
 		deviceStatus: record.deviceStatus,

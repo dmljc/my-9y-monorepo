@@ -7,6 +7,7 @@ import type { Device, DeviceFormValues, ThingOption } from "./interface";
 import {
 	MAX_LENGTH_12,
 	MAX_LENGTH_100,
+	parseDeviceDetail,
 	parseThingIds,
 	toThingOptions,
 } from "./utils";
@@ -113,14 +114,19 @@ const CreateModal = ({
 				});
 				try {
 					const data = await detail(editingRecord.id);
-					if (!data || typeof data !== "object") return;
-					const thingIds = parseThingIds(
-						String(data.thingId ?? "").trim(),
-					);
-					const manufacturer = String(data.manufacturer ?? "").trim();
+					const { device, thingIds } = parseDeviceDetail(data);
+					const manufacturer = String(
+						device.manufacturer ?? "",
+					).trim();
 					const next: Partial<DeviceFormValues> = {};
 					if (thingIds.length) next.thingIds = thingIds;
 					if (manufacturer) next.manufacturer = manufacturer;
+					if (device.deviceName) {
+						next.deviceName = String(device.deviceName);
+					}
+					if (device.deviceCode) {
+						next.deviceCode = String(device.deviceCode);
+					}
 					if (Object.keys(next).length) form.setFieldsValue(next);
 					if (thingIds.length) {
 						setThingOptions((prev) => {

@@ -55,7 +55,7 @@ export interface ThingOption {
 }
 
 /**
- * 列表行 / 详情（对齐 IiotTabletDevice 精简返回）。
+ * 列表行 / 详情设备字段（对齐 IiotTabletDevice 精简返回）。
  */
 export interface TabletDeviceRow {
 	id?: number;
@@ -67,8 +67,21 @@ export interface TabletDeviceRow {
 	room?: string;
 	deviceType?: string;
 	deviceStatus?: string;
+	/** @deprecated 旧字段：逗号分隔物实例 ID。 */
 	thingId?: string;
+	/** 新字段：物实例 ID 列表。 */
+	thingIds?: string[];
 	pipelineId?: string;
+}
+
+/**
+ * 设备详情解包后的 data（新结构含 device + thingIds）。
+ */
+export interface TabletDeviceDetailData {
+	device?: TabletDeviceRow;
+	thingIds?: string[];
+	/** 兼容扁平旧结构时的字段透传。 */
+	[key: string]: unknown;
 }
 
 /**
@@ -79,7 +92,9 @@ export interface TabletDevicePayload {
 	deviceCode: string;
 	deviceName: string;
 	manufacturer?: string;
-	/** 物实例 ID（IIoT 平台；多选用逗号分隔）。 */
+	/** 物实例 ID 列表（新结构）。 */
+	thingIds?: string[];
+	/** @deprecated 旧字段：逗号分隔物实例 ID，兼容过渡期。 */
 	thingId?: string;
 	building?: string;
 	buildingId: number;
