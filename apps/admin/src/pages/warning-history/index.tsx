@@ -77,15 +77,27 @@ const WarningHistory = () => {
 			ellipsis: true,
 		},
 		{
-			title: "点位名称",
-			dataIndex: "propertyName",
-			key: "propertyName",
+			title: "实例ID",
+			dataIndex: "thingId",
+			key: "thingId",
+			ellipsis: true,
+		},
+		{
+			title: "实例名称",
+			dataIndex: "thingName",
+			key: "thingName",
 			ellipsis: true,
 		},
 		{
 			title: "点位ID",
 			dataIndex: "propertyId",
 			key: "propertyId",
+			ellipsis: true,
+		},
+		{
+			title: "点位名称",
+			dataIndex: "propertyName",
+			key: "propertyName",
 			ellipsis: true,
 		},
 		{

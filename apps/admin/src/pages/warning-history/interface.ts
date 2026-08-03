@@ -5,8 +5,10 @@ export interface WarningHistoryRecord {
 	id?: number;
 	modelId?: string;
 	modelName?: string;
-	propertyName?: string;
+	thingId?: string;
+	thingName?: string;
 	propertyId?: string;
+	propertyName?: string;
 	dataType?: string;
 	value?: string;
 	dataTime?: string;
