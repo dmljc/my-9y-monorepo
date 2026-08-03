@@ -2,7 +2,7 @@
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Col, Form, Input, InputNumber, Modal, Radio, Row, Select, Switch } from "antd";
 import { useEffect, useState } from "react";
-import { getControllable, getModels } from "./api";
+import { getControllable, getThings } from "./api";
 import styles from "./index.module.css";
 import type { IiotControlRule } from "./interface";
 import type { RuleFormValues, SelectOption } from "./types";
@@ -25,41 +25,41 @@ const CreateModal = ({
 }: CreateModalProps) => {
 	const [form] = Form.useForm<RuleFormValues>();
 	const [loading, setLoading] = useState(false);
-	const [modelOptions, setModelOptions] = useState<SelectOption[]>([]);
+	const [thingOptions, setThingOptions] = useState<SelectOption[]>([]);
 	const [propertyOptionsMap, setPropertyOptionsMap] = useState<Record<string, SelectOption[]>>({});
 	const isEdit = editingRecord !== null;
 
-	const loadPropertyOptions = async (modelId: string) => {
-		if (!modelId) return;
-		const data = await getControllable(modelId);
+	const loadPropertyOptions = async (thingId: string) => {
+		if (!thingId) return;
+		const data = await getControllable(thingId);
 		setPropertyOptionsMap((prev) => ({
 			...prev,
-			[modelId]: utils.toPropertyOptions(data ?? []),
+			[thingId]: utils.toPropertyOptions(data ?? []),
 		}));
 	};
 
 	const initModal = async () => {
-		const modelsData = await getModels();
-		const options = utils.toModelOptions(modelsData?.models ?? []);
-		setModelOptions(options);
+		const thingsData = await getThings();
+		const options = utils.toThingOptions(thingsData?.things ?? thingsData ?? []);
+		setThingOptions(options);
 
 		if (editingRecord) {
 			const formValues = utils.toFormValues(editingRecord);
 			form.setFieldsValue(formValues);
-			const modelIds = [
+			const thingIds = [
 				...new Set(
 					[
 						...(formValues.conditions ?? []).map(
-							(item) => item.modelId,
+							(item) => item.thingId,
 						),
 						...(formValues.actions ?? []).map(
-							(item) => item.modelId,
+							(item) => item.thingId,
 						),
 					].filter(Boolean) as string[],
 				),
 			];
-			for (const modelId of modelIds) {
-				await loadPropertyOptions(modelId);
+			for (const thingId of thingIds) {
+				await loadPropertyOptions(thingId);
 			}
 			return;
 		}
@@ -98,9 +98,9 @@ const CreateModal = ({
 		}
 	};
 
-	const getPropertyOptions = (modelId?: string, propertyId?: string, propertyName?: string) => {
-		if (!modelId) return [];
-		return utils.mergeOption(propertyOptionsMap[modelId] ?? [], propertyId, propertyName);
+	const getPropertyOptions = (thingId?: string, propertyId?: string, propertyName?: string) => {
+		if (!thingId) return [];
+		return utils.mergeOption(propertyOptionsMap[thingId] ?? [], propertyId, propertyName);
 	};
 
 	return (
@@ -168,13 +168,13 @@ const CreateModal = ({
 									<div className={styles.ruleRow}>
 										<div className={styles.rowTitle}>条件{index + 1}</div>
 										<Item
-											name={[field.name, "modelId"]}
+											name={[field.name, "thingId"]}
 											rules={[{ required: true, message: "请选择设备" }]}
 										>
 											<Select
 												showSearch={{ optionFilterProp: "label" }}
 												placeholder="请选择设备"
-												options={modelOptions}
+												options={thingOptions}
 												onChange={(value) => {
 													loadPropertyOptions(value);
 													clearPropertyFields("conditions", field.name);
@@ -184,15 +184,15 @@ const CreateModal = ({
 										<Item
 											noStyle
 											shouldUpdate={(prev, next) =>
-												prev.conditions?.[field.name]?.modelId !==
-												next.conditions?.[field.name]?.modelId
+												prev.conditions?.[field.name]?.thingId !==
+												next.conditions?.[field.name]?.thingId
 											}
 										>
 											{() => {
-												const modelId = form.getFieldValue(["conditions", field.name, "modelId"]);
+												const thingId = form.getFieldValue(["conditions", field.name, "thingId"]);
 												const propertyId = form.getFieldValue(["conditions", field.name, "propertyId"]);
 												const propertyName = form.getFieldValue(["conditions", field.name, "propertyName"]);
-												const propertyOptions = getPropertyOptions(modelId, propertyId, propertyName);
+												const propertyOptions = getPropertyOptions(thingId, propertyId, propertyName);
 												return (
 													<Item
 														name={[field.name, "propertyId"]}
@@ -201,7 +201,7 @@ const CreateModal = ({
 														<Select
 															placeholder="请选择点位名称"
 															options={propertyOptions}
-															onFocus={() => modelId && loadPropertyOptions(modelId)}
+															onFocus={() => thingId && loadPropertyOptions(thingId)}
 															onChange={(value) =>
 																form.setFieldValue(
 																	["conditions", field.name, "propertyName"],
@@ -259,13 +259,13 @@ const CreateModal = ({
 								<div key={field.key} className={styles.actionRow}>
 									<div className={styles.rowTitle}>动作{index + 1}</div>
 									<Item
-										name={[field.name, "modelId"]}
+										name={[field.name, "thingId"]}
 										rules={[{ required: true, message: "请选择设备" }]}
 									>
 										<Select
 											showSearch={{ optionFilterProp: "label" }}
 											placeholder="请选择设备"
-											options={modelOptions}
+											options={thingOptions}
 											onChange={(value) => {
 												loadPropertyOptions(value);
 												clearPropertyFields("actions", field.name);
@@ -275,15 +275,15 @@ const CreateModal = ({
 									<Item
 										noStyle
 										shouldUpdate={(prev, next) =>
-											prev.actions?.[field.name]?.modelId !==
-											next.actions?.[field.name]?.modelId
+											prev.actions?.[field.name]?.thingId !==
+											next.actions?.[field.name]?.thingId
 										}
 									>
 										{() => {
-											const modelId = form.getFieldValue(["actions", field.name, "modelId"]);
+											const thingId = form.getFieldValue(["actions", field.name, "thingId"]);
 											const propertyId = form.getFieldValue(["actions", field.name, "propertyId"]);
 											const propertyName = form.getFieldValue(["actions", field.name, "propertyName"]);
-											const propertyOptions = getPropertyOptions(modelId, propertyId, propertyName);
+											const propertyOptions = getPropertyOptions(thingId, propertyId, propertyName);
 											return (
 												<Item
 													name={[field.name, "propertyId"]}
@@ -292,7 +292,7 @@ const CreateModal = ({
 													<Select
 														placeholder="请选择点位名称"
 														options={propertyOptions}
-														onFocus={() => modelId && loadPropertyOptions(modelId)}
+														onFocus={() => thingId && loadPropertyOptions(thingId)}
 														onChange={(value) =>
 															form.setFieldValue(
 																["actions", field.name, "propertyName"],

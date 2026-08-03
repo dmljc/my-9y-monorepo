@@ -25,10 +25,10 @@ export const changeStatus = (data: ChangeStatusPayload): Promise<any> => {
 	return request.put("/iiot/device-control/rule/changeStatus", data);
 };
 
-export const getModels = (): Promise<any> => {
-	return request.get("/iiot/device-control/models");
+export const getThings = (): Promise<any> => {
+	return request.get("/iiot/device-control/things");
 };
 
-export const getControllable = (modelId: string): Promise<any> => {
-	return request.get(`/iiot/device-control/controllable/${modelId}`);
+export const getControllable = (thingId: string): Promise<any> => {
+	return request.get(`/iiot/device-control/controllable/${thingId}`);
 };

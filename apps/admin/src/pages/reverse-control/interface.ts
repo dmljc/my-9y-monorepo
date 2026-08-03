@@ -60,28 +60,32 @@ export interface ControlRuleListResponse {
 }
 
 /**
- * 物模型项（models 接口返回）。
+ * 物实例项（things 接口返回）。
  */
-export interface DeviceModelItem {
-	model_id: string;
-	model_name: string;
+export interface DeviceThingItem {
+	thing_id?: string;
+	thing_name?: string;
+	thingId?: string;
+	thingName?: string;
 	description?: string | null;
 	type?: string;
 }
 
 /**
- * 物模型列表响应。
+ * 物实例列表响应。
  */
-export interface DeviceModelsResponse {
-	models: DeviceModelItem[];
+export interface DeviceThingsResponse {
+	things: DeviceThingItem[];
 }
 
 /**
  * 可控属性项。
  */
 export interface ControllableProperty {
-	propertyId: string;
-	propertyName: string;
+	property_id?: string;
+	property_name?: string;
+	propertyId?: string;
+	propertyName?: string;
 	dataType?: string;
 	unit?: string;
 }

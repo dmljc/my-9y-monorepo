@@ -6,7 +6,7 @@ export type ConditionRelation = "all" | "any";
 
 /** 表单中的触发条件（含 UI 用 joinOperator） */
 export interface RuleConditionFormItem {
-	modelId?: string;
+	thingId?: string;
 	propertyId?: string;
 	propertyName?: string;
 	operator?: string;
@@ -16,7 +16,7 @@ export interface RuleConditionFormItem {
 
 /** 表单中的执行动作 */
 export interface RuleActionFormItem {
-	modelId?: string;
+	thingId?: string;
 	propertyId?: string;
 	propertyName?: string;
 	delaySeconds?: number;

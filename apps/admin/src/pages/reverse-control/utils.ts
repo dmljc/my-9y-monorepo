@@ -1,6 +1,6 @@
 import type {
 	ControllableProperty,
-	DeviceModelItem,
+	DeviceThingItem,
 	IiotControlCondition,
 	IiotControlRule,
 } from "./interface";
@@ -127,7 +127,7 @@ export function normalizeConditions(
 	conditionRelation: ConditionRelation,
 ): RuleConditionFormItem[] {
 	return conditions.map((item, index) => ({
-		modelId: item.modelId,
+		thingId: item.thingId ?? item.modelId,
 		propertyId: item.propertyId,
 		propertyName: item.propertyName,
 		operator: item.operator,
@@ -162,7 +162,7 @@ export function toFormValues(rule: IiotControlRule): RuleFormValues {
 			conditionRelation,
 		),
 		actions: (rule.actions ?? []).map((action) => ({
-			modelId: action.modelId,
+			thingId: action.thingId ?? action.modelId,
 			propertyId: action.propertyId,
 			propertyName: action.propertyName,
 			delaySeconds: action.delaySeconds ?? 0,
@@ -190,8 +190,7 @@ export function toRule(values: RuleFormValues, id?: number): IiotControlRule {
 		conditionLogic: toLogic(conditionRelation),
 		status: toStatus(values.enabled),
 		conditions: values.conditions.map((item) => ({
-			modelId: item.modelId,
-			thingId: item.modelId,
+			thingId: item.thingId,
 			propertyId: item.propertyId,
 			propertyName: item.propertyName,
 			operator: item.operator,
@@ -201,8 +200,7 @@ export function toRule(values: RuleFormValues, id?: number): IiotControlRule {
 					: undefined,
 		})),
 		actions: values.actions.map((item) => ({
-			modelId: item.modelId,
-			thingId: item.modelId,
+			thingId: item.thingId,
 			propertyId: item.propertyId,
 			propertyName: item.propertyName,
 			delaySeconds: item.delaySeconds,
@@ -215,16 +213,22 @@ export function toRule(values: RuleFormValues, id?: number): IiotControlRule {
 }
 
 /**
- * 将物模型列表转为设备下拉选项。
+ * 将物实例列表转为设备下拉选项。
  *
- * @param {DeviceModelItem[]} - 物模型列表。
+ * @param {DeviceThingItem[]} - 物实例列表。
  * @returns {SelectOption[]} - 下拉选项。
  */
-export function toModelOptions(models: DeviceModelItem[]): SelectOption[] {
-	return models.map((item) => ({
-		label: item.model_name,
-		value: item.model_id,
-	}));
+export function toThingOptions(things: DeviceThingItem[]): SelectOption[] {
+	return things.flatMap((item) => {
+		const value = item.thing_id ?? item.thingId;
+		if (!value) return [];
+		return [
+			{
+				label: item.thing_name ?? item.thingName ?? value,
+				value,
+			},
+		];
+	});
 }
 
 /**
@@ -236,10 +240,16 @@ export function toModelOptions(models: DeviceModelItem[]): SelectOption[] {
 export function toPropertyOptions(
 	properties: ControllableProperty[],
 ): SelectOption[] {
-	return properties.map((item) => ({
-		label: item.propertyName,
-		value: item.propertyId,
-	}));
+	return properties.flatMap((item) => {
+		const value = item.property_id ?? item.propertyId;
+		if (!value) return [];
+		return [
+			{
+				label: item.property_name ?? item.propertyName ?? value,
+				value,
+			},
+		];
+	});
 }
 
 /**
@@ -262,17 +272,17 @@ export function mergeOption(
 }
 
 /**
- * 根据 modelId 解析展示名称。
+ * 根据 thingId 解析展示名称。
  *
- * @param {string | undefined} - 物模型 id。
+ * @param {string | undefined} - 物实例 id。
  * @param {SelectOption[]} - 设备选项。
  * @returns {string | undefined} - 展示名称。
  */
-export function modelLabel(
-	modelId: string | undefined,
-	modelOptions: SelectOption[],
+export function thingLabel(
+	thingId: string | undefined,
+	thingOptions: SelectOption[],
 ): string | undefined {
-	return modelOptions.find((item) => item.value === modelId)?.label;
+	return thingOptions.find((item) => item.value === thingId)?.label;
 }
 
 /**
@@ -282,13 +292,13 @@ export function modelLabel(
  * @param {SelectOption[]} - 设备选项。
  * @returns {string} - 主设备名称。
  */
-export function primaryModelLabel(
+export function primaryThingLabel(
 	rule: IiotControlRule,
-	modelOptions: SelectOption[],
+	thingOptions: SelectOption[],
 ): string {
-	const modelId = rule.conditions?.[0]?.modelId ?? rule.actions?.[0]?.modelId;
+	const thingId = rule.conditions?.[0]?.thingId ?? rule.actions?.[0]?.thingId;
 	return (
-		modelLabel(modelId, modelOptions) ??
+		thingLabel(thingId, thingOptions) ??
 		rule.conditions?.[0]?.propertyName ??
 		"未配置设备"
 	);
