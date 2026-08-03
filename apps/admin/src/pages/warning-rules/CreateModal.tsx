@@ -371,8 +371,7 @@ const CreateModal = ({
 							className={styles.inlineFormItem}
 						>
 							<Select
-								showSearch
-								optionFilterProp="label"
+								showSearch={{ optionFilterProp: "label" }}
 								placeholder="请选择厂房"
 								options={buildingOptions}
 								loading={buildingLoading}
@@ -389,8 +388,7 @@ const CreateModal = ({
 							className={styles.inlineFormItem}
 						>
 							<Select
-								showSearch
-								optionFilterProp="label"
+								showSearch={{ optionFilterProp: "label" }}
 								placeholder="请选择房间"
 								options={roomOptions}
 								loading={roomLoading}
@@ -411,8 +409,7 @@ const CreateModal = ({
 					rules={[{ required: true, message: "请选择设备" }]}
 				>
 					<Select
-						showSearch
-						optionFilterProp="label"
+						showSearch={{ optionFilterProp: "label" }}
 						placeholder={buildingId ? "请选择设备" : "请先选择厂房"}
 						options={deviceOptions}
 						loading={deviceLoading}
@@ -427,8 +424,7 @@ const CreateModal = ({
 					rules={[{ required: true, message: "请选择实例" }]}
 				>
 					<Select
-						showSearch
-						optionFilterProp="label"
+						showSearch={{ optionFilterProp: "label" }}
 						placeholder="请选择实例"
 						options={instanceOptions}
 						loading={instanceLoading}
@@ -443,8 +439,7 @@ const CreateModal = ({
 					rules={[{ required: true, message: "请选择点位" }]}
 				>
 					<Select
-						showSearch
-						optionFilterProp="label"
+						showSearch={{ optionFilterProp: "label" }}
 						placeholder={
 							instanceName ? "请选择点位" : "请先选择实例"
 						}

@@ -174,8 +174,7 @@ const CreateModal = ({
 											rules={[{ required: true, message: "请选择实例" }]}
 										>
 											<Select
-												showSearch
-												optionFilterProp="label"
+												showSearch={{ optionFilterProp: "label" }}
 												placeholder="请选择实例"
 												options={thingOptions}
 												optionLabelProp="label"
@@ -267,8 +266,7 @@ const CreateModal = ({
 										rules={[{ required: true, message: "请选择实例" }]}
 									>
 										<Select
-											showSearch
-											optionFilterProp="label"
+											showSearch={{ optionFilterProp: "label" }}
 											placeholder="请选择实例"
 											options={thingOptions}
 											optionLabelProp="label"

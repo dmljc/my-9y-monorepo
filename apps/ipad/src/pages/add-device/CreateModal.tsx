@@ -249,9 +249,10 @@ const CreateModal = ({
 					<Select
 						className={styles.thingSelect}
 						mode="multiple"
-						showSearch
-						filterOption={false}
-						onSearch={handleThingSearch}
+						showSearch={{
+							filterOption: false,
+							onSearch: handleThingSearch,
+						}}
 						loading={thingLoading}
 						placeholder="请选择实例"
 						options={thingOptions}
