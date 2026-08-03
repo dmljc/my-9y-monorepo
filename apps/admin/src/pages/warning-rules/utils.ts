@@ -1,14 +1,24 @@
 import type { AlarmLevel, AlarmRule } from "./interface";
 
 /**
+ * 下拉选项。
+ */
+export interface SelectOption {
+	label: string;
+	value: string;
+}
+
+/**
  * 报警规则表格行。
  */
 export interface WarningRule {
 	id: string;
 	name: string;
-	buildingNames: string[];
-	roomNames: string[];
-	deviceNames: string[];
+	buildingId: string;
+	building: string;
+	roomId: string;
+	room: string;
+	deviceName: string;
 	instanceName: string;
 	pointName: string;
 	thresholdMin: number;
@@ -24,14 +34,18 @@ export interface WarningRule {
  */
 export interface RuleFormValues {
 	name: string;
-	buildingNames: string[];
-	roomNames: string[];
-	deviceNames: string[];
+	buildingId: string;
+	building?: string;
+	roomId: string;
+	room?: string;
+	deviceName: string;
 	instanceName: string;
 	pointName: string;
 	thresholdMin: number;
 	thresholdMax: number;
 	levelId: string;
+	levelName?: string;
+	levelColor?: string;
 	enabled: boolean;
 }
 
@@ -68,21 +82,6 @@ export const THRESHOLD_MIN = 0;
  * 报警阈值最大值。
  */
 export const THRESHOLD_MAX = 99999.99;
-
-/**
- * 厂房选项。
- */
-export const BUILDING_OPTIONS = ["X03", "X05", "X12", "12"].map((value) => ({
-	label: value,
-	value,
-}));
-
-/**
- * 房间选项。
- */
-export const ROOM_OPTIONS = ["101", "A区-201", "B区-305", "C区-108"].map(
-	(value) => ({ label: value, value }),
-);
 
 /**
  * 设备选项。
@@ -166,14 +165,99 @@ export function formatThresholdRange(min: number, max: number): string {
 }
 
 /**
- * 将后端逗号分隔字段规范为字符串数组。
+ * 合并当前选中项与接口选项，避免编辑回显时 label 缺失。
  */
-export function normalizeMultiSelectValue(value?: string): string[] {
-	if (!value?.trim()) return [];
-	return value
-		.split(",")
-		.map((item) => item.trim())
-		.filter(Boolean);
+export function mergeOption(
+	options: SelectOption[],
+	value?: string,
+	label?: string,
+): SelectOption[] {
+	if (!value) return options;
+	if (options.some((item) => item.value === value)) return options;
+	return [{ label: label || value, value }, ...options];
+}
+
+/**
+ * 将厂房列表接口响应转为 Select 选项（value 为厂房 ID）。
+ */
+export function normalizeBuildingOptions(data: unknown): SelectOption[] {
+	const options: SelectOption[] = [];
+	if (!Array.isArray(data)) return options;
+
+	for (const item of data) {
+		if (typeof item === "string" && item.trim()) {
+			options.push({ label: item, value: item });
+			continue;
+		}
+		if (item && typeof item === "object") {
+			const record = item as Record<string, unknown>;
+			const value = String(
+				record.value ??
+					record.buildingId ??
+					record.id ??
+					record.building ??
+					record.buildingName ??
+					record.name ??
+					record.label ??
+					"",
+			).trim();
+			if (!value) continue;
+			options.push({
+				label: String(
+					record.label ??
+						record.building ??
+						record.buildingName ??
+						record.name ??
+						value,
+				),
+				value,
+			});
+		}
+	}
+
+	return options;
+}
+
+/**
+ * 将房间列表接口响应转为 Select 选项（value 为房间 ID）。
+ */
+export function normalizeRoomOptions(data: unknown): SelectOption[] {
+	const options: SelectOption[] = [];
+	if (!Array.isArray(data)) return options;
+
+	for (const item of data) {
+		if (typeof item === "string" && item.trim()) {
+			options.push({ label: item, value: item });
+			continue;
+		}
+		if (item && typeof item === "object") {
+			const record = item as Record<string, unknown>;
+			const value = String(
+				record.value ??
+					record.roomId ??
+					record.id ??
+					record.room ??
+					record.roomName ??
+					record.name ??
+					record.label ??
+					"",
+			).trim();
+			if (!value) continue;
+			options.push({
+				label: String(
+					record.label ??
+						record.room ??
+						record.roomName ??
+						record.name ??
+						record.roomNo ??
+						value,
+				),
+				value,
+			});
+		}
+	}
+
+	return options;
 }
 
 /**
@@ -199,21 +283,22 @@ export function toWarningRule(
 ): WarningRule {
 	const levelOption =
 		rule.levelId === undefined ? undefined : levelMap[String(rule.levelId)];
-	const instanceName = (rule.thingName ?? rule.thingId ?? "").trim();
-	const pointName = (rule.propertyName ?? rule.propertyId ?? "").trim();
 	return {
 		id: String(rule.id ?? ""),
 		name: rule.ruleName ?? "",
-		buildingNames: normalizeMultiSelectValue(rule.building),
-		roomNames: normalizeMultiSelectValue(rule.room),
-		deviceNames: normalizeMultiSelectValue(rule.deviceName),
-		instanceName,
-		pointName,
+		buildingId:
+			rule.buildingId !== undefined ? String(rule.buildingId) : "",
+		building: rule.building ?? "",
+		roomId: rule.roomId !== undefined ? String(rule.roomId) : "",
+		room: rule.room ?? "",
+		deviceName: rule.deviceName ?? "",
+		instanceName: (rule.thingId ?? "").trim(),
+		pointName: (rule.propertyName ?? rule.propertyId ?? "").trim(),
 		thresholdMin: Number(rule.thresholdMin ?? 0),
 		thresholdMax: Number(rule.thresholdMax ?? 0),
 		levelId: String(rule.levelId ?? ""),
-		levelName: rule.levelName ?? levelOption?.label ?? "",
-		levelColor: rule.levelColor ?? levelOption?.color ?? "",
+		levelName: levelOption?.label ?? rule.levelName ?? "",
+		levelColor: levelOption?.color ?? rule.levelColor ?? "",
 		enabled: toEnabled(rule.status),
 	};
 }
@@ -244,21 +329,18 @@ export function toAlarmRulePayload(
 	values: Partial<RuleFormValues>,
 	id?: string,
 ): AlarmRule {
-	const building = values.buildingNames?.join(",");
-	const room = values.roomNames?.join(",");
-	const deviceName = values.deviceNames?.join(",");
-	const thingName = values.instanceName?.trim();
+	const thingId = values.instanceName?.trim();
 	const propertyName = values.pointName?.trim();
 
 	return {
 		id: id ? Number(id) : undefined,
 		ruleName: values.name?.trim(),
-		monitorType: "room",
-		building: building?.trim(),
-		room: room?.trim(),
-		deviceName: deviceName?.trim(),
-		thingName,
-		thingId: thingName,
+		buildingId: values.buildingId ? Number(values.buildingId) : undefined,
+		building: values.building?.trim(),
+		roomId: values.roomId ? Number(values.roomId) : undefined,
+		room: values.room?.trim(),
+		deviceName: values.deviceName?.trim(),
+		thingId,
 		propertyName,
 		propertyId: propertyName,
 		thresholdMin:
@@ -270,6 +352,8 @@ export function toAlarmRulePayload(
 				? undefined
 				: String(values.thresholdMax),
 		levelId: values.levelId ? Number(values.levelId) : undefined,
+		levelName: values.levelName?.trim(),
+		levelColor: values.levelColor?.trim(),
 		status: toStatus(values.enabled),
 	};
 }

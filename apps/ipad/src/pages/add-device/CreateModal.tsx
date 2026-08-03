@@ -173,7 +173,7 @@ const CreateModal = ({
 		<Modal
 			className={styles.modal}
 			rootClassName={styles.modalRoot}
-			title={isEdit ? "编辑设备" : "添加设备"}
+			title={isEdit ? "编辑" : "新增"}
 			open={open}
 			onOk={onOk}
 			onCancel={onCancel}

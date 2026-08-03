@@ -8,17 +8,24 @@ export interface RuleListQuery {
 }
 
 /**
+ * 房间列表查询参数。
+ */
+export interface RoomListQuery {
+	buildingId: string;
+}
+
+/**
  * 后端报警规则实体。
  */
 export interface AlarmRule {
 	id?: number;
 	ruleName?: string;
-	monitorType?: string;
 	building?: string;
+	buildingId?: number;
 	room?: string;
+	roomId?: number;
 	deviceName?: string;
 	thingId?: string;
-	thingName?: string;
 	propertyName?: string;
 	propertyId?: string;
 	thresholdMin?: string;

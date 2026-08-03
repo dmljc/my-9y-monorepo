@@ -102,7 +102,17 @@ const WarningRules = () => {
 	};
 
 	const handleModalSubmit = async (values: RuleFormValues) => {
-		const payload = toAlarmRulePayload(values, editingRecord?.id);
+		const level = levelOptions.find(
+			(item) => item.value === values.levelId,
+		);
+		const payload = toAlarmRulePayload(
+			{
+				...values,
+				levelName: level?.label ?? values.levelName,
+				levelColor: level?.color ?? values.levelColor,
+			},
+			editingRecord?.id,
+		);
 		if (editingRecord) {
 			await update(payload);
 			message.success("编辑成功");
@@ -162,10 +172,10 @@ const WarningRules = () => {
 		},
 		{
 			title: "设备名称",
-			key: "deviceNames",
-			render: (_: unknown, record: WarningRule) =>
-				record.deviceNames.join("、") || "-",
+			dataIndex: "deviceName",
+			key: "deviceName",
 			ellipsis: true,
+			render: (value: string) => value || "-",
 		},
 		{
 			title: "实例名称",
@@ -181,17 +191,17 @@ const WarningRules = () => {
 		},
 		{
 			title: "所属厂房",
+			dataIndex: "building",
 			key: "building",
-			render: (_: unknown, record: WarningRule) =>
-				record.buildingNames.join("、") || "-",
 			ellipsis: true,
+			render: (value: string) => value || "-",
 		},
 		{
 			title: "房间",
+			dataIndex: "room",
 			key: "room",
-			render: (_: unknown, record: WarningRule) =>
-				record.roomNames.join("、") || "-",
 			ellipsis: true,
+			render: (value: string) => value || "-",
 		},
 		{
 			title: "阈值范围",

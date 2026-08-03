@@ -1,14 +1,21 @@
 import { Form, Input, InputNumber, Modal, Select, Switch } from "antd";
 import { useEffect, useState } from "react";
+import { buildings as fetchBuildings, rooms as fetchRooms } from "./api";
 import styles from "./index.module.css";
-import type { RuleFormValues, RuleLevelOption, WarningRule } from "./utils";
+import type {
+	RuleFormValues,
+	RuleLevelOption,
+	SelectOption,
+	WarningRule,
+} from "./utils";
 import {
-	BUILDING_OPTIONS,
 	DEVICE_OPTIONS,
 	INSTANCE_OPTIONS,
 	MAX_LENGTH_12,
+	mergeOption,
+	normalizeBuildingOptions,
+	normalizeRoomOptions,
 	POINT_OPTIONS,
-	ROOM_OPTIONS,
 	THRESHOLD_MAX,
 	THRESHOLD_MIN,
 } from "./utils";
@@ -30,21 +37,109 @@ const CreateModal = ({
 }: CreateModalProps) => {
 	const [form] = Form.useForm<RuleFormValues>();
 	const [loading, setLoading] = useState(false);
+	const [buildingLoading, setBuildingLoading] = useState(false);
+	const [buildingOptions, setBuildingOptions] = useState<SelectOption[]>([]);
+	const [roomLoading, setRoomLoading] = useState(false);
+	const [roomOptions, setRoomOptions] = useState<SelectOption[]>([]);
 	const isEdit = editingRecord !== null;
+	const buildingId = Form.useWatch("buildingId", form);
 
 	useEffect(() => {
-		if (!open) return;
-
-		if (editingRecord) {
-			form.setFieldsValue(editingRecord);
+		if (!open) {
+			setBuildingOptions([]);
+			setRoomOptions([]);
 			return;
 		}
 
-		form.resetFields();
-		form.setFieldsValue({
-			enabled: true,
-		});
+		if (editingRecord) {
+			form.setFieldsValue(editingRecord);
+		} else {
+			form.resetFields();
+			form.setFieldsValue({ enabled: true });
+		}
+
+		let ignore = false;
+		const loadBuildings = async () => {
+			setBuildingLoading(true);
+			try {
+				const data = await fetchBuildings();
+				if (ignore) return;
+				setBuildingOptions(
+					mergeOption(
+						normalizeBuildingOptions(data),
+						editingRecord?.buildingId,
+						editingRecord?.building,
+					),
+				);
+			} finally {
+				if (!ignore) setBuildingLoading(false);
+			}
+		};
+
+		loadBuildings();
+		return () => {
+			ignore = true;
+		};
 	}, [open, editingRecord]);
+
+	useEffect(() => {
+		if (!open) return;
+		if (!buildingId) {
+			setRoomOptions([]);
+			return;
+		}
+
+		let ignore = false;
+		const loadRooms = async () => {
+			setRoomLoading(true);
+			try {
+				const data = await fetchRooms({ buildingId });
+				if (ignore) return;
+				const sameBuilding =
+					editingRecord?.buildingId === buildingId
+						? editingRecord
+						: null;
+				setRoomOptions(
+					mergeOption(
+						normalizeRoomOptions(data),
+						sameBuilding?.roomId,
+						sameBuilding?.room,
+					),
+				);
+			} finally {
+				if (!ignore) setRoomLoading(false);
+			}
+		};
+
+		loadRooms();
+		return () => {
+			ignore = true;
+		};
+	}, [open, buildingId, editingRecord]);
+
+	const handleBuildingChange = (
+		value: string,
+		option?: SelectOption | SelectOption[],
+	) => {
+		const selected = Array.isArray(option) ? option[0] : option;
+		form.setFieldsValue({
+			buildingId: value,
+			building: selected?.label,
+			roomId: undefined,
+			room: undefined,
+		});
+	};
+
+	const handleRoomChange = (
+		value: string,
+		option?: SelectOption | SelectOption[],
+	) => {
+		const selected = Array.isArray(option) ? option[0] : option;
+		form.setFieldsValue({
+			roomId: value,
+			room: selected?.label,
+		});
+	};
 
 	const handleOk = async () => {
 		try {
@@ -59,8 +154,19 @@ const CreateModal = ({
 				return;
 			}
 
+			const building =
+				values.building ||
+				buildingOptions.find((item) => item.value === values.buildingId)
+					?.label ||
+				"";
+			const room =
+				values.room ||
+				roomOptions.find((item) => item.value === values.roomId)
+					?.label ||
+				"";
+
 			setLoading(true);
-			await onSubmit(values);
+			await onSubmit({ ...values, building, room });
 			onCancel();
 		} catch (err) {
 			if (err && typeof err === "object" && "errorFields" in err) return;
@@ -71,16 +177,14 @@ const CreateModal = ({
 
 	return (
 		<Modal
-			title={isEdit ? "编辑规则" : "新增规则"}
+			title={isEdit ? "编辑" : "新增"}
 			open={open}
 			onOk={handleOk}
 			onCancel={onCancel}
 			confirmLoading={loading}
 			destroyOnHidden
 			width={560}
-			okText={isEdit ? "确定" : "创建规则"}
 			cancelText="取消"
-			classNames={{ footer: styles.ruleModalFooter }}
 		>
 			<Form
 				form={form}
@@ -115,60 +219,53 @@ const CreateModal = ({
 				<Form.Item label="所属房间" required>
 					<div className={styles.roomSelects}>
 						<Form.Item
-							name="buildingNames"
+							name="buildingId"
 							noStyle
-							rules={[
-								{
-									required: true,
-									type: "array",
-									min: 1,
-									message: "请选择厂房",
-								},
-							]}
+							rules={[{ required: true, message: "请选择厂房" }]}
 						>
 							<Select
-								mode="multiple"
+								showSearch
+								optionFilterProp="label"
 								placeholder="请选择厂房"
-								options={BUILDING_OPTIONS}
+								options={buildingOptions}
+								loading={buildingLoading}
 								allowClear
+								onChange={handleBuildingChange}
 							/>
 						</Form.Item>
+						<Form.Item name="building" hidden>
+							<Input />
+						</Form.Item>
 						<Form.Item
-							name="roomNames"
+							name="roomId"
 							noStyle
-							rules={[
-								{
-									required: true,
-									type: "array",
-									min: 1,
-									message: "请选择房间",
-								},
-							]}
+							rules={[{ required: true, message: "请选择房间" }]}
 						>
 							<Select
-								mode="multiple"
+								showSearch
+								optionFilterProp="label"
 								placeholder="请选择房间"
-								options={ROOM_OPTIONS}
+								options={roomOptions}
+								loading={roomLoading}
+								disabled={!buildingId}
 								allowClear
+								onChange={handleRoomChange}
 							/>
+						</Form.Item>
+						<Form.Item name="room" hidden>
+							<Input />
 						</Form.Item>
 					</div>
 				</Form.Item>
 
 				<Form.Item
-					name="deviceNames"
+					name="deviceName"
 					label="设备名称"
-					rules={[
-						{
-							required: true,
-							type: "array",
-							min: 1,
-							message: "请选择设备",
-						},
-					]}
+					rules={[{ required: true, message: "请选择设备" }]}
 				>
 					<Select
-						mode="multiple"
+						showSearch
+						optionFilterProp="label"
 						placeholder="请选择设备"
 						options={DEVICE_OPTIONS}
 						allowClear

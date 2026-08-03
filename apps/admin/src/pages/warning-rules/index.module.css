@@ -77,9 +77,3 @@
 	flex: none;
 	color: #86909c;
 }
-
-.ruleModalFooter {
-	display: flex;
-	justify-content: center;
-	gap: 12px;
-}
