@@ -1,11 +1,13 @@
 import { Flex, Spin } from "antd";
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useUnauthorizedStore } from "@/stores/unauthorized";
 import { useUserStore } from "@/stores/user";
 import { clearToken, getToken } from "@/utils";
 
 /**
  * 受保护路由守卫：无 token 时重定向至登录页；有 token 时拉取用户信息。
+ * token 失效（401）由 UnauthorizedModal 处理，不在此抢先跳转。
  */
 const RequireAuth = () => {
 	const location = useLocation();
@@ -15,6 +17,7 @@ const RequireAuth = () => {
 	const fetchUserInfo = useUserStore((state) => state.fetchUserInfo);
 	const restoreUser = useUserStore((state) => state.restoreUser);
 	const clearUser = useUserStore((state) => state.clearUser);
+	const unauthorizedOpen = useUnauthorizedStore((state) => state.open);
 	const [ready, setReady] = useState(false);
 
 	useEffect(() => {
@@ -34,22 +37,25 @@ const RequireAuth = () => {
 			}
 			const ok = await fetchUserInfo();
 			if (!ok) {
-				clearToken();
-				clearUser();
-				navigate("/login", { replace: true });
+				// 401 已由全局 UnauthorizedModal 接管
+				if (!useUnauthorizedStore.getState().open) {
+					clearToken();
+					clearUser();
+					navigate("/login", { replace: true });
+				}
 			}
 			setReady(true);
 		};
 		init();
 	}, []);
 
-	if (!getToken()) {
+	if (!getToken() && !unauthorizedOpen) {
 		return (
 			<Navigate to="/login" replace state={{ from: location.pathname }} />
 		);
 	}
 
-	if (!ready || (!user && loading)) {
+	if (!ready || (!user && loading) || (unauthorizedOpen && !user)) {
 		return (
 			<Flex
 				align="center"

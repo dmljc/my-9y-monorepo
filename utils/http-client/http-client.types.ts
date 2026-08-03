@@ -29,7 +29,7 @@ export interface HttpClientOptions {
 	langHeaderName?: string;
 	/**
 	 * 鉴权失败回调（HTTP 401，或业务体 code === 401）。
-	 * 用于展示失效提示、清除登录态并跳转登录页；不会再走 onError，避免重复 toast。
+	 * 用于展示失效提示；同一 token 的后续请求会被本地阻断，不再走 onError。
 	 */
 	onUnauthorized?: (error: Error) => void;
 	/** 请求失败时全局回调（鉴权失败除外，避免与 onUnauthorized 重复提示） */

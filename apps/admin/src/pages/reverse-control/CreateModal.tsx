@@ -58,9 +58,9 @@ const CreateModal = ({
 					].filter(Boolean) as string[],
 				),
 			];
-			await Promise.all(
-				modelIds.map((modelId) => loadPropertyOptions(modelId)),
-			);
+			for (const modelId of modelIds) {
+				await loadPropertyOptions(modelId);
+			}
 			return;
 		}
 

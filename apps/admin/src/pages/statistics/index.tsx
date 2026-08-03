@@ -58,11 +58,9 @@ const Statistics = () => {
 		setLoading(true);
 		try {
 			const query = toStatisticsQuery(filter);
-			const [buildingData, levelData, trendData] = await Promise.all([
-				alarmByBuilding(query),
-				alarmByLevel(query),
-				alarmTrend(query.days),
-			]);
+			const buildingData = await alarmByBuilding(query);
+			const levelData = await alarmByLevel(query);
+			const trendData = await alarmTrend(query.days);
 
 			setChartData({
 				barAxisData: toBuildingBarData(buildingData ?? []),

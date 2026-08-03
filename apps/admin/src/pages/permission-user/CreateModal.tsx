@@ -44,10 +44,8 @@ const CreateModal = ({
 		if (!open) return;
 
 		const init = async () => {
-			const [tree, roles] = await Promise.all([
-				getDeptTree(),
-				getRoleOptions(),
-			]);
+			const tree = await getDeptTree();
+			const roles = await getRoleOptions();
 			setDeptTree(tree);
 			setRoleOptions(roles);
 

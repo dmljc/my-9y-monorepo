@@ -122,11 +122,14 @@ const WarningList = () => {
 
 	const initRef = useRef(false);
 	useEffect(() => {
-		if (!initRef.current) {
-			initRef.current = true;
-			loadData(1, pageSize);
-			loadStats();
-		}
+		if (initRef.current) return;
+		initRef.current = true;
+
+		const init = async () => {
+			await loadData(1, pageSize);
+			await loadStats();
+		};
+		init();
 	}, []);
 
 	const handleSearch = () => {
@@ -150,7 +153,8 @@ const WarningList = () => {
 		try {
 			await processWarning(record.id);
 			message.success("已标记为已解决");
-			await Promise.all([loadData(pageNum, pageSize), loadStats()]);
+			await loadData(pageNum, pageSize);
+			await loadStats();
 		} catch {
 		} finally {
 			setProcessingId(null);

@@ -4,7 +4,8 @@
  * 约定：
  * - 请求：自动注入 token、语言头
  * - 响应：解包 { code, data, message | msg }，成功返回 data，失败 reject Error
- * - 401：HTTP 状态 401，或业务体 code === 401（token 过期）时触发 onUnauthorized
+ * - 401：HTTP 状态 401，或业务体 code === 401（token 过期）时触发 onUnauthorized，
+ *       并阻断同一 token 的后续请求
  */
 import axios, { type AxiosError } from "axios";
 import type {
@@ -70,6 +71,14 @@ function getErrorMessage(error: AxiosError<ApiResponse>): string {
 
 /** 业务鉴权失败码（若依等：HTTP 200 + body.code === 401） */
 const UNAUTHORIZED_CODE = 401;
+
+/** 本地阻断已失效 token 后续请求时使用的错误名。 */
+const BLOCKED_UNAUTHORIZED = "UnauthorizedBlocked";
+
+/** 退出登录接口：401 不弹失效框（调用方会清理本地态并跳转登录页）。 */
+function isLogoutRequest(url?: string): boolean {
+	return /(^|\/)logout(\?|$)/.test(url ?? "");
+}
 
 /**
  * 处理业务响应体：成功时解包 data 或原样返回；失败时 reject。
@@ -150,9 +159,30 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
 		...axiosConfig,
 	});
 
-	// 请求拦截：注入鉴权与语言头
+	/** 已判定失效的 token；undefined 表示未锁定。清空/更换 token 后自动解锁。 */
+	let expiredToken: string | null | undefined;
+
+	const markUnauthorized = (error: Error) => {
+		expiredToken = getToken?.() ?? null;
+		onUnauthorized?.(error);
+	};
+
+	// 请求拦截：注入鉴权与语言头；同 token 失效后本地阻断（logout 除外）
 	raw.interceptors.request.use((config) => {
 		const token = getToken?.();
+
+		if (expiredToken !== undefined) {
+			if (token === expiredToken && !isLogoutRequest(config.url)) {
+				const err = new Error("登录状态已失效，请重新登录");
+				err.name = BLOCKED_UNAUTHORIZED;
+				onUnauthorized?.(err);
+				return Promise.reject(err);
+			}
+			if (token !== expiredToken) {
+				expiredToken = undefined;
+			}
+		}
+
 		if (token) {
 			config.headers.Authorization = `Bearer ${token}`;
 		}
@@ -177,16 +207,25 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
 				return response;
 			}
 
+			const notifyUnauthorized = isLogoutRequest(response.config.url)
+				? undefined
+				: markUnauthorized;
+
 			return unwrapBusinessBody(
 				response.data,
 				successCode,
 				onError,
-				onUnauthorized,
+				notifyUnauthorized,
 			) as typeof response.data;
 		},
-		(error: AxiosError<ApiResponse>) => {
-			const status = error.response?.status;
-			const body = error.response?.data;
+		(error: AxiosError<ApiResponse> | Error) => {
+			if (error.name === BLOCKED_UNAUTHORIZED) {
+				return Promise.reject(error);
+			}
+
+			const axiosError = error as AxiosError<ApiResponse>;
+			const status = axiosError.response?.status;
+			const body = axiosError.response?.data;
 			const businessCode = isBusinessEnvelope(body)
 				? getBusinessCode(body)
 				: null;
@@ -194,11 +233,11 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
 				status === UNAUTHORIZED_CODE ||
 				businessCode === UNAUTHORIZED_CODE;
 
-			if (isUnauthorized) {
-				onUnauthorized?.(new Error(getErrorMessage(error)));
+			if (isUnauthorized && !isLogoutRequest(axiosError.config?.url)) {
+				markUnauthorized(new Error(getErrorMessage(axiosError)));
 			}
 
-			const err = new Error(getErrorMessage(error));
+			const err = new Error(getErrorMessage(axiosError));
 			if (!isUnauthorized) {
 				onError?.(err);
 			}

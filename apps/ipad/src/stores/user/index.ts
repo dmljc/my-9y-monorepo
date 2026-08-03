@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useUnauthorizedStore } from "@/stores/unauthorized";
 import { clearToken, setToken } from "@/utils";
 import { getInfo, login as loginApi, logout as logoutApi } from "./api";
 import type { LoginParams, UserInfo } from "./interface";
@@ -103,6 +104,7 @@ export const useUserStore = create<UserState>((set, get) => ({
 			clearToken();
 			clearUserCache();
 			set(defaultUserState);
+			useUnauthorizedStore.getState().hide();
 		}
 	},
 	/**

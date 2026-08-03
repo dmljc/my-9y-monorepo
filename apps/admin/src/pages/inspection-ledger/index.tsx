@@ -122,12 +122,15 @@ const InspectionLedger = () => {
 
 	const initRef = useRef(false);
 	useEffect(() => {
-		if (!initRef.current) {
-			initRef.current = true;
-			loadStats();
-			loadBuildings();
-			loadData(1, pageSize, { deviceName: "", building: "" });
-		}
+		if (initRef.current) return;
+		initRef.current = true;
+
+		const init = async () => {
+			await loadBuildings();
+			await loadStats();
+			await loadData(1, pageSize, { deviceName: "", building: "" });
+		};
+		init();
 	}, []);
 
 	const handleSearch = () => {
