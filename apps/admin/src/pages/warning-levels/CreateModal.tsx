@@ -22,7 +22,7 @@ const DEFAULT_COLOR = "#0000FF";
 const COLOR_PRESET_ITEMS = [
 	{ name: "红", color: "#FF0000" },
 	{ name: "橙", color: "#FF7F00" },
-	{ name: "黄", color: "#FFFF00" },
+	{ name: "黄", color: "#F1C40F" },
 	{ name: "绿", color: "#00FF00" },
 	{ name: "蓝", color: "#0000FF" },
 	{ name: "靛", color: "#4B0082" },

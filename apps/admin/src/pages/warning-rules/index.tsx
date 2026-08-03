@@ -16,6 +16,7 @@ import styles from "./index.module.css";
 import {
 	buildRuleListResult,
 	formatThresholdRange,
+	isLightHexColor,
 	type RuleFormValues,
 	type RuleLevelOption,
 	toAlarmRulePayload,
@@ -213,11 +214,21 @@ const WarningRules = () => {
 			title: "等级",
 			dataIndex: "levelName",
 			key: "levelName",
-			render: (_: unknown, record) => (
-				<Tag color={record.levelColor || "processing"}>
-					{record.levelName || "-"}
-				</Tag>
-			),
+			render: (_: unknown, record) => {
+				const color = record.levelColor || "#1677ff";
+				const light = isLightHexColor(color);
+				return (
+					<Tag
+						style={{
+							color: light ? "#1d2129" : "#fff",
+							background: color,
+							borderColor: color,
+						}}
+					>
+						{record.levelName || "-"}
+					</Tag>
+				);
+			},
 		},
 		{
 			title: "状态",

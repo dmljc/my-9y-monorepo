@@ -165,6 +165,26 @@ export function formatThresholdRange(min: number, max: number): string {
 }
 
 /**
+ * 判断色值是否偏亮（浅黄等需深色文字）。
+ */
+export function isLightHexColor(color?: string): boolean {
+	if (!color) return false;
+	const raw = color.trim().replace(/^#/, "");
+	const hex =
+		raw.length === 3
+			? raw
+					.split("")
+					.map((char) => `${char}${char}`)
+					.join("")
+			: raw;
+	if (!/^[0-9a-fA-F]{6}$/.test(hex)) return false;
+	const r = Number.parseInt(hex.slice(0, 2), 16);
+	const g = Number.parseInt(hex.slice(2, 4), 16);
+	const b = Number.parseInt(hex.slice(4, 6), 16);
+	return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.7;
+}
+
+/**
  * 合并当前选中项与接口选项，避免编辑回显时 label 缺失。
  */
 export function mergeOption(
