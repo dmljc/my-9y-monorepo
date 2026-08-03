@@ -440,15 +440,16 @@
 	font-size: calc(15 / 1400 * 100cqw);
 }
 
-/* “选择实例”Select 单独兜底：确保高度与 Input 完全一致 */
-.thingSelect {
-	height: calc(40 / 1400 * 100cqw);
+/* “选择实例”多选：覆盖表单内 Select 固定高度，可随标签换行增高 */
+.form .thingSelect {
+	height: auto;
+	min-height: calc(40 / 1400 * 100cqw);
 }
 
-.thingSelect :global(.ant-select-selector) {
+.form .thingSelect :global(.ant-select-selector) {
 	min-height: calc(40 / 1400 * 100cqw);
-	height: calc(40 / 1400 * 100cqw);
-	padding: 0 calc(12 / 1400 * 100cqw);
+	height: auto;
+	padding: calc(4 / 1400 * 100cqw) calc(12 / 1400 * 100cqw);
 	border-radius: calc(4 / 1400 * 100cqw);
 	box-shadow: none;
 	display: flex;
@@ -456,44 +457,53 @@
 	box-sizing: border-box;
 }
 
-.thingSelect :global(.ant-select-selection-wrap) {
-	height: 100%;
+.form .thingSelect :global(.ant-select-selection-wrap) {
+	min-height: calc(32 / 1400 * 100cqw);
+	height: auto;
 	display: flex;
 	align-items: center;
 }
 
-.thingSelect :global(.ant-select-selection-item),
-.thingSelect :global(.ant-select-selection-placeholder) {
-	line-height: calc(38 / 1400 * 100cqw);
-	font-size: calc(16 / 1400 * 100cqw);
+.form .thingSelect :global(.ant-select-selection-overflow) {
+	gap: calc(4 / 1400 * 100cqw);
 }
 
-.thingSelect :global(.ant-select-selection-placeholder) {
-	color: #bfbfbf;
-	font-size: calc(15 / 1400 * 100cqw);
-}
-
-.thingSelect :global(.ant-select-placeholder) {
-	color: #bfbfbf;
-	font-size: calc(15 / 1400 * 100cqw);
-}
-
-.thingSelect :global(.ant-select-selection-search-input::placeholder) {
-	color: #bfbfbf;
-	font-size: calc(15 / 1400 * 100cqw);
-}
-
-/* 兜底：selection 内容本身也用 flex 居中，避免内部样式撑高/撑矮 */
-.thingSelect :global(.ant-select-selection-item),
-.thingSelect :global(.ant-select-selection-placeholder) {
-	height: 100%;
+.form .thingSelect :global(.ant-select-selection-item) {
+	height: calc(28 / 1400 * 100cqw);
+	margin-inline-end: 0;
+	line-height: calc(26 / 1400 * 100cqw);
+	font-size: calc(14 / 1400 * 100cqw);
+	border-radius: calc(4 / 1400 * 100cqw);
 	display: flex;
 	align-items: center;
 }
 
-/* showSearch 场景：搜索输入可能影响 selector 的实际高度 */
-.thingSelect :global(.ant-select-selection-search-input) {
-	height: 100%;
+.form .thingSelect :global(.ant-select-selection-placeholder) {
+	inset-inline-start: 0;
+	line-height: calc(32 / 1400 * 100cqw);
+	font-size: calc(15 / 1400 * 100cqw);
+	color: #bfbfbf;
+	height: auto;
+	display: flex;
+	align-items: center;
+}
+
+.form .thingSelect :global(.ant-select-placeholder) {
+	color: #bfbfbf;
+	font-size: calc(15 / 1400 * 100cqw);
+}
+
+.form .thingSelect :global(.ant-select-selection-search) {
+	margin-inline-start: 0;
+}
+
+.form .thingSelect :global(.ant-select-selection-search-input) {
+	height: calc(28 / 1400 * 100cqw);
 	padding: 0;
 	margin: 0;
+}
+
+.form .thingSelect :global(.ant-select-selection-search-input::placeholder) {
+	color: #bfbfbf;
+	font-size: calc(15 / 1400 * 100cqw);
 }

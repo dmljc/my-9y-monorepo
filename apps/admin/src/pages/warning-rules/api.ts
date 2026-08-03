@@ -19,6 +19,23 @@ export const rooms = (data: RoomListQuery): Promise<any> => {
 	return request.get("/iiot/alarm/rooms", { params: data });
 };
 
+/** 按厂房查询设备台账列表（buildingId 必填）。 */
+export const listDevices = (buildingId: string): Promise<any> => {
+	return request.get("/iiot/tablet/ledger/list", {
+		params: { buildingId },
+	});
+};
+
+/** 查询物实例列表。 */
+export const getThings = (): Promise<any> => {
+	return request.get("/iiot/device-control/things");
+};
+
+/** 按物实例查询可控点位。 */
+export const getControllable = (thingId: string): Promise<any> => {
+	return request.get(`/iiot/device-control/controllable/${thingId}`);
+};
+
 export const create = (data: AlarmRule): Promise<any> => {
 	return request.post("/iiot/alarm/rule", data);
 };

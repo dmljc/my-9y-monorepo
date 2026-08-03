@@ -183,12 +183,14 @@ const WarningRules = () => {
 			dataIndex: "instanceName",
 			key: "instanceName",
 			ellipsis: true,
+			render: (value: string) => value || "-",
 		},
 		{
 			title: "点位名称",
-			dataIndex: "pointName",
 			key: "pointName",
 			ellipsis: true,
+			render: (_: unknown, record: WarningRule) =>
+				record.propertyName || record.pointName || "-",
 		},
 		{
 			title: "所属厂房",

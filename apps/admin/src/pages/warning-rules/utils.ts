@@ -21,6 +21,7 @@ export interface WarningRule {
 	deviceName: string;
 	instanceName: string;
 	pointName: string;
+	propertyName?: string;
 	thresholdMin: number;
 	thresholdMax: number;
 	levelId: string;
@@ -40,7 +41,10 @@ export interface RuleFormValues {
 	room?: string;
 	deviceName: string;
 	instanceName: string;
+	/** 点位 ID（对应 propertyId） */
 	pointName: string;
+	/** 点位名称（对应 propertyName） */
+	propertyName?: string;
 	thresholdMin: number;
 	thresholdMax: number;
 	levelId: string;
@@ -83,40 +87,6 @@ export const THRESHOLD_MIN = 0;
  */
 export const THRESHOLD_MAX = 99999.99;
 
-/**
- * 设备选项。
- */
-export const DEVICE_OPTIONS = [
-	"反应釜",
-	"反应釜-A114",
-	"料线控制器",
-	"温控传感器-A101",
-	"压力表-B203",
-	"电机控制器-C305",
-].map((value) => ({ label: value, value }));
-
-/**
- * 实例选项。
- */
-export const INSTANCE_OPTIONS = [
-	"/114_FV201_KDFK",
-	"/101_ROOM_TEMP",
-	"/201_NH3",
-	"/FEED_LINE_LOAD",
-].map((value) => ({ label: value, value }));
-
-/**
- * 点位选项。
- */
-export const POINT_OPTIONS = [
-	"/114_FV201_KDFK",
-	"/101_ROOM_TEMP",
-	"/201_NH3",
-	"/FEED_LINE_LOAD",
-	"/114_FV201_TEMP",
-	"/ROOM_HUMIDITY",
-].map((value) => ({ label: value, value }));
-
 type LevelMap = Record<string, RuleLevelOption>;
 
 /**
@@ -134,6 +104,19 @@ function parseRows<T>(data: unknown): { rows: T[]; total: number } {
 		rows,
 		total: typeof record.total === "number" ? record.total : rows.length,
 	};
+}
+
+/**
+ * 将列表类接口 data 规范为数组。
+ */
+function toArray(data: unknown): unknown[] {
+	if (Array.isArray(data)) return data;
+	if (!data || typeof data !== "object") return [];
+	const record = data as Record<string, unknown>;
+	if (Array.isArray(record.rows)) return record.rows;
+	if (Array.isArray(record.list)) return record.list;
+	if (Array.isArray(record.things)) return record.things;
+	return [];
 }
 
 /**
@@ -281,6 +264,84 @@ export function normalizeRoomOptions(data: unknown): SelectOption[] {
 }
 
 /**
+ * 将设备台账列表转为设备名称选项。
+ *
+ * @param {unknown} - `/iiot/tablet/ledger/list` data。
+ * @param {string | undefined} - 可选按房间名称过滤。
+ */
+export function normalizeDeviceOptions(
+	data: unknown,
+	roomName?: string,
+): SelectOption[] {
+	const options: SelectOption[] = [];
+	const seen = new Set<string>();
+	const roomFilter = roomName?.trim();
+
+	for (const item of toArray(data)) {
+		if (!item || typeof item !== "object") continue;
+		const record = item as Record<string, unknown>;
+		const name = String(record.deviceName ?? "").trim();
+		if (!name || seen.has(name)) continue;
+		if (roomFilter) {
+			const room = String(record.room ?? "").trim();
+			if (room && room !== roomFilter) continue;
+		}
+		seen.add(name);
+		options.push({ label: name, value: name });
+	}
+
+	return options;
+}
+
+/**
+ * 规范化 things 接口返回。
+ */
+export function normalizeThingsList(data: unknown): unknown[] {
+	if (Array.isArray(data)) return data;
+	if (!data || typeof data !== "object") return [];
+	const record = data as Record<string, unknown>;
+	if (Array.isArray(record.things)) return record.things;
+	if (record.data && typeof record.data === "object") {
+		const nested = record.data as Record<string, unknown>;
+		if (Array.isArray(nested.things)) return nested.things;
+		if (Array.isArray(record.data)) return record.data;
+	}
+	return toArray(data);
+}
+
+/**
+ * 物实例 → 实例名称选项（label=thing_name，value=thing_id）。
+ */
+export function toThingOptions(data: unknown): SelectOption[] {
+	return normalizeThingsList(data).flatMap((item) => {
+		if (!item || typeof item !== "object") return [];
+		const record = item as Record<string, unknown>;
+		const value = String(record.thing_id ?? record.thingId ?? "").trim();
+		if (!value) return [];
+		const name = String(record.thing_name ?? record.thingName ?? "").trim();
+		return [{ label: name || value, value }];
+	});
+}
+
+/**
+ * 可控属性 → 点位选项（label=property_name，value=property_id）。
+ */
+export function toPropertyOptions(data: unknown): SelectOption[] {
+	return toArray(data).flatMap((item) => {
+		if (!item || typeof item !== "object") return [];
+		const record = item as Record<string, unknown>;
+		const value = String(
+			record.property_id ?? record.propertyId ?? "",
+		).trim();
+		if (!value) return [];
+		const name = String(
+			record.property_name ?? record.propertyName ?? "",
+		).trim();
+		return [{ label: name || value, value }];
+	});
+}
+
+/**
  * 将报警等级接口响应转为下拉选项。
  */
 export function toLevelOptions(data: unknown): RuleLevelOption[] {
@@ -313,7 +374,8 @@ export function toWarningRule(
 		room: rule.room ?? "",
 		deviceName: rule.deviceName ?? "",
 		instanceName: (rule.thingId ?? "").trim(),
-		pointName: (rule.propertyName ?? rule.propertyId ?? "").trim(),
+		pointName: (rule.propertyId ?? rule.propertyName ?? "").trim(),
+		propertyName: rule.propertyName ?? rule.propertyId ?? "",
 		thresholdMin: Number(rule.thresholdMin ?? 0),
 		thresholdMax: Number(rule.thresholdMax ?? 0),
 		levelId: String(rule.levelId ?? ""),
@@ -350,7 +412,8 @@ export function toAlarmRulePayload(
 	id?: string,
 ): AlarmRule {
 	const thingId = values.instanceName?.trim();
-	const propertyName = values.pointName?.trim();
+	const propertyId = values.pointName?.trim();
+	const propertyName = values.propertyName?.trim() || propertyId;
 
 	return {
 		id: id ? Number(id) : undefined,
@@ -361,8 +424,8 @@ export function toAlarmRulePayload(
 		room: values.room?.trim(),
 		deviceName: values.deviceName?.trim(),
 		thingId,
+		propertyId,
 		propertyName,
-		propertyId: propertyName,
 		thresholdMin:
 			values.thresholdMin === undefined
 				? undefined

@@ -26,7 +26,7 @@ export interface Device {
 	deviceName: string;
 	/** 列表/详情当前不返回厂家，编辑时可能为空。 */
 	manufacturer: string;
-	/** 物实例 ID；列表精简字段可能为空。 */
+	/** 物实例 ID（多选用逗号分隔）；列表精简字段可能为空。 */
 	thingId: string;
 	sampleRoom: string;
 	status: DeviceStatus;
@@ -42,8 +42,8 @@ export interface DeviceFormValues {
 	deviceCode: string;
 	deviceName: string;
 	manufacturer: string;
-	/** 物实例 ID。 */
-	thingId: string;
+	/** 物实例 ID 列表（多选）。 */
+	thingIds: string[];
 }
 
 /**
@@ -79,7 +79,7 @@ export interface TabletDevicePayload {
 	deviceCode: string;
 	deviceName: string;
 	manufacturer?: string;
-	/** 物实例 ID（IIoT 平台）。 */
+	/** 物实例 ID（IIoT 平台；多选用逗号分隔）。 */
 	thingId?: string;
 	building?: string;
 	buildingId: number;

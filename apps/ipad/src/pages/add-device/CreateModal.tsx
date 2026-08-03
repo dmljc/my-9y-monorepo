@@ -4,7 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { detail, listThings, lookup } from "./api";
 import styles from "./index.module.css";
 import type { Device, DeviceFormValues, ThingOption } from "./interface";
-import { MAX_LENGTH_12, MAX_LENGTH_100, toThingOptions } from "./utils";
+import {
+	MAX_LENGTH_12,
+	MAX_LENGTH_100,
+	parseThingIds,
+	toThingOptions,
+} from "./utils";
 
 /** 物实例远程搜索防抖间隔（毫秒）。 */
 const THING_SEARCH_DEBOUNCE_MS = 300;
@@ -22,7 +27,9 @@ const deviceNameRules: Rule[] = [
 ];
 
 /** 选择实例校验。 */
-const thingIdRules: Rule[] = [{ required: true, message: "请选择实例" }];
+const thingIdsRules: Rule[] = [
+	{ required: true, type: "array", min: 1, message: "请选择实例" },
+];
 
 /**
  * 新增 / 编辑设备弹窗 props。
@@ -98,23 +105,35 @@ const CreateModal = ({
 			await loadThings();
 
 			if (editingRecord) {
-				form.setFieldsValue(editingRecord);
+				form.setFieldsValue({
+					deviceCode: editingRecord.deviceCode,
+					deviceName: editingRecord.deviceName,
+					manufacturer: editingRecord.manufacturer,
+					thingIds: parseThingIds(editingRecord.thingId),
+				});
 				try {
 					const data = await detail(editingRecord.id);
 					if (!data || typeof data !== "object") return;
-					const thingId = String(data.thingId ?? "").trim();
+					const thingIds = parseThingIds(
+						String(data.thingId ?? "").trim(),
+					);
 					const manufacturer = String(data.manufacturer ?? "").trim();
 					const next: Partial<DeviceFormValues> = {};
-					if (thingId) next.thingId = thingId;
+					if (thingIds.length) next.thingIds = thingIds;
 					if (manufacturer) next.manufacturer = manufacturer;
 					if (Object.keys(next).length) form.setFieldsValue(next);
-					if (thingId) {
+					if (thingIds.length) {
 						setThingOptions((prev) => {
-							if (prev.some((item) => item.value === thingId))
-								return prev;
+							const missing = thingIds.filter(
+								(id) => !prev.some((item) => item.value === id),
+							);
+							if (!missing.length) return prev;
 							return [
 								...prev,
-								{ value: thingId, label: thingId },
+								...missing.map((id) => ({
+									value: id,
+									label: id,
+								})),
 							];
 						});
 					}
@@ -222,9 +241,14 @@ const CreateModal = ({
 						maxLength={MAX_LENGTH_12}
 					/>
 				</Form.Item>
-				<Form.Item name="thingId" label="选择实例" rules={thingIdRules}>
+				<Form.Item
+					name="thingIds"
+					label="选择实例"
+					rules={thingIdsRules}
+				>
 					<Select
 						className={styles.thingSelect}
+						mode="multiple"
 						showSearch
 						filterOption={false}
 						onSearch={handleThingSearch}
@@ -232,6 +256,7 @@ const CreateModal = ({
 						placeholder="请选择实例"
 						options={thingOptions}
 						allowClear
+						maxTagCount="responsive"
 					/>
 				</Form.Item>
 			</Form>

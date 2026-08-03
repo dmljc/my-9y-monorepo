@@ -171,12 +171,12 @@ const CreateModal = ({
 										<div className={styles.rowTitle}>条件{index + 1}</div>
 										<Item
 											name={[field.name, "thingId"]}
-											rules={[{ required: true, message: "请选择设备" }]}
+											rules={[{ required: true, message: "请选择实例" }]}
 										>
 											<Select
 												showSearch
 												optionFilterProp="label"
-												placeholder="请选择设备"
+												placeholder="请选择实例"
 												options={thingOptions}
 												optionLabelProp="label"
 												onChange={(value) => {
@@ -264,12 +264,12 @@ const CreateModal = ({
 									<div className={styles.rowTitle}>动作{index + 1}</div>
 									<Item
 										name={[field.name, "thingId"]}
-										rules={[{ required: true, message: "请选择设备" }]}
+										rules={[{ required: true, message: "请选择实例" }]}
 									>
 										<Select
 											showSearch
 											optionFilterProp="label"
-											placeholder="请选择设备"
+											placeholder="请选择实例"
 											options={thingOptions}
 											optionLabelProp="label"
 											onChange={(value) => {

@@ -75,6 +75,37 @@ export const mapRowToDevice = (row: TabletDeviceRow): Device => {
 };
 
 /**
+ * 将后端 thingId（逗号 / 中文逗号分隔）解析为多选值。
+ *
+ * @param {string | undefined} - 后端 thingId。
+ * @returns {string[]} - 物实例 ID 列表。
+ */
+export const parseThingIds = (thingId?: string): string[] => {
+	if (!thingId?.trim()) return [];
+	return [
+		...new Set(
+			thingId
+				.split(/[,，]/)
+				.map((item) => item.trim())
+				.filter(Boolean),
+		),
+	];
+};
+
+/**
+ * 将多选物实例 ID 序列化为后端 thingId。
+ *
+ * @param {string[] | undefined} - 物实例 ID 列表。
+ * @returns {string} - 逗号分隔字符串。
+ */
+export const joinThingIds = (thingIds?: string[]): string => {
+	if (!Array.isArray(thingIds)) return "";
+	return [
+		...new Set(thingIds.map((item) => item.trim()).filter(Boolean)),
+	].join(",");
+};
+
+/**
  * 将物实例列表转为下拉选项。
  *
  * @param {unknown} - `/iiot/device-control/things` 解包后的 data。
@@ -168,7 +199,7 @@ export const buildCreatePayload = (
 		deviceCode: values.deviceCode.trim(),
 		deviceName: values.deviceName.trim(),
 		manufacturer: values.manufacturer.trim(),
-		thingId: values.thingId.trim(),
+		thingId: joinThingIds(values.thingIds),
 		buildingId: building.buildingId,
 		building: building.building,
 	};
@@ -188,7 +219,7 @@ export const buildUpdatePayload = (
 	building: BuildingTab | null,
 ): TabletDevicePayload => {
 	const manufacturer = values.manufacturer.trim();
-	const thingId = values.thingId.trim();
+	const thingId = joinThingIds(values.thingIds);
 	return {
 		id: record.id,
 		deviceCode: values.deviceCode.trim(),
