@@ -10,6 +10,7 @@ import type { DeviceDataListQuery, DeviceDataSnapshot } from "./interface";
 
 interface ModelDataFilters {
 	modelName: string;
+	thingName: string;
 	propertyName: string;
 }
 
@@ -17,6 +18,7 @@ const ModelData = () => {
 	const navigate = useNavigate();
 	const { message, modal } = App.useApp();
 	const [modelName, setModelName] = useState("");
+	const [thingName, setThingName] = useState("");
 	const [propertyName, setPropertyName] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<DeviceDataSnapshot[]>([]);
@@ -37,6 +39,8 @@ const ModelData = () => {
 				pageSize: ps,
 				modelName:
 					filters?.modelName ?? (modelName.trim() || undefined),
+				thingName:
+					filters?.thingName ?? (thingName.trim() || undefined),
 				propertyName:
 					filters?.propertyName ?? (propertyName.trim() || undefined),
 			};
@@ -64,9 +68,14 @@ const ModelData = () => {
 
 	const handleReset = () => {
 		setModelName("");
+		setThingName("");
 		setPropertyName("");
 		setPageNum(1);
-		loadData(1, pageSize, { modelName: "", propertyName: "" });
+		loadData(1, pageSize, {
+			modelName: "",
+			thingName: "",
+			propertyName: "",
+		});
 	};
 
 	const handleDelete = (record: DeviceDataSnapshot) => {
@@ -104,6 +113,12 @@ const ModelData = () => {
 				(pageNum - 1) * pageSize + index + 1,
 		},
 		{
+			title: "物模型ID",
+			dataIndex: "modelId",
+			key: "modelId",
+			ellipsis: true,
+		},
+		{
 			title: "物模型名称",
 			dataIndex: "modelName",
 			key: "modelName",
@@ -113,6 +128,12 @@ const ModelData = () => {
 			title: "实例ID",
 			dataIndex: "thingId",
 			key: "thingId",
+			ellipsis: true,
+		},
+		{
+			title: "实例名称",
+			dataIndex: "thingName",
+			key: "thingName",
 			ellipsis: true,
 		},
 		{
@@ -184,6 +205,15 @@ const ModelData = () => {
 					value={modelName}
 					allowClear
 					onChange={(event) => setModelName(event.target.value)}
+					onPressEnter={handleSearch}
+				/>
+				<span className={styles.filterLabel}>实例名称</span>
+				<Input
+					className={styles.searchInput}
+					placeholder="请输入实例名称"
+					value={thingName}
+					allowClear
+					onChange={(event) => setThingName(event.target.value)}
 					onPressEnter={handleSearch}
 				/>
 				<span className={styles.filterLabel}>点位名称</span>

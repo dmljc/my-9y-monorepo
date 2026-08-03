@@ -4,6 +4,7 @@
 export interface DeviceDataSnapshot {
 	id?: number;
 	thingId?: string;
+	thingName?: string;
 	modelId?: string;
 	modelName?: string;
 	propertyName?: string;
@@ -20,6 +21,7 @@ export interface DeviceDataListQuery {
 	pageNum: number;
 	pageSize: number;
 	modelName?: string;
+	thingName?: string;
 	propertyName?: string;
 	searchValue?: string;
 	thingId?: string;
