@@ -177,15 +177,9 @@ export const buildDeviceTableColumns = ({
 						执行点检
 					</Button>
 				</Access>
-				<Access code={PERM_INSPECTION_LEDGER.EDIT}>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => onEdit(record)}
-					>
-						编辑
-					</Button>
-				</Access>
+				<Button type="link" size="small" onClick={() => onEdit(record)}>
+					编辑
+				</Button>
 				<Access code={PERM_INSPECTION_LEDGER.DELETE}>
 					<Button
 						type="link"

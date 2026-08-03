@@ -104,27 +104,27 @@ const ModelData = () => {
 				(pageNum - 1) * pageSize + index + 1,
 		},
 		{
-			title: "物实例ID",
-			dataIndex: "thingId",
-			key: "thingId",
-			ellipsis: true,
-		},
-		{
 			title: "物模型名称",
 			dataIndex: "modelName",
 			key: "modelName",
 			ellipsis: true,
 		},
 		{
-			title: "点位名称",
-			dataIndex: "propertyName",
-			key: "propertyName",
+			title: "实例ID",
+			dataIndex: "thingId",
+			key: "thingId",
 			ellipsis: true,
 		},
 		{
 			title: "点位ID",
 			dataIndex: "propertyId",
 			key: "propertyId",
+			ellipsis: true,
+		},
+		{
+			title: "点位名称",
+			dataIndex: "propertyName",
+			key: "propertyName",
 			ellipsis: true,
 		},
 		{
@@ -151,15 +151,15 @@ const ModelData = () => {
 			width: 180,
 			render: (_: unknown, record) => (
 				<div className={styles.actions}>
-					{/* <Access code={PERM_MODEL_DATA.HISTORY}> */}
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleHistoryQuery(record)}
-					>
-						历史数据查询
-					</Button>
-					{/* </Access> */}
+					<Access code={PERM_MODEL_DATA.HISTORY}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleHistoryQuery(record)}
+						>
+							历史数据
+						</Button>
+					</Access>
 					<Access code={PERM_MODEL_DATA.DELETE}>
 						<Button
 							type="link"
