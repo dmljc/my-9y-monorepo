@@ -1500,7 +1500,7 @@ const { message, modal } = App.useApp();
 const [loading, setLoading] = useState(false);
 const [dataSource, setDataSource] = useState<DeviceLedger[]>([]);
 const [pageNum, setPageNum] = useState(1);
-const [pageSize, setPageSize] = useState(15);
+const [pageSize, setPageSize] = useState(25);
 const [deviceName, setDeviceName] = useState("");
 const [modalOpen, setModalOpen] = useState(false);
 const [editingRecord, setEditingRecord] = useState<DeviceLedger | null>(null);
@@ -1926,15 +1926,15 @@ const columns: ColumnsType<User> = [
 
 ### Table 分页
 
-**做什么**：带服务端分页的列表页，`pageSize` 初始值与 Table `pagination.pageSize` 统一为 **15**；开启 `showSizeChanger` 时显式配置 **`pageSizeOptions: ["10", "15", "20", "50", "100"]`**，使下拉含 **15 条/页** 且与默认一致。**不要**依赖 Ant Design 默认的 10 条/页或仅含 10/20/50/100 的选项。
+**做什么**：带服务端分页的列表页，`pageSize` 初始值与 Table `pagination.pageSize` 统一为 **25**；开启 `showSizeChanger` 时显式配置 **`pageSizeOptions: ["10", "15", "20", "25", "50", "100"]`**，使下拉含 **25 条/页** 且与默认一致。**不要**依赖 Ant Design 默认的 10 条/页或仅含 10/20/50/100（缺 25）的选项。
 
-**为什么**：admin 列表页默认可视行数按 15 条对齐；不写 `pageSizeOptions` 时下拉无 15，或与 `useState(10)` 不一致会导致首屏条数、选项、接口 `pageSize` 三方脱节。
+**为什么**：admin 列表页默认可视行数按 25 条对齐；不写 `pageSizeOptions` 时下拉无 25，或与 `useState(10)` / `useState(15)` 不一致会导致首屏条数、选项、接口 `pageSize` 三方脱节。
 
 **✅ 推荐**
 
 ```tsx
 const [pageNum, setPageNum] = useState(1);
-const [pageSize, setPageSize] = useState(15);
+const [pageSize, setPageSize] = useState(25);
 
 const loadData = async (p: number, ps: number) => {
   setLoading(true);
@@ -1963,7 +1963,7 @@ const handleTableChange = (pagination: TablePaginationConfig) => {
     pageSize,
     total,
     showSizeChanger: true,
-    pageSizeOptions: ["10", "15", "20", "50", "100"],
+    pageSizeOptions: ["10", "15", "20", "25", "50", "100"],
     showQuickJumper: true,
     showTotal: (count) => `共 ${count} 条`,
   }}
@@ -1974,11 +1974,13 @@ const handleTableChange = (pagination: TablePaginationConfig) => {
 **❌ 避免**
 
 ```tsx
-const [pageSize, setPageSize] = useState(10); // ❌ 与项目默认 15 不一致
+const [pageSize, setPageSize] = useState(10); // ❌ 与项目默认 25 不一致
+const [pageSize, setPageSize] = useState(15); // ❌ 与项目默认 25 不一致
 
 pagination={{
   showSizeChanger: true,
-  // ❌ 未写 pageSizeOptions，下拉无 15 条/页
+  // ❌ 未写 pageSizeOptions，或选项缺 25 条/页
+  pageSizeOptions: ["10", "15", "20", "50", "100"],
 }}
 ```
 
@@ -1986,13 +1988,13 @@ pagination={{
 
 | 部分 | 要求 |
 |------|------|
-| 初始 `pageSize` | `useState(15)` |
+| 初始 `pageSize` | `useState(25)` |
 | `pagination.pageSize` | 绑定同一 `pageSize` state |
-| `pageSizeOptions` | `["10", "15", "20", "50", "100"]`（含 15，顺序递增） |
+| `pageSizeOptions` | `["10", "15", "20", "25", "50", "100"]`（含 25，顺序递增） |
 | 首屏 / 查询 / 重置 | `loadData` 传入当前 `pageSize`；切条数时 `handleTableChange` 用 `pagination.pageSize` |
 | 序号列 | `(pageNum - 1) * pageSize + index + 1` |
 
-**边界**：无分页或纯客户端分页的表格不适用；产品明确要求其它默认条数（如大屏 20）时单页覆盖，仍建议 `pageSizeOptions` 包含实际默认值；`permission-user` 等模块内已有 `DEFAULT_PAGE_SIZE` 常量时，新改页面对齐 **15** 或随该页一并迁移，**不要**同页 state 用 15、常量仍写 10。**参考实现**：`apps/admin/src/pages/historical-data/`。
+**边界**：无分页或纯客户端分页的表格不适用；产品明确要求其它默认条数（如大屏 20）时单页覆盖，仍建议 `pageSizeOptions` 包含实际默认值；`permission-user` 等模块内已有 `DEFAULT_PAGE_SIZE` 常量时，新改页面对齐 **25** 或随该页一并迁移，**不要**同页 state 用 25、常量仍写 10/15。**参考实现**：`apps/admin/src/pages/warning-rules/`、`apps/admin/src/pages/historical-data/`。
 
 ### Form：非特殊不抽离
 

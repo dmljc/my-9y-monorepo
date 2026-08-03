@@ -276,7 +276,7 @@ const CreateModal = ({
 		});
 	};
 
-	const handleOk = async () => {
+	const onOk = async () => {
 		try {
 			const values = await form.validateFields();
 			if (values.thresholdMin > values.thresholdMax) {
@@ -322,14 +322,13 @@ const CreateModal = ({
 
 	return (
 		<Modal
-			title={isEdit ? "编辑规则" : "新增规则"}
+			title={isEdit ? "编辑" : "新增"}
 			open={open}
-			onOk={handleOk}
+			onOk={onOk}
 			onCancel={onCancel}
 			confirmLoading={loading}
 			destroyOnHidden
 			width={560}
-			okText={isEdit ? "确定" : "创建规则"}
 		>
 			<Form
 				form={form}

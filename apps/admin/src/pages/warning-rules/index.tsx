@@ -36,13 +36,13 @@ const WarningRules = () => {
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(25);
 	const [togglingId, setTogglingId] = useState<string | null>(null);
-	const [name, setName] = useState("");
+	const [ruleName, setRuleName] = useState("");
 	const [levelOptions, setLevelOptions] = useState<RuleLevelOption[]>([]);
 
 	const loadData = async (
 		p: number,
 		ps: number,
-		keyword = name,
+		keyword = ruleName,
 		options = levelOptions,
 	) => {
 		setLoading(true);
@@ -75,7 +75,7 @@ const WarningRules = () => {
 	};
 
 	const handleReset = () => {
-		setName("");
+		setRuleName("");
 		setPageNum(1);
 		loadData(1, pageSize, "");
 	};
@@ -86,7 +86,7 @@ const WarningRules = () => {
 			initRef.current = true;
 			const init = async () => {
 				const options = await loadLevelOptions();
-				await loadData(pageNum, pageSize, name, options);
+				await loadData(pageNum, pageSize, ruleName, options);
 			};
 			init();
 		}
@@ -176,35 +176,31 @@ const WarningRules = () => {
 			dataIndex: "deviceName",
 			key: "deviceName",
 			ellipsis: true,
-			render: (value: string) => value || "-",
 		},
 		{
 			title: "实例名称",
 			dataIndex: "instanceName",
 			key: "instanceName",
 			ellipsis: true,
-			render: (value: string) => value || "-",
 		},
 		{
 			title: "点位名称",
 			key: "pointName",
 			ellipsis: true,
 			render: (_: unknown, record: WarningRule) =>
-				record.propertyName || record.pointName || "-",
+				record.propertyName || record.pointName,
 		},
 		{
 			title: "所属厂房",
 			dataIndex: "building",
 			key: "building",
 			ellipsis: true,
-			render: (value: string) => value || "-",
 		},
 		{
 			title: "房间",
 			dataIndex: "room",
 			key: "room",
 			ellipsis: true,
-			render: (value: string) => value || "-",
 		},
 		{
 			title: "阈值范围",
@@ -227,7 +223,7 @@ const WarningRules = () => {
 							borderColor: color,
 						}}
 					>
-						{record.levelName || "-"}
+						{record.levelName}
 					</Tag>
 				);
 			},
@@ -288,9 +284,9 @@ const WarningRules = () => {
 				<Input
 					className={styles.searchInput}
 					placeholder="请输入规则名称"
-					value={name}
+					value={ruleName}
 					allowClear
-					onChange={(event) => setName(event.target.value)}
+					onChange={(event) => setRuleName(event.target.value)}
 					onPressEnter={handleSearch}
 				/>
 				<Button type="primary" onClick={handleSearch}>
