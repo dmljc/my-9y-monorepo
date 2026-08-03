@@ -9,8 +9,8 @@ export interface WarningRule {
 	buildingNames: string[];
 	roomNames: string[];
 	deviceNames: string[];
-	instanceNames: string[];
-	pointNames: string[];
+	instanceName: string;
+	pointName: string;
 	thresholdMin: number;
 	thresholdMax: number;
 	levelId: string;
@@ -27,8 +27,8 @@ export interface RuleFormValues {
 	buildingNames: string[];
 	roomNames: string[];
 	deviceNames: string[];
-	instanceNames: string[];
-	pointNames: string[];
+	instanceName: string;
+	pointName: string;
 	thresholdMin: number;
 	thresholdMax: number;
 	levelId: string;
@@ -199,19 +199,16 @@ export function toWarningRule(
 ): WarningRule {
 	const levelOption =
 		rule.levelId === undefined ? undefined : levelMap[String(rule.levelId)];
-	const instanceNames = normalizeMultiSelectValue(
-		rule.thingName ?? rule.thingId,
-	);
+	const instanceName = (rule.thingName ?? rule.thingId ?? "").trim();
+	const pointName = (rule.propertyName ?? rule.propertyId ?? "").trim();
 	return {
 		id: String(rule.id ?? ""),
 		name: rule.ruleName ?? "",
 		buildingNames: normalizeMultiSelectValue(rule.building),
 		roomNames: normalizeMultiSelectValue(rule.room),
 		deviceNames: normalizeMultiSelectValue(rule.deviceName),
-		instanceNames,
-		pointNames: normalizeMultiSelectValue(
-			rule.propertyName ?? rule.propertyId,
-		),
+		instanceName,
+		pointName,
 		thresholdMin: Number(rule.thresholdMin ?? 0),
 		thresholdMax: Number(rule.thresholdMax ?? 0),
 		levelId: String(rule.levelId ?? ""),
@@ -250,8 +247,8 @@ export function toAlarmRulePayload(
 	const building = values.buildingNames?.join(",");
 	const room = values.roomNames?.join(",");
 	const deviceName = values.deviceNames?.join(",");
-	const thingName = values.instanceNames?.join(",");
-	const propertyName = values.pointNames?.join(",");
+	const thingName = values.instanceName?.trim();
+	const propertyName = values.pointName?.trim();
 
 	return {
 		id: id ? Number(id) : undefined,
@@ -260,10 +257,10 @@ export function toAlarmRulePayload(
 		building: building?.trim(),
 		room: room?.trim(),
 		deviceName: deviceName?.trim(),
-		thingName: thingName?.trim(),
-		thingId: thingName?.trim(),
-		propertyName: propertyName?.trim(),
-		propertyId: propertyName?.trim(),
+		thingName,
+		thingId: thingName,
+		propertyName,
+		propertyId: propertyName,
 		thresholdMin:
 			values.thresholdMin === undefined
 				? undefined

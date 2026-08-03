@@ -169,16 +169,14 @@ const WarningRules = () => {
 		},
 		{
 			title: "实例名称",
-			key: "instanceNames",
-			render: (_: unknown, record: WarningRule) =>
-				record.instanceNames.join("、") || "-",
+			dataIndex: "instanceName",
+			key: "instanceName",
 			ellipsis: true,
 		},
 		{
 			title: "点位名称",
-			key: "pointNames",
-			render: (_: unknown, record: WarningRule) =>
-				record.pointNames.join("、") || "-",
+			dataIndex: "pointName",
+			key: "pointName",
 			ellipsis: true,
 		},
 		{

@@ -176,19 +176,11 @@ const CreateModal = ({
 				</Form.Item>
 
 				<Form.Item
-					name="instanceNames"
+					name="instanceName"
 					label="实例名称"
-					rules={[
-						{
-							required: true,
-							type: "array",
-							min: 1,
-							message: "请选择实例",
-						},
-					]}
+					rules={[{ required: true, message: "请选择实例" }]}
 				>
 					<Select
-						mode="multiple"
 						showSearch
 						optionFilterProp="label"
 						placeholder="请选择实例"
@@ -198,19 +190,11 @@ const CreateModal = ({
 				</Form.Item>
 
 				<Form.Item
-					name="pointNames"
+					name="pointName"
 					label="点位名称"
-					rules={[
-						{
-							required: true,
-							type: "array",
-							min: 1,
-							message: "请选择点位",
-						},
-					]}
+					rules={[{ required: true, message: "请选择点位" }]}
 				>
 					<Select
-						mode="multiple"
 						showSearch
 						optionFilterProp="label"
 						placeholder="请选择点位"
