@@ -1731,13 +1731,37 @@ return <div>{statCards.map(renderStatCard)}</div>;
 
 ### 禁用已弃用 API
 
-**做什么**：使用 Ant Design 组件时，只写**当前版本文档中的有效 props / 配置**；若 TypeScript 提示 `@deprecated` 或编辑器标灰，须改用官方给出的替代写法后再合入。
+**做什么**：`apps/admin`、`apps/ipad` 使用 Ant Design 时，**只允许当前版本有效 API**；禁止使用带 `@deprecated` 标记、编辑器标灰、或 TS6385「已弃用」告警的 props / 静态成员。新增、修改、Code Review 时均须确认所用属性为现行写法后再合入。
 
-**为什么**：弃用 API 虽可能仍能用，但后续大版本会移除，且 TS 会持续告警；迁移到现行 API 与官方行为一致，减少隐性兼容问题。
+**为什么**：弃用 API 虽可能仍能运行，但大版本会移除且 TS 持续告警；统一现行 API 可避免隐性兼容债，并与[官方文档](https://ant.design/docs/react/llms-cn)行为一致。
+
+**判定与处理**
+
+| 步骤 | 要求 |
+|------|------|
+| 识别 | IDE 标灰、`@deprecated` JSDoc、`ts(6385)`，或以组件 `*.d.ts`（含 `@rc-component/*`）中的弃用说明为准 |
+| 替换 | 按类型注释 / 文档给出的替代 API 改写；**不要**为消告警而 `// @ts-ignore` / `eslint-disable` |
+| 结构 | 若替代写法是嵌套配置（如 `showSearch={{ … }}`、`expandable={{ … }}`、`classNames.popup.root`），须迁入对应对象，**不要**继续平铺在组件根 props |
+
+**Select / Cascader / TreeSelect / AutoComplete 搜索相关（高频）**
+
+顶层 `optionFilterProp`、`filterOption`、`filterSort`、`onSearch`、`searchValue`、`autoClearSearchValue` 已弃用，须写入 `showSearch` 配置对象（`showSearch` 为 `true` 时也要改成对象并合并字段）。
 
 **✅ 推荐**
 
 ```tsx
+<Select
+  showSearch={{ optionFilterProp: "label" }}
+  placeholder="请选择设备"
+  options={DEVICE_OPTIONS}
+/>
+
+<Select
+  mode="multiple"
+  showSearch={{ filterOption: false, onSearch: handleThingSearch }}
+  options={thingOptions}
+/>
+
 <Table
   columns={columns}
   dataSource={dataSource}
@@ -1748,14 +1772,33 @@ return <div>{statCards.map(renderStatCard)}</div>;
 **❌ 避免**
 
 ```tsx
-<Table
-  columns={columns}
-  dataSource={dataSource}
-  defaultExpandAllRows
+<Select showSearch optionFilterProp="label" options={DEVICE_OPTIONS} />
+
+<Select
+  showSearch
+  filterOption={false}
+  onSearch={handleThingSearch}
+  options={thingOptions}
 />
+
+<Table columns={columns} dataSource={dataSource} defaultExpandAllRows />
 ```
 
-**边界**：新增或修改代码时主动规避弃用项；不确定时查[官方文档](https://ant.design/docs/react/llms-cn)或组件 TS 类型上的 `@deprecated` 说明；同类迁移（如 Table 的 `expandedRowRender` → `expandable.expandedRowRender`）按文档嵌套到对应配置对象，不要继续平铺在组件根 props 上。
+**其它常见迁移（遇则改，勿新增）**
+
+| 弃用写法 | 现行写法 |
+|----------|----------|
+| `dropdownClassName` / `popupClassName` | `classNames.popup.root` |
+| `dropdownStyle` | `styles.popup` / `styles.popup.root` |
+| `dropdownRender` | `popupRender` |
+| `onDropdownVisibleChange` | `onOpenChange` |
+| `dropdownMatchSelectWidth` | `popupMatchSelectWidth` |
+| `bordered` | `variant` |
+| `destroyOnClose` / `destroyInactiveTabPane` 等 | `destroyOnHidden` |
+| `Select.Option` / `Select.OptGroup` | `options` |
+| Table 根级 `defaultExpandAllRows` / `expandedRowRender` | `expandable={{ … }}` |
+
+**边界**：以仓库锁定的 antd 大版本文档与类型为准；不确定时查官方文档或组件 TS 上的 `@deprecated` 替代说明。历史代码改到相关文件时**顺手迁掉**同文件内的弃用用法；不要只修业务逻辑而留下 TS 弃用告警。
 
 ### App.useApp 解构命名
 
