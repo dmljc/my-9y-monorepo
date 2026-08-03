@@ -213,18 +213,40 @@ export function toRule(values: RuleFormValues, id?: number): IiotControlRule {
 }
 
 /**
- * 将物实例列表转为设备下拉选项。
+ * 规范化 things 接口返回为物实例数组。
+ *
+ * @param {unknown} - things 接口 data。
+ * @returns {DeviceThingItem[]} - 物实例列表。
+ */
+export function normalizeThingsList(data: unknown): DeviceThingItem[] {
+	if (Array.isArray(data)) return data as DeviceThingItem[];
+	if (!data || typeof data !== "object") return [];
+	const record = data as Record<string, unknown>;
+	if (Array.isArray(record.things)) return record.things as DeviceThingItem[];
+	if (record.data && typeof record.data === "object") {
+		const nested = record.data as Record<string, unknown>;
+		if (Array.isArray(nested.things)) {
+			return nested.things as DeviceThingItem[];
+		}
+		if (Array.isArray(record.data)) return record.data as DeviceThingItem[];
+	}
+	return [];
+}
+
+/**
+ * 将物实例列表转为设备下拉选项（label=thing_name，value=thing_id）。
  *
  * @param {DeviceThingItem[]} - 物实例列表。
  * @returns {SelectOption[]} - 下拉选项。
  */
 export function toThingOptions(things: DeviceThingItem[]): SelectOption[] {
 	return things.flatMap((item) => {
-		const value = item.thing_id ?? item.thingId;
+		const value = String(item.thing_id ?? item.thingId ?? "").trim();
 		if (!value) return [];
+		const name = String(item.thing_name ?? item.thingName ?? "").trim();
 		return [
 			{
-				label: item.thing_name ?? item.thingName ?? value,
+				label: name || value,
 				value,
 			},
 		];

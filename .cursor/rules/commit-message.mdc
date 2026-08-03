@@ -1,0 +1,16 @@
+---
+description: Git commit message 使用简体中文
+alwaysApply: true
+---
+
+# Commit Message
+
+- 生成或撰写 commit message 时，**必须使用简体中文**
+- 可用 Conventional Commits 前缀（如 `feat` / `fix`），说明部分用中文
+
+示例：
+
+```text
+feat(apps/admin): 规范 things 数据解析，设备下拉展示中文名称
+fix(apps/admin): 修复告警等级颜色提交为小写的问题
+```

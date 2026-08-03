@@ -40,7 +40,9 @@ const CreateModal = ({
 
 	const initModal = async () => {
 		const thingsData = await getThings();
-		const options = utils.toThingOptions(thingsData?.things ?? thingsData ?? []);
+		const options = utils.toThingOptions(
+			utils.normalizeThingsList(thingsData),
+		);
 		setThingOptions(options);
 
 		if (editingRecord) {
@@ -172,9 +174,11 @@ const CreateModal = ({
 											rules={[{ required: true, message: "请选择设备" }]}
 										>
 											<Select
-												showSearch={{ optionFilterProp: "label" }}
+												showSearch
+												optionFilterProp="label"
 												placeholder="请选择设备"
 												options={thingOptions}
+												optionLabelProp="label"
 												onChange={(value) => {
 													loadPropertyOptions(value);
 													clearPropertyFields("conditions", field.name);
@@ -263,9 +267,11 @@ const CreateModal = ({
 										rules={[{ required: true, message: "请选择设备" }]}
 									>
 										<Select
-											showSearch={{ optionFilterProp: "label" }}
+											showSearch
+											optionFilterProp="label"
 											placeholder="请选择设备"
 											options={thingOptions}
+											optionLabelProp="label"
 											onChange={(value) => {
 												loadPropertyOptions(value);
 												clearPropertyFields("actions", field.name);
