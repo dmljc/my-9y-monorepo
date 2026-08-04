@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import homeBg from "@/assets/home/home-bg.webp";
 import iconLogout from "@/assets/home/logout.svg";
 import { useUserStore } from "@/stores/user";
+import { hasPermission } from "@/utils";
 import styles from "./index.module.css";
 import { NAV_ITEMS, splitTitle } from "./utils";
 
@@ -10,7 +11,9 @@ const Home = () => {
 	const navigate = useNavigate();
 	const { message } = App.useApp();
 	const logout = useUserStore((state) => state.logout);
+	useUserStore((state) => state.permissions);
 	const titleParts = splitTitle(import.meta.env.VITE_APP_TITLE);
+	const navItems = NAV_ITEMS.filter((item) => hasPermission(item.perm));
 
 	const handleNavClick = (path?: string) => {
 		if (path) {
@@ -83,7 +86,7 @@ const Home = () => {
 				</button>
 
 				<nav className={styles.navGrid} aria-label="功能入口">
-					{NAV_ITEMS.map((item) => (
+					{navItems.map((item) => (
 						<button
 							key={item.key}
 							type="button"

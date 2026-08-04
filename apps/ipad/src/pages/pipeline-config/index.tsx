@@ -8,7 +8,12 @@ import {
 	useMemo,
 	useState,
 } from "react";
+import { Navigate } from "react-router-dom";
+import Access from "@/components/Access";
+import { PERM_PIPELINE, PIPELINE_BUILDING_PERMS } from "@/constants/permission";
+import { usePermission } from "@/hooks/usePermission";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
+import { filterBuildingsByPermission } from "@/utils";
 import {
 	listBuildings,
 	listDevicePipelines,
@@ -44,6 +49,7 @@ import {
 
 const PipelineConfig = () => {
 	const { message } = App.useApp();
+	const canList = usePermission(PERM_PIPELINE.LIST);
 	const [buildings, setBuildings] = useState<BuildingTab[]>([]);
 	const [buildingKey, setBuildingKey] = useState("");
 	const [configType, setConfigType] = useState<PipelineConfigType>("device");
@@ -132,7 +138,10 @@ const PipelineConfig = () => {
 
 	const loadBuildings = async () => {
 		const buildingsData = await listBuildings();
-		const tabs = normalizeBuildingTabs(buildingsData);
+		const tabs = filterBuildingsByPermission(
+			normalizeBuildingTabs(buildingsData),
+			PIPELINE_BUILDING_PERMS,
+		);
 		setBuildings(tabs);
 		if (!tabs.length) {
 			setBuildingKey("");
@@ -151,8 +160,9 @@ const PipelineConfig = () => {
 	};
 
 	useEffect(() => {
+		if (!canList) return;
 		loadBuildings();
-	}, []);
+	}, [canList]);
 
 	const handleBuildingChange = (key: string) => {
 		setBuildingKey(key);
@@ -378,13 +388,15 @@ const PipelineConfig = () => {
 				key: "actions",
 				width: "10%",
 				render: (_, record) => (
-					<button
-						type="button"
-						className={styles.saveBtn}
-						onClick={() => handleSave(record)}
-					>
-						保存
-					</button>
+					<Access code={PERM_PIPELINE.SAVE_ROOM}>
+						<button
+							type="button"
+							className={styles.saveBtn}
+							onClick={() => handleSave(record)}
+						>
+							保存
+						</button>
+					</Access>
 				),
 			},
 		],
@@ -410,6 +422,7 @@ const PipelineConfig = () => {
 				title: "管道号（OUT）",
 				dataIndex: "pipeOut",
 				key: "pipeOut",
+				width: "22%",
 				render: (pipeOut: string, record) =>
 					renderPipeSelect(
 						pipeOut,
@@ -423,7 +436,7 @@ const PipelineConfig = () => {
 				dataIndex: "sampleRoom",
 				key: "sampleRoom",
 				ellipsis: true,
-				width: "10%",
+				width: "8%",
 				render: (sampleRoom: string) => sampleRoom || "—",
 			},
 			{
@@ -467,13 +480,15 @@ const PipelineConfig = () => {
 				key: "actions",
 				width: "10%",
 				render: (_, record) => (
-					<button
-						type="button"
-						className={styles.saveBtn}
-						onClick={() => handleSave(record)}
-					>
-						保存
-					</button>
+					<Access code={PERM_PIPELINE.SAVE_DEVICE}>
+						<button
+							type="button"
+							className={styles.saveBtn}
+							onClick={() => handleSave(record)}
+						>
+							保存
+						</button>
+					</Access>
 				),
 			},
 		],
@@ -490,6 +505,10 @@ const PipelineConfig = () => {
 		() => (configType === "room" ? roomColumns : deviceColumns),
 		[configType, deviceColumns, roomColumns],
 	);
+
+	if (!canList) {
+		return <Navigate to="/home" replace />;
+	}
 
 	return (
 		<div className={styles.pipelineConfig} data-page="pipeline-config">

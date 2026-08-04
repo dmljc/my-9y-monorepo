@@ -244,15 +244,15 @@
 
 /* 管道号（OUT）：下拉收窄，匀给右侧「管道号重复」文案区 */
 .pipeOutCell {
-	min-width: calc((200 + 8 + 90) / 1400 * 100cqw);
+	min-width: calc((240 + 8 + 90) / 1400 * 100cqw);
 }
 
 .pipeOutCell .pipeFieldSelect {
-	width: calc((200 - 50) / 1400 * 100cqw);
+	width: calc((200 - 30) / 1400 * 100cqw);
 }
 
 .pipeOutCell .pipeFieldError {
-	left: calc((200 - 50 + 8) / 1400 * 100cqw);
+	left: calc((200 - 30 + 8) / 1400 * 100cqw);
 }
 
 .flowRateInput {

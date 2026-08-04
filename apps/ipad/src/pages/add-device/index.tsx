@@ -1,7 +1,12 @@
 import { App, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
+import { Navigate } from "react-router-dom";
+import Access from "@/components/Access";
+import { LEDGER_BUILDING_PERMS, PERM_LEDGER } from "@/constants/permission";
+import { usePermission } from "@/hooks/usePermission";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
+import { filterBuildingsByPermission } from "@/utils";
 import {
 	create,
 	list,
@@ -26,6 +31,7 @@ import {
 
 const AddDevice = () => {
 	const { message, modal } = App.useApp();
+	const canList = usePermission(PERM_LEDGER.LIST);
 	const pageRef = useRef<HTMLDivElement>(null);
 	const [buildings, setBuildings] = useState<BuildingTab[]>([]);
 	const [buildingKey, setBuildingKey] = useState("");
@@ -59,7 +65,10 @@ const AddDevice = () => {
 
 	const loadBuildings = async () => {
 		const buildingsData = await listBuildings();
-		const tabs = normalizeBuildingTabs(buildingsData);
+		const tabs = filterBuildingsByPermission(
+			normalizeBuildingTabs(buildingsData),
+			LEDGER_BUILDING_PERMS,
+		);
 		setBuildings(tabs);
 		if (!tabs.length) {
 			setBuildingKey("");
@@ -76,8 +85,9 @@ const AddDevice = () => {
 	};
 
 	useEffect(() => {
+		if (!canList) return;
 		void loadBuildings();
-	}, []);
+	}, [canList]);
 
 	const handleBuildingChange = (key: string) => {
 		setBuildingKey(key);
@@ -131,7 +141,6 @@ const AddDevice = () => {
 			content: closing
 				? `确定将设备「${record.deviceCode}」关闭吗？关闭后可编辑或删除。`
 				: `确定将设备「${record.deviceCode}」开启为进行中吗？`,
-			okText: "确定",
 			onOk: async () => {
 				await toggleStatus(record.id);
 				message.success(closing ? "已关闭" : "已开启");
@@ -205,44 +214,56 @@ const AddDevice = () => {
 				if (record.status === "running") {
 					return (
 						<div className={styles.actions}>
-							<button
-								type="button"
-								className={styles.actionBtn}
-								onClick={() => handleToggleStatus(record)}
-							>
-								关闭
-							</button>
+							<Access code={PERM_LEDGER.DISABLE}>
+								<button
+									type="button"
+									className={styles.actionBtn}
+									onClick={() => handleToggleStatus(record)}
+								>
+									关闭
+								</button>
+							</Access>
 						</div>
 					);
 				}
 				return (
 					<div className={styles.actions}>
-						<button
-							type="button"
-							className={styles.actionBtn}
-							onClick={() => handleEdit(record)}
-						>
-							编辑
-						</button>
-						<button
-							type="button"
-							className={styles.actionBtn}
-							onClick={() => handleToggleStatus(record)}
-						>
-							开启
-						</button>
-						<button
-							type="button"
-							className={styles.actionBtn}
-							onClick={() => handleDelete(record)}
-						>
-							删除
-						</button>
+						<Access code={PERM_LEDGER.EDIT}>
+							<button
+								type="button"
+								className={styles.actionBtn}
+								onClick={() => handleEdit(record)}
+							>
+								编辑
+							</button>
+						</Access>
+						<Access code={PERM_LEDGER.ENABLE}>
+							<button
+								type="button"
+								className={styles.actionBtn}
+								onClick={() => handleToggleStatus(record)}
+							>
+								开启
+							</button>
+						</Access>
+						<Access code={PERM_LEDGER.REMOVE}>
+							<button
+								type="button"
+								className={styles.actionBtn}
+								onClick={() => handleDelete(record)}
+							>
+								删除
+							</button>
+						</Access>
 					</div>
 				);
 			},
 		},
 	];
+
+	if (!canList) {
+		return <Navigate to="/home" replace />;
+	}
 
 	return (
 		<div className={styles.addDevice} data-page="add-device">
@@ -256,27 +277,29 @@ const AddDevice = () => {
 				<div className={styles.body}>
 					<div className={styles.panel}>
 						<div className={styles.toolbar}>
-							<button
-								type="button"
-								className={styles.addBtn}
-								onClick={handleAdd}
-							>
-								<svg
-									className={styles.addBtnPlus}
-									viewBox="0 0 24 24"
-									aria-hidden
+							<Access code={PERM_LEDGER.ADD}>
+								<button
+									type="button"
+									className={styles.addBtn}
+									onClick={handleAdd}
 								>
-									<title>添加设备</title>
-									<path
-										d="M12 5v14M5 12h14"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth="2.5"
-										strokeLinecap="round"
-									/>
-								</svg>
-								<span>添加设备</span>
-							</button>
+									<svg
+										className={styles.addBtnPlus}
+										viewBox="0 0 24 24"
+										aria-hidden
+									>
+										<title>新增设备</title>
+										<path
+											d="M12 5v14M5 12h14"
+											fill="none"
+											stroke="currentColor"
+											strokeWidth="2.5"
+											strokeLinecap="round"
+										/>
+									</svg>
+									<span>新增设备</span>
+								</button>
+							</Access>
 						</div>
 						<Table
 							className={styles.table}

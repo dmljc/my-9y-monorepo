@@ -1,6 +1,11 @@
 import cardAddDevice from "@/assets/home/add-device.webp";
 import cardDeviceControl from "@/assets/home/device-control.webp";
 import cardPipelineConfig from "@/assets/home/pipeline-config.webp";
+import {
+	PERM_DEVICE_CONTROL,
+	PERM_LEDGER,
+	PERM_PIPELINE,
+} from "@/constants/permission";
 
 /**
  * 首页标题中需高亮的固定文案（对齐设计稿）。
@@ -49,6 +54,8 @@ export interface NavItem {
 	card: string;
 	/** 已实现功能的路由；未实现时留空。 */
 	path?: string;
+	/** 入口可见所需的页面 list 权限码。 */
+	perm: string;
 }
 
 /**
@@ -60,17 +67,20 @@ export const NAV_ITEMS: NavItem[] = [
 		label: "设备控制",
 		card: cardDeviceControl,
 		path: "/device-control",
+		perm: PERM_DEVICE_CONTROL.LIST,
 	},
 	{
 		key: "pipeline",
 		label: "管道配置",
 		card: cardPipelineConfig,
 		path: "/pipeline-config",
+		perm: PERM_PIPELINE.LIST,
 	},
 	{
 		key: "add-device",
 		label: "添加设备",
 		card: cardAddDevice,
 		path: "/add-device",
+		perm: PERM_LEDGER.LIST,
 	},
 ];

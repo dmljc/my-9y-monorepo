@@ -1,10 +1,17 @@
 import { ClearOutlined } from "@ant-design/icons";
 import { App, Empty, Switch } from "antd";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { Navigate } from "react-router-dom";
 import activeBg from "@/assets/device-control/active-bg.webp";
 import unActiveBg from "@/assets/device-control/un-active-bg.webp";
+import Access from "@/components/Access";
+import {
+	DEVICE_CONTROL_BUILDING_PERMS,
+	PERM_DEVICE_CONTROL,
+} from "@/constants/permission";
+import { usePermission } from "@/hooks/usePermission";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
-import { subscribeTabletWs } from "@/utils";
+import { filterBuildingsByPermission, subscribeTabletWs } from "@/utils";
 import {
 	listBuildings,
 	listRooms,
@@ -33,6 +40,10 @@ const THUMB_BG = {
 
 const DeviceControl = () => {
 	const { message } = App.useApp();
+	const canList = usePermission(PERM_DEVICE_CONTROL.LIST);
+	const canSwitchBuilding = usePermission(
+		PERM_DEVICE_CONTROL.SWITCH_BUILDING,
+	);
 	const [buildings, setBuildings] = useState<BuildingTab[]>([]);
 	const [buildingKey, setBuildingKey] = useState("");
 	const [devices, setDevices] = useState<DeviceItem[]>([]);
@@ -131,7 +142,10 @@ const DeviceControl = () => {
 
 	const loadBuildings = async () => {
 		const buildingsData = await listBuildings();
-		const tabs = normalizeBuildingTabs(buildingsData);
+		const tabs = filterBuildingsByPermission(
+			normalizeBuildingTabs(buildingsData),
+			DEVICE_CONTROL_BUILDING_PERMS,
+		);
 		setBuildings(tabs);
 		if (!tabs.length) {
 			setBuildingKey("");
@@ -148,8 +162,9 @@ const DeviceControl = () => {
 	};
 
 	useEffect(() => {
+		if (!canList) return;
 		void loadBuildings();
-	}, []);
+	}, [canList]);
 
 	/** 订阅项目级平板 WebSocket，消费 runtimeParams 更新当前页指标。 */
 	useEffect(() => {
@@ -265,6 +280,10 @@ const DeviceControl = () => {
 		}
 	};
 
+	if (!canList) {
+		return <Navigate to="/home" replace />;
+	}
+
 	return (
 		<div
 			className={styles.deviceControl}
@@ -277,9 +296,13 @@ const DeviceControl = () => {
 					buildings={buildings}
 					onBuildingChange={handleBuildingChange}
 					masterOn={masterOn}
-					onMasterChange={(checked) => {
-						void handleMasterChange(checked);
-					}}
+					onMasterChange={
+						canSwitchBuilding
+							? (checked) => {
+									void handleMasterChange(checked);
+								}
+							: undefined
+					}
 				/>
 
 				<div className={styles.body}>
@@ -342,109 +365,125 @@ const DeviceControl = () => {
 											{selected.roomLabel}
 										</span>
 									</div>
-									<div className={styles.detailSwitch}>
-										<span className={styles.switchLabel}>
-											开关
-										</span>
-										<Switch
-											checked={selected.enabled}
-											onChange={(checked) => {
-												void handleDeviceSwitch(
-													checked,
-												);
-											}}
-											disabled={actionLoading}
-											className={styles.controlSwitch}
-											aria-label="开关"
-										/>
-									</div>
+									<Access
+										code={PERM_DEVICE_CONTROL.SWITCH_DEVICE}
+									>
+										<div className={styles.detailSwitch}>
+											<span
+												className={styles.switchLabel}
+											>
+												开关
+											</span>
+											<Switch
+												checked={selected.enabled}
+												onChange={(checked) => {
+													void handleDeviceSwitch(
+														checked,
+													);
+												}}
+												disabled={actionLoading}
+												className={styles.controlSwitch}
+												aria-label="开关"
+											/>
+										</div>
+									</Access>
 								</div>
 
 								<div className={styles.detailBody}>
-									{selected.cleaning ? (
-										<button
-											type="button"
-											className={styles.cleaningStatus}
-											onClick={() => {
-												void handleClean();
-											}}
-											disabled={actionLoading}
-											aria-label="取消设备清洗"
-										>
-											<svg
-												className={styles.cleaningIcon}
-												xmlns="http://www.w3.org/2000/svg"
-												viewBox="0 0 18 18"
-												fill="none"
-												aria-hidden
+									<Access code={PERM_DEVICE_CONTROL.CLEAN}>
+										{selected.cleaning ? (
+											<button
+												type="button"
+												className={
+													styles.cleaningStatus
+												}
+												onClick={() => {
+													void handleClean();
+												}}
+												disabled={actionLoading}
+												aria-label="取消设备清洗"
 											>
-												<title>清洗中</title>
-												<g fill="#0099AF">
-													<circle
-														cx="9"
-														cy="2.2"
-														r="1.7"
-													/>
-													<circle
-														cx="13.8"
-														cy="4.2"
-														r="1.55"
-													/>
-													<circle
-														cx="15.8"
-														cy="9"
-														r="1.35"
-													/>
-													<circle
-														cx="13.8"
-														cy="13.8"
-														r="1.15"
-													/>
-													<circle
-														cx="9"
-														cy="15.8"
-														r="1"
-													/>
-													<circle
-														cx="4.2"
-														cy="13.8"
-														r="0.85"
-													/>
-													<circle
-														cx="2.2"
-														cy="9"
-														r="0.7"
-													/>
-													<circle
-														cx="4.2"
-														cy="4.2"
-														r="0.55"
-													/>
-												</g>
-											</svg>
-											<span
-												className={styles.cleaningText}
+												<svg
+													className={
+														styles.cleaningIcon
+													}
+													xmlns="http://www.w3.org/2000/svg"
+													viewBox="0 0 18 18"
+													fill="none"
+													aria-hidden
+												>
+													<title>清洗中</title>
+													<g fill="#0099AF">
+														<circle
+															cx="9"
+															cy="2.2"
+															r="1.7"
+														/>
+														<circle
+															cx="13.8"
+															cy="4.2"
+															r="1.55"
+														/>
+														<circle
+															cx="15.8"
+															cy="9"
+															r="1.35"
+														/>
+														<circle
+															cx="13.8"
+															cy="13.8"
+															r="1.15"
+														/>
+														<circle
+															cx="9"
+															cy="15.8"
+															r="1"
+														/>
+														<circle
+															cx="4.2"
+															cy="13.8"
+															r="0.85"
+														/>
+														<circle
+															cx="2.2"
+															cy="9"
+															r="0.7"
+														/>
+														<circle
+															cx="4.2"
+															cy="4.2"
+															r="0.55"
+														/>
+													</g>
+												</svg>
+												<span
+													className={
+														styles.cleaningText
+													}
+												>
+													清洗中
+												</span>
+											</button>
+										) : (
+											<button
+												type="button"
+												className={styles.cleanBtn}
+												onClick={() => {
+													void handleClean();
+												}}
+												disabled={actionLoading}
 											>
-												清洗中
-											</span>
-										</button>
-									) : (
-										<button
-											type="button"
-											className={styles.cleanBtn}
-											onClick={() => {
-												void handleClean();
-											}}
-											disabled={actionLoading}
-										>
-											<ClearOutlined
-												className={styles.cleanIcon}
-											/>
-											<span className={styles.cleanText}>
-												设备清洗
-											</span>
-										</button>
-									)}
+												<ClearOutlined
+													className={styles.cleanIcon}
+												/>
+												<span
+													className={styles.cleanText}
+												>
+													设备清洗
+												</span>
+											</button>
+										)}
+									</Access>
 
 									<div className={styles.metricRow}>
 										{isRealtimePending
