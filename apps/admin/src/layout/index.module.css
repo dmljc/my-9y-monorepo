@@ -67,8 +67,12 @@
 
 .content {
 	overflow: auto;
-	padding: 8px 24px 24px;
+	padding: 24px;
 	background: #f0f4f8;
+}
+
+.contentWithBreadcrumb {
+	padding: 8px 24px 24px;
 }
 
 .breadcrumb {

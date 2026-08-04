@@ -14,6 +14,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AppBreadcrumb from "./AppBreadcrumb";
 import styles from "./index.module.css";
 import {
+	buildBreadcrumbItems,
 	getDefaultPathForTop,
 	getTopMenuByPath,
 	type TopMenuKey,
@@ -38,6 +39,8 @@ const AppLayout = () => {
 	const navigate = useNavigate();
 	const menus = useMenuStore((state) => state.menus);
 	const activeTop = getTopMenuByPath(location.pathname, menus);
+	const showBreadcrumb =
+		buildBreadcrumbItems(location.pathname, menus).length > 0;
 
 	const topMenuItems = useMemo<MenuProps["items"]>(
 		() =>
@@ -90,7 +93,9 @@ const AppLayout = () => {
 					<UserDropdown />
 				</Flex>
 			</Header>
-			<Content className={styles.content}>
+			<Content
+				className={`${styles.content}${showBreadcrumb ? ` ${styles.contentWithBreadcrumb}` : ""}`}
+			>
 				<AppBreadcrumb />
 				<Outlet />
 			</Content>

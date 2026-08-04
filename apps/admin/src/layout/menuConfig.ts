@@ -351,19 +351,18 @@ export function buildBreadcrumbItems(
 	const sideMenu = getActiveSideMenu(topKey, normalizedPath, menus);
 	const extraLabel = EXTRA_BREADCRUMB_LABELS[normalizedPath];
 
-	if (sideMenu || extraLabel) {
-		return [
-			{
-				title: topMenu.label,
-				path: getDefaultPathForTop(topKey, menus),
-			},
-			{
-				title: sideMenu?.label ?? extraLabel,
-			},
-		];
-	}
+	// 仅有顶栏一级、无侧栏/二级时不展示面包屑，避免与顶栏选中项重复
+	if (!sideMenu && !extraLabel) return [];
 
-	return [{ title: topMenu.label }];
+	return [
+		{
+			title: topMenu.label,
+			path: getDefaultPathForTop(topKey, menus),
+		},
+		{
+			title: sideMenu?.label ?? extraLabel,
+		},
+	];
 }
 
 /** 根据路由生成浏览器标签页标题 */
