@@ -71,7 +71,7 @@ const Home = () => {
 					type="button"
 					className={styles.logoutBtn}
 					onClick={() => {
-						void handleLogout();
+						handleLogout();
 					}}
 					aria-label="退出登录"
 				>

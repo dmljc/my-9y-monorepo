@@ -48,7 +48,7 @@ const DeviceControl = () => {
 	const [buildingKey, setBuildingKey] = useState("");
 	const [devices, setDevices] = useState<DeviceItem[]>([]);
 	const [masterOn, setMasterOn] = useState(true);
-	const [actionLoading, setActionLoading] = useState(false);
+	const [loading, setLoading] = useState(false);
 	/** 已完成首轮实时数据请求的设备，避免切换时短暂渲染默认指标。 */
 	const [realtimeLoadedIds, setRealtimeLoadedIds] = useState<
 		Record<number, true>
@@ -163,7 +163,7 @@ const DeviceControl = () => {
 
 	useEffect(() => {
 		if (!canList) return;
-		void loadBuildings();
+		loadBuildings();
 	}, [canList]);
 
 	/** 订阅项目级平板 WebSocket，消费 runtimeParams 更新当前页指标。 */
@@ -210,7 +210,7 @@ const DeviceControl = () => {
 	const handleBuildingChange = (key: string) => {
 		setBuildingKey(key);
 		const tab = buildings.find((item) => item.key === key);
-		if (tab) void loadDevices(tab.buildingId, key);
+		if (tab) loadDevices(tab.buildingId, key);
 	};
 
 	const handleSelectDevice = (id: number) => {
@@ -226,7 +226,7 @@ const DeviceControl = () => {
 			return;
 		}
 		const name = currentBuilding.label;
-		setActionLoading(true);
+		setLoading(true);
 		try {
 			await switchBuilding(
 				currentBuilding.buildingId,
@@ -244,13 +244,13 @@ const DeviceControl = () => {
 			);
 			await loadDevices(currentBuilding.buildingId, buildingKey, checked);
 		} finally {
-			setActionLoading(false);
+			setLoading(false);
 		}
 	};
 
 	const handleDeviceSwitch = async (checked: boolean) => {
 		if (!selected || !currentBuilding) return;
-		setActionLoading(true);
+		setLoading(true);
 		try {
 			await switchDevice(selected.id, checked ? "on" : "off");
 			const nextDevices = devices.map((item) =>
@@ -261,14 +261,14 @@ const DeviceControl = () => {
 			message.success(checked ? "设备开关已开启" : "设备开关已关闭");
 			await loadDevices(currentBuilding.buildingId, buildingKey);
 		} finally {
-			setActionLoading(false);
+			setLoading(false);
 		}
 	};
 
 	const handleClean = async () => {
 		if (!selected || !currentBuilding) return;
 		const wasCleaning = selected.cleaning;
-		setActionLoading(true);
+		setLoading(true);
 		try {
 			await toggleClean(selected.id);
 			await loadDevices(currentBuilding.buildingId, buildingKey);
@@ -276,7 +276,7 @@ const DeviceControl = () => {
 				wasCleaning ? "已取消设备清洗" : "已下发设备清洗指令",
 			);
 		} finally {
-			setActionLoading(false);
+			setLoading(false);
 		}
 	};
 
@@ -299,7 +299,7 @@ const DeviceControl = () => {
 					onMasterChange={
 						canSwitchBuilding
 							? (checked) => {
-									void handleMasterChange(checked);
+									handleMasterChange(checked);
 								}
 							: undefined
 					}
@@ -377,11 +377,9 @@ const DeviceControl = () => {
 											<Switch
 												checked={selected.enabled}
 												onChange={(checked) => {
-													void handleDeviceSwitch(
-														checked,
-													);
+													handleDeviceSwitch(checked);
 												}}
-												disabled={actionLoading}
+												disabled={loading}
 												className={styles.controlSwitch}
 												aria-label="开关"
 											/>
@@ -398,9 +396,9 @@ const DeviceControl = () => {
 													styles.cleaningStatus
 												}
 												onClick={() => {
-													void handleClean();
+													handleClean();
 												}}
-												disabled={actionLoading}
+												disabled={loading}
 												aria-label="取消设备清洗"
 											>
 												<svg
@@ -469,9 +467,9 @@ const DeviceControl = () => {
 												type="button"
 												className={styles.cleanBtn}
 												onClick={() => {
-													void handleClean();
+													handleClean();
 												}}
-												disabled={actionLoading}
+												disabled={loading}
 											>
 												<ClearOutlined
 													className={styles.cleanIcon}

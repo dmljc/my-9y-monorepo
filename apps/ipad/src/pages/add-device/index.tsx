@@ -86,14 +86,14 @@ const AddDevice = () => {
 
 	useEffect(() => {
 		if (!canList) return;
-		void loadBuildings();
+		loadBuildings();
 	}, [canList]);
 
 	const handleBuildingChange = (key: string) => {
 		setBuildingKey(key);
 		setPageNum(1);
 		const tab = buildings.find((item) => item.key === key);
-		if (tab) void loadDevices(tab.buildingId);
+		if (tab) loadDevices(tab.buildingId);
 	};
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {

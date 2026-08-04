@@ -114,7 +114,7 @@
 }
 
 .logoutBtn:focus-visible {
-	outline: 2px solid #1677ff;
+	outline: calc(2 / 1400 * 100cqw) solid #1677ff;
 	outline-offset: calc(4 / 1400 * 100cqw);
 	border-radius: calc(4 / 1400 * 100cqw);
 }
@@ -173,8 +173,8 @@
 }
 
 .navCard:focus-visible {
-	outline: 2px solid #1677ff;
-	outline-offset: 2px;
+	outline: calc(2 / 1400 * 100cqw) solid #1677ff;
+	outline-offset: calc(2 / 1400 * 100cqw);
 }
 
 .navCard:active {

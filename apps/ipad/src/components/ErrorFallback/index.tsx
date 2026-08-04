@@ -1,5 +1,6 @@
 import { Button, Flex, Result, type ResultProps } from "antd";
 import { useNavigate } from "react-router-dom";
+import styles from "./index.module.css";
 
 export interface ErrorFallbackProps {
 	/** Ant Design Result 状态图标，如 403 / 404 / 500 / error */
@@ -25,27 +26,29 @@ const ErrorFallback = ({
 	const navigate = useNavigate();
 
 	return (
-		<Flex align="center" justify="center" style={{ minHeight: "100vh" }}>
-			<Result
-				status={status}
-				title={title}
-				subTitle={subTitle}
-				extra={
-					<Flex gap="small" justify="center">
-						{onRetry ? (
-							<Button type="primary" onClick={onRetry}>
-								重新加载
-							</Button>
-						) : null}
-						{showHome ? (
-							<Button onClick={() => navigate("/home")}>
-								返回首页
-							</Button>
-						) : null}
-					</Flex>
-				}
-			/>
-		</Flex>
+		<div className={styles.errorFallback}>
+			<div className={styles.stage}>
+				<Result
+					status={status}
+					title={title}
+					subTitle={subTitle}
+					extra={
+						<Flex gap="small" justify="center">
+							{onRetry ? (
+								<Button type="primary" onClick={onRetry}>
+									重新加载
+								</Button>
+							) : null}
+							{showHome ? (
+								<Button onClick={() => navigate("/home")}>
+									返回首页
+								</Button>
+							) : null}
+						</Flex>
+					}
+				/>
+			</div>
+		</div>
 	);
 };
 
