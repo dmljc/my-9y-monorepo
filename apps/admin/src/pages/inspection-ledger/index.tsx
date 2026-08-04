@@ -30,6 +30,8 @@ import { buildDeviceTableColumns } from "./tableColumns";
 import {
 	buildStatCards,
 	normalizeBuildingOptions,
+	normalizeCycleUnit,
+	normalizeDeviceType,
 	normalizeStats,
 	toApiDateTime,
 } from "./utils";
@@ -163,16 +165,16 @@ const InspectionLedger = () => {
 		const payload: DeviceLedger = {
 			deviceCode: values.deviceCode.trim(),
 			deviceName: values.deviceName.trim(),
-			deviceType: values.deviceType,
+			deviceType: normalizeDeviceType(values.deviceType),
 			manufacturer: values.manufacturer.trim(),
 			building: values.building,
-			buildingId: values.buildingId
-				? Number(values.buildingId)
-				: undefined,
 			room: values.room,
 			cycleValue: values.cycleValue,
-			cycleUnit: values.cycleUnit,
+			cycleUnit: normalizeCycleUnit(values.cycleUnit),
 			lastInspection: toApiDateTime(values.lastInspection),
+			...(values.buildingId
+				? { buildingId: Number(values.buildingId) }
+				: {}),
 		};
 		if (editingRecord?.id !== undefined) {
 			await update({ ...payload, id: editingRecord.id });

@@ -4,17 +4,21 @@ import dayjs from "dayjs";
 import Access from "@/components/Access";
 import { PERM_INSPECTION_LEDGER } from "@/constants/permission";
 import type { DeviceLedger } from "./interface";
-import { DATE_FORMAT, TYPE_OPTIONS } from "./utils";
+import { DATE_FORMAT, normalizeCycleUnit, normalizeDeviceType } from "./utils";
 
-const TYPE_LABEL = Object.fromEntries(
-	TYPE_OPTIONS.map(({ label, value }) => [value, label]),
-);
-
+/** 周期单位展示文案（兼容历史英文值）。 */
 const CYCLE_UNIT_LABEL: Record<string, string> = {
 	day: "天",
+	week: "周",
 	month: "月",
+	year: "年",
+	天: "天",
+	周: "周",
+	月: "月",
+	年: "年",
 };
 
+/** 点检状态展示文案（兼容编码与英文值）。 */
 const STATUS_LABEL: Record<string, string> = {
 	normal: "正常",
 	expiring_soon: "即将到期",
@@ -24,6 +28,7 @@ const STATUS_LABEL: Record<string, string> = {
 	"2": "逾期未检",
 };
 
+/** 点检状态 Tag 颜色。 */
 const STATUS_COLOR: Record<string, string> = {
 	normal: "success",
 	expiring_soon: "warning",
@@ -33,6 +38,14 @@ const STATUS_COLOR: Record<string, string> = {
 	"2": "error",
 };
 
+/**
+ * 格式化点检周期展示文案。
+ *
+ * @param {number | undefined} - 周期数值。
+ * @param {string | undefined} - 周期单位。
+ * @param {string | undefined} - 后端已拼好的周期文案。
+ * @returns {string} - 展示文案；无法拼装时返回空串。
+ */
 const formatCycleText = (
 	cycleValue?: number,
 	cycleUnit?: string,
@@ -40,16 +53,26 @@ const formatCycleText = (
 ): string => {
 	if (cycleText?.trim()) return cycleText;
 	if (!cycleValue || !cycleUnit) return "";
-	const unitLabel = CYCLE_UNIT_LABEL[cycleUnit] ?? cycleUnit;
+	const unitLabel =
+		CYCLE_UNIT_LABEL[cycleUnit] ??
+		normalizeCycleUnit(cycleUnit) ??
+		cycleUnit;
 	return `每${cycleValue}${unitLabel}`;
 };
 
+/**
+ * 格式化点检日期为列表展示格式。
+ *
+ * @param {string | undefined} - 原始日期字符串。
+ * @returns {string} - 格式化后的日期；无效时回退原值。
+ */
 const formatInspectionDate = (value?: string): string => {
 	if (!value) return "";
 	const parsed = dayjs(value);
 	return parsed.isValid() ? parsed.format(DATE_FORMAT) : value;
 };
 
+/** 构建点检台账表格列的入参。 */
 export interface DeviceTableColumnOptions {
 	pageNum: number;
 	pageSize: number;
@@ -62,6 +85,9 @@ export interface DeviceTableColumnOptions {
 
 /**
  * 构建点检台账表格列。
+ *
+ * @param {DeviceTableColumnOptions} - 分页、权限操作与样式配置。
+ * @returns {ColumnsType<DeviceLedger>} - Table columns。
  */
 export const buildDeviceTableColumns = ({
 	pageNum,
@@ -98,7 +124,7 @@ export const buildDeviceTableColumns = ({
 		dataIndex: "deviceType",
 		key: "deviceType",
 		ellipsis: true,
-		render: (type: string) => TYPE_LABEL[type] ?? type,
+		render: (type: string) => normalizeDeviceType(type) || type,
 	},
 	{
 		title: "厂家",

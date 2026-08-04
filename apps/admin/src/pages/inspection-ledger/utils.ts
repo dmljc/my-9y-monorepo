@@ -19,32 +19,108 @@ export const DEFAULT_FORM_VALUES: Pick<
 	"cycleValue" | "cycleUnit" | "lastInspection"
 > = {
 	cycleValue: 7,
-	cycleUnit: "day",
+	cycleUnit: "天",
 	lastInspection: dayjs().format(DATE_FORMAT),
 };
 
 /** 筛选区「全部」选项。 */
 export const ALL_BUILDING_OPTION = { label: "全部", value: "" } as const;
 
+/** 设备类型选项（value 与接口示例一致，传中文）。 */
 export const TYPE_OPTIONS = [
-	{ label: "泵", value: "pump" },
-	{ label: "压缩机", value: "compressor" },
-	{ label: "反应釜", value: "reactor" },
-	{ label: "传感器", value: "sensor" },
-	{ label: "阀门", value: "valve" },
-	{ label: "风机", value: "fan" },
-	{ label: "控制器", value: "controller" },
-	{ label: "电机", value: "motor" },
-	{ label: "换热器", value: "heat_exchanger" },
-	{ label: "干燥机", value: "dryer" },
-	{ label: "过滤器", value: "filter" },
-	{ label: "冷却塔", value: "cooling_tower" },
+	{ label: "泵", value: "泵" },
+	{ label: "压缩机", value: "压缩机" },
+	{ label: "反应釜", value: "反应釜" },
+	{ label: "传感器", value: "传感器" },
+	{ label: "阀门", value: "阀门" },
+	{ label: "风机", value: "风机" },
+	{ label: "控制器", value: "控制器" },
+	{ label: "电机", value: "电机" },
+	{ label: "换热器", value: "换热器" },
+	{ label: "干燥机", value: "干燥机" },
+	{ label: "过滤器", value: "过滤器" },
+	{ label: "冷却塔", value: "冷却塔" },
 ];
 
+/** 周期单位选项：天/周/月。 */
 export const CYCLE_UNIT_OPTIONS = [
-	{ label: "天", value: "day" },
-	{ label: "月", value: "month" },
+	{ label: "天", value: "天" },
+	{ label: "周", value: "周" },
+	{ label: "月", value: "月" },
 ];
+
+/** 历史英文周期单位到中文值的映射。 */
+const CYCLE_UNIT_ALIASES: Record<string, string> = {
+	day: "天",
+	week: "周",
+	month: "月",
+	year: "年",
+};
+
+/** 历史英文设备类型到中文值的映射。 */
+const DEVICE_TYPE_ALIASES: Record<string, string> = {
+	pump: "泵",
+	compressor: "压缩机",
+	reactor: "反应釜",
+	sensor: "传感器",
+	valve: "阀门",
+	fan: "风机",
+	controller: "控制器",
+	motor: "电机",
+	heat_exchanger: "换热器",
+	dryer: "干燥机",
+	filter: "过滤器",
+	cooling_tower: "冷却塔",
+};
+
+/**
+ * 将周期单位规范为中文值。
+ *
+ * @param {string | undefined} - 表单或列表中的周期单位。
+ * @returns {string} - 天/周/月；无法识别时原样返回。
+ */
+export function normalizeCycleUnit(unit?: string): string {
+	if (!unit) return "";
+	return CYCLE_UNIT_ALIASES[unit] ?? unit;
+}
+
+/**
+ * 将设备类型规范为接口中文值。
+ *
+ * @param {string | undefined} - 表单或列表中的设备类型。
+ * @returns {string} - 中文类型名；无法识别时原样返回。
+ */
+export function normalizeDeviceType(type?: string): string {
+	if (!type) return "";
+	return DEVICE_TYPE_ALIASES[type] ?? type;
+}
+
+/**
+ * 计算下次点检日期展示值。
+ *
+ * @param {string | undefined} - 上次点检日期。
+ * @param {number | undefined} - 周期数值。
+ * @param {string | undefined} - 周期单位（天/周/月或历史值）。
+ * @returns {string} - YYYY-MM-DD；条件不足时返回空串。
+ */
+export function calcNextInspectionDate(
+	lastInspection?: string,
+	cycleValue?: number,
+	cycleUnit?: string,
+): string {
+	if (!lastInspection || !cycleValue || !cycleUnit) return "";
+	const unit = normalizeCycleUnit(cycleUnit);
+	const amount = Number(cycleValue);
+	if (!unit || !Number.isFinite(amount) || amount < 1) return "";
+
+	const base = dayjs(lastInspection);
+	if (!base.isValid()) return "";
+
+	if (unit === "周") return base.add(amount, "week").format(DATE_FORMAT);
+	if (unit === "月") return base.add(amount, "month").format(DATE_FORMAT);
+	if (unit === "年") return base.add(amount, "year").format(DATE_FORMAT);
+	return base.add(amount, "day").format(DATE_FORMAT);
+}
 
 /**
  * 将统计接口响应规范为页面使用的结构。

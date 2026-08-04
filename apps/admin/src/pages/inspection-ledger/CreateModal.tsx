@@ -14,12 +14,15 @@ import { buildings as fetchBuildings, rooms as fetchRooms } from "./api";
 import type { DeviceFormValues, DeviceLedger } from "./interface";
 import {
 	CYCLE_UNIT_OPTIONS,
+	calcNextInspectionDate,
 	DATE_FORMAT,
 	DEFAULT_FORM_VALUES,
 	MAX_LENGTH_12,
 	MAX_LENGTH_20,
 	normalizeBuildingOptions,
+	normalizeCycleUnit,
 	normalizeDateValue,
+	normalizeDeviceType,
 	normalizeRoomOptions,
 	TYPE_OPTIONS,
 } from "./utils";
@@ -58,13 +61,11 @@ const CreateModal = ({
 	const cycleUnit = Form.useWatch("cycleUnit", form);
 	const lastInspection = Form.useWatch("lastInspection", form);
 
-	let nextInspectionDate = "";
-	if (lastInspection && cycleValue && cycleUnit) {
-		const unit = cycleUnit === "month" ? "month" : "day";
-		nextInspectionDate = dayjs(lastInspection)
-			.add(cycleValue, unit)
-			.format(DATE_FORMAT);
-	}
+	const nextInspectionDate = calcNextInspectionDate(
+		lastInspection,
+		cycleValue,
+		cycleUnit,
+	);
 
 	useEffect(() => {
 		if (!open) return;
@@ -76,6 +77,8 @@ const CreateModal = ({
 					editingRecord.buildingId !== undefined
 						? String(editingRecord.buildingId)
 						: undefined,
+				deviceType: normalizeDeviceType(editingRecord.deviceType),
+				cycleUnit: normalizeCycleUnit(editingRecord.cycleUnit),
 				lastInspection: normalizeDateValue(
 					editingRecord.lastInspection,
 				),
