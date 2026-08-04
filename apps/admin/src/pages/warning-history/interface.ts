@@ -19,5 +19,6 @@ export interface WarningHistoryRecord {
  */
 export interface WarningHistoryListQuery {
 	thingId: string;
+	propertyId: string;
 	alarmTime: string;
 }

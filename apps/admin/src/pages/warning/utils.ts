@@ -30,6 +30,7 @@ export interface WarningItem {
 	time: string;
 	status: WarningStatus;
 	thingId?: string;
+	propertyId?: string;
 }
 
 /** 今日顶部统计数据 */

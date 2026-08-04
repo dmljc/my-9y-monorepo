@@ -38,6 +38,7 @@ interface IiotAlarm {
 	alarmTime?: string;
 	status?: string;
 	thingId?: string;
+	propertyId?: string;
 }
 
 /** 将筛选字段与分页参数组装为接口查询参数 */
@@ -130,6 +131,7 @@ function toWarningItem(alarm: IiotAlarm): WarningItem {
 		time: alarm.alarmTime ?? "",
 		status: toWarningStatus(alarm.status),
 		thingId: alarm.thingId,
+		propertyId: alarm.propertyId,
 	};
 }
 

@@ -22,6 +22,7 @@ const WarningHistory = () => {
 	const loadData = async (p: number, ps: number) => {
 		const query: WarningHistoryListQuery = {
 			thingId: searchParams.get("thingId") ?? "",
+			propertyId: `/${searchParams.get("propertyId") ?? ""}`,
 			alarmTime: alarmTime ?? "",
 		};
 
@@ -118,6 +119,7 @@ const WarningHistory = () => {
 	return (
 		<div className={styles.warningHistory}>
 			<Table
+				size="small"
 				columns={columns}
 				dataSource={dataSource}
 				rowKey="id"

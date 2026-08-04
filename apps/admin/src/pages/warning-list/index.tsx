@@ -171,9 +171,14 @@ const WarningList = () => {
 			message.warning("物实例ID为空，无法查询历史数据");
 			return;
 		}
+		if (!record.propertyId) {
+			message.warning("点位ID为空，无法查询历史数据");
+			return;
+		}
 		const searchParams = new URLSearchParams({
 			alarmTime: warningTime.format("YYYY-MM-DD HH:mm:ss"),
 			thingId: record.thingId,
+			propertyId: record.propertyId,
 		});
 		navigate(`/warning/history?${searchParams.toString()}`);
 	};
