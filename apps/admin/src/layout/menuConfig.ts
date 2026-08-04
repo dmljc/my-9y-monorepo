@@ -313,11 +313,18 @@ const ROUTE_TITLES: Record<string, string> = {
 };
 
 /**
- * 无侧栏菜单项、但需出现在面包屑第二级的页面文案。
+ * 无侧栏菜单项、但需出现在面包屑中的详情/子页面。
+ * parentPath 指向来源侧栏页时，面包屑为「顶栏 / 侧栏 / 本页」三层。
  */
-const EXTRA_BREADCRUMB_LABELS: Record<string, string> = {
-	"/warning/history": "告警历史",
-	"/model-data/history": "历史数据",
+const EXTRA_BREADCRUMB_PAGES: Record<
+	string,
+	{ label: string; parentPath?: string }
+> = {
+	"/warning/history": {
+		label: "前后15分钟数据",
+		parentPath: "/warning/list",
+	},
+	"/model-data/history": { label: "历史数据", parentPath: "/model-data" },
 };
 
 /**
@@ -349,20 +356,35 @@ export function buildBreadcrumbItems(
 	if (!topMenu) return [];
 
 	const sideMenu = getActiveSideMenu(topKey, normalizedPath, menus);
-	const extraLabel = EXTRA_BREADCRUMB_LABELS[normalizedPath];
+	const extraPage = EXTRA_BREADCRUMB_PAGES[normalizedPath];
 
 	// 仅有顶栏一级、无侧栏/二级时不展示面包屑，避免与顶栏选中项重复
-	if (!sideMenu && !extraLabel) return [];
+	if (!sideMenu && !extraPage) return [];
 
-	return [
+	const items: BreadcrumbNavItem[] = [
 		{
 			title: topMenu.label,
 			path: getDefaultPathForTop(topKey, menus),
 		},
-		{
-			title: sideMenu?.label ?? extraLabel,
-		},
 	];
+
+	if (extraPage) {
+		const parentSideMenu = extraPage.parentPath
+			? getActiveSideMenu(topKey, extraPage.parentPath, menus)
+			: null;
+		const middleMenu = parentSideMenu ?? sideMenu;
+		if (middleMenu) {
+			items.push({
+				title: middleMenu.label,
+				path: middleMenu.path,
+			});
+		}
+		items.push({ title: extraPage.label });
+		return items;
+	}
+
+	items.push({ title: sideMenu?.label });
+	return items;
 }
 
 /** 根据路由生成浏览器标签页标题 */
