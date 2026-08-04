@@ -57,195 +57,6 @@ export function formatActionTitle(permName: string): string {
 /** 超级管理员角色编码（与后端 roleKey 一致） */
 export const SUPER_ADMIN_ROLE_CODE = "admin";
 
-/**
- * 平板端权限配置模拟树。
- *
- * 后端平板端权限树接口尚未开放，暂用此数据展示角色权限分配界面；
- * menuId 与权限码仅供前端联调，后端接口完成后须替换为真实返回值。
- */
-export const TABLET_PERMISSION_MODULES: RolePermissionModule[] = [
-	{
-		moduleId: 8000,
-		moduleName: "设备控制",
-		subModules: [
-			{
-				subModuleId: 8001,
-				subModuleName: "X12",
-				checked: true,
-				permissions: [
-					{
-						menuId: 80011,
-						permName: "厂房总开关",
-						perms: "iiot:tablet:device-control:x12:building-switch",
-						checked: true,
-					},
-					{
-						menuId: 80012,
-						permName: "设备开关",
-						perms: "iiot:tablet:device-control:x12:device-switch",
-						checked: true,
-					},
-					{
-						menuId: 80013,
-						permName: "设备清洗",
-						perms: "iiot:tablet:device-control:x12:clean",
-						checked: true,
-					},
-				],
-			},
-			{
-				subModuleId: 8002,
-				subModuleName: "X03",
-				checked: true,
-				permissions: [
-					{
-						menuId: 80021,
-						permName: "厂房总开关",
-						perms: "iiot:tablet:device-control:x03:building-switch",
-						checked: true,
-					},
-					{
-						menuId: 80022,
-						permName: "设备开关",
-						perms: "iiot:tablet:device-control:x03:device-switch",
-						checked: true,
-					},
-					{
-						menuId: 80023,
-						permName: "设备清洗",
-						perms: "iiot:tablet:device-control:x03:clean",
-						checked: true,
-					},
-				],
-			},
-		],
-	},
-	{
-		moduleId: 8100,
-		moduleName: "管道配置",
-		subModules: [
-			{
-				subModuleId: 8101,
-				subModuleName: "X12",
-				checked: true,
-				permissions: [
-					{
-						menuId: 81011,
-						permName: "设备配置保存",
-						perms: "iiot:tablet:pipeline:x12:device-save",
-						checked: true,
-					},
-					{
-						menuId: 81012,
-						permName: "房间配置保存",
-						perms: "iiot:tablet:pipeline:x12:room-save",
-						checked: true,
-					},
-				],
-			},
-			{
-				subModuleId: 8102,
-				subModuleName: "X03",
-				checked: true,
-				permissions: [
-					{
-						menuId: 81021,
-						permName: "设备配置保存",
-						perms: "iiot:tablet:pipeline:x03:device-save",
-						checked: true,
-					},
-					{
-						menuId: 81022,
-						permName: "房间配置保存",
-						perms: "iiot:tablet:pipeline:x03:room-save",
-						checked: true,
-					},
-				],
-			},
-		],
-	},
-	{
-		moduleId: 8200,
-		moduleName: "添加设备",
-		subModules: [
-			{
-				subModuleId: 8201,
-				subModuleName: "X12",
-				checked: true,
-				permissions: [
-					{
-						menuId: 82011,
-						permName: "新增",
-						perms: "iiot:tablet:device:x12:add",
-						checked: true,
-					},
-					{
-						menuId: 82012,
-						permName: "编辑",
-						perms: "iiot:tablet:device:x12:edit",
-						checked: true,
-					},
-					{
-						menuId: 82013,
-						permName: "开启",
-						perms: "iiot:tablet:device:x12:enable",
-						checked: true,
-					},
-					{
-						menuId: 82014,
-						permName: "关闭",
-						perms: "iiot:tablet:device:x12:disable",
-						checked: true,
-					},
-					{
-						menuId: 82015,
-						permName: "删除",
-						perms: "iiot:tablet:device:x12:remove",
-						checked: true,
-					},
-				],
-			},
-			{
-				subModuleId: 8202,
-				subModuleName: "X03",
-				checked: true,
-				permissions: [
-					{
-						menuId: 82021,
-						permName: "新增",
-						perms: "iiot:tablet:device:x03:add",
-						checked: true,
-					},
-					{
-						menuId: 82022,
-						permName: "编辑",
-						perms: "iiot:tablet:device:x03:edit",
-						checked: true,
-					},
-					{
-						menuId: 82023,
-						permName: "开启",
-						perms: "iiot:tablet:device:x03:enable",
-						checked: true,
-					},
-					{
-						menuId: 82024,
-						permName: "关闭",
-						perms: "iiot:tablet:device:x03:disable",
-						checked: true,
-					},
-					{
-						menuId: 82025,
-						permName: "删除",
-						perms: "iiot:tablet:device:x03:remove",
-						checked: true,
-					},
-				],
-			},
-		],
-	},
-];
-
 /** 角色名称最大字符数 */
 export const ROLE_NAME_MAX_LENGTH = 20;
 
@@ -299,23 +110,55 @@ function pickAssignedMenuIds(source: Record<string, unknown>): number[] {
 }
 
 /**
- * 解析权限分配详情响应，兼容未解包的 envelope 与仅返回 menuIds 的后端。
+ * 从对象中解析 admin / ipad 模块树与已分配 menuId。
  *
- * @param {RolePermissionDetailResponse | unknown} - getAssignDetail 返回值。
+ * @param {Record<string, unknown>} - 含 admin、ipad 或 modules 的对象。
+ * @returns {{ adminModules: RolePermissionModule[]; ipadModules: RolePermissionModule[]; assignedMenuIds: number[] }} - 分组模块树与已分配 menuId。
+ */
+function pickGroupedModules(source: Record<string, unknown>): {
+	adminModules: RolePermissionModule[];
+	ipadModules: RolePermissionModule[];
+	assignedMenuIds: number[];
+} {
+	const adminModules = Array.isArray(source.admin)
+		? (source.admin as RolePermissionModule[])
+		: Array.isArray(source.modules)
+			? (source.modules as RolePermissionModule[])
+			: [];
+	const ipadModules = Array.isArray(source.ipad)
+		? (source.ipad as RolePermissionModule[])
+		: [];
+	return {
+		adminModules,
+		ipadModules,
+		assignedMenuIds: pickAssignedMenuIds(source),
+	};
+}
+
+/**
+ * 解析权限分配详情响应，适配 data.admin / data.ipad 分组结构。
+ *
+ * @param {RolePermissionDetailResponse | unknown} - getAssignDetail 返回值（多为解包后的 data）。
  * @param {(number | string)[]} - 列表行上的 menuIds 兜底。
- * @returns {{ modules: RolePermissionModule[]; assignedMenuIds: number[] }} - 模块树与已分配 menuId。
+ * @returns {{ adminModules: RolePermissionModule[]; ipadModules: RolePermissionModule[]; assignedMenuIds: number[] }} - 分组模块树与已分配 menuId。
  */
 export function parseAssignDetailResponse(
 	res: RolePermissionDetailResponse | unknown,
 	roleMenuIds: (number | string)[] = [],
-): { modules: RolePermissionModule[]; assignedMenuIds: number[] } {
+): {
+	adminModules: RolePermissionModule[];
+	ipadModules: RolePermissionModule[];
+	assignedMenuIds: number[];
+} {
 	const empty = {
-		modules: [] as RolePermissionModule[],
+		adminModules: [] as RolePermissionModule[],
+		ipadModules: [] as RolePermissionModule[],
 		assignedMenuIds: [] as number[],
 	};
 	if (Array.isArray(res)) {
 		return {
-			modules: res as RolePermissionModule[],
+			adminModules: res as RolePermissionModule[],
+			ipadModules: [],
 			assignedMenuIds: pickAssignedMenuIds({
 				menuIds: roleMenuIds,
 			}),
@@ -324,21 +167,23 @@ export function parseAssignDetailResponse(
 	if (res == null || typeof res !== "object") return empty;
 
 	const root = res as Record<string, unknown>;
-	let modules: RolePermissionModule[] = [];
+	let adminModules: RolePermissionModule[] = [];
+	let ipadModules: RolePermissionModule[] = [];
 	let assignedMenuIds: number[] = [];
 
-	if (Array.isArray(root.modules)) {
-		modules = root.modules as RolePermissionModule[];
-		assignedMenuIds = pickAssignedMenuIds(root);
+	if (
+		Array.isArray(root.admin) ||
+		Array.isArray(root.ipad) ||
+		Array.isArray(root.modules)
+	) {
+		({ adminModules, ipadModules, assignedMenuIds } =
+			pickGroupedModules(root));
 	} else if (root.data != null && typeof root.data === "object") {
 		if (Array.isArray(root.data)) {
-			modules = root.data as RolePermissionModule[];
+			adminModules = root.data as RolePermissionModule[];
 		} else {
-			const data = root.data as Record<string, unknown>;
-			if (Array.isArray(data.modules)) {
-				modules = data.modules as RolePermissionModule[];
-				assignedMenuIds = pickAssignedMenuIds(data);
-			}
+			({ adminModules, ipadModules, assignedMenuIds } =
+				pickGroupedModules(root.data as Record<string, unknown>));
 		}
 	}
 
@@ -346,7 +191,7 @@ export function parseAssignDetailResponse(
 		assignedMenuIds = pickAssignedMenuIds({ menuIds: roleMenuIds });
 	}
 
-	return { modules, assignedMenuIds };
+	return { adminModules, ipadModules, assignedMenuIds };
 }
 
 /**

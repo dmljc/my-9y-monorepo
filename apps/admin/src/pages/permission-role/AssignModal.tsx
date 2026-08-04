@@ -1,6 +1,6 @@
-import { App, Checkbox, Modal, Spin, Table, Tabs } from "antd";
+import { Checkbox, Modal, Spin, Table, Tabs } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { getAssignDetail } from "./api";
 import type { SysRole } from "./interface";
 import type { AssignAction, AssignRow } from "./utils";
@@ -12,7 +12,6 @@ import {
 	getActionKeys,
 	hiddenIdsByPage,
 	parseAssignDetailResponse,
-	TABLET_PERMISSION_MODULES,
 } from "./utils";
 
 interface AssignModalProps {
@@ -33,31 +32,37 @@ const AssignModal = ({
 	onCancel,
 	onOk: onOkProp,
 }: AssignModalProps) => {
-	const { message } = App.useApp();
-	const tabletTableRows = buildAssignRows(TABLET_PERMISSION_MODULES);
 	const [loading, setLoading] = useState(false);
 	const [detailLoading, setDetailLoading] = useState(false);
 	const [activePermissionTab, setActivePermissionTab] = useState("admin");
 	const [adminTableRows, setAdminTableRows] = useState<AssignRow[]>([]);
-	const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
-	const [tabletCheckedKeys, setTabletCheckedKeys] = useState<string[]>(() =>
-		extractCheckedKeys(TABLET_PERMISSION_MODULES),
-	);
-	const [hiddenMenuIdsByPage, setHiddenMenuIdsByPage] = useState<
+	const [ipadTableRows, setIpadTableRows] = useState<AssignRow[]>([]);
+	const [adminCheckedKeys, setAdminCheckedKeys] = useState<string[]>([]);
+	const [ipadCheckedKeys, setIpadCheckedKeys] = useState<string[]>([]);
+	const [adminHiddenMenuIdsByPage, setAdminHiddenMenuIdsByPage] = useState<
 		Record<string, number[]>
 	>({});
-	const [allHiddenIdsByPage, setAllHiddenIdsByPage] = useState<
+	const [ipadHiddenMenuIdsByPage, setIpadHiddenMenuIdsByPage] = useState<
+		Record<string, number[]>
+	>({});
+	const [adminAllHiddenIdsByPage, setAdminAllHiddenIdsByPage] = useState<
+		Record<string, number[]>
+	>({});
+	const [ipadAllHiddenIdsByPage, setIpadAllHiddenIdsByPage] = useState<
 		Record<string, number[]>
 	>({});
 
 	useEffect(() => {
 		if (!open || role?.roleId === undefined) {
 			setAdminTableRows([]);
-			setCheckedKeys([]);
-			setTabletCheckedKeys(extractCheckedKeys(TABLET_PERMISSION_MODULES));
+			setIpadTableRows([]);
+			setAdminCheckedKeys([]);
+			setIpadCheckedKeys([]);
 			setActivePermissionTab("admin");
-			setHiddenMenuIdsByPage({});
-			setAllHiddenIdsByPage({});
+			setAdminHiddenMenuIdsByPage({});
+			setIpadHiddenMenuIdsByPage({});
+			setAdminAllHiddenIdsByPage({});
+			setIpadAllHiddenIdsByPage({});
 			return;
 		}
 
@@ -71,23 +76,37 @@ const AssignModal = ({
 				const res = await getAssignDetail(String(roleId));
 				if (cancelled) return;
 
-				const { modules, assignedMenuIds } = parseAssignDetailResponse(
-					res,
-					roleMenuIds,
+				const { adminModules, ipadModules, assignedMenuIds } =
+					parseAssignDetailResponse(res, roleMenuIds);
+				setAdminTableRows(buildAssignRows(adminModules));
+				setIpadTableRows(buildAssignRows(ipadModules));
+				setAdminCheckedKeys(
+					extractCheckedKeys(adminModules, assignedMenuIds),
 				);
-				setAdminTableRows(buildAssignRows(modules));
-				setCheckedKeys(extractCheckedKeys(modules, assignedMenuIds));
-				setHiddenMenuIdsByPage(
-					hiddenIdsByPage(modules, assignedMenuIds),
+				setIpadCheckedKeys(
+					extractCheckedKeys(ipadModules, assignedMenuIds),
 				);
-				setAllHiddenIdsByPage(buildAllHiddenIdsByPage(modules));
+				setAdminHiddenMenuIdsByPage(
+					hiddenIdsByPage(adminModules, assignedMenuIds),
+				);
+				setIpadHiddenMenuIdsByPage(
+					hiddenIdsByPage(ipadModules, assignedMenuIds),
+				);
+				setAdminAllHiddenIdsByPage(
+					buildAllHiddenIdsByPage(adminModules),
+				);
+				setIpadAllHiddenIdsByPage(buildAllHiddenIdsByPage(ipadModules));
 			} catch {
 				if (cancelled) return;
 				// 加载失败时清空，避免展示过期权限；toast 由全局 onError 弹出
 				setAdminTableRows([]);
-				setCheckedKeys([]);
-				setHiddenMenuIdsByPage({});
-				setAllHiddenIdsByPage({});
+				setIpadTableRows([]);
+				setAdminCheckedKeys([]);
+				setIpadCheckedKeys([]);
+				setAdminHiddenMenuIdsByPage({});
+				setIpadHiddenMenuIdsByPage({});
+				setAdminAllHiddenIdsByPage({});
+				setIpadAllHiddenIdsByPage({});
 			} finally {
 				if (!cancelled) {
 					setDetailLoading(false);
@@ -102,8 +121,11 @@ const AssignModal = ({
 		};
 	}, [open, role?.roleId, role?.menuIds]);
 
-	const updateCheckedKeys = (updater: (keys: Set<string>) => void) => {
-		setCheckedKeys((prev) => {
+	const updateCheckedKeys = (
+		setKeys: Dispatch<SetStateAction<string[]>>,
+		updater: (keys: Set<string>) => void,
+	) => {
+		setKeys((prev) => {
 			const next = new Set(prev);
 			updater(next);
 			return [...next];
@@ -114,8 +136,13 @@ const AssignModal = ({
 		record: AssignableRow,
 		checked: boolean,
 		rows: AssignRow[],
+		setKeys: Dispatch<SetStateAction<string[]>>,
+		allHiddenIdsByPage: Record<string, number[]>,
+		setHiddenMenuIdsByPage: Dispatch<
+			SetStateAction<Record<string, number[]>>
+		>,
 	) => {
-		updateCheckedKeys((keys) => {
+		updateCheckedKeys(setKeys, (keys) => {
 			if (checked) {
 				keys.add(record.pageKey);
 				return;
@@ -138,66 +165,27 @@ const AssignModal = ({
 			return;
 		}
 
-		if (!checked) {
-			setHiddenMenuIdsByPage((prev) => {
-				if (!(record.pageKey in prev)) return prev;
-				const next = { ...prev };
-				delete next[record.pageKey];
-				return next;
-			});
-		}
+		setHiddenMenuIdsByPage((prev) => {
+			if (!(record.pageKey in prev)) return prev;
+			const next = { ...prev };
+			delete next[record.pageKey];
+			return next;
+		});
 	};
 
 	const handleActionChange = (
 		record: AssignableRow,
 		actionKey: string,
 		checked: boolean,
+		setKeys: Dispatch<SetStateAction<string[]>>,
 	) => {
-		updateCheckedKeys((keys) => {
+		updateCheckedKeys(setKeys, (keys) => {
 			if (checked) {
 				keys.add(record.pageKey);
 				keys.add(actionKey);
 				return;
 			}
 			keys.delete(actionKey);
-		});
-	};
-
-	const handleTabletPageChange = (
-		record: AssignableRow,
-		checked: boolean,
-	) => {
-		setTabletCheckedKeys((prev) => {
-			const next = new Set(prev);
-			if (checked) {
-				next.add(record.pageKey);
-			} else {
-				next.delete(record.pageKey);
-				for (const actionKey of getActionKeys(
-					record.pageKey,
-					tabletTableRows,
-				)) {
-					next.delete(actionKey);
-				}
-			}
-			return [...next];
-		});
-	};
-
-	const handleTabletActionChange = (
-		record: AssignableRow,
-		actionKey: string,
-		checked: boolean,
-	) => {
-		setTabletCheckedKeys((prev) => {
-			const next = new Set(prev);
-			if (checked) {
-				next.add(record.pageKey);
-				next.add(actionKey);
-			} else {
-				next.delete(actionKey);
-			}
-			return [...next];
 		});
 	};
 
@@ -234,18 +222,21 @@ const AssignModal = ({
 
 	const onOk = async () => {
 		if (!role) return;
-		if (activePermissionTab === "tablet") {
-			message.info("平板端权限为模拟数据，暂不支持保存");
-			return;
-		}
 		try {
 			setLoading(true);
-			const menuIds = collectMenuIds(
-				checkedKeys,
-				adminTableRows,
-				hiddenMenuIdsByPage,
-			);
-			await onOkProp(menuIds);
+			const menuIds = [
+				...collectMenuIds(
+					adminCheckedKeys,
+					adminTableRows,
+					adminHiddenMenuIdsByPage,
+				),
+				...collectMenuIds(
+					ipadCheckedKeys,
+					ipadTableRows,
+					ipadHiddenMenuIdsByPage,
+				),
+			];
+			await onOkProp([...new Set(menuIds)]);
 			onCancel();
 		} catch {
 			// 接口失败；toast 由全局 onError 处理
@@ -325,9 +316,23 @@ const AssignModal = ({
 									size="small"
 									columns={buildColumns(
 										adminTableRows,
-										checkedKeys,
-										handlePageChange,
-										handleActionChange,
+										adminCheckedKeys,
+										(record, checked, rows) =>
+											handlePageChange(
+												record,
+												checked,
+												rows,
+												setAdminCheckedKeys,
+												adminAllHiddenIdsByPage,
+												setAdminHiddenMenuIdsByPage,
+											),
+										(record, actionKey, checked) =>
+											handleActionChange(
+												record,
+												actionKey,
+												checked,
+												setAdminCheckedKeys,
+											),
 									)}
 									dataSource={adminTableRows}
 									rowKey="rowKey"
@@ -337,19 +342,33 @@ const AssignModal = ({
 							),
 						},
 						{
-							key: "tablet",
+							key: "ipad",
 							label: "平板端",
 							children: (
 								<Table
 									size="small"
 									columns={buildColumns(
-										tabletTableRows,
-										tabletCheckedKeys,
-										handleTabletPageChange,
-										handleTabletActionChange,
+										ipadTableRows,
+										ipadCheckedKeys,
+										(record, checked, rows) =>
+											handlePageChange(
+												record,
+												checked,
+												rows,
+												setIpadCheckedKeys,
+												ipadAllHiddenIdsByPage,
+												setIpadHiddenMenuIdsByPage,
+											),
+										(record, actionKey, checked) =>
+											handleActionChange(
+												record,
+												actionKey,
+												checked,
+												setIpadCheckedKeys,
+											),
 										"厂房权限",
 									)}
-									dataSource={tabletTableRows}
+									dataSource={ipadTableRows}
 									rowKey="rowKey"
 									pagination={false}
 									bordered
