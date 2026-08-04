@@ -1,5 +1,7 @@
 /** 警告列表 - 按钮权限码。 */
 export const PERM_WARNING_LIST = {
+	/** 前后15分钟数据 */
+	HISTORY: "warning:list:history",
 	RESOLVE: "warning:list:resolve",
 } as const;
 
@@ -20,6 +22,7 @@ export const PERM_WARNING_LEVELS = {
 /** 点检台账 - 按钮权限码。 */
 export const PERM_INSPECTION_LEDGER = {
 	CREATE: "device:inspection-ledger:add",
+	EDIT: "device:inspection-ledger:edit",
 	INSPECT: "device:inspection-ledger:inspect",
 	DELETE: "device:inspection-ledger:delete",
 } as const;

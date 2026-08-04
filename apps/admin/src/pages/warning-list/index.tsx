@@ -253,13 +253,15 @@ const WarningList = () => {
 			fixed: "right",
 			render: (_: unknown, record: WarningItem) => (
 				<div className={styles.actions}>
-					<Button
-						type="link"
-						size="small"
-						onClick={() => handleHistoryQuery(record)}
-					>
-						前后15分钟数据
-					</Button>
+					<Access code={PERM_WARNING_LIST.HISTORY}>
+						<Button
+							type="link"
+							size="small"
+							onClick={() => handleHistoryQuery(record)}
+						>
+							前后15分钟数据
+						</Button>
+					</Access>
 					{record.status === "unprocessed" ? (
 						<Access code={PERM_WARNING_LIST.RESOLVE}>
 							<Button
