@@ -17,7 +17,7 @@ import {
 	updateUser,
 } from "./utils";
 
-const PermissionUser = () => {
+const SystemUser = () => {
 	const { message, modal } = App.useApp();
 	const [loading, setLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<User[]>([]);
@@ -189,7 +189,7 @@ const PermissionUser = () => {
 	];
 
 	return (
-		<div className={styles.permissionUser}>
+		<div className={styles.systemUser}>
 			<div className={styles.toolbar}>
 				<span className={styles.filterLabel}>用户账号</span>
 				<Input
@@ -263,4 +263,4 @@ const PermissionUser = () => {
 	);
 };
 
-export default PermissionUser;
+export default SystemUser;

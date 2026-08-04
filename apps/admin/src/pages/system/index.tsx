@@ -23,8 +23,8 @@ const MENU_ICONS: Record<string, ReactNode> = {
 	operationLog: <FileTextOutlined />,
 };
 
-/** 角色权限模块布局：侧边栏 + 子路由内容 */
-const Permission = () => {
+/** 系统管理模块布局：侧边栏 + 子路由内容 */
+const System = () => {
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
 	const menus = useMenuStore((state) => state.menus);
@@ -49,7 +49,7 @@ const Permission = () => {
 	};
 
 	return (
-		<div className={styles.permission}>
+		<div className={styles.system}>
 			<aside className={styles.sidebar}>
 				<Menu
 					className={styles.sideMenu}
@@ -67,4 +67,4 @@ const Permission = () => {
 	);
 };
 
-export default Permission;
+export default System;

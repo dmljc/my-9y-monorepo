@@ -240,7 +240,7 @@ const handleOk = async () => { /* ... */ };
 
 **权限分配弹窗**
 
-后端 `permName` 可能仍为「编辑用户」等旧文案；展示层用 `formatActionTitle`（见 `permission-role/utils.ts`）规范为简短动词，**不要**在 AssignModal 内 inline 映射。
+后端 `permName` 可能仍为「编辑用户」等旧文案；展示层用 `formatActionTitle`（见 `system-role/utils.ts`）规范为简短动词，**不要**在 AssignModal 内 inline 映射。
 
 **✅ 推荐**
 
@@ -287,7 +287,7 @@ message.success("保存成功");
 <Button>新增</Button>  {/* ❌ 语义应为「权限分配」 */}
 ```
 
-**边界**：删除确认框 `content` 仍写具体对象（如 `确定要删除用户「${name}」吗？`），与按钮简短文案不冲突；Modal `okText: "删除"` 等确认类文案见「Modal / confirm 按钮文案」；`handleModalSubmit` 等编辑/新增分支的成功 toast 须分别用 **编辑成功** / **新增成功**，与表格「编辑」、Modal 标题「编辑」一致，**不要**混用「保存成功」「更新成功」「创建成功」；后端 `permName` 源头统一后，前端 `formatActionTitle` 仍保留以兼容历史数据。**参考实现**：`apps/admin/src/pages/permission-organization/index.tsx`、`apps/admin/src/pages/reverse-control/index.tsx`。
+**边界**：删除确认框 `content` 仍写具体对象（如 `确定要删除用户「${name}」吗？`），与按钮简短文案不冲突；Modal `okText: "删除"` 等确认类文案见「Modal / confirm 按钮文案」；`handleModalSubmit` 等编辑/新增分支的成功 toast 须分别用 **编辑成功** / **新增成功**，与表格「编辑」、Modal 标题「编辑」一致，**不要**混用「保存成功」「更新成功」「创建成功」；后端 `permName` 源头统一后，前端 `formatActionTitle` 仍保留以兼容历史数据。**参考实现**：`apps/admin/src/pages/system-organization/index.tsx`、`apps/admin/src/pages/reverse-control/index.tsx`。
 
 ### 搜索区查询与重置
 
@@ -460,7 +460,7 @@ const handleSearch = () => {
 // ✅ 应拆成独立 state：deviceName + building；日期类同理用 dateRange 等字段名，不要塞进 draftFilter
 ```
 
-**边界**：**无筛选条件**的纯列表（如 `warning-levels`）不必强行加搜索区；布局侧栏（`permission/`、`device/`）不适用；客户端树形筛选可用 `deptName`（输入）+ `searchKeyword`（生效 keyword），不必叫 draft/applied；导出、新增等与筛选无关的按钮放在查询/重置之后（常用 `margin-left: auto` 靠右）。**参考实现**：直接字段 — `permission-user/`、`historical-data/`、`warning-list/`、`inspection-ledger/`；`draftFilter` — `statistics/`；输入/生效分离 — `permission-organization/`（`deptName` + `searchKeyword`）。
+**边界**：**无筛选条件**的纯列表（如 `warning-levels`）不必强行加搜索区；布局侧栏（`system/`、`device/`）不适用；客户端树形筛选可用 `deptName`（输入）+ `searchKeyword`（生效 keyword），不必叫 draft/applied；导出、新增等与筛选无关的按钮放在查询/重置之后（常用 `margin-left: auto` 靠右）。**参考实现**：直接字段 — `system-user/`、`historical-data/`、`warning-list/`、`inspection-ledger/`；`draftFilter` — `statistics/`；输入/生效分离 — `system-organization/`（`deptName` + `searchKeyword`）。
 
 ### 查询参数空值处理（不写 `undefined` 占位）
 
@@ -806,15 +806,15 @@ export const writeRememberMe = (values: LoginParams) => { /* ... */ };
 
 ### 页面目录内命名缩短
 
-**做什么**：`pages/<模块>/` 下的**子文件名、组件名、utils 导出、模块特有 api** 已能从目录路径获得业务上下文时，**不要**在标识符里再重复整段模块名（如 `permission`、`Permission`）；改用**短而仍可读**的名称。
+**做什么**：`pages/<模块>/` 下的**子文件名、组件名、utils 导出、模块特有 api** 已能从目录路径获得业务上下文时，**不要**在标识符里再重复整段模块名（如 `system`、`System`）；改用**短而仍可读**的名称。
 
-**为什么**：目录本身即命名空间——`pages/permission-role/PermissionAssignModal.tsx` 里的 `Permission` 与路径重复；`buildPermissionTableRowsFromDetail` 放在 `permission-role/utils.ts` 时前缀与后缀叠加过长，扫读成本高。
+**为什么**：目录本身即命名空间——`pages/system-role/PermissionAssignModal.tsx` 里的 `Permission` / `System` 与路径重复；`buildPermissionTableRowsFromDetail` 放在 `system-role/utils.ts` 时前缀与后缀叠加过长，扫读成本高。
 
 **✅ 推荐 — 子组件 / 文件名**
 
 ```
-pages/permission-role/
-  index.tsx         # 页面组件 PermissionRole
+pages/system-role/
+  index.tsx         # 页面组件 SystemRole
   CreateModal.tsx   # 通用 CRUD 弹窗，可不加业务前缀
   AssignModal.tsx   # ✅ 权限分配；不要 PermissionAssignModal
   utils.ts
@@ -822,7 +822,7 @@ pages/permission-role/
 ```
 
 ```ts
-// permission-role/api.ts — 目录已表明是 role 模块
+// system-role/api.ts — 目录已表明是 role 模块
 export const getAssignDetail = (id: string) =>
   request.get(`/system/role/permissionDetail/${id}`);
 // ❌ getPermissionDetail、fetchRolePermissionAssignDetail
@@ -832,7 +832,7 @@ export const getAssignDetail = (id: string) =>
 
 仅在本页/本目录使用时，省略与目录重复的前缀：
 
-| 避免 | 推荐（permission-role 示例） |
+| 避免 | 推荐（system-role 示例） |
 |------|------------------------------|
 | `PermissionAssignModal` | `AssignModal` |
 | `PermissionTableRow` | `AssignRow` |
@@ -890,15 +890,15 @@ import { MAX_LENGTH_20 } from "./utils";
 | 场景 | 做法 |
 |------|------|
 | 本页 `utils.ts`、仅服务当前模块表单 | `MAX_LENGTH_20`、`MAX_LENGTH_12`；同长度多字段共用一个 |
-| **跨页共用**（如 `permission-user/formRules.ts` 供 Login 与 CreateModal） | 保留语义名：`USERNAME_MAX_LENGTH`、`PASSWORD_MAX_LENGTH` |
+| **跨页共用**（如 `system-user/formRules.ts` 供 Login 与 CreateModal） | 保留语义名：`USERNAME_MAX_LENGTH`、`PASSWORD_MAX_LENGTH` |
 | 除长度外还有独立语义（正则、最小值等） | `PASSWORD_MIN_LENGTH`、`USERNAME_PATTERN` 等按字段语义命名 |
 
 **❌ 避免**
 
 ```tsx
-// 目录已是 permission-user，仍重复 Permission / User
-PermissionUserCreateModal.tsx
-export function buildPermissionUserTableRows() { /* ... */ }
+// 目录已是 system-user，仍重复 System / User
+SystemUserCreateModal.tsx
+export function buildSystemUserTableRows() { /* ... */ }
 ```
 
 ```ts
@@ -927,7 +927,7 @@ export const FACTORY_BUILDING_OPTIONS = [ /* … */ ];
 | utils 函数 | 去掉重复的 `Permission`、`Module` 等；保留动词：`build`、`extract`、`collect`、`format` |
 | api 函数 | 通用 CRUD 仍用 `list` / `create` / `update` / `remove`；**本模块特有**接口用短语义名：`getAssignDetail`，不要 `getRolePermissionAssignDetail` |
 
-**边界**：**跨页面复用**（抽到 `src/utils`、`src/components` 或多页 import 的 export）须用**完整、无歧义**命名，不必强行缩短。**`interface.ts` 中与后端对齐的类型**（如 `SysUser`、`RolePermissionModule`）保持接口语义，不为 shorten 而改名。**布局 / 全局**组件（`layout/`、`components/`）无「页面目录」上下文，仍用完整功能名（如 `UserDropdown`）。参考 `pages/permission-role/`（`AssignModal`、`buildAssignRows`）；utils 常量缩短 — `pages/inspection-ledger/utils.ts`。
+**边界**：**跨页面复用**（抽到 `src/utils`、`src/components` 或多页 import 的 export）须用**完整、无歧义**命名，不必强行缩短。**`interface.ts` 中与后端对齐的类型**（如 `SysUser`、`RolePermissionModule`）保持接口语义，不为 shorten 而改名。**布局 / 全局**组件（`layout/`、`components/`）无「页面目录」上下文，仍用完整功能名（如 `UserDropdown`）。参考 `pages/system-role/`（`AssignModal`、`buildAssignRows`）；utils 常量缩短 — `pages/inspection-ledger/utils.ts`。
 
 ### 页面 api.ts 接口函数
 
@@ -947,14 +947,14 @@ export const FACTORY_BUILDING_OPTIONS = [ /* … */ ];
 **目录结构**
 
 ```
-pages/permission-user/
+pages/system-user/
   api.ts          # 仅 HTTP 调用
   interface.ts    # 后端请求/响应类型（中文 JSDoc）
   utils.ts        # 有编排/复用时才需要（见「列表 utils：非必需不抽离」）
   index.tsx
   CreateModal.tsx
 
-pages/permission-role/   # utils 无 api import，权限树 mock + 表格纯函数
+pages/system-role/   # utils 无 api import，权限树 mock + 表格纯函数
   api.ts
   interface.ts
   utils.ts        # buildAssignRows、collectMenuIds 等
@@ -962,7 +962,7 @@ pages/permission-role/   # utils 无 api import，权限树 mock + 表格纯函�
   CreateModal.tsx
   AssignModal.tsx
 
-pages/permission-organization/   # utils 无 api import，CRUD 在 index 调 api
+pages/system-organization/   # utils 无 api import，CRUD 在 index 调 api
   api.ts
   interface.ts
   utils.ts        # 仅 buildOrgTree、filterOrgTree 等纯函数
@@ -978,7 +978,7 @@ pages/historical-data/   # 简单列表示例：可无 utils.ts
 
 **✅ 推荐 — api.ts（纯 HTTP 薄封装）**
 
-参考 `apps/admin/src/stores/user/api.ts`、`apps/admin/src/pages/permission-user/api.ts`：
+参考 `apps/admin/src/stores/user/api.ts`、`apps/admin/src/pages/system-user/api.ts`：
 
 ```ts
 import { request } from "@/utils";
@@ -1052,7 +1052,7 @@ export function buildOrgTree(depts: SysDept[]): OrgTreeNode[] { /* ... */ }
 仅当单页内逻辑**明显复杂**且需在 utils 集中时，才 `import ./api`；export 的函数名**不要**与 `api.ts` 的 `list` / `create` / `update` / `remove` 同名，应表达编排语义（如 `fetchUserListResult`），或页面仍直接调 api、utils 只 export 纯转换 `sysUserToUser`：
 
 ```ts
-// utils.ts — permission-user / permission-role 等（多接口、行转换）
+// utils.ts — system-user / system-role 等（多接口、行转换）
 import { list as fetchUserListApi } from "./api";
 
 export async function fetchUserListResult(params: UserListParams): Promise<UserListResult> {
@@ -1215,7 +1215,7 @@ const data = await fetchUserListApi(...);
 setDataSource(data.rows.map(sysUserToUser)); // 应抽到 utils.list
 ```
 
-**边界**：下载 blob、读响应头等特殊场景可用 `request.raw`；`interface.ts` 中的类型仍须中文 JSDoc；简单页（如 Login、直出分页列表）页面直接 import `./api`，**不必**为统一结构强行建 `utils.ts`；`utils.ts` **默认不** `import ./api`（见上节「utils 再包一层与 api 同名」反例）；多接口 list 编排可例外，但勿 export 与 api 同名的 `create`/`list`/`update`/`remove`。**参考实现**：`apps/admin/src/stores/user/api.ts`（最简）、`apps/admin/src/pages/historical-data/`（无 utils）、`apps/admin/src/pages/permission-organization/`、`permission-role/`（utils 无 api、CRUD 在 index）、`apps/admin/src/pages/permission-user/`（含复杂 list 编排）。
+**边界**：下载 blob、读响应头等特殊场景可用 `request.raw`；`interface.ts` 中的类型仍须中文 JSDoc；简单页（如 Login、直出分页列表）页面直接 import `./api`，**不必**为统一结构强行建 `utils.ts`；`utils.ts` **默认不** `import ./api`（见上节「utils 再包一层与 api 同名」反例）；多接口 list 编排可例外，但勿 export 与 api 同名的 `create`/`list`/`update`/`remove`。**参考实现**：`apps/admin/src/stores/user/api.ts`（最简）、`apps/admin/src/pages/historical-data/`（无 utils）、`apps/admin/src/pages/system-organization/`、`system-role/`（utils 无 api、CRUD 在 index）、`apps/admin/src/pages/system-user/`（含复杂 list 编排）。
 
 ### 接入真实接口后移除 mock
 
@@ -1282,7 +1282,7 @@ export function list(params: RoleListParams): Promise<RoleListResult> {
 4. 页面与子组件只从 `./utils`（或简单页 `./api`）导入，不直接依赖已删除的 mock。
 5. 原先依赖 mock 详情的交互（如权限分配回显）改为调 `detail` 等真实接口。
 
-**边界**：全项目联调前、接口尚未就绪的页面，mock 可暂留于 `utils.ts`，但 `api.ts` 不应提前写死错误路径；**一旦本模块任一接口切到 `request`，该接口链路须完整迁移，不得半 mock 半真实**。参考 `apps/admin/src/pages/permission-role/`。
+**边界**：全项目联调前、接口尚未就绪的页面，mock 可暂留于 `utils.ts`，但 `api.ts` 不应提前写死错误路径；**一旦本模块任一接口切到 `request`，该接口链路须完整迁移，不得半 mock 半真实**。参考 `apps/admin/src/pages/system-role/`。
 
 ### 列表数据直出接口字段
 
@@ -1363,7 +1363,7 @@ return { list: (data.list ?? []).map(snapshotToRecord) };
 
 **边界**：仅在以下场景才做字段转换——**查询/提交**参数与后端命名不一致（在 `loadData` / `create` / `update` 内 **inline** trim、类型转换，见「列表 utils：非必需不抽离」）；**多接口聚合**或列表行缺少展示必填字段且后端短期无法补齐；**权限/角色**等需关联补全（仍优先让 list 接口本身带齐字段）。**不要**为简单提交单独抽 `formValuesToSysXxx`；**不要**为占位展示写 `?? "-"`、**不要用其它字段顶替**（如列绑 `modelId` 却读 `thingId`、用 `thingId` 填 `modelName`）；接口未返回该字段时单元格留空即可，交给 Table 默认渲染或列级 `render`。
 
-**参考实现**：表格直出 `apps/admin/src/pages/historical-data/`、`permission-role/`；含行转换 `apps/admin/src/pages/permission-user/`。
+**参考实现**：表格直出 `apps/admin/src/pages/historical-data/`、`system-role/`；含行转换 `apps/admin/src/pages/system-user/`。
 
 ### 列表 utils：非必需不抽离
 
@@ -1437,7 +1437,7 @@ const [draftFilter, setDraftFilter] = useState<DeviceFilter>(() => {
 **✅ 推荐 — 复杂列表（保留 utils 编排）**
 
 ```ts
-// utils.ts — permission-user / permission-role 等
+// utils.ts — system-user / system-role 等
 export async function list(params: UserListParams): Promise<UserListResult> {
   const data = await fetchUserListApi(toUserListQuery(params));
   // 行转换、角色补全、客户端过滤等真实逻辑
@@ -1465,7 +1465,7 @@ export function toListParams(pageNum: number, pageSize: number, filter: DeviceFi
 }
 ```
 
-**边界**：需要复杂 list 编排时页面 `import { fetchXxxListResult } from "./utils"`，**CRUD 仍** `import ./api`；与「列表数据直出接口字段」配合，表格不重命名后端字段；加载列表用 `try/finally` 关 `loading`，勿写空 `catch {}`（见「HTTP 全局错误提示」）。**参考实现**：`apps/admin/src/pages/historical-data/`（无 `utils.ts`）；`apps/admin/src/pages/permission-organization/`、`permission-role/`（utils 无 api）；`apps/admin/src/pages/permission-user/`（含复杂 list 编排）。
+**边界**：需要复杂 list 编排时页面 `import { fetchXxxListResult } from "./utils"`，**CRUD 仍** `import ./api`；与「列表数据直出接口字段」配合，表格不重命名后端字段；加载列表用 `try/finally` 关 `loading`，勿写空 `catch {}`（见「HTTP 全局错误提示」）。**参考实现**：`apps/admin/src/pages/historical-data/`（无 `utils.ts`）；`apps/admin/src/pages/system-organization/`、`system-role/`（utils 无 api）；`apps/admin/src/pages/system-user/`（含复杂 list 编排）。
 
 ### 列表页逻辑：非特殊不抽 hook
 
@@ -1492,7 +1492,7 @@ export function toListParams(pageNum: number, pageSize: number, filter: DeviceFi
 | 单页内**明显复杂**且页面 JSX 过长（如多 Tab、左树右表各一套 CRUD） | 可拆 hook，但须确有可读性收益，**不要**为 CRUD 列表默认建 hook |
 | 纯计算 / 转换 / 常量 | 放 `utils.ts`，**不要**为无 React 逻辑建 hook |
 
-**✅ 推荐 — 逻辑内联在 `index.tsx`（inspection-ledger / permission-organization / historical-data）**
+**✅ 推荐 — 逻辑内联在 `index.tsx`（inspection-ledger / system-organization / historical-data）**
 
 ```tsx
 // index.tsx
@@ -1578,7 +1578,7 @@ const {
 | 子组件 | `CreateModal`、`tableColumns` 可拆文件；**单处** `map` / 展示块 inline（见「单处使用：非特殊不抽组件」）；**页面编排**仍留 `index.tsx` |
 | 禁止 | 仅为 `loadData` + CRUD 模板单独建 `useXxxList` / `useDeviceLedger` |
 
-**边界**：与「列表 utils：非必需不抽离」「Form：非特殊不抽离」「页面 api.ts 接口函数」配合——三层分工为 **`api.ts` HTTP**、**`utils.ts` 纯函数**、**`index.tsx` 页面 state 与编排**；`tableColumns.tsx` 拆列配置属 UI 拆分，不违背本规则；全局 `src/hooks/`（如鉴权、通用分页）跨页复用时不受限。**参考实现**：`inspection-ledger/`、`permission-organization/`、`historical-data/`、`reverse-control/`。
+**边界**：与「列表 utils：非必需不抽离」「Form：非特殊不抽离」「页面 api.ts 接口函数」配合——三层分工为 **`api.ts` HTTP**、**`utils.ts` 纯函数**、**`index.tsx` 页面 state 与编排**；`tableColumns.tsx` 拆列配置属 UI 拆分，不违背本规则；全局 `src/hooks/`（如鉴权、通用分页）跨页复用时不受限。**参考实现**：`inspection-ledger/`、`system-organization/`、`historical-data/`、`reverse-control/`。
 
 ### 列表页 DOM 扁平化
 
@@ -1589,7 +1589,7 @@ const {
 **✅ 推荐**
 
 ```tsx
-<div className={styles.permissionOrganization}>
+<div className={styles.systemOrganization}>
   <div className={styles.toolbar}>
     <span className={styles.filterLabel}>组织名称</span>
     <Input className={styles.searchInput} placeholder="请输入组织名称" onPressEnter={handleSearch} />
@@ -1642,7 +1642,7 @@ const {
 
 | 可去掉的层级 | 替代方式 |
 |-------------|---------|
-| 根容器 + 内层 `panel`/`section` | 样式合并到组件同名根类（如 `.permissionOrganization`） |
+| 根容器 + 内层 `panel`/`section` | 样式合并到组件同名根类（如 `.systemOrganization`） |
 | `header` + `filterBar` | 单层 `.toolbar`，筛选项直接作 flex 子项 |
 | 左右分栏再套 `filterBar` | 同一 flex 行，操作区 `.panelActions` 设 `margin-left: auto` |
 | 表格外层 `tableWrap` | 列少、无固定列需求时直接 `<Table />`；确需横向滚动再设 `scroll.x` |
@@ -1995,7 +1995,7 @@ pagination={{
 | 首屏 / 查询 / 重置 | `loadData` 传入当前 `pageSize`；切条数时 `handleTableChange` 用 `pagination.pageSize` |
 | 序号列 | `(pageNum - 1) * pageSize + index + 1` |
 
-**边界**：无分页或纯客户端分页的表格不适用；产品明确要求其它默认条数（如大屏 20）时单页覆盖，仍建议 `pageSizeOptions` 包含实际默认值；`permission-user` 等模块内已有 `DEFAULT_PAGE_SIZE` 常量时，新改页面对齐 **25** 或随该页一并迁移，**不要**同页 state 用 25、常量仍写 10/15。**参考实现**：`apps/admin/src/pages/warning-rules/`、`apps/admin/src/pages/historical-data/`。
+**边界**：无分页或纯客户端分页的表格不适用；产品明确要求其它默认条数（如大屏 20）时单页覆盖，仍建议 `pageSizeOptions` 包含实际默认值；`system-user` 等模块内已有 `DEFAULT_PAGE_SIZE` 常量时，新改页面对齐 **25** 或随该页一并迁移，**不要**同页 state 用 25、常量仍写 10/15。**参考实现**：`apps/admin/src/pages/warning-rules/`、`apps/admin/src/pages/historical-data/`。
 
 ### Form：非特殊不抽离
 
@@ -2031,7 +2031,7 @@ pages/inspection-ledger/
   utils.ts          # ❌ export ledgerToFormValues / formValuesToLedger / maxLengthRule 仅服务 CreateModal
 ```
 
-**边界**：下文「Form.Item 校验规则」「Form.Item 底部边距」「formRules」「Form 布局配置」「setFieldsValue 编辑回显」「表单字段映射」等是对上表各行的细化，**有冲突时以「确有跨文件复用 / 复杂编排」为准**才抽离；Login 引用 `permission-user/formRules.ts`、权限分配等跨模块场景属例外。**参考实现**：inline — `inspection-ledger/`；跨页 rules — `permission-user/formRules.ts`。
+**边界**：下文「Form.Item 校验规则」「Form.Item 底部边距」「formRules」「Form 布局配置」「setFieldsValue 编辑回显」「表单字段映射」等是对上表各行的细化，**有冲突时以「确有跨文件复用 / 复杂编排」为准**才抽离；Login 引用 `system-user/formRules.ts`、权限分配等跨模块场景属例外。**参考实现**：inline — `inspection-ledger/`；跨页 rules — `system-user/formRules.ts`。
 
 ### Form.Item 校验规则
 
@@ -2143,7 +2143,7 @@ const skipEditPasswordPlaceholder = (value: string) =>
 }
 ```
 
-**边界**：多条 `rules` 按顺序执行；`transform` 只影响**当前 rule** 的校验值，需在多条规则上重复时提取为同一函数（如 `skipEditPasswordPlaceholder`）；远程唯一性校验、与 `getFieldValue` 联动的确认密码等**必须**用 `validator`；Login 等未走页面 `utils.ts` 的简单页，常量仍可局部定义，但规则写法遵循本节约束。**参考实现**：`apps/admin/src/pages/permission-user/CreateModal.tsx`（跨页共用规则见 `permission-user/formRules.ts`）。
+**边界**：多条 `rules` 按顺序执行；`transform` 只影响**当前 rule** 的校验值，需在多条规则上重复时提取为同一函数（如 `skipEditPasswordPlaceholder`）；远程唯一性校验、与 `getFieldValue` 联动的确认密码等**必须**用 `validator`；Login 等未走页面 `utils.ts` 的简单页，常量仍可局部定义，但规则写法遵循本节约束。**参考实现**：`apps/admin/src/pages/system-user/CreateModal.tsx`（跨页共用规则见 `system-user/formRules.ts`）。
 
 ### Form.Item 底部边距：校验前后高度一致
 
@@ -2184,7 +2184,7 @@ const skipEditPasswordPlaceholder = (value: string) =>
 
 | 场景 | 做法 |
 |------|------|
-| **跨页面 / 跨组件共用**同一套规则 | 可建 `formRules.ts` 并 export（如 `permission-user/formRules.ts` 供 `Login` 与 `CreateModal` 共用 `USERNAME_RULES`） |
+| **跨页面 / 跨组件共用**同一套规则 | 可建 `formRules.ts` 并 export（如 `system-user/formRules.ts` 供 `Login` 与 `CreateModal` 共用 `USERNAME_RULES`） |
 | **可复用规则工厂** | 如 `getPasswordRules(required, transform)`，新增/编辑/登录多处调用 |
 | 单组件内 rules **极少** | 直接 inline 在 `CreateModal.tsx`，**不要**建 `formRules.ts` |
 
@@ -2217,14 +2217,14 @@ import { MAX_LENGTH_20 } from "./utils";
 **✅ 推荐 — 跨页共用才抽 `formRules.ts`**
 
 ```ts
-// permission-user/formRules.ts — Login 与 CreateModal 共用
+// system-user/formRules.ts — Login 与 CreateModal 共用
 export const USERNAME_RULES: Rule[] = [ /* … */ ];
 export function getPasswordRules(required = true, transform?: …): Rule[] { /* … */ }
 ```
 
 ```tsx
 // Login/index.tsx
-import { USERNAME_RULES, PASSWORD_RULES } from "@/pages/permission-user/formRules";
+import { USERNAME_RULES, PASSWORD_RULES } from "@/pages/system-user/formRules";
 ```
 
 **❌ 避免**
@@ -2249,7 +2249,7 @@ export const deviceCodeRules = [
 ];
 ```
 
-**边界**：与「Form.Item 校验规则」配合——长度用声明式 `{ max, message }` 写在 `Form.Item` 旁；Login 从 `permission-user/formRules` 引用属于跨模块复用，可保留。**参考实现**：inline — `inspection-ledger/CreateModal.tsx`；`formRules.ts` — `permission-user/`（含 `Login` 共用账号密码规则）。
+**边界**：与「Form.Item 校验规则」配合——长度用声明式 `{ max, message }` 写在 `Form.Item` 旁；Login 从 `system-user/formRules` 引用属于跨模块复用，可保留。**参考实现**：inline — `inspection-ledger/CreateModal.tsx`；`formRules.ts` — `system-user/`（含 `Login` 共用账号密码规则）。
 
 ### Form 布局配置：非特殊不抽 utils
 
@@ -2455,7 +2455,7 @@ export function ledgerToFormValues(record: DeviceLedger): DeviceFormValues { /* 
 export function formValuesToLedger(values: DeviceFormValues): DeviceLedger { /* … */ }
 ```
 
-**边界**：与「setFieldsValue 编辑回显」「编辑弹窗不回显详情接口」「列表 utils：非必需不抽离」「列表页逻辑：非特殊不抽 hook」配合；跨页复用的账号规则仍见 `formRules.ts` 例外；权限等**多步骤编排**可保留 `recordToFormValues` 类函数。**参考实现**：inline — `inspection-ledger/`（`CreateModal` + `index.tsx`）、`permission-organization/`。
+**边界**：与「setFieldsValue 编辑回显」「编辑弹窗不回显详情接口」「列表 utils：非必需不抽离」「列表页逻辑：非特殊不抽 hook」配合；跨页复用的账号规则仍见 `formRules.ts` 例外；权限等**多步骤编排**可保留 `recordToFormValues` 类函数。**参考实现**：inline — `inspection-ledger/`（`CreateModal` + `index.tsx`）、`system-organization/`。
 
 ### 编辑弹窗不回显详情接口
 
@@ -2620,7 +2620,7 @@ const loadData = async () => {
 
 **✅ 推荐 — Modal 提交（父组件不 catch）**
 
-传给 `CreateModal` / `AssignModal` 的 `handleModalSubmit` 等回调**直接 `await` 接口**；失败时不 catch、不 `throw new Error("submit failed")`。错误自然冒泡到子 Modal 的 `onOk`，Modal 侧 catch 后**不调用** `onCancel()`，弹窗保持打开。参考 `apps/admin/src/pages/permission-organization/index.tsx`。
+传给 `CreateModal` / `AssignModal` 的 `handleModalSubmit` 等回调**直接 `await` 接口**；失败时不 catch、不 `throw new Error("submit failed")`。错误自然冒泡到子 Modal 的 `onOk`，Modal 侧 catch 后**不调用** `onCancel()`，弹窗保持打开。参考 `apps/admin/src/pages/system-organization/index.tsx`。
 
 ```tsx
 // index.tsx — 父组件
@@ -2771,7 +2771,7 @@ pages/login/
 适用于多数 CRUD 列表：工具栏 + 表格在同一 `.panel` / 根容器内（见「列表页 DOM 扁平化」）。
 
 ```css
-.permissionOrganization {
+.systemOrganization {
   padding: 24px;
   background: #fff;
 }
@@ -2831,7 +2831,7 @@ pages/login/
 }
 ```
 
-**边界**：确须覆盖时，选择器挂在页面根类名下（如 `.permissionOrganization :global(...)`），避免全局裸 CSS；全站统一视觉应在 layout / `ConfigProvider` token 层集中处理，不在各 CRUD 页复制粘贴；无 `:global(.ant-*)` 时可不为 Table 单独挂仅用于覆盖的 `className`。
+**边界**：确须覆盖时，选择器挂在页面根类名下（如 `.systemOrganization :global(...)`），避免全局裸 CSS；全站统一视觉应在 layout / `ConfigProvider` token 层集中处理，不在各 CRUD 页复制粘贴；无 `:global(.ant-*)` 时可不为 Table 单独挂仅用于覆盖的 `className`。
 
 ### 不写响应式 @media
 

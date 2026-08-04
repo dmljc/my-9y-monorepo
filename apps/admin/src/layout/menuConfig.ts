@@ -124,7 +124,7 @@ function joinRoutePath(parentPath: string, path?: string): string {
 	const childSegments = path.replace(/^\/+/, "").split("/").filter(Boolean);
 	const parentTail = parentSegments[parentSegments.length - 1];
 
-	// 子路径已含父级末段（如 permission + permission/operation-log）时去重
+	// 子路径已含父级末段（如 system + system/operation-log）时去重
 	if (parentTail && childSegments[0] === parentTail) {
 		return normalizePath(
 			`${normalizedParent}/${childSegments.slice(1).join("/")}`,

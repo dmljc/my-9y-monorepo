@@ -18,12 +18,10 @@ const InspectionLedger = lazy(() => import("@/pages/inspection-ledger"));
 const ModelData = lazy(() => import("@/pages/model-data"));
 const HistoricalData = lazy(() => import("@/pages/historical-data"));
 const ReverseControl = lazy(() => import("@/pages/reverse-control"));
-const Permission = lazy(() => import("@/pages/permission"));
-const PermissionRole = lazy(() => import("@/pages/permission-role"));
-const PermissionUser = lazy(() => import("@/pages/permission-user"));
-const PermissionOrganization = lazy(
-	() => import("@/pages/permission-organization"),
-);
+const System = lazy(() => import("@/pages/system"));
+const SystemRole = lazy(() => import("@/pages/system-role"));
+const SystemUser = lazy(() => import("@/pages/system-user"));
+const SystemOrganization = lazy(() => import("@/pages/system-organization"));
 const OperationLog = lazy(() => import("@/pages/operation-log"));
 const NotFound = lazy(() => import("@/components/NotFound"));
 const Forbidden = lazy(() => import("@/components/Forbidden"));
@@ -127,7 +125,7 @@ const routes: RouteObject[] = [
 							},
 							{
 								path: "/system",
-								element: <Permission />,
+								element: <System />,
 								children: [
 									{
 										index: true,
@@ -142,15 +140,15 @@ const routes: RouteObject[] = [
 									},
 									{
 										path: "role",
-										element: <PermissionRole />,
+										element: <SystemRole />,
 									},
 									{
 										path: "user",
-										element: <PermissionUser />,
+										element: <SystemUser />,
 									},
 									{
 										path: "organization",
-										element: <PermissionOrganization />,
+										element: <SystemOrganization />,
 									},
 									{
 										path: "operation-log",

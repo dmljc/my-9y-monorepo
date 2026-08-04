@@ -15,7 +15,7 @@ import styles from "./index.module.css";
 import type { OrgFormValues, OrgTreeNode } from "./utils";
 import { buildOrgTree, filterOrgTree, setFlatOrgsCache } from "./utils";
 
-const PermissionOrganization = () => {
+const SystemOrganization = () => {
 	const { message, modal } = App.useApp();
 	const [loading, setLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<OrgTreeNode[]>([]);
@@ -137,7 +137,7 @@ const PermissionOrganization = () => {
 	];
 
 	return (
-		<div className={styles.permissionOrganization}>
+		<div className={styles.systemOrganization}>
 			<div className={styles.toolbar}>
 				<span className={styles.filterLabel}>组织名称</span>
 				<Input
@@ -186,4 +186,4 @@ const PermissionOrganization = () => {
 	);
 };
 
-export default PermissionOrganization;
+export default SystemOrganization;

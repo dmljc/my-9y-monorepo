@@ -11,7 +11,7 @@ import {
 	PASSWORD_RULES,
 	USERNAME_MAX_LENGTH,
 	USERNAME_RULES,
-} from "@/pages/permission-user/formRules";
+} from "@/pages/system-user/formRules";
 import { useUserStore } from "@/stores/user";
 import styles from "./index.module.css";
 import type { LoginFormValues } from "./interface";

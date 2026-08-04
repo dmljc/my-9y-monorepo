@@ -20,7 +20,7 @@ import type { RoleListQuery, SysRole } from "./interface";
 import type { RoleFormValues } from "./utils";
 import { formatPermissionCount } from "./utils";
 
-const PermissionRole = () => {
+const SystemRole = () => {
 	const { message, modal } = App.useApp();
 	const fetchUserInfo = useUserStore((state) => state.fetchUserInfo);
 	const fetchMenus = useMenuStore((state) => state.fetchMenus);
@@ -217,7 +217,7 @@ const PermissionRole = () => {
 	];
 
 	return (
-		<div className={styles.permissionRole}>
+		<div className={styles.systemRole}>
 			<div className={styles.toolbar}>
 				<span className={styles.filterLabel}>角色名称</span>
 				<Input
@@ -288,4 +288,4 @@ const PermissionRole = () => {
 	);
 };
 
-export default PermissionRole;
+export default SystemRole;
