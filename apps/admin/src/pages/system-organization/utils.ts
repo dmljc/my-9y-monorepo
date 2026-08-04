@@ -136,17 +136,25 @@ export function getDescendantIds(
 	return ids;
 }
 
+/** 上级组织 TreeSelect 节点 */
+export interface ParentTreeNode {
+	title: string;
+	value: number;
+	disabled?: boolean;
+	children?: ParentTreeNode[];
+}
+
 /**
- * 上级组织下拉选项。
+ * 上级组织树形选项（编辑时禁用自身及下级）。
  *
  * @param {SysDept[]} - 扁平组织列表。
- * @param {number} - 编辑时需排除的组织 ID。
- * @returns {{ value: number; label: string }[]} - 上级组织选项。
+ * @param {number} - 编辑时需禁用的组织 ID。
+ * @returns {ParentTreeNode[]} - TreeSelect 树数据。
  */
-export function getParentOptions(
+export function getParentTreeData(
 	depts: SysDept[],
 	excludeId?: number,
-): { value: number; label: string }[] {
+): ParentTreeNode[] {
 	const excluded = new Set<number>();
 	if (excludeId !== undefined) {
 		excluded.add(excludeId);
@@ -155,17 +163,16 @@ export function getParentOptions(
 		}
 	}
 
+	const mapNode = (node: OrgTreeNode): ParentTreeNode => ({
+		title: node.deptName ?? "",
+		value: node.deptId as number,
+		disabled: excluded.has(node.deptId as number),
+		children: node.children?.map(mapNode),
+	});
+
 	return [
-		{ value: TOP_PARENT_VALUE, label: "无（顶级组织）" },
-		...depts
-			.filter(
-				(item) =>
-					item.deptId !== undefined && !excluded.has(item.deptId),
-			)
-			.map((item) => ({
-				value: item.deptId as number,
-				label: item.deptName ?? "",
-			})),
+		{ title: "无（顶级组织）", value: TOP_PARENT_VALUE },
+		...buildOrgTree(depts).map(mapNode),
 	];
 }
 

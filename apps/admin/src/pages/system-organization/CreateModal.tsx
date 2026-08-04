@@ -1,9 +1,9 @@
-import { Form, Input, Modal, Select } from "antd";
+import { Form, Input, Modal, TreeSelect } from "antd";
 import { useEffect, useState } from "react";
 import type { OrgFormValues, OrgTreeNode } from "./utils";
 import {
 	getAllOrgs,
-	getParentOptions,
+	getParentTreeData,
 	isDuplicateOrgName,
 	ORG_DESCRIPTION_MAX_LENGTH,
 	ORG_NAME_MAX_LENGTH,
@@ -28,7 +28,10 @@ const CreateModal = ({
 	const [form] = Form.useForm<OrgFormValues>();
 	const [loading, setLoading] = useState(false);
 	const isEdit = editingRecord !== null;
-	const parentOptions = getParentOptions(getAllOrgs(), editingRecord?.deptId);
+	const parentTreeData = getParentTreeData(
+		getAllOrgs(),
+		editingRecord?.deptId,
+	);
 
 	useEffect(() => {
 		if (!open) return;
@@ -129,9 +132,12 @@ const CreateModal = ({
 						},
 					]}
 				>
-					<Select
+					<TreeSelect
 						placeholder="请选择上级组织"
-						options={parentOptions}
+						treeData={parentTreeData}
+						treeDefaultExpandAll
+						showSearch
+						treeNodeFilterProp="title"
 					/>
 				</Form.Item>
 
