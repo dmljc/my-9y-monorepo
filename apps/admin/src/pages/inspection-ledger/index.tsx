@@ -188,7 +188,6 @@ const InspectionLedger = () => {
 		modal.confirm({
 			title: "确认执行点检",
 			content: `确定要执行设备「${record.deviceName ?? ""}」的点检吗？`,
-			okText: "执行点检",
 			onOk: async () => {
 				setInspectingId(id);
 				try {
