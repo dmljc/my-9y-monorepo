@@ -217,21 +217,21 @@
 	border-color: #0984ff;
 }
 
-/* 登录按钮：rgba(9,132,255,0.5)，字号 28 → 14 */
+/* 登录按钮：与 admin 同色 #0984ff */
 .submit {
 	height: calc(50 / 1400 * 100cqw);
 	border-radius: calc(12 / 1400 * 100cqw);
 	font-size: calc(14 / 1400 * 100cqw);
 	line-height: calc(20 / 1400 * 100cqw);
 	font-weight: 600;
-	background: rgba(9, 132, 255, 0.5);
-	border-color: transparent;
+	background: #0984ff;
+	border-color: #0984ff;
 	box-shadow: none;
 }
 
 .submit:hover {
-	background: rgba(9, 132, 255, 0.65);
-	border-color: transparent;
+	background: #0076eb;
+	border-color: #0076eb;
 }
 
 .submitItem {
