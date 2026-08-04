@@ -54,8 +54,18 @@ export function formatActionTitle(permName: string): string {
 	return permName;
 }
 
-/** 超级管理员角色编码（与后端 roleKey 一致） */
-export const SUPER_ADMIN_ROLE_CODE = "admin";
+/** 超级管理员角色名称（与列表展示名一致）。 */
+export const SUPER_ADMIN_ROLE_NAME = "超级管理员";
+
+/**
+ * 判断是否为超级管理员角色。
+ *
+ * @param {SysRole | null | undefined} - 角色实体。
+ * @returns {boolean} - 是超级管理员时返回 true。
+ */
+export function isSuperAdminRole(role?: SysRole | null): boolean {
+	return role?.roleName === SUPER_ADMIN_ROLE_NAME;
+}
 
 /** 角色名称最大字符数 */
 export const ROLE_NAME_MAX_LENGTH = 20;
@@ -440,8 +450,8 @@ export function getActionKeys(pageKey: string, rows: AssignRow[]): string[] {
  * @returns {string} - 权限数量展示文案。
  */
 export function formatPermissionCount(role: SysRole): string {
-	if (role.admin || role.roleKey === SUPER_ADMIN_ROLE_CODE) {
-		return "所有";
+	if (isSuperAdminRole(role)) {
+		return "全部";
 	}
 	return String(role.menuCount ?? 0);
 }

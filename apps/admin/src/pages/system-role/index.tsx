@@ -18,7 +18,7 @@ import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import type { RoleListQuery, SysRole } from "./interface";
 import type { RoleFormValues } from "./utils";
-import { formatPermissionCount } from "./utils";
+import { formatPermissionCount, isSuperAdminRole } from "./utils";
 
 const SystemRole = () => {
 	const { message, modal } = App.useApp();
@@ -80,11 +80,13 @@ const SystemRole = () => {
 	};
 
 	const handleEdit = (record: SysRole) => {
+		if (isSuperAdminRole(record)) return;
 		setEditingRecord(record);
 		setCreateModalOpen(true);
 	};
 
 	const handleAssign = (record: SysRole) => {
+		if (isSuperAdminRole(record)) return;
 		setAssigningRecord(record);
 		setAssignModalOpen(true);
 	};
@@ -121,6 +123,7 @@ const SystemRole = () => {
 	};
 
 	const handleDelete = (record: SysRole) => {
+		if (isSuperAdminRole(record)) return;
 		modal.confirm({
 			title: "确认删除",
 			content: `确定要删除角色「${record.roleName}」吗？`,
@@ -182,37 +185,42 @@ const SystemRole = () => {
 			title: "操作",
 			key: "actions",
 			fixed: "right",
-			render: (_: unknown, record: SysRole) => (
-				<div className={styles.actions}>
-					<Access code={PERM_ROLE.EDIT}>
-						<Button
-							type="link"
-							size="small"
-							onClick={() => handleEdit(record)}
-						>
-							编辑
-						</Button>
-					</Access>
-					<Access code={PERM_ROLE.EDIT}>
-						<Button
-							type="link"
-							size="small"
-							onClick={() => handleAssign(record)}
-						>
-							权限分配
-						</Button>
-					</Access>
-					<Access code={PERM_ROLE.REMOVE}>
-						<Button
-							type="link"
-							size="small"
-							onClick={() => handleDelete(record)}
-						>
-							删除
-						</Button>
-					</Access>
-				</div>
-			),
+			render: (_: unknown, record: SysRole) => {
+				if (isSuperAdminRole(record)) {
+					return null;
+				}
+				return (
+					<div className={styles.actions}>
+						<Access code={PERM_ROLE.EDIT}>
+							<Button
+								type="link"
+								size="small"
+								onClick={() => handleEdit(record)}
+							>
+								编辑
+							</Button>
+						</Access>
+						<Access code={PERM_ROLE.EDIT}>
+							<Button
+								type="link"
+								size="small"
+								onClick={() => handleAssign(record)}
+							>
+								权限分配
+							</Button>
+						</Access>
+						<Access code={PERM_ROLE.REMOVE}>
+							<Button
+								type="link"
+								size="small"
+								onClick={() => handleDelete(record)}
+							>
+								删除
+							</Button>
+						</Access>
+					</div>
+				);
+			},
 		},
 	];
 
