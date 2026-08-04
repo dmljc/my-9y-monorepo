@@ -27,8 +27,7 @@ const OperationLog = () => {
 	const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(
 		getQuickRangeDates(DEFAULT_QUICK_RANGE),
 	);
-	const [userName, setUserName] = useState("");
-	const [operName, setOperName] = useState("");
+	const [keywords, setKeywords] = useState("");
 
 	const [loading, setLoading] = useState(false);
 	const [exportLoading, setExportLoading] = useState(false);
@@ -41,17 +40,15 @@ const OperationLog = () => {
 		p: number,
 		ps: number,
 		filters?: {
-			userName?: string;
-			operName?: string;
+			keywords?: string;
 			dateRange?: [Dayjs, Dayjs] | null;
 		},
 	): OperLogListQuery => {
-		const active = filters ?? { userName, operName, dateRange };
+		const active = filters ?? { keywords, dateRange };
 		const query: OperLogListQuery = {
 			pageNum: p,
 			pageSize: ps,
-			userName: active.userName?.trim(),
-			operName: active.operName?.trim(),
+			keywords: active.keywords?.trim(),
 		};
 		if (active.dateRange) {
 			query.params = {
@@ -66,8 +63,7 @@ const OperationLog = () => {
 		p: number,
 		ps: number,
 		filters?: {
-			userName?: string;
-			operName?: string;
+			keywords?: string;
 			dateRange?: [Dayjs, Dayjs] | null;
 		},
 	) => {
@@ -100,12 +96,10 @@ const OperationLog = () => {
 		const defaultRange = getQuickRangeDates(DEFAULT_QUICK_RANGE);
 		setQuickRange(DEFAULT_QUICK_RANGE);
 		setDateRange(defaultRange);
-		setUserName("");
-		setOperName("");
+		setKeywords("");
 		setPageNum(1);
 		loadData(1, pageSize, {
-			userName: "",
-			operName: "",
+			keywords: "",
 			dateRange: defaultRange,
 		});
 	};
@@ -165,16 +159,16 @@ const OperationLog = () => {
 			ellipsis: true,
 		},
 		{
+			title: "部门",
+			dataIndex: "deptName",
+			key: "deptName",
+			ellipsis: true,
+		},
+		{
 			title: "操作",
 			key: "action",
 			ellipsis: true,
 			render: (_, record) => formatOperAction(record),
-		},
-		{
-			title: "时间",
-			dataIndex: "operTime",
-			key: "operTime",
-			ellipsis: true,
 		},
 		{
 			title: "IP地址",
@@ -182,27 +176,24 @@ const OperationLog = () => {
 			key: "operIp",
 			ellipsis: true,
 		},
+		{
+			title: "时间",
+			dataIndex: "operTime",
+			key: "operTime",
+			ellipsis: true,
+		},
 	];
 
 	return (
 		<div className={styles.operationLog}>
 			<div className={styles.toolbar}>
-				<span className={styles.filterLabel}>账号</span>
+				<span className={styles.filterLabel}>关键词</span>
 				<Input
 					className={styles.searchInput}
-					placeholder="请输入账号"
-					value={userName}
+					placeholder="请输入账号或用户名"
+					value={keywords}
 					allowClear
-					onChange={(event) => setUserName(event.target.value)}
-					onPressEnter={handleSearch}
-				/>
-				<span className={styles.filterLabel}>用户名</span>
-				<Input
-					className={styles.searchInput}
-					placeholder="请输入用户名"
-					value={operName}
-					allowClear
-					onChange={(event) => setOperName(event.target.value)}
+					onChange={(event) => setKeywords(event.target.value)}
 					onPressEnter={handleSearch}
 				/>
 				<span className={styles.filterLabel}>时间范围</span>

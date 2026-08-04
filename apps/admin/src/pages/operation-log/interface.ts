@@ -29,8 +29,7 @@ export interface SysOperLog {
 export interface OperLogListQuery {
 	pageNum: number;
 	pageSize: number;
-	operName?: string;
-	userName?: string;
+	keywords?: string;
 	operIp?: string;
 	businessType?: number;
 	status?: number;
