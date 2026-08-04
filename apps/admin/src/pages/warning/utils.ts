@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { COLOR_PRESET_ITEMS } from "@/pages/warning-levels/utils";
 
 // ---------------------------------------------------------------------------
 // 类型
@@ -80,10 +81,15 @@ export const LEVEL_LABEL: Record<RiskLevel, string> = {
 	low: "低",
 };
 
+const PRESET_COLOR_BY_NAME = Object.fromEntries(
+	COLOR_PRESET_ITEMS.map((item) => [item.name, item.color]),
+) as Record<(typeof COLOR_PRESET_ITEMS)[number]["name"], string>;
+
+/** 高 / 中 / 低 回退色，对齐报警等级预置光谱（红 / 橙 / 蓝）。 */
 export const LEVEL_COLOR: Record<RiskLevel, string> = {
-	high: "error",
-	medium: "warning",
-	low: "processing",
+	high: PRESET_COLOR_BY_NAME.红,
+	medium: PRESET_COLOR_BY_NAME.橙,
+	low: PRESET_COLOR_BY_NAME.蓝,
 };
 
 export const STATUS_LABEL: Record<WarningStatus, string> = {

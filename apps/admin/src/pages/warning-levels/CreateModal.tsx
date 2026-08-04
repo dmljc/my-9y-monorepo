@@ -3,7 +3,12 @@ import { ColorPicker, Form, Input, Modal } from "antd";
 import type { AggregationColor } from "antd/es/color-picker/color";
 import { useEffect, useState } from "react";
 import styles from "./index.module.css";
-import type { LevelFormValues, WarningLevel } from "./utils";
+import {
+	COLOR_PRESET_ITEMS,
+	DEFAULT_COLOR,
+	type LevelFormValues,
+	type WarningLevel,
+} from "./utils";
 
 interface CreateModalProps {
 	open: boolean;
@@ -11,23 +16,6 @@ interface CreateModalProps {
 	onCancel: () => void;
 	onSubmit: (values: LevelFormValues) => Promise<void>;
 }
-
-/** 默认色：蓝 */
-const DEFAULT_COLOR = "#0000FF";
-
-/**
- * 光谱七色预置（红、橙、黄、绿、蓝、靛、紫）
- * name：展示于色卡下方
- */
-const COLOR_PRESET_ITEMS = [
-	{ name: "红", color: "#FF0000" },
-	{ name: "橙", color: "#FF7F00" },
-	{ name: "黄", color: "#F1C40F" },
-	{ name: "绿", color: "#00FF00" },
-	{ name: "蓝", color: "#0000FF" },
-	{ name: "靛", color: "#4B0082" },
-	{ name: "紫", color: "#8B00FF" },
-] as const;
 
 function normalizeHex(color: string) {
 	return color.trim().toLowerCase();
