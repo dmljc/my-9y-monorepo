@@ -53,6 +53,14 @@
 	background: transparent;
 }
 
+.topMenu :global(.ant-menu-item:focus),
+.topMenu :global(.ant-menu-item:focus-visible),
+.topMenu :global(.ant-menu-item-selected:focus),
+.topMenu :global(.ant-menu-item-selected:focus-visible) {
+	outline: none;
+	box-shadow: none;
+}
+
 .topMenu:global(.ant-menu-horizontal) > :global(.ant-menu-item::after),
 .topMenu:global(.ant-menu-horizontal) > :global(.ant-menu-item-selected::after),
 .topMenu:global(.ant-menu-horizontal) > :global(.ant-menu-item:hover::after),
