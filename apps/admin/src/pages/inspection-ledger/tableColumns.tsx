@@ -94,12 +94,6 @@ export const buildDeviceTableColumns = ({
 		ellipsis: true,
 	},
 	{
-		title: "型号",
-		dataIndex: "deviceType",
-		key: "deviceType",
-		ellipsis: true,
-	},
-	{
 		title: "设备类型",
 		dataIndex: "deviceType",
 		key: "deviceType",
