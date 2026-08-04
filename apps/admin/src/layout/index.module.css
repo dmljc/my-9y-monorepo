@@ -67,6 +67,11 @@
 
 .content {
 	overflow: auto;
-	padding: 24px;
+	padding: 8px 24px 24px;
 	background: #f0f4f8;
+}
+
+.breadcrumb {
+	margin-bottom: 8px;
+	line-height: 22px;
 }

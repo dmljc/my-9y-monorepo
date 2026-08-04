@@ -11,6 +11,7 @@ import type { MenuProps } from "antd";
 import { ConfigProvider, Flex, Layout, Menu, Typography } from "antd";
 import { type ReactNode, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import AppBreadcrumb from "./AppBreadcrumb";
 import styles from "./index.module.css";
 import {
 	getDefaultPathForTop,
@@ -90,6 +91,7 @@ const AppLayout = () => {
 				</Flex>
 			</Header>
 			<Content className={styles.content}>
+				<AppBreadcrumb />
 				<Outlet />
 			</Content>
 		</Layout>

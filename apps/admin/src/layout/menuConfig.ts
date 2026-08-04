@@ -312,6 +312,60 @@ const ROUTE_TITLES: Record<string, string> = {
 	"/500": "服务器错误",
 };
 
+/**
+ * 无侧栏菜单项、但需出现在面包屑第二级的页面文案。
+ */
+const EXTRA_BREADCRUMB_LABELS: Record<string, string> = {
+	"/warning/history": "告警历史",
+	"/model-data/history": "历史数据",
+};
+
+/**
+ * 面包屑单项。
+ */
+export interface BreadcrumbNavItem {
+	/** 展示文案。 */
+	title: string;
+	/** 可点击时的跳转路径；末级不设。 */
+	path?: string;
+}
+
+/**
+ * 根据当前路径与菜单生成面包屑项。
+ *
+ * @param {string} - 当前 pathname。
+ * @param {TopMenuItem[]} - 前端菜单树。
+ * @returns {BreadcrumbNavItem[]} - 面包屑项；无需展示时返回空数组。
+ */
+export function buildBreadcrumbItems(
+	pathname: string,
+	menus: TopMenuItem[] = [],
+): BreadcrumbNavItem[] {
+	if (menus.length === 0) return [];
+
+	const normalizedPath = normalizePath(pathname);
+	const topKey = getTopMenuByPath(normalizedPath, menus);
+	const topMenu = menus.find((item) => item.key === topKey);
+	if (!topMenu) return [];
+
+	const sideMenu = getActiveSideMenu(topKey, normalizedPath, menus);
+	const extraLabel = EXTRA_BREADCRUMB_LABELS[normalizedPath];
+
+	if (sideMenu || extraLabel) {
+		return [
+			{
+				title: topMenu.label,
+				path: getDefaultPathForTop(topKey, menus),
+			},
+			{
+				title: sideMenu?.label ?? extraLabel,
+			},
+		];
+	}
+
+	return [{ title: topMenu.label }];
+}
+
 /** 根据路由生成浏览器标签页标题 */
 export function getDocumentTitle(pathname: string): string {
 	const routeTitle = ROUTE_TITLES[pathname];
