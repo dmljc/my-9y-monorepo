@@ -27,6 +27,11 @@ import {
 const TWIN_LABEL_COL = { span: 8 };
 const TWIN_WRAPPER_COL = { span: 16 };
 
+interface SelectOption {
+	label: string;
+	value: string;
+}
+
 interface CreateModalProps {
 	open: boolean;
 	editingRecord: DeviceLedger | null;
@@ -43,16 +48,12 @@ const CreateModal = ({
 	const [form] = Form.useForm<DeviceFormValues>();
 	const [loading, setLoading] = useState(false);
 	const [buildingLoading, setBuildingLoading] = useState(false);
-	const [buildingOptions, setBuildingOptions] = useState<
-		{ label: string; value: string }[]
-	>([]);
+	const [buildingOptions, setBuildingOptions] = useState<SelectOption[]>([]);
 	const [roomLoading, setRoomLoading] = useState(false);
-	const [roomOptions, setRoomOptions] = useState<
-		{ label: string; value: string }[]
-	>([]);
+	const [roomOptions, setRoomOptions] = useState<SelectOption[]>([]);
 	const isEdit = editingRecord !== null;
 
-	const building = Form.useWatch("building", form);
+	const buildingId = Form.useWatch("buildingId", form);
 	const cycleValue = Form.useWatch("cycleValue", form);
 	const cycleUnit = Form.useWatch("cycleUnit", form);
 	const lastInspection = Form.useWatch("lastInspection", form);
@@ -71,6 +72,10 @@ const CreateModal = ({
 		if (editingRecord) {
 			form.setFieldsValue({
 				...editingRecord,
+				buildingId:
+					editingRecord.buildingId !== undefined
+						? String(editingRecord.buildingId)
+						: undefined,
 				lastInspection: normalizeDateValue(
 					editingRecord.lastInspection,
 				),
@@ -90,7 +95,7 @@ const CreateModal = ({
 				const buildingData = await fetchBuildings();
 				if (!ignore) {
 					setBuildingOptions(
-						normalizeBuildingOptions(buildingData, false),
+						normalizeBuildingOptions(buildingData, false, true),
 					);
 				}
 			} finally {
@@ -109,7 +114,7 @@ const CreateModal = ({
 
 	useEffect(() => {
 		if (!open) return;
-		if (!building) {
+		if (!buildingId) {
 			setRoomOptions([]);
 			return;
 		}
@@ -118,7 +123,7 @@ const CreateModal = ({
 		const loadRooms = async () => {
 			setRoomLoading(true);
 			try {
-				const roomData = await fetchRooms({ buildingId: building });
+				const roomData = await fetchRooms({ buildingId });
 				if (!ignore) {
 					setRoomOptions(normalizeRoomOptions(roomData));
 				}
@@ -134,20 +139,33 @@ const CreateModal = ({
 		return () => {
 			ignore = true;
 		};
-	}, [open, building]);
+	}, [open, buildingId]);
 
-	const handleFactoryChange = () => {
-		form.setFieldValue("room", undefined);
+	const handleBuildingChange = (value: string) => {
+		const selected = buildingOptions.find((item) => item.value === value);
+		form.setFields([
+			{ name: "building", value: selected?.label ?? "" },
+			{ name: "room", value: null },
+		]);
 	};
 
 	const onOk = async () => {
 		try {
 			const values = await form.validateFields();
+			const building =
+				values.building ||
+				buildingOptions.find((item) => item.value === values.buildingId)
+					?.label ||
+				"";
 			setLoading(true);
-			await onOkProp(values);
+			await onOkProp({
+				...values,
+				building,
+			});
 			onCancel();
-		} catch {
-			// 表单校验失败或接口失败
+		} catch (err) {
+			// 校验失败时 Form 会展示错误；接口失败由全局 onError 提示
+			if (err && typeof err === "object" && "errorFields" in err) return;
 		} finally {
 			setLoading(false);
 		}
@@ -169,6 +187,7 @@ const CreateModal = ({
 				labelCol={{ span: 4 }}
 				wrapperCol={{ span: 20 }}
 				preserve={false}
+				scrollToFirstError
 			>
 				<Form.Item
 					name="deviceCode"
@@ -250,7 +269,7 @@ const CreateModal = ({
 				<Row gutter={12}>
 					<Col span={12}>
 						<Form.Item
-							name="building"
+							name="buildingId"
 							label="所属厂房"
 							labelCol={TWIN_LABEL_COL}
 							wrapperCol={TWIN_WRAPPER_COL}
@@ -260,8 +279,11 @@ const CreateModal = ({
 								placeholder="请选择厂房"
 								options={buildingOptions}
 								loading={buildingLoading}
-								onChange={handleFactoryChange}
+								onChange={handleBuildingChange}
 							/>
+						</Form.Item>
+						<Form.Item name="building" hidden>
+							<Input />
 						</Form.Item>
 					</Col>
 					<Col span={12}>
@@ -276,7 +298,7 @@ const CreateModal = ({
 								placeholder="请选择房间"
 								options={roomOptions}
 								loading={roomLoading}
-								disabled={!building}
+								disabled={!buildingId}
 							/>
 						</Form.Item>
 					</Col>

@@ -69,11 +69,13 @@ export function normalizeStats(
  *
  * @param {unknown} - 厂房接口 data 字段。
  * @param {boolean} - 是否包含「全部」选项。
+ * @param {boolean} - 为 true 时 value 取厂房 ID（表单联动房间）；否则取厂房名称（筛选）。
  * @returns {Array<{ label: string; value: string }>} - 厂房选项列表。
  */
 export function normalizeBuildingOptions(
 	data: unknown,
 	includeAll = true,
+	valueAsId = false,
 ): { label: string; value: string }[] {
 	const options: { label: string; value: string }[] = includeAll
 		? [ALL_BUILDING_OPTION]
@@ -88,25 +90,20 @@ export function normalizeBuildingOptions(
 		}
 		if (item && typeof item === "object") {
 			const record = item as Record<string, unknown>;
-			const value = String(
-				record.value ??
-					record.buildingId ??
-					record.id ??
+			const name = String(
+				record.label ??
 					record.building ??
 					record.buildingName ??
 					record.name ??
-					record.label ??
 					"",
-			);
-			if (!value.trim()) continue;
+			).trim();
+			const id = String(
+				record.value ?? record.buildingId ?? record.id ?? "",
+			).trim();
+			const value = valueAsId ? id || name : name || id;
+			if (!value) continue;
 			options.push({
-				label: String(
-					record.label ??
-						record.building ??
-						record.buildingName ??
-						record.name ??
-						value,
-				),
+				label: name || value,
 				value,
 			});
 		}
@@ -116,7 +113,7 @@ export function normalizeBuildingOptions(
 }
 
 /**
- * 将房间列表接口响应转为 Select 选项。
+ * 将房间列表接口响应转为 Select 选项（value / label 均为房间名称）。
  *
  * @param {unknown} - 房间接口 data 字段。
  * @returns {Array<{ label: string; value: string }>} - 房间选项列表。
@@ -135,24 +132,21 @@ export function normalizeRoomOptions(
 		}
 		if (item && typeof item === "object") {
 			const record = item as Record<string, unknown>;
-			const value = String(
-				record.value ??
-					record.roomId ??
-					record.id ??
+			const name = String(
+				record.label ??
+					record.room ??
 					record.roomName ??
 					record.name ??
-					record.label ??
+					record.roomNo ??
 					"",
-			);
-			if (!value.trim()) continue;
+			).trim();
+			const fallbackId = String(
+				record.value ?? record.roomId ?? record.id ?? "",
+			).trim();
+			const value = name || fallbackId;
+			if (!value) continue;
 			options.push({
-				label: String(
-					record.label ??
-						record.roomName ??
-						record.name ??
-						record.roomNo ??
-						value,
-				),
+				label: name || value,
 				value,
 			});
 		}

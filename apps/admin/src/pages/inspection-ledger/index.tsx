@@ -166,6 +166,9 @@ const InspectionLedger = () => {
 			deviceType: values.deviceType,
 			manufacturer: values.manufacturer.trim(),
 			building: values.building,
+			buildingId: values.buildingId
+				? Number(values.buildingId)
+				: undefined,
 			room: values.room,
 			cycleValue: values.cycleValue,
 			cycleUnit: values.cycleUnit,

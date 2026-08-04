@@ -8,6 +8,7 @@ export interface DeviceLedger {
 	deviceType?: string;
 	manufacturer?: string;
 	building?: string;
+	buildingId?: number;
 	room?: string;
 	cycleValue?: number;
 	cycleUnit?: string;
@@ -66,7 +67,11 @@ export interface DeviceFormValues {
 	deviceName: string;
 	deviceType: string;
 	manufacturer: string;
+	/** 厂房 ID，用于联动查询房间。 */
+	buildingId: string;
+	/** 厂房名称，提交台账用。 */
 	building: string;
+	/** 房间名称，提交台账用。 */
 	room: string;
 	cycleValue: number;
 	cycleUnit: string;
