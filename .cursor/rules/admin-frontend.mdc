@@ -1869,9 +1869,9 @@ confirmModal.confirm({ /* ... */ });
 
 ### Table columns 列宽
 
-**做什么**：`columns` 配置中，**仅「序号」列**设置 `width: 72`；其余数据列、操作列**不写 `width`**，由表格自适应分配宽度。
+**做什么**：`columns` 配置中，**「序号」列**固定 `width: 72`；**「操作」列允许按按钮数量设置 `width`**（如仅编辑/删除可用 `120`～`150`，含「执行点检」「权限分配」等可适当加宽）；其余数据列**不写 `width`**，由表格自适应分配宽度。
 
-**为什么**：序号列内容固定、宽度可预期；其余列交给 Table 弹性布局，避免硬编码宽度导致窄屏溢出或宽屏留白，也减少各页重复调列宽。
+**为什么**：序号列内容固定、宽度可预期；操作列按钮数量因页而异，给固定宽度可避免 fixed 右栏被挤扁或换行；业务数据列交给 Table 弹性布局，避免每列硬编码宽度导致窄屏溢出或宽屏留白。
 
 **✅ 推荐**
 
@@ -1890,6 +1890,7 @@ const columns: ColumnsType<User> = [
     title: "操作",
     key: "actions",
     fixed: "right",
+    width: 150,
     render: (_, record) => (/* ... */),
   },
 ];
@@ -1899,10 +1900,10 @@ const columns: ColumnsType<User> = [
 
 ```tsx
 { title: "用户账号", dataIndex: "username", width: 120 },
-{ title: "操作", key: "actions", width: 150, fixed: "right" },
+{ title: "用户姓名", dataIndex: "realName", width: 100 },
 ```
 
-**边界**：序号列保持 `align: "center"`；列特别多、使用 `fixed` 列或设计明确要求最小表格宽度时，才在 Table 上设 `scroll.x`（见下节），不必靠给每列加 `width` 撑开。
+**边界**：序号列保持 `align: "center"`；操作列 `width` 按实际按钮占位微调即可，无统一 magic number；列特别多、使用 `fixed` 列或设计明确要求最小表格宽度时，才在 Table 上设 `scroll.x`（见下节），不必靠给每列数据列加 `width` 撑开。
 
 ### Table scroll
 
@@ -1922,7 +1923,7 @@ const columns: ColumnsType<User> = [
 <Table columns={columns} dataSource={dataSource} scroll={{ x: 640 }} />
 ```
 
-**边界**：与「Table columns 列宽」配合——未设 `scroll` 时数据列不写 `width`；确需 `scroll.x` 时再按文档取值（列宽之和、`max-content` 等），不要复制粘贴固定 magic number。
+**边界**：与「Table columns 列宽」配合——未设 `scroll` 时数据列不写 `width`（序号、操作列除外）；确需 `scroll.x` 时再按文档取值（列宽之和、`max-content` 等），不要复制粘贴固定 magic number。
 
 ### Table 分页
 
