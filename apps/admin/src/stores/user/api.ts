@@ -6,7 +6,7 @@ export const login = (data: LoginParams): Promise<LoginResponse> => {
 };
 
 export const getInfo = (): Promise<GetInfoResponse> => {
-	return request.get("/getInfo");
+	return request.get("/getInfo", { params: { type: "admin" } });
 };
 
 export const logout = (): Promise<void> => {

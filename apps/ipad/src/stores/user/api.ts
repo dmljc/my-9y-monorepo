@@ -12,12 +12,12 @@ export const login = (data: LoginParams): Promise<LoginResponse> => {
 };
 
 /**
- * 获取当前登录用户信息（与 admin 相同：GET /getInfo）。
+ * 获取当前登录用户信息（GET /getInfo，type=ipad）。
  *
  * @returns {Promise<GetInfoResponse>} - 用户、权限与角色。
  */
 export const getInfo = (): Promise<GetInfoResponse> => {
-	return request.get("/getInfo");
+	return request.get("/getInfo", { params: { type: "ipad" } });
 };
 
 /**
