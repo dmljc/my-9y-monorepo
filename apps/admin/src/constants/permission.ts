@@ -49,7 +49,6 @@ export const PERM_USER = {
 	ADD: "system:user:add",
 	EDIT: "system:user:edit",
 	REMOVE: "system:user:delete",
-	EXPORT: "system:user:export",
 } as const;
 
 /** 组织管理 - 按钮权限码。 */

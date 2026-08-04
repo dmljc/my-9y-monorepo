@@ -1,7 +1,5 @@
-import { resolveExportBlob, XLSX_MIME } from "@/utils";
 import {
 	create as createUserApi,
-	exportUser as exportUserApi,
 	getDeptTree as fetchDeptTreeApi,
 	listRoles as fetchRoleListApi,
 	detail as fetchUserDetailApi,
@@ -618,27 +616,6 @@ export async function updateUser(
  */
 export async function removeUser(id: string): Promise<void> {
 	await removeUserApi(id);
-}
-
-/**
- * 按当前筛选条件导出用户列表为 Excel 文件。
- *
- * @param {UserListFilters} - 当前筛选条件。
- * @returns {Blob} - 可下载的 Excel 文件 Blob。
- */
-export async function exportUsers(filters: UserListFilters): Promise<Blob> {
-	const response = await exportUserApi(
-		toUserListQuery({
-			pageNum: 1,
-			pageSize: DEFAULT_PAGE_SIZE,
-			...filters,
-		}),
-	);
-	const raw =
-		response.data instanceof Blob
-			? response.data
-			: new Blob([response.data], { type: XLSX_MIME });
-	return resolveExportBlob(raw, XLSX_MIME);
 }
 
 /**
