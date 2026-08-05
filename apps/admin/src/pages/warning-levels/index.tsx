@@ -1,13 +1,14 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Access from "@/components/Access";
 import { PERM_WARNING_LEVELS } from "@/constants/permission";
 import { create, list, remove, update } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import type { LevelFormValues, WarningLevel } from "./utils";
+import { parseLevelRows, toAlarmLevelPayload, toWarningLevel } from "./utils";
 
 const WarningLevels = () => {
 	const { message, modal } = App.useApp();
@@ -21,48 +22,45 @@ const WarningLevels = () => {
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(25);
 
-	const loadData = useCallback(
-		async (p: number, ps: number) => {
-			setLoading(true);
-			try {
-				const result = await list({ pageNum: p, pageSize: ps });
-				setDataSource(result.list);
-				setTotal(result.total);
-				setPageNum(result.pageNum);
-				setPageSize(result.pageSize);
-			} catch {
-			} finally {
-				setLoading(false);
-			}
-		},
-		[message],
-	);
+	const loadData = async (p: number, ps: number) => {
+		setLoading(true);
+		try {
+			const data = await list({ pageNum: p, pageSize: ps });
+			const { rows, total: count } = parseLevelRows(data);
+			setDataSource(rows.map(toWarningLevel));
+			setTotal(count);
+			setPageNum(p);
+			setPageSize(ps);
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	const initRef = useRef(false);
 	useEffect(() => {
 		if (!initRef.current) {
 			initRef.current = true;
-			void loadData(pageNum, pageSize);
+			loadData(pageNum, pageSize);
 		}
 	}, []);
 
-	const openAdd = () => {
+	const handleAdd = () => {
 		setEditingRecord(null);
 		setModalOpen(true);
 	};
 
-	const openEdit = (record: WarningLevel) => {
+	const handleEdit = (record: WarningLevel) => {
 		setEditingRecord(record);
 		setModalOpen(true);
 	};
 
 	const handleModalSubmit = async (values: LevelFormValues) => {
 		if (editingRecord) {
-			await update(editingRecord.id, values);
-			message.success("更新成功");
+			await update(toAlarmLevelPayload(values, editingRecord.id));
+			message.success("编辑成功");
 		} else {
-			await create(values);
-			message.success("创建成功");
+			await create(toAlarmLevelPayload(values));
+			message.success("新增成功");
 		}
 		await loadData(pageNum, pageSize);
 	};
@@ -73,7 +71,6 @@ const WarningLevels = () => {
 			content: `确定要删除报警等级「${record.name}」吗？`,
 			okText: "删除",
 			okButtonProps: { danger: true },
-			cancelText: "取消",
 			onOk: async () => {
 				await remove(record.id);
 				message.success("删除成功");
@@ -83,7 +80,7 @@ const WarningLevels = () => {
 	};
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {
-		void loadData(pagination.current ?? 1, pagination.pageSize ?? 10);
+		loadData(pagination.current ?? 1, pagination.pageSize ?? pageSize);
 	};
 
 	const columns: ColumnsType<WarningLevel> = [
@@ -125,7 +122,7 @@ const WarningLevels = () => {
 						<Button
 							type="link"
 							size="small"
-							onClick={() => openEdit(record)}
+							onClick={() => handleEdit(record)}
 						>
 							编辑
 						</Button>
@@ -146,55 +143,44 @@ const WarningLevels = () => {
 
 	return (
 		<div className={styles.warningLevels}>
-			<section className={styles.panel}>
-				<header className={styles.panelHeader}>
-					<div className={styles.panelTitle}>
-						<span className={styles.panelIcon} aria-hidden />
-						<span>报警等级管理</span>
-					</div>
+			<div className={styles.toolbar}>
+				<span className={styles.panelTitle}>
+					<span className={styles.panelIcon} aria-hidden />
+					<span>报警等级管理</span>
+				</span>
+				<div className={styles.panelActions}>
 					<Access code={PERM_WARNING_LEVELS.CREATE}>
 						<Button
 							type="primary"
 							icon={<PlusOutlined />}
-							onClick={openAdd}
+							onClick={handleAdd}
 						>
 							新增
 						</Button>
 					</Access>
-				</header>
-
-				<div className={styles.tableWrap}>
-					<Table
-						size="small"
-						className={styles.levelTable}
-						columns={columns}
-						dataSource={dataSource}
-						rowKey="id"
-						loading={loading}
-						scroll={{ x: 640 }}
-						locale={{
-							emptyText: <Empty description="暂无报警等级" />,
-						}}
-						pagination={{
-							current: pageNum,
-							pageSize,
-							total,
-							showSizeChanger: true,
-							pageSizeOptions: [
-								"10",
-								"15",
-								"20",
-								"25",
-								"50",
-								"100",
-							],
-							showQuickJumper: true,
-							showTotal: (count) => `共 ${count} 条`,
-						}}
-						onChange={handleTableChange}
-					/>
 				</div>
-			</section>
+			</div>
+
+			<Table
+				size="small"
+				columns={columns}
+				dataSource={dataSource}
+				rowKey="id"
+				loading={loading}
+				locale={{
+					emptyText: <Empty description="暂无报警等级" />,
+				}}
+				pagination={{
+					current: pageNum,
+					pageSize,
+					total,
+					showSizeChanger: true,
+					pageSizeOptions: ["10", "15", "20", "25", "50", "100"],
+					showQuickJumper: true,
+					showTotal: (count) => `共 ${count} 条`,
+				}}
+				onChange={handleTableChange}
+			/>
 
 			<CreateModal
 				open={modalOpen}

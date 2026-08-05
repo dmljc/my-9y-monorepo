@@ -5,7 +5,7 @@ import {
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Menu } from "antd";
-import type { ReactNode } from "react";
+import { type ReactNode, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
 	getActiveSideMenu,
@@ -29,11 +29,15 @@ const Warning = () => {
 	const sideMenus = getSideMenus("warning", menus);
 	const activeMenu = getActiveSideMenu("warning", pathname, menus);
 
-	const menuItems: MenuProps["items"] = sideMenus.map((item) => ({
-		key: item.key,
-		label: item.label,
-		icon: MENU_ICONS[item.key],
-	}));
+	const menuItems = useMemo<MenuProps["items"]>(
+		() =>
+			sideMenus.map((item) => ({
+				key: item.key,
+				label: item.label,
+				icon: MENU_ICONS[item.key],
+			})),
+		[sideMenus],
+	);
 
 	const handleMenuClick: MenuProps["onClick"] = ({ key }) => {
 		const target = sideMenus.find((item: SideMenuItem) => item.key === key);
@@ -43,7 +47,7 @@ const Warning = () => {
 	};
 
 	return (
-		<div className={styles.warning}>
+		<div className={styles.warningLayout}>
 			{sideMenus.length > 0 ? (
 				<aside className={styles.sidebar}>
 					<Menu

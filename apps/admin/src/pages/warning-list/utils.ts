@@ -1,24 +1,11 @@
-import { COLOR_PRESET_ITEMS } from "@/pages/warning-levels/utils";
 import type {
 	AlarmListQuery,
-	IiotAlarm,
-	RiskLevel,
 	StatCard,
 	StatCardAssets,
 	StatusFilter,
-	WarningItem,
 	WarningStats,
 	WarningStatus,
-	WarningType,
 } from "./interface";
-
-/**
- * 告警类型展示文案。
- */
-export const TYPE_LABEL: Record<WarningType, string> = {
-	room: "房间",
-	device: "设备",
-};
 
 /**
  * 状态筛选项。
@@ -28,28 +15,6 @@ export const STATUS_OPTIONS: { label: string; value: StatusFilter }[] = [
 	{ label: "已解决", value: "processed" },
 	{ label: "未解决", value: "unprocessed" },
 ];
-
-/**
- * 风险等级展示文案。
- */
-export const LEVEL_LABEL: Record<RiskLevel, string> = {
-	high: "高",
-	medium: "中",
-	low: "低",
-};
-
-const PRESET_COLOR_BY_NAME = Object.fromEntries(
-	COLOR_PRESET_ITEMS.map((item) => [item.name, item.color]),
-) as Record<(typeof COLOR_PRESET_ITEMS)[number]["name"], string>;
-
-/**
- * 高 / 中 / 低 回退色，对齐报警等级预置光谱（红 / 橙 / 蓝）。
- */
-export const LEVEL_COLOR: Record<RiskLevel, string> = {
-	high: PRESET_COLOR_BY_NAME.红,
-	medium: PRESET_COLOR_BY_NAME.橙,
-	low: PRESET_COLOR_BY_NAME.蓝,
-};
 
 /**
  * 处理状态展示文案。
@@ -101,66 +66,6 @@ export function toAlarmListQuery(
 		};
 	}
 	return query;
-}
-
-/**
- * 将后端 monitorType 转为展示类型。
- *
- * @param {string | undefined} - 后端监控类型。
- * @returns {WarningType} - 展示用告警类型。
- */
-function toWarningType(monitorType?: string): WarningType {
-	return monitorType === "room" ? "room" : "device";
-}
-
-/**
- * 将后端 status 转为展示状态。
- *
- * @param {string | undefined} - 后端状态值。
- * @returns {WarningStatus} - 展示用处理状态。
- */
-function toWarningStatus(status?: string): WarningStatus {
-	if (status === "1" || status === "processed" || status === "resolved") {
-		return "processed";
-	}
-	return "unprocessed";
-}
-
-/**
- * 根据等级名称 / 颜色推断风险档位。
- *
- * @param {IiotAlarm} - 后端告警行。
- * @returns {RiskLevel} - 展示用风险等级。
- */
-function toRiskLevel(alarm: IiotAlarm): RiskLevel {
-	if (alarm.levelName?.includes("一般")) return "low";
-	if (alarm.levelName?.includes("严重")) return "medium";
-	if (alarm.levelColor?.toLowerCase().includes("fa8c16")) return "medium";
-	if (alarm.levelColor?.toLowerCase().includes("faad14")) return "low";
-	return "high";
-}
-
-/**
- * 将后端告警行转为表格行。
- *
- * @param {IiotAlarm} - 后端告警行。
- * @returns {WarningItem} - 表格展示记录。
- */
-export function toWarningItem(alarm: IiotAlarm): WarningItem {
-	return {
-		id: String(alarm.id ?? ""),
-		type: toWarningType(alarm.monitorType),
-		name: alarm.propertyName ?? alarm.deviceName ?? "",
-		currentValue: alarm.currentValue ?? "",
-		thresholdRange: `${alarm.thresholdMin ?? ""}-${alarm.thresholdMax ?? ""}`,
-		level: toRiskLevel(alarm),
-		levelName: alarm.levelName,
-		levelColor: alarm.levelColor,
-		time: alarm.alarmTime ?? "",
-		status: toWarningStatus(alarm.status),
-		thingId: alarm.thingId,
-		propertyId: alarm.propertyId,
-	};
 }
 
 /**

@@ -3,28 +3,41 @@ import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import cardBlueCircleImg from "@/assets/warning/card-blue-circle.png";
-import cardGreenCircleImg from "@/assets/warning/card-green-circle.png";
-import cardOrangeCircleImg from "@/assets/warning/card-orange-circle.png";
-import statSolvedTodayImg from "@/assets/warning/stat-solved-today.png";
-import statTotalTodayImg from "@/assets/warning/stat-total-today.png";
-import statUnsolvedTodayImg from "@/assets/warning/stat-unsolved-today.png";
+import cardBlueCircleImg from "@/assets/warning/card-blue-circle.webp";
+import cardGreenCircleImg from "@/assets/warning/card-green-circle.webp";
+import cardOrangeCircleImg from "@/assets/warning/card-orange-circle.webp";
+import statSolvedTodayImg from "@/assets/warning/stat-solved-today.webp";
+import statTotalTodayImg from "@/assets/warning/stat-total-today.webp";
+import statUnsolvedTodayImg from "@/assets/warning/stat-unsolved-today.webp";
 import Access from "@/components/Access";
 import { PERM_WARNING_LIST } from "@/constants/permission";
 import { getStats, list, resolve } from "./api";
 import styles from "./index.module.css";
-import type { StatusFilter, WarningItem, WarningStats } from "./interface";
+import type { IiotAlarm, StatusFilter, WarningStats } from "./interface";
 import {
 	buildStatCards,
-	LEVEL_COLOR,
-	LEVEL_LABEL,
 	STATUS_LABEL,
 	STATUS_OPTIONS,
-	TYPE_LABEL,
 	toAlarmListQuery,
-	toWarningItem,
 	toWarningStats,
 } from "./utils";
+
+const isLightHexColor = (color?: string): boolean => {
+	if (!color) return false;
+	const raw = color.trim().replace(/^#/, "");
+	const hex =
+		raw.length === 3
+			? raw
+					.split("")
+					.map((char) => `${char}${char}`)
+					.join("")
+			: raw;
+	if (!/^[0-9a-fA-F]{6}$/.test(hex)) return false;
+	const r = Number.parseInt(hex.slice(0, 2), 16);
+	const g = Number.parseInt(hex.slice(2, 4), 16);
+	const b = Number.parseInt(hex.slice(4, 6), 16);
+	return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.7;
+};
 
 const { RangePicker } = DatePicker;
 
@@ -51,7 +64,7 @@ const WarningList = () => {
 	const [status, setStatus] = useState<StatusFilter>("all");
 
 	const [loading, setLoading] = useState(false);
-	const [dataSource, setDataSource] = useState<WarningItem[]>([]);
+	const [dataSource, setDataSource] = useState<IiotAlarm[]>([]);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(25);
@@ -75,8 +88,8 @@ const WarningList = () => {
 			const data = await list(
 				toAlarmListQuery(p, ps, filterDateRange, filterStatus),
 			);
-			const rows = data.rows ?? [];
-			setDataSource(rows.map(toWarningItem));
+			const rows = (data.list ?? []) as IiotAlarm[];
+			setDataSource(rows);
 			setTotal(data.total ?? 0);
 			setPageNum(p);
 			setPageSize(ps);
@@ -118,10 +131,11 @@ const WarningList = () => {
 		loadData(pagination.current ?? 1, pagination.pageSize ?? pageSize);
 	};
 
-	const handleProcess = async (record: WarningItem) => {
-		setProcessingId(record.id);
+	const handleProcess = async (record: IiotAlarm) => {
+		const id = String(record.id ?? "");
+		setProcessingId(id);
 		try {
-			await resolve(record.id);
+			await resolve(id);
 			message.success("已标记为已解决");
 			await loadData(pageNum, pageSize);
 			await loadStats();
@@ -130,8 +144,8 @@ const WarningList = () => {
 		}
 	};
 
-	const handleHistoryQuery = (record: WarningItem) => {
-		const warningTime = dayjs(record.time);
+	const handleHistoryQuery = (record: IiotAlarm) => {
+		const warningTime = dayjs(record.alarmTime);
 		if (!warningTime.isValid()) {
 			message.warning("告警时间无效，无法查询历史数据");
 			return;
@@ -152,26 +166,26 @@ const WarningList = () => {
 		navigate(`/warning/history?${searchParams.toString()}`);
 	};
 
-	const columns: ColumnsType<WarningItem> = [
+	const getWarningStatus = (status?: string) =>
+		status === "1" || status === "processed" || status === "resolved"
+			? "processed"
+			: "unprocessed";
+
+	const columns: ColumnsType<IiotAlarm> = [
 		{
 			title: "序号",
 			key: "index",
 			width: 72,
 			align: "center",
-			render: (_: unknown, __: WarningItem, index: number) =>
+			render: (_: unknown, __: IiotAlarm, index: number) =>
 				(pageNum - 1) * pageSize + index + 1,
 		},
 		{
 			title: "名称",
-			dataIndex: "name",
 			key: "name",
 			ellipsis: true,
-		},
-		{
-			title: "类型",
-			dataIndex: "type",
-			key: "type",
-			render: (type: WarningItem["type"]) => TYPE_LABEL[type],
+			render: (_: unknown, record: IiotAlarm) =>
+				record.propertyName ?? record.deviceName ?? "",
 		},
 		{
 			title: "当前值",
@@ -180,73 +194,90 @@ const WarningList = () => {
 		},
 		{
 			title: "阈值范围",
-			dataIndex: "thresholdRange",
 			key: "thresholdRange",
+			render: (_: unknown, record: IiotAlarm) =>
+				`${record.thresholdMin ?? ""}-${record.thresholdMax ?? ""}`,
 		},
 		{
 			title: "等级",
-			dataIndex: "level",
+			dataIndex: "levelName",
 			key: "level",
-			render: (_: WarningItem["level"], record) => (
-				<Tag color={record.levelColor ?? LEVEL_COLOR[record.level]}>
-					{record.levelName ?? LEVEL_LABEL[record.level]}
-				</Tag>
-			),
+			render: (_: unknown, record: IiotAlarm) => {
+				const color = record.levelColor ?? "#1677FF";
+				const light = isLightHexColor(color);
+				return (
+					<Tag
+						style={{
+							color: light ? "#1d2129" : "#fff",
+							background: color,
+							borderColor: color,
+						}}
+					>
+						{record.levelName}
+					</Tag>
+				);
+			},
 		},
 		{
 			title: "时间",
-			dataIndex: "time",
-			key: "time",
+			dataIndex: "alarmTime",
+			key: "alarmTime",
 			ellipsis: true,
 		},
 		{
 			title: "状态",
 			dataIndex: "status",
 			key: "status",
-			render: (itemStatus: WarningItem["status"]) => (
-				<span
-					className={
-						itemStatus === "processed"
-							? styles.statusProcessed
-							: styles.statusUnprocessed
-					}
-				>
-					{STATUS_LABEL[itemStatus]}
-				</span>
-			),
+			render: (status?: string) => {
+				const normalized = getWarningStatus(status);
+				return (
+					<span
+						className={
+							normalized === "processed"
+								? styles.statusProcessed
+								: styles.statusUnprocessed
+						}
+					>
+						{STATUS_LABEL[normalized]}
+					</span>
+				);
+			},
 		},
 		{
 			title: "操作",
 			key: "actions",
 			width: 250,
 			fixed: "right",
-			render: (_: unknown, record: WarningItem) => (
-				<div className={styles.actions}>
-					<Access code={PERM_WARNING_LIST.HISTORY}>
-						<Button
-							type="link"
-							size="small"
-							onClick={() => handleHistoryQuery(record)}
-						>
-							前后15分钟数据
-						</Button>
-					</Access>
-					{record.status === "unprocessed" ? (
-						<Access code={PERM_WARNING_LIST.RESOLVE}>
+			render: (_: unknown, record: IiotAlarm) => {
+				const normalized = getWarningStatus(record.status);
+				return (
+					<div className={styles.actions}>
+						<Access code={PERM_WARNING_LIST.HISTORY}>
 							<Button
 								type="link"
 								size="small"
-								loading={processingId === record.id}
-								onClick={() => handleProcess(record)}
+								onClick={() => handleHistoryQuery(record)}
 							>
-								标记解决
+								前后15分钟数据
 							</Button>
 						</Access>
-					) : (
-						<span className={styles.processedAction}>已处理</span>
-					)}
-				</div>
-			),
+						{normalized === "unprocessed" && (
+							<Access code={PERM_WARNING_LIST.RESOLVE}>
+								<Button
+									type="link"
+									size="small"
+									loading={
+										processingId === String(record.id ?? "")
+									}
+									onClick={() => handleProcess(record)}
+								>
+									标记解决
+								</Button>
+							</Access>
+						)}
+					</div>
+				);
+			},
 		},
 	];
 
@@ -324,7 +355,7 @@ const WarningList = () => {
 					size="small"
 					columns={columns}
 					dataSource={dataSource}
-					rowKey="id"
+					rowKey={(record) => String(record.id ?? "")}
 					loading={loading}
 					pagination={{
 						current: pageNum,

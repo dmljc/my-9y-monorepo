@@ -36,10 +36,7 @@ const CreateModal = ({
 		if (!open) return;
 
 		if (editingRecord) {
-			form.setFieldsValue({
-				name: editingRecord.name,
-				color: editingRecord.color,
-			});
+			form.setFieldsValue(editingRecord);
 			return;
 		}
 
@@ -47,7 +44,7 @@ const CreateModal = ({
 		form.setFieldsValue({ color: DEFAULT_COLOR });
 	}, [open, editingRecord]);
 
-	const handleOk = async () => {
+	const onOk = async () => {
 		try {
 			const values = await form.validateFields();
 			setLoading(true);
@@ -68,7 +65,7 @@ const CreateModal = ({
 		<Modal
 			title={isEdit ? "编辑" : "新增"}
 			open={open}
-			onOk={handleOk}
+			onOk={onOk}
 			onCancel={onCancel}
 			confirmLoading={loading}
 			destroyOnHidden

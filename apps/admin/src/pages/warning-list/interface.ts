@@ -1,14 +1,4 @@
 /**
- * 告警风险等级（展示用）。
- */
-export type RiskLevel = "high" | "medium" | "low";
-
-/**
- * 告警类型（展示用）。
- */
-export type WarningType = "room" | "device";
-
-/**
  * 处理状态（展示用）。
  */
 export type WarningStatus = "processed" | "unprocessed";
@@ -46,24 +36,6 @@ export interface IiotAlarm {
 	levelColor?: string;
 	alarmTime?: string;
 	status?: string;
-	thingId?: string;
-	propertyId?: string;
-}
-
-/**
- * 表格展示用告警记录。
- */
-export interface WarningItem {
-	id: string;
-	type: WarningType;
-	name: string;
-	currentValue: string;
-	thresholdRange: string;
-	level: RiskLevel;
-	levelName?: string;
-	levelColor?: string;
-	time: string;
-	status: WarningStatus;
 	thingId?: string;
 	propertyId?: string;
 }
