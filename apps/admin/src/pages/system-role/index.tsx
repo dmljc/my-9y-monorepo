@@ -80,13 +80,11 @@ const SystemRole = () => {
 	};
 
 	const handleEdit = (record: SysRole) => {
-		if (isSuperAdminRole(record)) return;
 		setEditingRecord(record);
 		setCreateModalOpen(true);
 	};
 
 	const handleAssign = (record: SysRole) => {
-		if (isSuperAdminRole(record)) return;
 		setAssigningRecord(record);
 		setAssignModalOpen(true);
 	};
@@ -186,9 +184,7 @@ const SystemRole = () => {
 			key: "actions",
 			fixed: "right",
 			render: (_: unknown, record: SysRole) => {
-				if (isSuperAdminRole(record)) {
-					return null;
-				}
+				const isSuperAdmin = isSuperAdminRole(record);
 				return (
 					<div className={styles.actions}>
 						<Access code={PERM_ROLE.EDIT}>
@@ -213,6 +209,7 @@ const SystemRole = () => {
 							<Button
 								type="link"
 								size="small"
+								disabled={isSuperAdmin}
 								onClick={() => handleDelete(record)}
 							>
 								删除
