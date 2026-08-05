@@ -125,8 +125,9 @@ const CreateModal = ({
 							label="反控规则名称"
 							rules={[
 								{ required: true, whitespace: true, message: "请输入规则名称" },
-								{ max: utils.MAX_LENGTH_12, message: `最多输入${utils.MAX_LENGTH_12}个字符` }
-							]}>
+								{ max: utils.MAX_LENGTH_12, message: `最多输入${utils.MAX_LENGTH_12}个字符` },
+							]}
+						>
 							<Input
 								placeholder="请输入规则名称"
 								maxLength={utils.MAX_LENGTH_12}
@@ -140,8 +141,9 @@ const CreateModal = ({
 							label="反控规则描述"
 							rules={[
 								{ required: true, whitespace: true, message: "请输入规则描述" },
-								{ max: utils.MAX_LENGTH_18, message: `最多输入${utils.MAX_LENGTH_18}个字符` }
-							]}>
+								{ max: utils.MAX_LENGTH_18, message: `最多输入${utils.MAX_LENGTH_18}个字符` },
+							]}
+						>
 							<Input
 								placeholder="请输入规则描述"
 								maxLength={utils.MAX_LENGTH_18}
@@ -160,11 +162,7 @@ const CreateModal = ({
 								<div key={field.key}>
 									{index > 0 && (
 										<div className={styles.conditionJoin}>
-											<Item
-												name={[field.name, "joinOperator"]}
-												initialValue="and"
-												rules={[{ required: true, message: "请选择条件关系" }]}
-											>
+											<Item name={[field.name, "joinOperator"]} initialValue="and">
 												<Radio.Group className={styles.joinRadioGroup} options={utils.JOIN_OPTIONS} />
 											</Item>
 										</div>
