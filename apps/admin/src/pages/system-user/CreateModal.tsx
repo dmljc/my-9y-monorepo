@@ -14,7 +14,6 @@ import {
 	getRoleOptions,
 	NAME_MAX_LENGTH,
 	NAME_PATTERN,
-	recordToFormValues,
 } from "./utils";
 
 interface CreateModalProps {
@@ -51,7 +50,10 @@ const CreateModal = ({
 
 			if (editingRecord) {
 				form.setFieldsValue({
-					...recordToFormValues(editingRecord),
+					...editingRecord,
+					organizationId:
+						Number(editingRecord.organizationId) ||
+						editingRecord.organizationId,
 					password: EDIT_PASSWORD_PLACEHOLDER,
 				});
 				return;

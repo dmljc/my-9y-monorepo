@@ -4,16 +4,12 @@ import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
 import Access from "@/components/Access";
 import { PERM_USER } from "@/constants/permission";
+import { create, remove, update } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
+import type { SysUser } from "./interface";
 import type { User, UserFormValues, UserListFilters } from "./utils";
-import {
-	createUser,
-	DEFAULT_PAGE_SIZE,
-	fetchUserListResult,
-	removeUser,
-	updateUser,
-} from "./utils";
+import { DEFAULT_PAGE_SIZE, fetchUserListResult } from "./utils";
 
 const SystemUser = () => {
 	const { message, modal } = App.useApp();
@@ -39,8 +35,8 @@ const SystemUser = () => {
 				pageNum: p,
 				pageSize: ps,
 				...(filters ?? {
-					username: username.trim() || undefined,
-					name: name.trim() || undefined,
+					username: username.trim(),
+					name: name.trim(),
 				}),
 			});
 			setDataSource(result.list);
@@ -82,11 +78,21 @@ const SystemUser = () => {
 	};
 
 	const handleModalSubmit = async (values: UserFormValues) => {
+		const payload: SysUser = {
+			userName: values.username.trim(),
+			nickName: values.name.trim(),
+			deptId: Number(values.organizationId),
+			roleIds: values.roleIds.map(Number),
+		};
+		if (values.password?.trim()) {
+			payload.password = values.password.trim();
+		}
 		if (editingRecord) {
-			await updateUser(editingRecord.id, values);
+			payload.userId = Number(editingRecord.id);
+			await update(payload);
 			message.success("编辑成功");
 		} else {
-			await createUser(values);
+			await create(payload);
 			message.success("新增成功");
 		}
 		await loadData(pageNum, pageSize);
@@ -99,7 +105,7 @@ const SystemUser = () => {
 			okText: "删除",
 			okButtonProps: { danger: true },
 			onOk: async () => {
-				await removeUser(record.id);
+				await remove(record.id);
 				message.success("删除成功");
 				await loadData(pageNum, pageSize);
 			},
@@ -147,6 +153,7 @@ const SystemUser = () => {
 			title: "操作",
 			key: "actions",
 			fixed: "right",
+			width: 150,
 			render: (_: unknown, record: User) => (
 				<div className={styles.actions}>
 					<Access code={PERM_USER.EDIT}>

@@ -1,18 +1,12 @@
 import {
-	create as createUserApi,
 	getDeptTree as fetchDeptTreeApi,
 	listRoles as fetchRoleListApi,
-	detail as fetchUserDetailApi,
 	list as fetchUserListApi,
-	remove as removeUserApi,
-	update as updateUserApi,
 } from "./api";
 import type {
-	AjaxResult,
 	DeptTreeNode,
 	SysRole,
 	SysUser,
-	UserDetailResponse,
 	UserListQuery,
 } from "./interface";
 
@@ -89,36 +83,6 @@ export const EDIT_PASSWORD_PLACEHOLDER = "************";
 // ---------------------------------------------------------------------------
 // 数据转换与工具函数
 // ---------------------------------------------------------------------------
-
-/**
- * 将筛选输入框的值转为列表查询参数。
- *
- * @param {string} - 用户账号筛选值。
- * @param {string} - 用户姓名筛选值。
- * @returns {UserListFilters} - 列表筛选条件。
- */
-export function toListFilters(username: string, name: string): UserListFilters {
-	return {
-		username: username.trim() || undefined,
-		name: name.trim() || undefined,
-	};
-}
-
-/**
- * 用户记录 → 表单初始值（编辑回填）。
- *
- * @param {User} - 用户列表行数据。
- * @returns {UserFormValues} - 表单初始值。
- */
-export function recordToFormValues(record: User): UserFormValues {
-	const { username, name, organizationId, roleIds } = record;
-	return {
-		username,
-		name,
-		organizationId: Number(organizationId) || organizationId,
-		roleIds,
-	};
-}
 
 /**
  * 从用户实体解析角色 ID 列表。
@@ -214,35 +178,6 @@ export function sysUserToUser(
 }
 
 /**
- * 表单值 → 后端用户提交体。
- *
- * @param {UserFormValues} - 新增/编辑表单值。
- * @param {string} - 编辑时的用户 ID，新增时省略。
- * @returns {SysUser} - 后端用户提交体。
- */
-export function formValuesToSysUser(
-	values: UserFormValues,
-	userId?: string,
-): SysUser {
-	const payload: SysUser = {
-		userName: values.username.trim(),
-		nickName: values.name.trim(),
-		deptId: Number(values.organizationId),
-		roleIds: values.roleIds.map(Number),
-	};
-
-	if (values.password?.trim()) {
-		payload.password = values.password.trim();
-	}
-
-	if (userId) {
-		payload.userId = Number(userId);
-	}
-
-	return payload;
-}
-
-/**
  * 根据角色 ID 列表生成表格展示文案。
  *
  * @param {string[]} - 角色 ID 列表。
@@ -267,18 +202,6 @@ export function buildRoleNames(
 let roleNameMapCache: Record<string, string> | null = null;
 
 /**
- * 校验 RuoYi 操作类接口响应。
- *
- * @param {AjaxResult} - 后端通用响应。
- * @returns {void} - 无返回值。
- */
-function assertAjaxOk(res: AjaxResult): void {
-	if (res.code !== 200) {
-		throw new Error(res.msg || "操作失败");
-	}
-}
-
-/**
  * 前端列表参数 → 后端查询参数。
  *
  * @param {UserListParams} - 前端列表查询参数。
@@ -289,8 +212,8 @@ function toUserListQuery(params: UserListParams): UserListQuery {
 	return {
 		pageNum,
 		pageSize,
-		userName: username?.trim() || undefined,
-		nickName: name?.trim() || undefined,
+		userName: username?.trim(),
+		nickName: name?.trim(),
 	};
 }
 
@@ -454,32 +377,6 @@ async function getRoleNameMap(): Promise<Record<string, string>> {
 }
 
 /**
- * 解析用户详情接口响应（含 envelope 上的 roleIds）。
- *
- * @param {unknown} - 用户详情接口原始响应。
- * @returns {{ sysUser: SysUser; roleIds: string[] }} - 用户实体与角色 ID。
- */
-function parseUserDetailResponse(res: unknown): {
-	sysUser: SysUser;
-	roleIds: string[];
-} {
-	if (res && typeof res === "object" && "data" in res) {
-		const envelope = res as UserDetailResponse;
-		assertAjaxOk(envelope);
-		return {
-			sysUser: envelope.data,
-			roleIds: resolveRoleIds(
-				envelope.data,
-				(envelope.roleIds ?? []).map(String),
-			),
-		};
-	}
-
-	const sysUser = res as SysUser;
-	return { sysUser, roleIds: resolveRoleIds(sysUser) };
-}
-
-/**
  * 将列表行转为前端用户（角色仅从 list 响应解析，不调详情）。
  *
  * 若 list 仅带 roleIds、无名称，则拉一次角色列表做 ID→名称映射。
@@ -551,71 +448,6 @@ export async function fetchUserListResult(
 		pageNum,
 		pageSize,
 	};
-}
-
-/**
- * 获取用户详情（编辑回填）。
- *
- * @param {string} - 用户 ID。
- * @returns {User} - 用户详情。
- */
-export async function detail(id: string): Promise<User> {
-	const res = await fetchUserDetailApi(id);
-	const roleNameMap = await getRoleNameMap();
-	const { sysUser, roleIds } = parseUserDetailResponse(res);
-	return sysUserToUser(sysUser, roleIds, roleNameMap);
-}
-
-/**
- * 创建用户。
- *
- * @param {UserFormValues} - 新增表单值。
- * @returns {void} - 无返回值。
- */
-export async function createUser(values: UserFormValues): Promise<void> {
-	await createUserApi(formValuesToSysUser(values));
-}
-
-/**
- * 更新用户。
- *
- * @param {string} - 用户 ID。
- * @param {Partial<UserFormValues>} - 编辑表单值。
- * @returns {void} - 无返回值。
- */
-export async function updateUser(
-	id: string,
-	values: Partial<UserFormValues>,
-): Promise<void> {
-	const payload: SysUser = formValuesToSysUser(
-		{
-			username: values.username ?? "",
-			name: values.name ?? "",
-			organizationId: values.organizationId ?? "",
-			roleIds: values.roleIds ?? [],
-			password: values.password,
-		},
-		id,
-	);
-
-	if (
-		!values.password?.trim() ||
-		values.password === EDIT_PASSWORD_PLACEHOLDER
-	) {
-		delete payload.password;
-	}
-
-	await updateUserApi(payload);
-}
-
-/**
- * 删除用户。
- *
- * @param {string} - 用户 ID。
- * @returns {void} - 无返回值。
- */
-export async function removeUser(id: string): Promise<void> {
-	await removeUserApi(id);
 }
 
 /**
