@@ -8,7 +8,7 @@ alwaysApply: false
 
 适用于 `apps/admin`、`apps/ipad` 下新增或修改的页面、布局、组件；以及为 **银河麒麟断网交付** 服务的根目录脚本 / pnpm 配置（`package.json`、`.npmrc`、`pnpm-workspace.yaml`、`scripts/`）。
 
-**两应用共用本文件全部约定**（组件形态、事件命名、CRUD 文案、搜索区、api/utils 分层、Ant Design、列表页扁平化、Form / Modal / Table、HTTP 错误处理等）。下文补充 **银河麒麟断网运行**；未单独说明的一律按 admin 写法执行。**ipad 专属**（目录落位、横屏设备、16px 边距、1400 蓝湖尺寸、contain 舞台等）见 `.cursor/rules/ipad.mdc`。顶部统计卡片结构见 `.cursor/rules/admin-stat-cards.mdc`（两应用共用；ipad 落盘见 `ipad.mdc`）。
+**两应用共用本文件全部约定**（组件形态、事件命名、CRUD 文案、搜索区、api/utils 分层、Ant Design、列表页扁平化、Form / Modal / Table、HTTP 错误处理、顶部统计卡片等）。下文补充 **银河麒麟断网运行**；未单独说明的一律按 admin 写法执行。**ipad 专属**（目录落位、横屏设备、16px 边距、1400 蓝湖尺寸、contain 舞台、统计卡 `cqw` 落盘等）见 `.cursor/rules/ipad.mdc`。
 
 ## 银河麒麟断网运行（交付约束）
 
@@ -2862,6 +2862,56 @@ pages/login/
 
 **边界**：移动端专属页面、设计稿标注断点行为、或 layout 层统一断点变量除外；确需响应式时优先在 layout 集中定义，单页避免自创 magic number 断点；与「列表页 DOM 扁平化」不冲突——保留 `flex-wrap` 即可，不必为换行单独写 `@media`。`apps/ipad` 另见 `.cursor/rules/ipad.mdc`——**仅横屏**（HUAWEI MatePad 11.5″ S / `SLG-W10`，约 2800×1840、3:2），**不要**为竖屏写 `@media (orientation: portrait)`。
 
+### 顶部统计卡片
+
+适用于 `apps/admin`、`apps/ipad` 中告警列表、点检台账等页顶部的 3 列统计卡片；结构、类名与插图定位两应用一致。**参考实现**：`apps/admin/src/pages/warning-list/index.module.css`。
+
+**ipad 侧**插图落盘、`cqw` 尺寸与 contain 舞台见 `.cursor/rules/ipad.mdc`（「顶部统计卡片」）。
+
+**卡片结构**
+
+```tsx
+<div className={`${styles.summaryCard} ${styles.summaryCardBlue}`}>
+  <img className={styles.summaryCardBg} src={bg} alt="" aria-hidden draggable={false} />
+  <div className={styles.summaryCardTitle}>{title}</div>
+  <div className={styles.summaryCardValue}>{value}</div>
+  <img className={styles.summaryCardIllustration} src={image} alt="" draggable={false} />
+</div>
+```
+
+**关键样式**
+
+| 类名 | 要点 |
+|------|------|
+| `.summaryCards` | `grid-template-columns: repeat(3, 1fr); gap: 12px` |
+| `.summaryCard` | `height: 148px; padding: 24px 0 0 20px; position: relative; overflow: hidden` |
+| `.summaryCard` 背景装饰 | **整卡竖向浅色渐变**（对齐蓝湖取样）+ `<img class="summaryCardBg">` 始终 `mix-blend-mode: multiply`（消切图白底）。**≤1920**：`width:106%; height:118%` 居中铺满。**>1920**：贴右 `height:118%; width:auto` + 左侧 mask。**禁止**无 multiply 的硬接切图；**禁止**双轴 `%` 拉伸圆 |
+| `.summaryCardIllustration` | 见下方插图定位 |
+
+**插图定位（已验证）**
+
+设计稿边距：上 10px、右 40px、下 38px。**不要用 `left` 与 `right` 同时约束**，否则插图会被拉成宽矩形并偏左。
+
+```css
+.summaryCardIllustration {
+  position: absolute;
+  top: 10px;
+  right: 40px;
+  height: calc(100% - 48px); /* 10 + 38 */
+  width: auto;
+  object-fit: contain;
+  object-position: right center;
+  pointer-events: none;
+  user-select: none;
+}
+```
+
+**替换卡片图片时**
+
+1. 插图放对应应用资源目录：admin → `apps/admin/src/assets/warning/`（或业务子目录）；**ipad** → `apps/ipad/src/assets/<业务>/`（详见 `ipad.mdc`）。圆形装饰背景与 3D 插图分开资源。
+2. 蓝 / 绿 / 橙三色对应 `.summaryCardBlue` / `.summaryCardGreen` / `.summaryCardOrange` 标题竖条色：`#0984ff` / `#2acd7f` / `#fa8c16`。
+3. 新页对齐 `warning-list` 的卡片 CSS，仅替换图片路径与文案，**不要**改插图定位为百分比宽度或同时设 `left`+`right`，也**不要**另起一套统计卡类名。
+
 ## 样式（例外）
 
 仅当页面极简（单层容器、无 Ant 内部样式覆盖、无多类名）时，admin / ipad 均可使用同目录 `style.ts` 导出 `CSSProperties`；一旦出现列表、多区块或需覆盖 Ant 局部样式，改回 CSS Modules。
@@ -2872,7 +2922,8 @@ pages/login/
 - 路由懒加载写法与各应用 `src/routers/index.tsx` 保持一致（ipad 引入路由时对齐 admin 写法）。
 - 从 UI 设计稿提取的背景图、插画等静态资源优先使用 **WebP**（见「设计稿切图与静态资源」）。
 - 设计稿上的客户真实项目名 / 真实信息须**掩码**后落地，**不得**提交到公网（见「客户真实信息掩码（设计稿落地）」）。
-- **`apps/ipad` 专属**（16px 边距、1400 蓝湖尺寸、横屏设备、contain 舞台等）：见 `.cursor/rules/ipad.mdc`；**不要**套用 admin「模块间 24px」。
+- **`apps/ipad` 专属**（16px 边距、1400 蓝湖尺寸、横屏设备、contain 舞台、统计卡 `cqw` 等）：见 `.cursor/rules/ipad.mdc`；**不要**套用 admin「模块间 24px」。
+- 顶部 3 列统计卡片结构与插图定位见「顶部统计卡片」；**参考** `warning-list/index.module.css`。
 - **银河麒麟断网交付**：Node 24 + Chrome ≥ 145；有网装依赖后整包拷贝，断网机勿 `pnpm install`；保留 `run-app-script` 与相关 pnpm 配置（见「银河麒麟断网运行」）。
 - 提交前在仓库根目录执行 `pnpm lint`。
 

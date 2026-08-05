@@ -55,7 +55,7 @@ apps/ipad/src/
 - 箭头函数组件、props 单独 `XxxProps`、页面名不加 `Page` 后缀。
 - 事件：`handle` + 动作（本页 UI）；Form / Modal 等与 prop 同名用 `onFinish` / `onOk`。
 - 列表 CRUD、搜索区、分页（默认 `pageSize` 15）、`loading` 命名、api 薄封装、utils 纯函数、HTTP 错误靠全局 `onError`——全文各节对 ipad **同等生效**。
-- 有顶部 3 列统计卡时，结构与 CSS 对齐 `admin-stat-cards.mdc`；插图放 `apps/ipad/src/assets/<业务>/`。
+- 有顶部 3 列统计卡时，结构与 CSS 对齐 `admin-frontend.mdc`「顶部统计卡片」；插图放 `apps/ipad/src/assets/<业务>/`。
 - 路径别名：`@/` → `apps/ipad/src`（admin 为 `apps/admin/src`）。
 
 ### ipad 端差异（仅下列例外）
@@ -349,7 +349,7 @@ apps/ipad/src/
 
 ## 顶部统计卡片（ipad）
 
-卡片结构、类名与插图定位与 admin **共用**，见 `.cursor/rules/admin-stat-cards.mdc`（参考 `apps/admin/src/pages/warning-list/index.module.css`）。
+卡片结构、类名与插图定位与 admin **共用**，见 `.cursor/rules/admin-frontend.mdc`「顶部统计卡片」（参考 `apps/admin/src/pages/warning-list/index.module.css`）。
 
 **ipad 侧补充**：
 
