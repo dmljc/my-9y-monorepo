@@ -150,7 +150,7 @@ const ReverseControl = () => {
 			ellipsis: true,
 		},
 		{
-			title: "规则描述",
+			title: "反控规则描述",
 			dataIndex: "description",
 			key: "description",
 			ellipsis: true,
