@@ -12,7 +12,6 @@ import {
 	buildExportFileName,
 	DATE_TIME_FORMAT,
 	DEFAULT_QUICK_RANGE,
-	formatOperAction,
 	getQuickRangeDates,
 	QUICK_RANGE_OPTIONS,
 	type QuickRange,
@@ -166,9 +165,9 @@ const OperationLog = () => {
 		},
 		{
 			title: "操作",
-			key: "action",
+			dataIndex: "title",
+			key: "title",
 			ellipsis: true,
-			render: (_, record) => formatOperAction(record),
 		},
 		{
 			title: "IP地址",
@@ -221,7 +220,11 @@ const OperationLog = () => {
 				<Button onClick={handleReset}>重置</Button>
 				<div className={styles.panelActions}>
 					<Access code={PERM_OPERATION_LOG.EXPORT}>
-						<Button loading={exportLoading} onClick={handleExport}>
+						<Button
+							type="primary"
+							loading={exportLoading}
+							onClick={handleExport}
+						>
 							导出
 						</Button>
 					</Access>
