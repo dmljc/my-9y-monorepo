@@ -450,10 +450,11 @@ export function getActionKeys(pageKey: string, rows: AssignRow[]): string[] {
  * @returns {string} - 权限数量展示文案。
  */
 export function formatPermissionCount(role: SysRole): string {
+	const count = role.menuCount ?? 0;
 	if (isSuperAdminRole(role)) {
-		return "全部";
+		return `${count}(全部)`;
 	}
-	return String(role.menuCount ?? 0);
+	return String(count);
 }
 
 /**
