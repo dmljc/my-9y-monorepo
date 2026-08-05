@@ -23,22 +23,4 @@ export interface DeviceDataListQuery {
 	modelName?: string;
 	thingName?: string;
 	propertyName?: string;
-	searchValue?: string;
-	thingId?: string;
-	propertyId?: string;
-	dataType?: string;
-	params?: {
-		beginDataTime?: string;
-		endDataTime?: string;
-	};
-}
-
-/**
- * 设备数据分页响应。
- */
-export interface DeviceDataListResponse {
-	list: DeviceDataSnapshot[];
-	total: number;
-	pageNum: number;
-	pageSize: number;
 }
