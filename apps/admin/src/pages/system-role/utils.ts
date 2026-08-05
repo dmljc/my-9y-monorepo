@@ -67,11 +67,11 @@ export function isSuperAdminRole(role?: SysRole | null): boolean {
 	return role?.roleName === SUPER_ADMIN_ROLE_NAME;
 }
 
-/** 角色名称最大字符数 */
-export const ROLE_NAME_MAX_LENGTH = 20;
+/** 角色名称最大长度。 */
+export const MAX_LENGTH_20 = 20;
 
-/** 角色描述最大字符数 */
-export const ROLE_DESCRIPTION_MAX_LENGTH = 100;
+/** 角色描述最大长度。 */
+export const MAX_LENGTH_100 = 100;
 
 /**
  * 判断按钮权限是否不在分配弹窗中展示（查询/重置类筛选项）。

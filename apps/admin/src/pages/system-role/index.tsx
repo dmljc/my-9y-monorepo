@@ -44,7 +44,7 @@ const SystemRole = () => {
 			const query: RoleListQuery = {
 				pageNum: p,
 				pageSize: ps,
-				roleName: name.trim() || undefined,
+				roleName: name.trim(),
 			};
 			const data = await fetchRoleList(query);
 			setDataSource(data.list);
@@ -183,6 +183,7 @@ const SystemRole = () => {
 			title: "操作",
 			key: "actions",
 			fixed: "right",
+			width: 200,
 			render: (_: unknown, record: SysRole) => {
 				const isSuperAdmin = isSuperAdminRole(record);
 				return (

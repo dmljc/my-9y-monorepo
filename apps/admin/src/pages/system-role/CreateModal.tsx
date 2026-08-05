@@ -2,11 +2,7 @@ import { Form, Input, Modal } from "antd";
 import { useEffect, useState } from "react";
 import type { SysRole } from "./interface";
 import type { RoleFormValues } from "./utils";
-import {
-	isDuplicateRoleName,
-	ROLE_DESCRIPTION_MAX_LENGTH,
-	ROLE_NAME_MAX_LENGTH,
-} from "./utils";
+import { isDuplicateRoleName, MAX_LENGTH_20, MAX_LENGTH_100 } from "./utils";
 
 const { TextArea } = Input;
 
@@ -80,8 +76,8 @@ const CreateModal = ({
 							message: "请输入角色名称",
 						},
 						{
-							max: ROLE_NAME_MAX_LENGTH,
-							message: `最多输入${ROLE_NAME_MAX_LENGTH}个字符`,
+							max: MAX_LENGTH_20,
+							message: `最多输入${MAX_LENGTH_20}个字符`,
 						},
 						{
 							validator: (_, value: string) => {
@@ -103,7 +99,7 @@ const CreateModal = ({
 				>
 					<Input
 						placeholder="请输入角色名称"
-						maxLength={ROLE_NAME_MAX_LENGTH}
+						maxLength={MAX_LENGTH_20}
 						showCount
 					/>
 				</Form.Item>
@@ -113,14 +109,14 @@ const CreateModal = ({
 					label="角色描述"
 					rules={[
 						{
-							max: ROLE_DESCRIPTION_MAX_LENGTH,
-							message: `最多输入${ROLE_DESCRIPTION_MAX_LENGTH}个字符`,
+							max: MAX_LENGTH_100,
+							message: `最多输入${MAX_LENGTH_100}个字符`,
 						},
 					]}
 				>
 					<TextArea
 						placeholder="请输入角色描述"
-						maxLength={ROLE_DESCRIPTION_MAX_LENGTH}
+						maxLength={MAX_LENGTH_100}
 						showCount
 						rows={3}
 					/>
