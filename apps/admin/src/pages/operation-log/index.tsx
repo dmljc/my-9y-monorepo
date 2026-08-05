@@ -21,8 +21,9 @@ const { RangePicker } = DatePicker;
 
 const OperationLog = () => {
 	const { message } = App.useApp();
-	const [quickRange, setQuickRange] =
-		useState<QuickRange>(DEFAULT_QUICK_RANGE);
+	const [quickRange, setQuickRange] = useState<QuickRange | undefined>(
+		DEFAULT_QUICK_RANGE,
+	);
 	const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(
 		getQuickRangeDates(DEFAULT_QUICK_RANGE),
 	);
@@ -121,17 +122,22 @@ const OperationLog = () => {
 		setExportLoading(true);
 		try {
 			const response = await exportLog(buildQuery(pageNum, pageSize));
-			const blob = await resolveExportBlob(
-				response.data instanceof Blob
-					? response.data
-					: new Blob([response.data], { type: XLSX_MIME }),
-				XLSX_MIME,
-			);
-			downloadBlob(blob, buildExportFileName());
-		} catch (error) {
-			if (error instanceof Error) {
-				message.error(error.message);
+			let blob: Blob;
+			try {
+				blob = await resolveExportBlob(
+					response.data instanceof Blob
+						? response.data
+						: new Blob([response.data], { type: XLSX_MIME }),
+					XLSX_MIME,
+				);
+			} catch (error) {
+				// blob 内业务错误不经全局 onError
+				if (error instanceof Error) {
+					message.error(error.message);
+				}
+				return;
 			}
+			downloadBlob(blob, buildExportFileName());
 		} finally {
 			setExportLoading(false);
 		}
@@ -209,9 +215,11 @@ const OperationLog = () => {
 					onChange={(dates) => {
 						if (!dates?.[0] || !dates?.[1]) {
 							setDateRange(null);
+							setQuickRange(undefined);
 							return;
 						}
 						setDateRange([dates[0], dates[1]]);
+						setQuickRange(undefined);
 					}}
 				/>
 				<Button type="primary" onClick={handleSearch}>
