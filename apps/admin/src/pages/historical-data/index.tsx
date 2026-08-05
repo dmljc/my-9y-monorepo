@@ -86,8 +86,8 @@ const HistoricalData = () => {
 			const data = await list(query);
 			setDataSource(data.list ?? []);
 			setTotal(data.total ?? 0);
-			setPageNum(p);
-			setPageSize(ps);
+			setPageNum(data.pageNum ?? p);
+			setPageSize(data.pageSize ?? ps);
 		} finally {
 			setLoading(false);
 		}
