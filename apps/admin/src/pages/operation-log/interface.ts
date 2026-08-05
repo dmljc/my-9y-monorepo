@@ -33,10 +33,8 @@ export interface OperLogListQuery {
 	operIp?: string;
 	businessType?: number;
 	status?: number;
-	params?: {
-		beginTime?: string;
-		endTime?: string;
-	};
+	beginTime?: string;
+	endTime?: string;
 }
 
 /**

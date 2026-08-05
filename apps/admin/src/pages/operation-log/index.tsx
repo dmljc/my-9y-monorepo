@@ -51,10 +51,8 @@ const OperationLog = () => {
 			keywords: active.keywords?.trim(),
 		};
 		if (active.dateRange) {
-			query.params = {
-				beginTime: active.dateRange[0].format(DATE_TIME_FORMAT),
-				endTime: active.dateRange[1].format(DATE_TIME_FORMAT),
-			};
+			query.beginTime = active.dateRange[0].format(DATE_TIME_FORMAT);
+			query.endTime = active.dateRange[1].format(DATE_TIME_FORMAT);
 		}
 		return query;
 	};
