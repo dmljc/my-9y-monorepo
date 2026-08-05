@@ -90,16 +90,16 @@ export function buildOrgTree(depts: SysDept[]): OrgTreeNode[] {
  */
 export function filterOrgTree(
 	nodes: OrgTreeNode[],
-	keyword: string,
+	keywords: string,
 ): OrgTreeNode[] {
-	if (!keyword) return nodes;
+	if (!keywords) return nodes;
 
 	const result: OrgTreeNode[] = [];
 	for (const node of nodes) {
 		const children = node.children
-			? filterOrgTree(node.children, keyword)
+			? filterOrgTree(node.children, keywords)
 			: [];
-		if (node.deptName?.includes(keyword) || children.length > 0) {
+		if (node.deptName?.includes(keywords) || children.length > 0) {
 			result.push({
 				...node,
 				children: children.length ? children : undefined,

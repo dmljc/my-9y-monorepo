@@ -34,16 +34,16 @@ const SystemOrganization = () => {
 		null,
 	);
 	const [deptName, setDeptName] = useState("");
-	const [searchKeyword, setSearchKeyword] = useState("");
+	const [keywords, setKeywords] = useState("");
 	const initRef = useRef(false);
 
-	const loadData = async (keyword = searchKeyword) => {
+	const loadData = async (activeKeywords = keywords) => {
 		setLoading(true);
 		try {
 			const data = await fetchDeptList();
 			const depts = data ?? [];
 			setFlatOrgsCache(depts);
-			const tree = filterOrgTree(buildOrgTree(depts), keyword);
+			const tree = filterOrgTree(buildOrgTree(depts), activeKeywords);
 			setDataSource(tree);
 			setExpandedRowKeys(collectExpandableKeys(tree));
 		} finally {
@@ -52,14 +52,14 @@ const SystemOrganization = () => {
 	};
 
 	const handleSearch = () => {
-		const keyword = deptName.trim();
-		setSearchKeyword(keyword);
-		loadData(keyword);
+		const nextKeywords = deptName.trim();
+		setKeywords(nextKeywords);
+		loadData(nextKeywords);
 	};
 
 	const handleReset = () => {
 		setDeptName("");
-		setSearchKeyword("");
+		setKeywords("");
 		loadData("");
 	};
 

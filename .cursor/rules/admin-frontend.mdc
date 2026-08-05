@@ -288,7 +288,7 @@ message.success("保存成功");
 | 场景 | 做法 |
 |------|------|
 | **常规 CRUD 列表**（点「查询」才拉接口；筛选项为 `Input`、`Select`、`DatePicker`、`RangePicker` 等任意控件） | **每个筛选项各用一个 state**，命名与后端 query / `interface` 字段同名（如 `deviceName`、`building`、`modelName`、`dateRange`）；控件直接绑定该 state；**不要**用 `draftFilter` / `appliedFilter` 对象把多个字段包在一起，也**不要** `draftXxx` / `appliedXxx` 草稿/生效双份命名 |
-| **多字段组合 / 统计图表**（须「点查询才生效」且翻页保持上次条件） | 用 `draftFilter` / `appliedFilter` 对象，或输入态与生效态分字段（如组织树 `deptName` + `searchKeyword`） |
+| **多字段组合 / 统计图表**（须「点查询才生效」且翻页保持上次条件） | 用 `draftFilter` / `appliedFilter` 对象，或输入态与生效态分字段（如组织树 `deptName` + `keywords`） |
 
 **为什么**：搜索区控件类型（文本、下拉、日期、时间范围等）不改变 state 写法——字段与接口 query 一一对应时，各自独立 state 即可；`draftFilter` 对象或 `draftXxx` / `appliedXxx` 只在确需「输入与生效分离」时才有价值（如统计页多图表、翻页须锁定上次查询条件），**不应因为筛选项是 Select、有 2 个以上字段、或控件类型混合，就默认拆成草稿对象**。
 
@@ -298,7 +298,7 @@ message.success("保存成功");
 |------------------------------|----------------------------------|
 | 用户管理、历史数据、点检台账等 CRUD 列表 | 统计分析等多图表页（`statistics/`） |
 | 筛选项为任意 Ant Design 控件，字段与接口 query 一一对应 | 须「点查询」后翻页仍用**上一次生效条件**，且表单输入可与生效条件不同步 |
-| `loadData` 读当前各字段 state，`handleReset` 清空后重载 | 组织树等客户端筛选：`deptName`（输入）+ `searchKeyword`（生效） |
+| `loadData` 读当前各字段 state，`handleReset` 清空后重载 | 组织树等客户端筛选：`deptName`（输入）+ `keywords`（生效） |
 
 **写法要点**
 
@@ -461,7 +461,7 @@ const handleSearch = () => {
 // ✅ 应拆成独立 state：deviceName + building；日期类同理用 dateRange 等字段名，不要塞进 draftFilter
 ```
 
-**边界**：**无筛选条件**的纯列表（如 `warning-levels`）不必强行加搜索区；布局侧栏（`system/`、`device/`）不适用；客户端树形筛选可用 `deptName`（输入）+ `searchKeyword`（生效 keyword），不必叫 draft/applied；导出、新增等与筛选无关的按钮放在查询/重置之后（常用 `margin-left: auto` 靠右）；**搜索区 `Input` 宽度 220px 仅约束文本输入框**，`Select` / `DatePicker` / `RangePicker` 可按选项长度单独设宽（如 `filterSelect`）。**参考实现**：直接字段 — `system-user/`、`historical-data/`、`warning-list/`、`inspection-ledger/`；`draftFilter` — `statistics/`；输入/生效分离 — `system-organization/`（`deptName` + `searchKeyword`）；搜索区 Input 宽 — `system-role/`、`model-data/`（`.searchInput { width: 220px }`）。
+**边界**：**无筛选条件**的纯列表（如 `warning-levels`）不必强行加搜索区；布局侧栏（`system/`、`device/`）不适用；客户端树形筛选可用 `deptName`（输入）+ `keywords`（生效），不必叫 draft/applied；通用关键词查询字段统一用 `keywords`（不要用 `searchKeyword` / `keyword`）；导出、新增等与筛选无关的按钮放在查询/重置之后（常用 `margin-left: auto` 靠右）；**搜索区 `Input` 宽度 220px 仅约束文本输入框**，`Select` / `DatePicker` / `RangePicker` 可按选项长度单独设宽（如 `filterSelect`）。**参考实现**：直接字段 — `system-user/`、`historical-data/`、`warning-list/`、`inspection-ledger/`；`draftFilter` — `statistics/`；输入/生效分离 — `system-organization/`（`deptName` + `keywords`）；关键词字段 — `operation-log/`（`keywords`）；搜索区 Input 宽 — `system-role/`、`model-data/`（`.searchInput { width: 220px }`）。
 
 ### 查询参数空值处理（不写 `undefined` 占位）
 
@@ -1030,7 +1030,7 @@ const loadData = async () => {
     const data = await fetchDeptList();
     const depts = data ?? [];
     setFlatOrgsCache(depts);
-    setDataSource(filterOrgTree(buildOrgTree(depts), keyword));
+    setDataSource(filterOrgTree(buildOrgTree(depts), keywords));
   } finally {
     setLoading(false);
   }

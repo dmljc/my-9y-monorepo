@@ -42,7 +42,7 @@ const WarningRules = () => {
 	const loadData = async (
 		p: number,
 		ps: number,
-		keyword = ruleName,
+		name = ruleName,
 		options = levelOptions,
 	) => {
 		setLoading(true);
@@ -50,7 +50,7 @@ const WarningRules = () => {
 			const data = await fetchRuleList({
 				pageNum: p,
 				pageSize: ps,
-				ruleName: keyword.trim(),
+				ruleName: name.trim(),
 			});
 			const result = buildRuleListResult(data, options, p, ps);
 			setDataSource(result.list);
