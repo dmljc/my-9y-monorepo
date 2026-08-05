@@ -306,6 +306,7 @@ message.success("保存成功");
 |------|------|
 | 按钮顺序 | 筛选项 → **查询** → **重置** →（可选）导出 / 新增等操作 |
 | state 形态 | 一字段一 state；`Input` / `Select` / `DatePicker` / `RangePicker` 等均直接绑定，**不要**合并进 `draftFilter` 对象 |
+| **搜索区 `Input` 宽度** | 统一 **220px**：`className={styles.searchInput}`，CSS Modules 写 `.searchInput { width: 220px; }`；**不要**用 180 / 200 / 280 等其它宽度，也**不要**省略宽度让 Input 自适应 |
 | 查询 | `handleSearch`：`setPageNum(1)` 后 `loadData`；`loadData` 内对文本字段 **trim** 后拼 query |
 | 重置 | `handleReset`：清空各筛选项 state、恢复默认（或空串）、`setPageNum(1)` 后 `loadData` |
 | 默认值 | 时间范围等放 `utils.ts` 的 `DEFAULT_FILTER` 等常量，重置时复用 |
@@ -350,10 +351,16 @@ const handleReset = () => {
   loadData(1, pageSize, { deviceName: "", building: "" });
 };
 
-<Input value={deviceName} onChange={(e) => setDeviceName(e.target.value)} onPressEnter={handleSearch} />
+<Input className={styles.searchInput} value={deviceName} onChange={(e) => setDeviceName(e.target.value)} onPressEnter={handleSearch} />
 <Select value={building} options={buildingOptions} onChange={setBuilding} />
 <Button type="primary" onClick={handleSearch}>查询</Button>
 <Button onClick={handleReset}>重置</Button>
+```
+
+```css
+.searchInput {
+  width: 220px;
+}
 ```
 
 ```tsx
@@ -390,7 +397,7 @@ const handleReset = () => {
   loadData(1, pageSize, {});
 };
 
-<Input value={username} onChange={(e) => setUsername(e.target.value)} onPressEnter={handleSearch} />
+<Input className={styles.searchInput} value={username} onChange={(e) => setUsername(e.target.value)} onPressEnter={handleSearch} />
 <Button type="primary" onClick={handleSearch}>查询</Button>
 <Button onClick={handleReset}>重置</Button>
 ```
@@ -424,6 +431,10 @@ const handleReset = () => {
 // 重置只清输入框，不刷新列表/图表
 const handleReset = () => setUsername("");
 
+// 搜索区 Input 未固定 220px，或写成其它宽度
+<Input placeholder="请输入设备名称" />  {/* ❌ 缺 .searchInput */}
+// CSS: .searchInput { width: 180px; }  {/* ❌ 须为 220px */}
+
 // 简单筛选用 draft/applied 双份命名字段
 const [draftUsername, setDraftUsername] = useState("");
 const [appliedUsername, setAppliedUsername] = useState("");
@@ -450,7 +461,7 @@ const handleSearch = () => {
 // ✅ 应拆成独立 state：deviceName + building；日期类同理用 dateRange 等字段名，不要塞进 draftFilter
 ```
 
-**边界**：**无筛选条件**的纯列表（如 `warning-levels`）不必强行加搜索区；布局侧栏（`system/`、`device/`）不适用；客户端树形筛选可用 `deptName`（输入）+ `searchKeyword`（生效 keyword），不必叫 draft/applied；导出、新增等与筛选无关的按钮放在查询/重置之后（常用 `margin-left: auto` 靠右）。**参考实现**：直接字段 — `system-user/`、`historical-data/`、`warning-list/`、`inspection-ledger/`；`draftFilter` — `statistics/`；输入/生效分离 — `system-organization/`（`deptName` + `searchKeyword`）。
+**边界**：**无筛选条件**的纯列表（如 `warning-levels`）不必强行加搜索区；布局侧栏（`system/`、`device/`）不适用；客户端树形筛选可用 `deptName`（输入）+ `searchKeyword`（生效 keyword），不必叫 draft/applied；导出、新增等与筛选无关的按钮放在查询/重置之后（常用 `margin-left: auto` 靠右）；**搜索区 `Input` 宽度 220px 仅约束文本输入框**，`Select` / `DatePicker` / `RangePicker` 可按选项长度单独设宽（如 `filterSelect`）。**参考实现**：直接字段 — `system-user/`、`historical-data/`、`warning-list/`、`inspection-ledger/`；`draftFilter` — `statistics/`；输入/生效分离 — `system-organization/`（`deptName` + `searchKeyword`）；搜索区 Input 宽 — `system-role/`、`model-data/`（`.searchInput { width: 220px }`）。
 
 ### 查询参数空值处理（不写 `undefined` 占位）
 

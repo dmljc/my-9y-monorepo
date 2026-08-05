@@ -273,6 +273,7 @@ const InspectionLedger = () => {
 				<div className={styles.filterItem}>
 					<span className={styles.filterLabel}>设备名称</span>
 					<Input
+						className={styles.searchInput}
 						placeholder="请输入设备名称"
 						value={deviceName}
 						allowClear
