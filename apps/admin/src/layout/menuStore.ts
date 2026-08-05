@@ -48,7 +48,7 @@ const cachedMenus = getMenuCache();
 export const useMenuStore = create<MenuState>((set, get) => ({
 	menus: cachedMenus,
 	loading: false,
-	loaded: false,
+	loaded: cachedMenus.length > 0,
 	loadError: false,
 	fetchMenus: async (options) => {
 		if (get().loading || (!options?.force && get().loaded)) return;
