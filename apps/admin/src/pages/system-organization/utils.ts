@@ -15,11 +15,11 @@ export interface OrgFormValues {
 /** 上级组织：顶级占位值 */
 export const TOP_PARENT_VALUE = 0;
 
-/** 组织名称最大字符数 */
-export const ORG_NAME_MAX_LENGTH = 30;
+/** 组织名称最大长度。 */
+export const MAX_LENGTH_30 = 30;
 
-/** 组织描述最大字符数 */
-export const ORG_DESCRIPTION_MAX_LENGTH = 200;
+/** 组织描述最大长度。 */
+export const MAX_LENGTH_200 = 200;
 
 /** 最近一次列表加载的扁平组织缓存（供表单上级组织选项） */
 let flatOrgsCache: SysDept[] = [];

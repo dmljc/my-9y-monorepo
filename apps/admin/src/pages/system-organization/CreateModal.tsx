@@ -5,8 +5,8 @@ import {
 	getAllOrgs,
 	getParentTreeData,
 	isDuplicateOrgName,
-	ORG_DESCRIPTION_MAX_LENGTH,
-	ORG_NAME_MAX_LENGTH,
+	MAX_LENGTH_30,
+	MAX_LENGTH_200,
 	TOP_PARENT_VALUE,
 } from "./utils";
 
@@ -88,8 +88,8 @@ const CreateModal = ({
 							message: "请输入组织名称",
 						},
 						{
-							max: ORG_NAME_MAX_LENGTH,
-							message: `最多输入${ORG_NAME_MAX_LENGTH}个字符`,
+							max: MAX_LENGTH_30,
+							message: `最多输入${MAX_LENGTH_30}个字符`,
 						},
 						{
 							validator: (_, value: string) => {
@@ -111,7 +111,7 @@ const CreateModal = ({
 				>
 					<Input
 						placeholder="请输入组织名称"
-						maxLength={ORG_NAME_MAX_LENGTH}
+						maxLength={MAX_LENGTH_30}
 						showCount
 					/>
 				</Form.Item>
@@ -119,25 +119,13 @@ const CreateModal = ({
 				<Form.Item
 					name="parentId"
 					label="上级组织"
-					rules={[
-						{
-							validator: (_, value: number | undefined) => {
-								if (value === undefined || value === null) {
-									return Promise.reject(
-										new Error("请选择上级组织"),
-									);
-								}
-								return Promise.resolve();
-							},
-						},
-					]}
+					rules={[{ required: true, message: "请选择上级组织" }]}
 				>
 					<TreeSelect
 						placeholder="请选择上级组织"
 						treeData={parentTreeData}
 						treeDefaultExpandAll
-						showSearch
-						treeNodeFilterProp="title"
+						showSearch={{ treeNodeFilterProp: "title" }}
 					/>
 				</Form.Item>
 
@@ -146,14 +134,14 @@ const CreateModal = ({
 					label="组织描述"
 					rules={[
 						{
-							max: ORG_DESCRIPTION_MAX_LENGTH,
-							message: `最多输入${ORG_DESCRIPTION_MAX_LENGTH}个字符`,
+							max: MAX_LENGTH_200,
+							message: `最多输入${MAX_LENGTH_200}个字符`,
 						},
 					]}
 				>
 					<TextArea
 						placeholder="请输入组织描述"
-						maxLength={ORG_DESCRIPTION_MAX_LENGTH}
+						maxLength={MAX_LENGTH_200}
 						showCount
 						rows={3}
 					/>

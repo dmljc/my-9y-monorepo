@@ -90,11 +90,16 @@ const SystemOrganization = () => {
 	};
 
 	const handleModalSubmit = async (values: OrgFormValues) => {
+		const payload = {
+			deptName: values.deptName.trim(),
+			parentId: values.parentId,
+			remark: values.remark.trim(),
+		};
 		if (editingRecord?.deptId !== undefined) {
-			await updateDept({ ...values, deptId: editingRecord.deptId });
+			await updateDept({ ...payload, deptId: editingRecord.deptId });
 			message.success("编辑成功");
 		} else {
-			await createDept(values);
+			await createDept(payload);
 			message.success("新增成功");
 		}
 		await loadData();
