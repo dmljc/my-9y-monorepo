@@ -95,6 +95,8 @@ const CreateModal = ({
 			setLoading(true);
 			await onOkProp(values);
 			onCancel();
+		} catch {
+			// 表单校验失败或接口失败；接口 toast 已由全局 onError 弹出
 		} finally {
 			setLoading(false);
 		}
@@ -123,11 +125,11 @@ const CreateModal = ({
 							label="反控规则名称"
 							rules={[
 								{ required: true, whitespace: true, message: "请输入规则名称" },
-								{ max: 12, message: "最多输入12个汉字" }
+								{ max: utils.MAX_LENGTH_12, message: `最多输入${utils.MAX_LENGTH_12}个字符` }
 							]}>
 							<Input
 								placeholder="请输入规则名称"
-								maxLength={12}
+								maxLength={utils.MAX_LENGTH_12}
 								showCount
 							/>
 						</Item>
@@ -138,11 +140,11 @@ const CreateModal = ({
 							label="反控规则描述"
 							rules={[
 								{ required: true, whitespace: true, message: "请输入规则描述" },
-								{ max: 18, message: "最多输入18个汉字" }
+								{ max: utils.MAX_LENGTH_18, message: `最多输入${utils.MAX_LENGTH_18}个字符` }
 							]}>
 							<Input
 								placeholder="请输入规则描述"
-								maxLength={18}
+								maxLength={utils.MAX_LENGTH_18}
 								showCount
 							/>
 						</Item>

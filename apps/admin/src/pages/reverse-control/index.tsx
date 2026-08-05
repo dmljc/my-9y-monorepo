@@ -16,7 +16,6 @@ const ReverseControl = () => {
 	const [loading, setLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<IiotControlRule[]>([]);
 	const [ruleName, setRuleName] = useState("");
-	const [searchKeyword, setSearchKeyword] = useState("");
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingRecord, setEditingRecord] = useState<IiotControlRule | null>(
 		null,
@@ -27,13 +26,18 @@ const ReverseControl = () => {
 	const [togglingId, setTogglingId] = useState<number | null>(null);
 	const initRef = useRef(false);
 
-	const loadData = async (p: number, ps: number, keyword = searchKeyword) => {
+	const loadData = async (
+		p: number,
+		ps: number,
+		filters?: { ruleName?: string },
+	) => {
 		setLoading(true);
 		try {
+			const active = filters ?? { ruleName };
 			const data = await list({
 				pageNum: p,
 				pageSize: ps,
-				ruleName: keyword.trim() || undefined,
+				ruleName: active.ruleName?.trim(),
 			});
 			setDataSource(data.list ?? []);
 			setTotal(data.total ?? 0);
@@ -45,17 +49,14 @@ const ReverseControl = () => {
 	};
 
 	const handleSearch = () => {
-		const keyword = ruleName.trim();
-		setSearchKeyword(keyword);
 		setPageNum(1);
-		loadData(1, pageSize, keyword);
+		loadData(1, pageSize);
 	};
 
 	const handleReset = () => {
 		setRuleName("");
-		setSearchKeyword("");
 		setPageNum(1);
-		loadData(1, pageSize, "");
+		loadData(1, pageSize, { ruleName: "" });
 	};
 
 	useEffect(() => {
@@ -177,6 +178,7 @@ const ReverseControl = () => {
 			title: "操作",
 			key: "actions",
 			align: "center",
+			width: 120,
 			render: (_: unknown, record) => (
 				<div className={styles.actions}>
 					<Access code={PERM_REVERSE_CONTROL.EDIT}>

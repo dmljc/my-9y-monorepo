@@ -39,6 +39,12 @@ export const DEFAULT_ACTION = {
 	actionValue: 0,
 } satisfies Partial<RuleActionFormItem>;
 
+/** 规则名称最大长度。 */
+export const MAX_LENGTH_12 = 12;
+
+/** 规则描述最大长度。 */
+export const MAX_LENGTH_18 = 18;
+
 /** 后端启用状态值 */
 export const STATUS_ENABLED = "0";
 
@@ -291,64 +297,4 @@ export function mergeOption(
 	if (options.some((item) => item.value === value)) return options;
 	if (!label) return options;
 	return [{ label, value }, ...options];
-}
-
-/**
- * 根据 thingId 解析展示名称。
- *
- * @param {string | undefined} - 物实例 id。
- * @param {SelectOption[]} - 设备选项。
- * @returns {string | undefined} - 展示名称。
- */
-export function thingLabel(
-	thingId: string | undefined,
-	thingOptions: SelectOption[],
-): string | undefined {
-	return thingOptions.find((item) => item.value === thingId)?.label;
-}
-
-/**
- * 获取规则关联的主设备名称（用于展示）。
- *
- * @param {IiotControlRule} - 规则实体。
- * @param {SelectOption[]} - 设备选项。
- * @returns {string} - 主设备名称。
- */
-export function primaryThingLabel(
-	rule: IiotControlRule,
-	thingOptions: SelectOption[],
-): string {
-	const thingId = rule.conditions?.[0]?.thingId ?? rule.actions?.[0]?.thingId;
-	return (
-		thingLabel(thingId, thingOptions) ??
-		rule.conditions?.[0]?.propertyName ??
-		"未配置设备"
-	);
-}
-
-/**
- * 将反控规则的条件与动作拼接为可读摘要。
- *
- * @param {IiotControlRule} - 规则实体。
- * @returns {string} - 摘要文本。
- */
-export function ruleSummary(rule: IiotControlRule): string {
-	const relation = toRelation(rule.conditionLogic);
-	const relationText = relation === "all" ? "全部满足" : "任一满足";
-	const conditionText = (rule.conditions ?? [])
-		.map((condition, index) => {
-			const expr = `${condition.propertyName ?? condition.propertyId} ${condition.operator} ${condition.thresholdValue ?? ""}`;
-			if (index === 0) return expr;
-			const join = relation === "all" ? " 且 " : " 或 ";
-			return `${join}${expr}`;
-		})
-		.join("");
-	const actionText = (rule.actions ?? [])
-		.map(
-			(action) =>
-				`${action.propertyName ?? action.propertyId} 延迟${action.delaySeconds ?? 0}s 执行=${action.actionValue ?? ""}`,
-		)
-		.join("，");
-
-	return `${relationText}：${conditionText || "未配置条件"}；执行：${actionText || "未配置动作"}`;
 }

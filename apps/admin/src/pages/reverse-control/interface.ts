@@ -50,16 +50,6 @@ export interface ControlRuleListQuery {
 }
 
 /**
- * 反控规则分页响应。
- */
-export interface ControlRuleListResponse {
-	list: IiotControlRule[];
-	total: number;
-	pageNum: number;
-	pageSize: number;
-}
-
-/**
  * 物实例项（things 接口返回）。
  */
 export interface DeviceThingItem {
@@ -69,13 +59,6 @@ export interface DeviceThingItem {
 	thingName?: string;
 	description?: string | null;
 	type?: string;
-}
-
-/**
- * 物实例列表响应。
- */
-export interface DeviceThingsResponse {
-	things: DeviceThingItem[];
 }
 
 /**
