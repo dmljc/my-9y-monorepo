@@ -3,12 +3,22 @@ packages:
   - "packages/*" # 可复用包
   - "utils/*" # 共享工具：如 @utils/http-client
 
-# 执行 pnpm run / exec 前不自动 install（详见 .npmrc verify-deps-before-run）。
+# 执行 pnpm run / exec 前不自动 install。
 # 避免拷到断网麒麟后因 storeDir 不一致触发 modules purge。
 verifyDepsBeforeRun: false
 
-# Linux 原生可选依赖配置见根 package.json → pnpm.supportedArchitectures
-# （有网安装后整包拷到断网银河麒麟；断网机勿再 pnpm install）
+# 有网安装时顺带拉取 Linux 原生可选依赖，便于整包拷到断网银河麒麟；断网机勿再 pnpm install。
+supportedArchitectures:
+  os:
+    - current
+    - linux
+  cpu:
+    - current
+    - x64
+    - arm64
+  libc:
+    - current
+    - glibc
 
 # 依赖版本目录（catalog）：全仓库统一版本源
 # 子包 dependencies / devDependencies / peerDependencies 可用 "catalog:" 引用
@@ -40,7 +50,7 @@ catalog:
   "@types/react": ^19.2.18
   "@types/react-dom": ^19.2.4
 
-# 允许 @swc/core、esbuild 执行安装脚本（详见根 package.json → pnpm.onlyBuiltDependencies）
+# 允许 @swc/core、esbuild 执行安装脚本（pnpm 11 用 allowBuilds 替代 onlyBuiltDependencies）
 allowBuilds:
   "@swc/core": true
   esbuild: true

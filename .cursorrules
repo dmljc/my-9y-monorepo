@@ -1,0 +1,20 @@
+# Git Commit Message
+
+生成或撰写 git commit message（含 Source Control 面板 ✨ 自动生成）时：
+
+- **必须使用简体中文**（说明部分）；不要用英文句子作主体说明
+- 可用 Conventional Commits 前缀（如 `feat` / `fix` / `refactor`），scope 可用英文路径，**说明必须中文**
+
+示例：
+
+```text
+feat(apps/admin): 规范 things 数据解析，设备下拉展示中文名称
+fix(apps/admin): 修复告警等级颜色提交为小写的问题
+refactor(apps/admin): 简化角色管理中超级管理员操作按钮逻辑
+```
+
+避免：
+
+```text
+refactor(apps/admin): simplify super admin role checks in SystemRole component
+```

@@ -10,16 +10,6 @@ alwaysApply: false
 
 **两应用共用本文件全部约定**（组件形态、事件命名、CRUD 文案、搜索区、api/utils 分层、Ant Design、列表页扁平化、Form / Modal / Table、HTTP 错误处理等）。下文补充 **银河麒麟断网运行**；未单独说明的一律按 admin 写法执行。**ipad 专属**（目录落位、横屏设备、16px 边距、1400 蓝湖尺寸、contain 舞台等）见 `.cursor/rules/ipad.mdc`。顶部统计卡片结构见 `.cursor/rules/admin-stat-cards.mdc`（两应用共用；ipad 落盘见 `ipad.mdc`）。
 
-## Commit Message
-
-- 生成或撰写 commit message 时，**必须使用简体中文**
-- 可用 Conventional Commits 前缀（如 `feat` / `fix`），说明部分用中文
-
-```text
-feat(apps/admin): 规范 things 数据解析，设备下拉展示中文名称
-fix(apps/admin): 修复告警等级颜色提交为小写的问题
-```
-
 ## 银河麒麟断网运行（交付约束）
 
 **做什么**：保证 `apps/admin` / `apps/ipad` 在 **银河麒麟 + 断网 + Node 24 + Chrome ≥ 145** 下可正常 **启动（dev）与打包（build）**。Mac / Windows **有网**开发按常规 `pnpm install` 即可，**不为**这两端单独做断网或跨系统拷贝兼容。
@@ -48,7 +38,7 @@ fix(apps/admin): 修复告警等级颜色提交为小写的问题
 |------|-------------|------|
 | `.npmrc` | `verify-deps-before-run=false` | 跑脚本时不自动 install，避免麒麟触发 modules purge |
 | `.npmrc` | `package-import-method=copy` | 依赖写入 `node_modules` 实体，整包拷贝更自包含 |
-| 根 `package.json` → `pnpm.supportedArchitectures` | `os: current + linux` 等 | 有网安装时顺带拉取 Linux 原生可选依赖 |
+| `pnpm-workspace.yaml` → `supportedArchitectures` | `os: current + linux` 等 | 有网安装时顺带拉取 Linux 原生可选依赖（pnpm 11 起勿写在 `package.json#pnpm`） |
 | 根 `package.json` scripts | `admin:*` / `ipad:*` 走 `node scripts/run-app-script.mjs …` | 不经过会校验 store 的 `pnpm -F …`，直接调本地 `.bin` |
 | `scripts/run-app-script.mjs` | 用 `PATH` 指向 app/root 的 `.bin` 执行子包 scripts | 断网麒麟启动 / 打包入口 |
 
