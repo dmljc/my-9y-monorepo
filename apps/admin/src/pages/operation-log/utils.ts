@@ -73,10 +73,10 @@ export function formatOperAction(log: SysOperLog): string {
 }
 
 /**
- * 生成导出文件名。
+ * 生成导出文件名（前缀为当前年月日时分秒）。
  *
  * @returns {string} - 导出文件名。
  */
 export function buildExportFileName(): string {
-	return "操作日志.xlsx";
+	return `${dayjs().format(DATE_TIME_FORMAT)}_操作日志.xlsx`;
 }
