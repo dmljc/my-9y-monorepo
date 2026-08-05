@@ -1,7 +1,11 @@
-import { PlusOutlined } from "@ant-design/icons";
+import {
+	NodeCollapseOutlined,
+	NodeExpandOutlined,
+	PlusOutlined,
+} from "@ant-design/icons";
 import { App, Button, Empty, Input, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useEffect, useRef, useState } from "react";
+import { type Key, useEffect, useRef, useState } from "react";
 import Access from "@/components/Access";
 import { PERM_ORGANIZATION } from "@/constants/permission";
 import {
@@ -13,12 +17,18 @@ import {
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import type { OrgFormValues, OrgTreeNode } from "./utils";
-import { buildOrgTree, filterOrgTree, setFlatOrgsCache } from "./utils";
+import {
+	buildOrgTree,
+	collectExpandableKeys,
+	filterOrgTree,
+	setFlatOrgsCache,
+} from "./utils";
 
 const SystemOrganization = () => {
 	const { message, modal } = App.useApp();
 	const [loading, setLoading] = useState(false);
 	const [dataSource, setDataSource] = useState<OrgTreeNode[]>([]);
+	const [expandedRowKeys, setExpandedRowKeys] = useState<Key[]>([]);
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingRecord, setEditingRecord] = useState<OrgTreeNode | null>(
 		null,
@@ -33,7 +43,9 @@ const SystemOrganization = () => {
 			const data = await fetchDeptList();
 			const depts = data ?? [];
 			setFlatOrgsCache(depts);
-			setDataSource(filterOrgTree(buildOrgTree(depts), keyword));
+			const tree = filterOrgTree(buildOrgTree(depts), keyword);
+			setDataSource(tree);
+			setExpandedRowKeys(collectExpandableKeys(tree));
 		} finally {
 			setLoading(false);
 		}
@@ -57,6 +69,15 @@ const SystemOrganization = () => {
 			loadData();
 		}
 	}, []);
+
+	const expandableKeys = collectExpandableKeys(dataSource);
+	const isAllExpanded =
+		expandableKeys.length > 0 &&
+		expandableKeys.every((key) => expandedRowKeys.includes(key));
+
+	const handleToggleExpand = () => {
+		setExpandedRowKeys(isAllExpanded ? [] : expandableKeys);
+	};
 
 	const handleAdd = () => {
 		setEditingRecord(null);
@@ -153,6 +174,18 @@ const SystemOrganization = () => {
 				</Button>
 				<Button onClick={handleReset}>重置</Button>
 				<div className={styles.panelActions}>
+					<Button
+						icon={
+							isAllExpanded ? (
+								<NodeCollapseOutlined />
+							) : (
+								<NodeExpandOutlined />
+							)
+						}
+						onClick={handleToggleExpand}
+					>
+						{isAllExpanded ? "全部折叠" : "全部展开"}
+					</Button>
 					<Access code={PERM_ORGANIZATION.ADD}>
 						<Button
 							type="primary"
@@ -172,7 +205,11 @@ const SystemOrganization = () => {
 				rowKey="deptId"
 				loading={loading}
 				pagination={false}
-				expandable={{ defaultExpandAllRows: true }}
+				expandable={{
+					expandedRowKeys,
+					onExpandedRowsChange: (keys) =>
+						setExpandedRowKeys([...keys]),
+				}}
 				locale={{ emptyText: <Empty description="暂无组织" /> }}
 			/>
 

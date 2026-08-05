@@ -1,3 +1,4 @@
+import type { Key } from "react";
 import type { SysDept } from "./interface";
 
 /** 树形表格节点 */
@@ -106,6 +107,26 @@ export function filterOrgTree(
 		}
 	}
 	return result;
+}
+
+/**
+ * 收集树中可展开节点的 key（有子节点的 deptId）。
+ *
+ * @param {OrgTreeNode[]} - 树形组织列表。
+ * @returns {Key[]} - 可展开行的 key 列表。
+ */
+export function collectExpandableKeys(nodes: OrgTreeNode[]): Key[] {
+	const keys: Key[] = [];
+	const walk = (list: OrgTreeNode[]) => {
+		for (const node of list) {
+			if (node.children?.length && node.deptId !== undefined) {
+				keys.push(node.deptId);
+				walk(node.children);
+			}
+		}
+	};
+	walk(nodes);
+	return keys;
 }
 
 /**
