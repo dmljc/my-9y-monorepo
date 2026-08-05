@@ -9,7 +9,13 @@ import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import type { IiotControlRule } from "./interface";
 import type { RuleFormValues } from "./types";
-import { isEnabled, toRule, toStatus } from "./utils";
+import {
+	formatActions,
+	formatConditions,
+	isEnabled,
+	toRule,
+	toStatus,
+} from "./utils";
 
 const ReverseControl = () => {
 	const { message, modal } = App.useApp();
@@ -156,15 +162,29 @@ const ReverseControl = () => {
 			ellipsis: true,
 		},
 		{
+			title: "触发条件",
+			key: "conditions",
+			ellipsis: true,
+			render: (_: unknown, record) => formatConditions(record),
+		},
+		{
+			title: "执行动作",
+			key: "execActions",
+			ellipsis: true,
+			render: (_: unknown, record) => formatActions(record),
+		},
+		{
 			title: "累计触发",
 			dataIndex: "triggerCount",
 			key: "triggerCount",
 			align: "center",
+			width: 180,
 		},
 		{
 			title: "启停用",
 			key: "enabled",
 			align: "center",
+			width: 180,
 			render: (_: unknown, record) => (
 				<Switch
 					size="small"
@@ -178,7 +198,7 @@ const ReverseControl = () => {
 			title: "操作",
 			key: "actions",
 			align: "center",
-			width: 120,
+			width: 140,
 			render: (_: unknown, record) => (
 				<div className={styles.actions}>
 					<Access code={PERM_REVERSE_CONTROL.EDIT}>

@@ -298,3 +298,44 @@ export function mergeOption(
 	if (!label) return options;
 	return [{ label, value }, ...options];
 }
+
+/**
+ * 将触发条件格式化为表格展示文案。
+ *
+ * @param {IiotControlRule} - 规则实体。
+ * @returns {string} - 条件摘要，如「点位 >= 10 and 点位 <= 0」。
+ */
+export function formatConditions(rule: IiotControlRule): string {
+	const conditions = rule.conditions ?? [];
+	if (conditions.length === 0) return "";
+	const join = rule.conditionLogic === "OR" ? " or " : " and ";
+	return conditions
+		.map((item) => {
+			const name = item.propertyName ?? item.propertyId ?? "";
+			const operator = item.operator ?? "";
+			const value = item.thresholdValue ?? "";
+			return [name, operator, value].filter(Boolean).join(" ");
+		})
+		.filter(Boolean)
+		.join(join);
+}
+
+/**
+ * 将执行动作格式化为表格展示文案。
+ *
+ * @param {IiotControlRule} - 规则实体。
+ * @returns {string} - 动作摘要，如「点位 延迟0s 执行=1」。
+ */
+export function formatActions(rule: IiotControlRule): string {
+	const actions = rule.actions ?? [];
+	if (actions.length === 0) return "";
+	return actions
+		.map((item) => {
+			const name = item.propertyName ?? item.propertyId ?? "";
+			const delay = item.delaySeconds ?? 0;
+			const value = item.actionValue ?? "";
+			return `${name} 延迟${delay}s 执行=${value}`.trim();
+		})
+		.filter(Boolean)
+		.join("；");
+}
