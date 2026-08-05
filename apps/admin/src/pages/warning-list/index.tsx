@@ -11,25 +11,20 @@ import statTotalTodayImg from "@/assets/warning/stat-total-today.png";
 import statUnsolvedTodayImg from "@/assets/warning/stat-unsolved-today.png";
 import Access from "@/components/Access";
 import { PERM_WARNING_LIST } from "@/constants/permission";
-import {
-	getStats,
-	list,
-	processWarning,
-	toListParams,
-} from "@/pages/warning/api";
+import { getStats, list, resolve } from "./api";
+import styles from "./index.module.css";
+import type { StatusFilter, WarningItem, WarningStats } from "./interface";
 import {
 	buildStatCards,
 	LEVEL_COLOR,
 	LEVEL_LABEL,
 	STATUS_LABEL,
 	STATUS_OPTIONS,
-	type StatCard,
-	type StatusFilter,
 	TYPE_LABEL,
-	type WarningItem,
-	type WarningStats,
-} from "@/pages/warning/utils";
-import styles from "./index.module.css";
+	toAlarmListQuery,
+	toWarningItem,
+	toWarningStats,
+} from "./utils";
 
 const { RangePicker } = DatePicker;
 
@@ -48,31 +43,6 @@ const STAT_CARD_TONE_CLASS = {
 	orange: styles.summaryCardOrange,
 } as const;
 
-function StatCardView({ card }: { card: StatCard }) {
-	return (
-		<div
-			className={`${styles.summaryCard} ${STAT_CARD_TONE_CLASS[card.tone]}`}
-		>
-			{/* 圆切图 multiply 消白底；≤1920 铺满，>1920 贴右等比 */}
-			<img
-				className={styles.summaryCardBg}
-				src={card.background}
-				alt=""
-				aria-hidden
-				draggable={false}
-			/>
-			<div className={styles.summaryCardTitle}>{card.title}</div>
-			<div className={styles.summaryCardValue}>{card.value}</div>
-			<img
-				className={styles.summaryCardIllustration}
-				src={card.image}
-				alt=""
-				draggable={false}
-			/>
-		</div>
-	);
-}
-
 const WarningList = () => {
 	const navigate = useNavigate();
 	const { message } = App.useApp();
@@ -84,7 +54,7 @@ const WarningList = () => {
 	const [dataSource, setDataSource] = useState<WarningItem[]>([]);
 	const [total, setTotal] = useState(0);
 	const [pageNum, setPageNum] = useState(1);
-	const [pageSize, setPageSize] = useState(20);
+	const [pageSize, setPageSize] = useState(25);
 	const [stats, setStats] = useState<WarningStats>({
 		totalToday: 0,
 		solvedToday: 0,
@@ -102,22 +72,22 @@ const WarningList = () => {
 	) => {
 		setLoading(true);
 		try {
-			const result = await list(
-				toListParams(p, ps, filterDateRange, filterStatus),
+			const data = await list(
+				toAlarmListQuery(p, ps, filterDateRange, filterStatus),
 			);
-			setDataSource(result.list);
-			setTotal(result.total);
-			setPageNum(result.pageNum);
-			setPageSize(result.pageSize);
-		} catch {
+			const rows = data.rows ?? [];
+			setDataSource(rows.map(toWarningItem));
+			setTotal(data.total ?? 0);
+			setPageNum(p);
+			setPageSize(ps);
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	const loadStats = async () => {
-		const result = await getStats();
-		setStats(result);
+		const data = await getStats();
+		setStats(toWarningStats(data));
 	};
 
 	const initRef = useRef(false);
@@ -133,29 +103,28 @@ const WarningList = () => {
 	}, []);
 
 	const handleSearch = () => {
+		setPageNum(1);
 		loadData(1, pageSize);
 	};
 
 	const handleReset = () => {
 		setDateRange(null);
 		setStatus("all");
+		setPageNum(1);
 		loadData(1, pageSize, null, "all");
 	};
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {
-		const nextPage = pagination.current ?? 1;
-		const nextSize = pagination.pageSize ?? pageSize;
-		loadData(nextPage, nextSize);
+		loadData(pagination.current ?? 1, pagination.pageSize ?? pageSize);
 	};
 
 	const handleProcess = async (record: WarningItem) => {
 		setProcessingId(record.id);
 		try {
-			await processWarning(record.id);
+			await resolve(record.id);
 			message.success("已标记为已解决");
 			await loadData(pageNum, pageSize);
 			await loadStats();
-		} catch {
 		} finally {
 			setProcessingId(null);
 		}
@@ -228,7 +197,7 @@ const WarningList = () => {
 			title: "时间",
 			dataIndex: "time",
 			key: "time",
-			width: 180,
+			ellipsis: true,
 		},
 		{
 			title: "状态",
@@ -282,11 +251,34 @@ const WarningList = () => {
 	];
 
 	return (
-		<div className={styles.warning}>
+		<div className={styles.warningList}>
 			<div className={styles.topPanel}>
 				<div className={styles.summaryCards}>
 					{statCards.map((card) => (
-						<StatCardView key={card.key} card={card} />
+						<div
+							key={card.key}
+							className={`${styles.summaryCard} ${STAT_CARD_TONE_CLASS[card.tone]}`}
+						>
+							<img
+								className={styles.summaryCardBg}
+								src={card.background}
+								alt=""
+								aria-hidden
+								draggable={false}
+							/>
+							<div className={styles.summaryCardTitle}>
+								{card.title}
+							</div>
+							<div className={styles.summaryCardValue}>
+								{card.value}
+							</div>
+							<img
+								className={styles.summaryCardIllustration}
+								src={card.image}
+								alt=""
+								draggable={false}
+							/>
+						</div>
 					))}
 				</div>
 			</div>
@@ -330,7 +322,6 @@ const WarningList = () => {
 			<div className={styles.listPanel}>
 				<Table
 					size="small"
-					className={styles.warningTable}
 					columns={columns}
 					dataSource={dataSource}
 					rowKey="id"

@@ -9,6 +9,9 @@ import type {
 	WarningHistoryRecord,
 } from "./interface";
 
+/**
+ * 告警关联历史数据：按 URL 查询参数一次拉取全量，表格做前端分页。
+ */
 const WarningHistory = () => {
 	const [searchParams] = useSearchParams();
 	const alarmTime = searchParams.get("alarmTime");
@@ -19,7 +22,7 @@ const WarningHistory = () => {
 	const [pageSize, setPageSize] = useState(25);
 	const initRef = useRef(false);
 
-	const loadData = async (p: number, ps: number) => {
+	const loadData = async () => {
 		const query: WarningHistoryListQuery = {
 			thingId: searchParams.get("thingId") ?? "",
 			propertyId: `/${searchParams.get("propertyId") ?? ""}`,
@@ -29,13 +32,9 @@ const WarningHistory = () => {
 		setLoading(true);
 		try {
 			const data = await list(query);
-			const records: WarningHistoryRecord[] = Array.isArray(data)
-				? data
-				: (data.list ?? data.rows ?? []);
+			const records = Array.isArray(data) ? data : (data.list ?? []);
 			setDataSource(records);
 			setTotal(records.length);
-			setPageNum(p);
-			setPageSize(ps);
 		} finally {
 			setLoading(false);
 		}
@@ -44,7 +43,7 @@ const WarningHistory = () => {
 	useEffect(() => {
 		if (!initRef.current) {
 			initRef.current = true;
-			loadData(pageNum, pageSize);
+			loadData();
 		}
 	}, []);
 
