@@ -268,16 +268,33 @@ export function getTopMenuByPath(
 	return matched?.key ?? DEFAULT_TOP_MENU_KEY;
 }
 
+/**
+ * 根据已加载菜单解析登录后首页路径。
+ * getRouters 为空时返回 null，由调用方跳转 403。
+ *
+ * @param {TopMenuItem[]} - 前端菜单树。
+ * @returns {string | null} - 首页路径；无可用菜单时为 null。
+ */
+export function getHomePath(menus: TopMenuItem[]): string | null {
+	if (menus.length === 0) return null;
+	const preferred =
+		menus.find((item) => item.key === DEFAULT_TOP_MENU_KEY) ?? menus[0];
+	return preferred.defaultPath ?? preferred.path;
+}
+
 export function getDefaultPathForTop(
 	topKey: TopMenuKey,
 	menus: TopMenuItem[] = [],
 ): string {
-	const sourceMenus = menus.length > 0 ? menus : TOP_ROUTE_CONFIGS;
-	const menu = sourceMenus.find((item) => item.key === topKey);
-	const fallback =
-		sourceMenus.find((item) => item.key === DEFAULT_TOP_MENU_KEY)?.path ??
-		"/warning/list";
-	return menu?.defaultPath ?? menu?.path ?? fallback;
+	const menu = menus.find((item) => item.key === topKey);
+	if (menu) {
+		return menu.defaultPath ?? menu.path;
+	}
+	if (menus.length > 0) {
+		return getHomePath(menus) ?? "/403";
+	}
+	const config = TOP_ROUTE_CONFIGS.find((item) => item.key === topKey);
+	return config?.defaultPath ?? config?.path ?? "/warning/list";
 }
 
 export function getPageLabel(pathname: string): string {
@@ -383,7 +400,7 @@ export function buildBreadcrumbItems(
 		return items;
 	}
 
-	items.push({ title: sideMenu?.label });
+	items.push({ title: sideMenu?.label ?? "" });
 	return items;
 }
 

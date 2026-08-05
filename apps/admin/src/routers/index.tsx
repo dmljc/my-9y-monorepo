@@ -3,6 +3,8 @@ import { Navigate, type RouteObject } from "react-router-dom";
 import { getDefaultPathForTop } from "@/layout/menuConfig";
 
 const RequireAuth = lazy(() => import("@/components/RequireAuth"));
+const RequireMenu = lazy(() => import("@/components/RequireMenu"));
+const HomeRedirect = lazy(() => import("@/components/HomeRedirect"));
 const RouteError = lazy(() => import("@/components/RouteError"));
 const Layout = lazy(() => import("@/layout"));
 const Login = lazy(() => import("@/pages/login"));
@@ -47,120 +49,138 @@ const routes: RouteObject[] = [
 				element: <RequireAuth />,
 				children: [
 					{
-						path: "/",
-						element: (
-							<Navigate
-								to={getDefaultPathForTop("warning")}
-								replace
-							/>
-						),
-					},
-					{
-						path: "/dashboard",
-						element: <Dashboard />,
-					},
-					{
-						element: <Layout />,
+						element: <RequireMenu />,
 						children: [
-							{ path: "/statistics", element: <Statistics /> },
 							{
-								path: "/warning",
-								element: <Warning />,
+								path: "/",
+								element: <HomeRedirect />,
+							},
+							{
+								path: "/dashboard",
+								element: <Dashboard />,
+							},
+							{
+								element: <Layout />,
 								children: [
 									{
-										index: true,
-										element: (
-											<Navigate
-												to={getDefaultPathForTop(
-													"warning",
-												).replace("/warning/", "")}
-												replace
-											/>
-										),
-									},
-									{ path: "list", element: <WarningList /> },
-									{
-										path: "history",
-										element: <WarningHistory />,
+										path: "/statistics",
+										element: <Statistics />,
 									},
 									{
-										path: "rules",
-										element: <WarningRules />,
+										path: "/warning",
+										element: <Warning />,
+										children: [
+											{
+												index: true,
+												element: (
+													<Navigate
+														to={getDefaultPathForTop(
+															"warning",
+														).replace(
+															"/warning/",
+															"",
+														)}
+														replace
+													/>
+												),
+											},
+											{
+												path: "list",
+												element: <WarningList />,
+											},
+											{
+												path: "history",
+												element: <WarningHistory />,
+											},
+											{
+												path: "rules",
+												element: <WarningRules />,
+											},
+											{
+												path: "levels",
+												element: <WarningLevels />,
+											},
+										],
 									},
 									{
-										path: "levels",
-										element: <WarningLevels />,
+										path: "/device",
+										element: <Device />,
+										children: [
+											{
+												index: true,
+												element: (
+													<Navigate
+														to={getDefaultPathForTop(
+															"device",
+														).replace(
+															"/device/",
+															"",
+														)}
+														replace
+													/>
+												),
+											},
+											{
+												path: "inspection-ledger",
+												element: <InspectionLedger />,
+											},
+										],
+									},
+									{
+										path: "/model-data",
+										element: <ModelData />,
+									},
+									{
+										path: "/model-data/history",
+										element: <HistoricalData />,
+									},
+									{
+										path: "/reverse-control",
+										element: <ReverseControl />,
+									},
+									{
+										path: "/system",
+										element: <System />,
+										children: [
+											{
+												index: true,
+												element: (
+													<Navigate
+														to={getDefaultPathForTop(
+															"system",
+														).replace(
+															"/system/",
+															"",
+														)}
+														replace
+													/>
+												),
+											},
+											{
+												path: "role",
+												element: <SystemRole />,
+											},
+											{
+												path: "user",
+												element: <SystemUser />,
+											},
+											{
+												path: "organization",
+												element: <SystemOrganization />,
+											},
+											{
+												path: "operation-log",
+												element: <OperationLog />,
+											},
+										],
 									},
 								],
 							},
 							{
-								path: "/device",
-								element: <Device />,
-								children: [
-									{
-										index: true,
-										element: (
-											<Navigate
-												to={getDefaultPathForTop(
-													"device",
-												).replace("/device/", "")}
-												replace
-											/>
-										),
-									},
-									{
-										path: "inspection-ledger",
-										element: <InspectionLedger />,
-									},
-								],
-							},
-							{ path: "/model-data", element: <ModelData /> },
-							{
-								path: "/model-data/history",
-								element: <HistoricalData />,
-							},
-							{
-								path: "/reverse-control",
-								element: <ReverseControl />,
-							},
-							{
-								path: "/system",
-								element: <System />,
-								children: [
-									{
-										index: true,
-										element: (
-											<Navigate
-												to={getDefaultPathForTop(
-													"system",
-												).replace("/system/", "")}
-												replace
-											/>
-										),
-									},
-									{
-										path: "role",
-										element: <SystemRole />,
-									},
-									{
-										path: "user",
-										element: <SystemUser />,
-									},
-									{
-										path: "organization",
-										element: <SystemOrganization />,
-									},
-									{
-										path: "operation-log",
-										element: <OperationLog />,
-									},
-								],
+								path: "*",
+								element: <NotFound />,
 							},
 						],
-					},
-					{
-						path: "*",
-						element: <NotFound />,
 					},
 				],
 			},

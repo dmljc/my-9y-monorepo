@@ -50,15 +50,17 @@ const System = () => {
 
 	return (
 		<div className={styles.system}>
-			<aside className={styles.sidebar}>
-				<Menu
-					className={styles.sideMenu}
-					mode="inline"
-					selectedKeys={activeMenu ? [activeMenu.key] : []}
-					items={menuItems}
-					onClick={handleMenuClick}
-				/>
-			</aside>
+			{sideMenus.length > 0 ? (
+				<aside className={styles.sidebar}>
+					<Menu
+						className={styles.sideMenu}
+						mode="inline"
+						selectedKeys={activeMenu ? [activeMenu.key] : []}
+						items={menuItems}
+						onClick={handleMenuClick}
+					/>
+				</aside>
+			) : null}
 
 			<section className={styles.content}>
 				<Outlet />

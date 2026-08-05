@@ -4,7 +4,7 @@ import { Button, Checkbox, Form, Input, Typography } from "antd";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import loginHero from "@/assets/login/login-hero.webp";
-import { getDefaultPathForTop } from "@/layout/menuConfig";
+import { getHomePath } from "@/layout/menuConfig";
 import { useMenuStore } from "@/layout/menuStore";
 import {
 	PASSWORD_MAX_LENGTH,
@@ -38,7 +38,8 @@ const Login = () => {
 
 		await fetchMenus({ force: true });
 		setRememberMe(values);
-		navigate(getDefaultPathForTop("warning"));
+		const homePath = getHomePath(useMenuStore.getState().menus);
+		navigate(homePath ?? "/403");
 	};
 
 	return (

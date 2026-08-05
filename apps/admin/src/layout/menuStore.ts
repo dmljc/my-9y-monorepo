@@ -38,6 +38,7 @@ interface MenuState {
 	menus: TopMenuItem[];
 	loading: boolean;
 	loaded: boolean;
+	loadError: boolean;
 	fetchMenus: (options?: { force?: boolean }) => Promise<void>;
 	clearMenus: () => void;
 }
@@ -47,10 +48,11 @@ const cachedMenus = getMenuCache();
 export const useMenuStore = create<MenuState>((set, get) => ({
 	menus: cachedMenus,
 	loading: false,
-	loaded: cachedMenus.length > 0,
+	loaded: false,
+	loadError: false,
 	fetchMenus: async (options) => {
 		if (get().loading || (!options?.force && get().loaded)) return;
-		set({ loading: true });
+		set({ loading: true, loadError: false });
 		try {
 			const data = await getRouters();
 			const menus = buildAppMenus(parseRouterResponse(data));
@@ -59,6 +61,9 @@ export const useMenuStore = create<MenuState>((set, get) => ({
 				menus,
 				loaded: true,
 			});
+		} catch (error) {
+			set({ loaded: false, loadError: true });
+			throw error;
 		} finally {
 			set({ loading: false });
 		}
@@ -69,6 +74,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
 			menus: [],
 			loading: false,
 			loaded: false,
+			loadError: false,
 		});
 	},
 }));
