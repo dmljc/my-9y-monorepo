@@ -34,15 +34,13 @@ const ModelData = () => {
 	) => {
 		setLoading(true);
 		try {
+			const active = filters ?? { modelName, thingName, propertyName };
 			const query: DeviceDataListQuery = {
 				pageNum: p,
 				pageSize: ps,
-				modelName:
-					filters?.modelName ?? (modelName.trim() || undefined),
-				thingName:
-					filters?.thingName ?? (thingName.trim() || undefined),
-				propertyName:
-					filters?.propertyName ?? (propertyName.trim() || undefined),
+				modelName: active.modelName.trim(),
+				thingName: active.thingName.trim(),
+				propertyName: active.propertyName.trim(),
 			};
 			const data = await list(query);
 			setDataSource(data.list ?? []);
@@ -169,6 +167,7 @@ const ModelData = () => {
 		{
 			title: "操作",
 			key: "actions",
+			fixed: "right",
 			width: 180,
 			render: (_: unknown, record) => (
 				<div className={styles.actions}>
