@@ -168,7 +168,6 @@ const ModelData = () => {
 			title: "操作",
 			key: "actions",
 			fixed: "right",
-			width: 180,
 			render: (_: unknown, record) => (
 				<div className={styles.actions}>
 					<Access code={PERM_MODEL_DATA.HISTORY}>

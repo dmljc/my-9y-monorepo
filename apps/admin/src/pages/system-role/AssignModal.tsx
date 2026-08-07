@@ -202,7 +202,12 @@ const AssignModal = ({
 
 		return (
 			<div
-				style={{ display: "flex", flexWrap: "wrap", gap: "16px 24px" }}
+				style={{
+					display: "flex",
+					flexWrap: "nowrap",
+					gap: "16px 24px",
+					whiteSpace: "nowrap",
+				}}
 			>
 				{record.actions.map((action) => (
 					<Checkbox
@@ -301,7 +306,7 @@ const AssignModal = ({
 			onCancel={onCancel}
 			confirmLoading={loading}
 			destroyOnHidden
-			width="35vw"
+			width="min(720px, calc(100vw - 48px))"
 		>
 			<Spin spinning={detailLoading}>
 				<Tabs

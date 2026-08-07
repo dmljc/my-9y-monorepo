@@ -42,3 +42,10 @@
 	gap: 12px;
 	margin-left: auto;
 }
+
+/* 1400×920 横屏平板：收紧关键词输入框，避免「导出」掉到第二行 */
+@media (min-width: 1024px) and (max-width: 1400px) and (orientation: landscape) {
+	.searchInput {
+		width: 180px;
+	}
+}
