@@ -50,7 +50,7 @@ export interface RuntimeParam {
 }
 
 /**
- * WebSocket 推送中的单台设备。
+ * WebSocket `/api/ws/tablet` 推送中的单台设备（tablet_init / tablet_data）。
  */
 export interface TabletWsDevice {
 	deviceId?: number;
@@ -60,11 +60,13 @@ export interface TabletWsDevice {
 	deviceStatus?: string | number;
 	/** 0 空闲 / 1 清洗中。 */
 	cleanStatus?: string | number;
+	/** 运行参数；右侧指标卡按该数组动态渲染。 */
 	runtimeParams?: RuntimeParam[];
 }
 
 /**
  * WebSocket 消息体（tablet_init / tablet_data）。
+ * 注意：线上 data 可能是对象，也可能是二次 JSON 字符串；解析见 parseTabletWsMessage。
  */
 export interface TabletWsMessage {
 	topic?: string;
@@ -74,13 +76,15 @@ export interface TabletWsMessage {
 }
 
 /**
- * 详情区实时指标卡。
+ * 详情区实时指标卡（完全由 WS runtimeParams 驱动）。
  */
 export interface DeviceMetric {
 	key: string;
 	label: string;
 	value: number | null;
 	unit: string;
+	/** 非数字时的原始文案（如原因描述）。 */
+	textValue?: string;
 }
 
 /**

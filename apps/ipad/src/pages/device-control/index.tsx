@@ -23,11 +23,15 @@ import styles from "./index.module.css";
 import type { BuildingTab, DeviceItem } from "./interface";
 import {
 	deriveMasterOn,
+	findWsDeviceForItem,
 	formatMetric,
-	getDisplayMetrics,
 	getTabletWsDevices,
+	indexTabletWsDevices,
+	isTabletRealtimeTopic,
 	mapRuntimeParams,
+	mergeDeviceFromWs,
 	normalizeBuildingTabs,
+	normalizeDeviceCode,
 	parseDevicesFromRooms,
 	parseTabletWsMessage,
 } from "./utils";
@@ -57,8 +61,29 @@ const DeviceControl = () => {
 	const [selectedIdByBuilding, setSelectedIdByBuilding] = useState<
 		Record<string, number>
 	>({});
-	/** WebSocket 推送的指标缓存，切厂房重拉列表时立刻合并。 */
-	const wsMetricsRef = useRef<Map<number, DeviceItem["metrics"]>>(new Map());
+	/**
+	 * WebSocket 推送的指标缓存（rooms deviceId / deviceCode / deviceName）。
+	 * rooms 与 WS 的 deviceId 可能不一致，需多键对齐。
+	 */
+	const wsMetricsRef = useRef<{
+		byId: Map<number, DeviceItem["metrics"]>;
+		byCode: Map<string, DeviceItem["metrics"]>;
+		byName: Map<string, DeviceItem["metrics"]>;
+	}>({
+		byId: new Map(),
+		byCode: new Map(),
+		byName: new Map(),
+	});
+
+	const pickCachedMetrics = (item: DeviceItem) => {
+		const cache = wsMetricsRef.current;
+		if (cache.byId.has(item.id)) return cache.byId.get(item.id);
+		const code = normalizeDeviceCode(item.code);
+		if (code && cache.byCode.has(code)) return cache.byCode.get(code);
+		const name = normalizeDeviceCode(item.name);
+		if (name && cache.byName.has(name)) return cache.byName.get(name);
+		return undefined;
+	};
 
 	const currentBuilding =
 		buildings.find((item) => item.key === buildingKey) ?? null;
@@ -88,7 +113,7 @@ const DeviceControl = () => {
 			return devicesNext.map((item) => ({
 				...item,
 				metrics:
-					wsMetricsRef.current.get(item.id) ??
+					pickCachedMetrics(item) ??
 					metricsById.get(item.id) ??
 					item.metrics,
 			}));
@@ -97,7 +122,7 @@ const DeviceControl = () => {
 			let changed = false;
 			const next = { ...prev };
 			for (const item of devicesNext) {
-				if (wsMetricsRef.current.has(item.id) && !next[item.id]) {
+				if (pickCachedMetrics(item) !== undefined && !next[item.id]) {
 					next[item.id] = true;
 					changed = true;
 				}
@@ -166,43 +191,66 @@ const DeviceControl = () => {
 		loadBuildings();
 	}, [canList]);
 
-	/** 订阅项目级平板 WebSocket，消费 runtimeParams 更新当前页指标。 */
+	/**
+	 * 订阅平板 WebSocket（tablet_init / tablet_data）。
+	 * 按 deviceId（主）/ deviceCode / deviceName 把 runtimeParams 回显到右侧详情卡。
+	 */
 	useEffect(() => {
 		return subscribeTabletWs((raw) => {
-			const devicesFromWs = getTabletWsDevices(parseTabletWsMessage(raw));
+			const message = parseTabletWsMessage(raw);
+			const devicesFromWs = getTabletWsDevices(message);
+			if (
+				!isTabletRealtimeTopic(
+					message?.topic,
+					devicesFromWs.length > 0,
+				)
+			) {
+				return;
+			}
 			if (!devicesFromWs.length) return;
 
-			const metricsById = new Map<
-				number,
-				ReturnType<typeof mapRuntimeParams>
-			>();
-			const loadedIds: number[] = [];
-			for (const row of devicesFromWs) {
-				const id = Number(row.deviceId ?? 0);
-				if (!id) continue;
-				const metrics = mapRuntimeParams(row.runtimeParams);
-				metricsById.set(id, metrics);
-				wsMetricsRef.current.set(id, metrics);
-				loadedIds.push(id);
-			}
-			if (!metricsById.size) return;
+			const wsIndex = indexTabletWsDevices(devicesFromWs);
+			const cache = wsMetricsRef.current;
 
-			setDevices((prev) =>
-				prev.map((item) => {
-					const metrics = metricsById.get(item.id);
-					return metrics ? { ...item, metrics } : item;
-				}),
-			);
-			setRealtimeLoadedIds((prev) => {
-				let changed = false;
-				const next = { ...prev };
-				for (const id of loadedIds) {
-					if (!next[id]) {
-						next[id] = true;
-						changed = true;
+			for (const row of devicesFromWs) {
+				const metrics = mapRuntimeParams(row.runtimeParams);
+				const id = Number(row.deviceId ?? 0);
+				const code = normalizeDeviceCode(row.deviceCode);
+				const name = normalizeDeviceCode(row.deviceName);
+				if (id) cache.byId.set(id, metrics);
+				if (code) cache.byCode.set(code, metrics);
+				if (name) cache.byName.set(name, metrics);
+			}
+
+			setDevices((prev) => {
+				if (!prev.length) return prev;
+
+				const touchedIds: number[] = [];
+				const next = prev.map((item) => {
+					const row = findWsDeviceForItem(item, wsIndex);
+					if (!row) return item;
+					const merged = mergeDeviceFromWs(item, row);
+					/* 按 rooms 的 deviceId 再缓存一份，保证左侧点选后右侧能命中 */
+					cache.byId.set(item.id, merged.metrics);
+					touchedIds.push(item.id);
+					return merged;
+				});
+
+				if (!touchedIds.length) return prev;
+
+				setRealtimeLoadedIds((loaded) => {
+					let loadedChanged = false;
+					const nextLoaded = { ...loaded };
+					for (const id of touchedIds) {
+						if (!nextLoaded[id]) {
+							nextLoaded[id] = true;
+							loadedChanged = true;
+						}
 					}
-				}
-				return changed ? next : prev;
+					return loadedChanged ? nextLoaded : loaded;
+				});
+				setMasterOn(deriveMasterOn(next));
+				return next;
 			});
 		});
 	}, []);
@@ -514,11 +562,9 @@ const DeviceControl = () => {
 														</div>
 													</div>
 												))
-											: getDisplayMetrics(
-													selected.metrics,
-												).map((metric, index) => (
+											: selected.metrics.map((metric) => (
 													<div
-														key={`metric-${index}`}
+														key={metric.key}
 														className={
 															styles.metricCard
 														}
@@ -529,7 +575,7 @@ const DeviceControl = () => {
 															}
 														>
 															{formatMetric(
-																metric.value,
+																metric,
 															)}
 														</div>
 														<div

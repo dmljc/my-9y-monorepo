@@ -10,11 +10,37 @@ import type {
 	TabletWsMessage,
 } from "./interface";
 
-/** 无实时数据时的占位指标（对齐稿面两卡）。 */
-export const DEFAULT_METRICS: DeviceMetric[] = [
-	{ key: "temperature", label: "温度", value: null, unit: "℃" },
-	{ key: "flowRate", label: "流量", value: null, unit: "L/min" },
-];
+/**
+ * 将单条 WS runtimeParam 转为指标卡。
+ * 有限数字按数值展示；非数字字符串仍展示文案（value 置 null，由 formatMetric 旁路）。
+ *
+ * @param {RuntimeParam} - WS 运行参数项。
+ * @param {number} - 列表序号，用于兜底 key。
+ * @returns {DeviceMetric | null} - 指标；无 label/displayField 时 null。
+ */
+const toMetric = (
+	item: RuntimeParam,
+	index: number,
+): DeviceMetric | null => {
+	const key = String(item.displayField ?? "").trim();
+	const label = String(item.label ?? "").trim();
+	if (!key && !label) return null;
+
+	const raw = item.value;
+	const num = Number(raw);
+	const hasNumber = raw !== "" && raw !== null && raw !== undefined && Number.isFinite(num);
+
+	return {
+		key: key || label || `metric-${index}`,
+		label: label || key || "指标",
+		value: hasNumber ? num : null,
+		unit: String(item.unit ?? "").trim(),
+		textValue:
+			hasNumber || raw === undefined || raw === null
+				? undefined
+				: String(raw),
+	};
+};
 
 /**
  * 将厂房接口响应转为顶栏 Tab。
@@ -122,10 +148,10 @@ export const deriveMasterOn = (devices: DeviceItem[]): boolean => {
 };
 
 /**
- * 将 WebSocket runtimeParams 转为详情指标卡。
+ * 将 WebSocket runtimeParams 全量转为详情指标卡（顺序与推送一致，不写死字段）。
  *
  * @param {RuntimeParam[] | undefined} - 运行参数列表。
- * @returns {DeviceMetric[]} - 有数值的指标；最多取前 2 个对齐双卡布局。
+ * @returns {DeviceMetric[]} - 指标卡列表。
  */
 export const mapRuntimeParams = (
 	params: RuntimeParam[] | undefined,
@@ -133,33 +159,161 @@ export const mapRuntimeParams = (
 	if (!Array.isArray(params)) return [];
 
 	const metrics: DeviceMetric[] = [];
-	for (const item of params) {
-		const num = Number(item.value);
-		if (!Number.isFinite(num)) continue;
-		const key = String(item.displayField ?? "").trim();
-		const label = String(item.label ?? "").trim();
-		metrics.push({
-			key: key || label || `metric-${metrics.length}`,
-			label: label || key || "指标",
-			value: num,
-			unit: String(item.unit ?? "").trim(),
-		});
-		if (metrics.length >= 2) break;
+	for (let i = 0; i < params.length; i += 1) {
+		const metric = toMetric(params[i], i);
+		if (metric) metrics.push(metric);
 	}
 	return metrics;
 };
 
 /**
+ * 是否为平板实时数据 topic（tablet_init / tablet_data）。
+ * topic 缺失但带 devices 时也放行（兼容只推 data 的帧）。
+ *
+ * @param {string | undefined} - 消息 topic。
+ * @param {boolean} - 是否已解析出 devices。
+ * @returns {boolean} - 是否消费。
+ */
+export const isTabletRealtimeTopic = (
+	topic?: string,
+	hasDevices = false,
+): boolean => {
+	const value = String(topic ?? "")
+		.trim()
+		.toLowerCase();
+	if (value === "tablet_init" || value === "tablet_data") return true;
+	return hasDevices && value === "";
+};
+
+/**
+ * 规范化设备编码，用于 rooms 与 WS 对齐（deviceId 可能不一致）。
+ *
+ * @param {unknown} - 原始编码。
+ * @returns {string} - 小写 trim 后的编码；空串表示无效。
+ */
+export const normalizeDeviceCode = (value: unknown): string => {
+	return String(value ?? "")
+		.trim()
+		.toLowerCase();
+};
+
+/**
+ * 用 WebSocket 设备快照合并列表项（名称、开关、清洗、运行参数）。
+ * 注意：保留 rooms 的 deviceId，供开关/清洗接口使用。
+ * runtimeParams 只要是数组就覆盖指标（无过程量时清空，避免串台残留）。
+ *
+ * @param {DeviceItem} - 当前列表项（rooms 接口）。
+ * @param {TabletWsDevice} - WS 推送设备。
+ * @returns {DeviceItem} - 合并后的设备。
+ */
+export const mergeDeviceFromWs = (
+	item: DeviceItem,
+	row: TabletWsDevice,
+): DeviceItem => {
+	const name = String(row.deviceName ?? "").trim();
+	const code = String(row.deviceCode ?? "").trim();
+	const hasStatus = row.deviceStatus !== undefined && row.deviceStatus !== null;
+	const hasClean = row.cleanStatus !== undefined && row.cleanStatus !== null;
+	const hasRuntimeParams = Array.isArray(row.runtimeParams);
+	const metrics = hasRuntimeParams
+		? mapRuntimeParams(row.runtimeParams)
+		: item.metrics;
+
+	return {
+		...item,
+		name: name || item.name,
+		code: code || item.code,
+		enabled: hasStatus
+			? String(row.deviceStatus ?? "") !== "1"
+			: item.enabled,
+		cleaning: hasClean
+			? String(row.cleanStatus ?? "") === "1"
+			: item.cleaning,
+		metrics,
+	};
+};
+
+/**
+ * 尝试把未知值解析成 JSON（兼容二次 stringify）。
+ *
+ * @param {unknown} - 原始值。
+ * @returns {unknown} - 解析结果；失败返回原值。
+ */
+const unwrapJson = (value: unknown): unknown => {
+	if (typeof value !== "string") return value;
+	const text = value.trim();
+	if (!text || (text[0] !== "{" && text[0] !== "[")) return value;
+	try {
+		return JSON.parse(text) as unknown;
+	} catch {
+		return value;
+	}
+};
+
+/**
+ * 从任意结构中提取 devices 数组。
+ * 兼容：
+ * - { devices: [] }
+ * - { data: { devices: [] } }
+ * - { data: "\"{ devices: [] }\"" } / data 为 JSON 字符串
+ * - { data: [] }（data 直接是设备数组）
+ * - 根级即为设备数组
+ *
+ * @param {unknown} - 任意载荷。
+ * @returns {TabletWsDevice[]} - 设备列表。
+ */
+export const extractTabletDevices = (value: unknown): TabletWsDevice[] => {
+	const root = unwrapJson(value);
+	if (Array.isArray(root)) {
+		return root as TabletWsDevice[];
+	}
+	if (!root || typeof root !== "object") {
+		return [];
+	}
+
+	const obj = root as Record<string, unknown>;
+	if (Array.isArray(obj.devices)) {
+		return obj.devices as TabletWsDevice[];
+	}
+
+	const data = unwrapJson(obj.data);
+	if (Array.isArray(data)) {
+		return data as TabletWsDevice[];
+	}
+	if (data && typeof data === "object") {
+		const dataObj = data as Record<string, unknown>;
+		if (Array.isArray(dataObj.devices)) {
+			return dataObj.devices as TabletWsDevice[];
+		}
+	}
+
+	return [];
+};
+
+/**
  * 解析平板 WebSocket 文本消息。
+ * 兼容 data 对象 / JSON 字符串 / 设备数组等多种形态。
  *
  * @param {string} - 原始消息。
  * @returns {TabletWsMessage | null} - 合法消息；解析失败为 null。
  */
 export const parseTabletWsMessage = (raw: string): TabletWsMessage | null => {
 	try {
-		const parsed = JSON.parse(raw) as TabletWsMessage;
-		if (!parsed || typeof parsed !== "object") return null;
-		return parsed;
+		const parsed = unwrapJson(raw);
+		if (!parsed || typeof parsed !== "object") {
+			return null;
+		}
+		const devices = extractTabletDevices(parsed);
+		if (Array.isArray(parsed)) {
+			return { data: { devices } };
+		}
+		const root = parsed as Record<string, unknown>;
+		const topic =
+			typeof root.topic === "string" ? root.topic : undefined;
+		return {
+			topic,
+			data: { devices },
+		};
 	} catch {
 		return null;
 	}
@@ -179,23 +333,69 @@ export const getTabletWsDevices = (
 };
 
 /**
- * 详情区展示用指标：有实时数据用实时，否则用温度/流量占位。
+ * 构建 WS 设备索引：deviceId / deviceCode / 唯一 deviceName。
+ * rooms 与 WS 的 deviceId 经常不一致，需多键对齐。
  *
- * @param {DeviceMetric[]} - 设备上已缓存的实时指标。
- * @returns {DeviceMetric[]} - 用于渲染的指标列表。
+ * @param {TabletWsDevice[]} - WS 设备列表。
+ * @returns {{ byId: Map<number, TabletWsDevice>; byCode: Map<string, TabletWsDevice>; byName: Map<string, TabletWsDevice> }} - 索引。
  */
-export const getDisplayMetrics = (metrics: DeviceMetric[]): DeviceMetric[] => {
-	return metrics.length > 0 ? metrics : DEFAULT_METRICS;
+export const indexTabletWsDevices = (devices: TabletWsDevice[]) => {
+	const byId = new Map<number, TabletWsDevice>();
+	const byCode = new Map<string, TabletWsDevice>();
+	const nameCount = new Map<string, number>();
+
+	for (const row of devices) {
+		const id = Number(row.deviceId ?? 0);
+		if (id) byId.set(id, row);
+		const code = normalizeDeviceCode(row.deviceCode);
+		if (code) byCode.set(code, row);
+		const name = normalizeDeviceCode(row.deviceName);
+		if (name) nameCount.set(name, (nameCount.get(name) ?? 0) + 1);
+	}
+
+	const byName = new Map<string, TabletWsDevice>();
+	for (const row of devices) {
+		const name = normalizeDeviceCode(row.deviceName);
+		if (name && nameCount.get(name) === 1) {
+			byName.set(name, row);
+		}
+	}
+
+	return { byId, byCode, byName };
+};
+
+export type TabletWsDeviceIndex = ReturnType<typeof indexTabletWsDevices>;
+
+/**
+ * 在 WS 快照中查找与列表项对应的设备：deviceId → deviceCode → 唯一 deviceName。
+ *
+ * @param {DeviceItem} - rooms 列表项。
+ * @param {TabletWsDeviceIndex} - WS 索引。
+ * @returns {TabletWsDevice | undefined} - 命中的 WS 行。
+ */
+export const findWsDeviceForItem = (
+	item: DeviceItem,
+	index: TabletWsDeviceIndex,
+): TabletWsDevice | undefined => {
+	return (
+		index.byId.get(item.id) ??
+		index.byCode.get(normalizeDeviceCode(item.code)) ??
+		index.byName.get(normalizeDeviceCode(item.name))
+	);
 };
 
 /**
- * 指标展示文案。
+ * 指标卡主数值展示文案（原样输出后端值，不做小数位格式化）。
  *
- * @param {number | null} - 数值。
- * @param {number} - 小数位。
+ * @param {DeviceMetric} - 指标。
  * @returns {string} - 展示字符串。
  */
-export const formatMetric = (value: number | null, digits = 1): string => {
+export const formatMetric = (metric: DeviceMetric): string => {
+	if (metric.textValue !== undefined) {
+		const text = metric.textValue.trim();
+		return text || "—";
+	}
+	const { value } = metric;
 	if (value === null || !Number.isFinite(value)) return "—";
-	return value.toFixed(digits);
+	return String(value);
 };
