@@ -1,1 +1,2 @@
+. "$(dirname "$0")/load-path.sh"
 npx --no -- commitlint --edit "$1"

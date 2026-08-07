@@ -95,7 +95,7 @@ module.exports = {
 			},
 			{
 				value: "build",
-				name: "构建: 📦️ 构建与依赖（pnpm catalog、Vite 等）",
+				name: "构建: 📦️ 构建与依赖、全局配置（package.json、pnpm、Vite、Biome、ts 等）",
 				emoji: ":package:",
 			},
 			{
