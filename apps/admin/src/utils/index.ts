@@ -1,3 +1,5 @@
+// 导出设备判断相关工具函数。
+export { isTabletDevice } from "./device";
 // 导出文件下载相关工具函数。
 export { downloadBlob, resolveExportBlob, XLSX_MIME } from "./file";
 // 导出按钮权限判断工具函数。

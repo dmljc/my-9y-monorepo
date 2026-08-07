@@ -8,9 +8,10 @@ import {
 	ToolOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
-import { ConfigProvider, Flex, Layout, Menu, Typography } from "antd";
+import { App, ConfigProvider, Flex, Layout, Menu, Typography } from "antd";
 import { type ReactNode, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { isTabletDevice } from "@/utils";
 import AppBreadcrumb from "./AppBreadcrumb";
 import styles from "./index.module.css";
 import {
@@ -37,6 +38,7 @@ const TOP_MENU_ICONS: Record<TopMenuKey, ReactNode> = {
 const AppLayout = () => {
 	const location = useLocation();
 	const navigate = useNavigate();
+	const { modal } = App.useApp();
 	const menus = useMenuStore((state) => state.menus);
 	const activeTop = getTopMenuByPath(location.pathname, menus);
 	const showBreadcrumb =
@@ -54,6 +56,13 @@ const AppLayout = () => {
 
 	const onTopMenuClick: MenuProps["onClick"] = ({ key }) => {
 		if (key === "dashboard") {
+			if (isTabletDevice()) {
+				modal.warning({
+					title: "不支持在平板访问大屏",
+					content: "大屏对硬件的性能要求较高，请使用电脑浏览器打开。",
+				});
+				return;
+			}
 			window.open(
 				getDefaultPathForTop(key as TopMenuKey, menus),
 				"_blank",
