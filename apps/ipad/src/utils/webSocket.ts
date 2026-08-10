@@ -1,5 +1,3 @@
-import { getToken } from "./request";
-
 /** 平板 WebSocket 断线重连间隔（毫秒）。 */
 const RECONNECT_MS = 3000;
 
@@ -16,7 +14,7 @@ let socket: WebSocket | null = null;
 let reconnectTimer: number | null = null;
 
 /**
- * 组装平板实时数据 WebSocket 地址。
+ * 组装平板实时数据 WebSocket 地址（不传 token）。
  *
  * @returns {string} - WebSocket URL。
  */
@@ -25,21 +23,15 @@ const getTabletWsUrl = (): string => {
 		/\/$/,
 		"",
 	);
-	const token = getToken();
-	let url: string;
 
 	if (/^https?:\/\//i.test(apiBase)) {
 		const parsed = new URL(`${apiBase}/ws/tablet`);
 		parsed.protocol = parsed.protocol === "https:" ? "wss:" : "ws:";
-		url = parsed.toString();
-	} else {
-		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-		url = `${protocol}//${window.location.host}${apiBase}/ws/tablet`;
+		return parsed.toString();
 	}
 
-	if (!token) return url;
-	const joiner = url.includes("?") ? "&" : "?";
-	return `${url}${joiner}token=${encodeURIComponent(token)}`;
+	const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+	return `${protocol}//${window.location.host}${apiBase}/ws/tablet`;
 };
 
 /**
