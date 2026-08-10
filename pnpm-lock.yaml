@@ -19,8 +19,8 @@ catalogs:
       specifier: ^4.3.3
       version: 4.3.3
     antd:
-      specifier: ^6.5.3
-      version: 6.5.3
+      specifier: ^6.5.4
+      version: 6.5.4
     axios:
       specifier: ^1.19.0
       version: 1.19.0
@@ -84,8 +84,8 @@ importers:
         specifier: ^17.3.0
         version: 17.3.0
       npm-check-updates:
-        specifier: ^23.0.1
-        version: 23.0.1
+        specifier: ^23.0.2
+        version: 23.0.2
       rollup-plugin-visualizer:
         specifier: ^7.0.1
         version: 7.0.1(rolldown@1.2.1)
@@ -103,7 +103,7 @@ importers:
         version: 6.3.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       antd:
         specifier: 'catalog:'
-        version: 6.5.3(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 6.5.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       axios:
         specifier: 'catalog:'
         version: 1.19.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
@@ -146,7 +146,7 @@ importers:
         version: 6.3.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       antd:
         specifier: 'catalog:'
-        version: 6.5.3(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 6.5.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       axios:
         specifier: 'catalog:'
         version: 1.19.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
@@ -933,8 +933,8 @@ packages:
     resolution: {integrity: sha512-4Dj6M28JB+oAH8kFkTLUo+a2jwOFkuqb3yucU0CANcRRUbxS0cP0nZYCGjcc3BNXwRIsUVmDGgzawme7zvJHvg==}
     engines: {node: '>=12'}
 
-  antd@6.5.3:
-    resolution: {integrity: sha512-Q5r8sztf9Yk9B70bSUjnPYMCJ4A/eZM7uMoTj8UAhlSKR9aftjEuBEPcNSmRux7hB+87rxO8vN1X4HNjR97qyQ==}
+  antd@6.5.4:
+    resolution: {integrity: sha512-jchA6i0rEwHjLpgC+l6HeLHP0gL4Q4yjs6Mxqt6PlhGD5ArxCj3ZH+fKFbNquCtd6Rlzzi+emfNFpP2dGLwZzg==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
@@ -1582,8 +1582,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  npm-check-updates@23.0.1:
-    resolution: {integrity: sha512-e4hu3Rq4waj7SnhzvqAc5UG557mfP5e3JIFFQd7Fg3RiRkJl8yR90NFoZ1GSWUT3S/QacJndJb+7dLQBPeH+iA==}
+  npm-check-updates@23.0.2:
+    resolution: {integrity: sha512-t5tv+d4sP+WbSwcDAFBwDxSUJRomc+TJoURPu7q5B/19toUsR/7eshRxBdWdE7iYw80iE4O4D/7OvCvIcaG8ug==}
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0, npm: '>=10.0.0'}
     hasBin: true
 
@@ -2706,7 +2706,7 @@ snapshots:
 
   ansi-styles@6.2.3: {}
 
-  antd@6.5.3(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+  antd@6.5.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
       '@ant-design/colors': 8.0.1
       '@ant-design/cssinjs': 2.1.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -3353,7 +3353,7 @@ snapshots:
 
   nanoid@3.3.17: {}
 
-  npm-check-updates@23.0.1: {}
+  npm-check-updates@23.0.2: {}
 
   once@1.4.0:
     dependencies:

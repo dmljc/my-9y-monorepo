@@ -28,7 +28,7 @@ catalog:
   react-dom: ^19.2.8
 
   # UI
-  antd: ^6.5.3
+  antd: ^6.5.4
   "@ant-design/icons": ^6.3.2
 
   # HTTP
