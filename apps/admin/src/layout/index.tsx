@@ -16,6 +16,7 @@ import AppBreadcrumb from "./AppBreadcrumb";
 import styles from "./index.module.css";
 import {
 	buildBreadcrumbItems,
+	DASHBOARD_EXTERNAL_URL,
 	getDefaultPathForTop,
 	getTopMenuByPath,
 	type TopMenuKey,
@@ -63,10 +64,7 @@ const AppLayout = () => {
 				});
 				return;
 			}
-			window.open(
-				getDefaultPathForTop(key as TopMenuKey, menus),
-				"_blank",
-			);
+			window.open(DASHBOARD_EXTERNAL_URL, "_blank", "noopener,noreferrer");
 			return;
 		}
 		navigate(getDefaultPathForTop(key as TopMenuKey, menus));

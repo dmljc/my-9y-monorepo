@@ -47,6 +47,13 @@ interface RouteConfig {
 	defaultPath?: string;
 }
 
+/**
+ * 顶部「大屏」菜单外链（新窗口打开数字孪生预览）。
+ * 由 `.env` 的 `VITE_DASHBOARD_EXTERNAL_URL` 配置；菜单权限仍匹配后端 path `/dashboard`。
+ */
+export const DASHBOARD_EXTERNAL_URL =
+	import.meta.env.VITE_DASHBOARD_EXTERNAL_URL;
+
 const TOP_ROUTE_CONFIGS: RouteConfig[] = [
 	{ key: "dashboard", label: "大屏", path: "/dashboard" },
 	{ key: "statistics", label: "统计分析", path: "/statistics" },
