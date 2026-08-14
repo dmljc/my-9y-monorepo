@@ -1,7 +1,6 @@
 /*
-  蓝湖自定义画布：1400×920 → 标注即 CSS 逻辑像素
-  缩放统一：calc(n / 1400 * 100cqw)；宽高同基准，勿混用 2800/1840 或 cqh
-  设备卡面：active-bg / un-active-bg（设计稿 152×80）
+  蓝湖 1400×920 contain 舞台：一屏完整显示，不滚动
+  缩放统一：calc(n / 1400 * 100cqw)
 */
 .deviceControl {
 	display: flex;
@@ -14,10 +13,6 @@
 	container-type: size;
 }
 
-/*
- * 等比舞台：宽高比固定 1400:920，在视口内 contain。
- * MatePad 3:2 时铺满；电脑端偏宽时左右留白，按高度缩放。
- */
 .stage {
 	position: relative;
 	display: flex;
@@ -29,464 +24,643 @@
 	container-type: size;
 }
 
-/*
-  详情头开关：40×20
-  关态用不透明 #bfbfbf（等同白底上 rgba(0,0,0,0.25)），避免蓝头透色
-*/
-.controlSwitch:global(.ant-switch) {
-	min-width: calc(40 / 1400 * 100cqw);
-	width: calc(40 / 1400 * 100cqw);
-	height: calc(20 / 1400 * 100cqw);
-	line-height: calc(20 / 1400 * 100cqw);
-	background: #bfbfbf;
-}
-
-.controlSwitch:global(.ant-switch):hover:not(:global(.ant-switch-checked)) {
-	background: #bfbfbf;
-}
-
-.controlSwitch:global(.ant-switch) :global(.ant-switch-handle) {
-	width: calc(16 / 1400 * 100cqw);
-	height: calc(16 / 1400 * 100cqw);
-	inset-inline-start: calc(2 / 1400 * 100cqw);
-	top: calc(2 / 1400 * 100cqw);
-}
-
-.controlSwitch:global(.ant-switch) :global(.ant-switch-handle::before) {
-	background: #fff;
-}
-
-.controlSwitch:global(.ant-switch-checked) {
-	background: #0984ff;
-}
-
-.controlSwitch:global(.ant-switch-checked):hover {
-	background: #0984ff;
-}
-
-.controlSwitch:global(.ant-switch-checked) :global(.ant-switch-handle) {
-	inset-inline-start: calc(100% - (18 / 1400 * 100cqw));
-}
-
-.controlSwitch:global(.ant-switch-checked) :global(.ant-switch-handle::before) {
-	background: #fff;
-}
-
-/* —— 主体：模块间距 16 —— */
 .body {
 	flex: 1;
 	min-height: 0;
 	display: flex;
 	gap: calc(16 / 1400 * 100cqw);
-	/* 平板：四边模块间距 16；电脑宽屏见下方 @media */
 	padding: calc(16 / 1400 * 100cqw);
 }
 
-/* 电脑端宽屏（宽高比明显大于 MatePad 3:2）：仅保留上下间距 */
 @media (min-aspect-ratio: 16 / 10) {
 	.body {
 		padding: calc(16 / 1400 * 100cqw) 0;
 	}
 }
 
-.sidebar {
-	flex: none;
-	width: calc(370 / 1400 * 100cqw);
-	display: flex;
-	flex-direction: column;
-	overflow: auto;
-	padding: calc(20 / 1400 * 100cqw) calc(24 / 1400 * 100cqw);
-	border-radius: calc(12 / 1400 * 100cqw);
+.sidebar,
+.infoPanel,
+.mainPanel,
+.footer {
 	background: #fff;
-}
-
-.emptyWrap {
-	flex: 1;
-	min-height: calc(200 / 1400 * 100cqw);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: calc(24 / 1400 * 100cqw);
-}
-
-.deviceGrid {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	column-gap: calc(14 / 1400 * 100cqw);
-	row-gap: calc(16 / 1400 * 100cqw);
-}
-
-.deviceCard {
-	display: flex;
-	flex-direction: column;
-	gap: calc(12 / 1400 * 100cqw);
-	padding: 0;
-	border: none;
-	background: transparent;
-	cursor: pointer;
-	text-align: center;
-}
-
-.deviceThumb {
-	position: relative;
-	width: calc(152 / 1400 * 100cqw);
-	height: calc(80 / 1400 * 100cqw);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	overflow: hidden;
-	border: none;
-	border-radius: calc(6 / 1400 * 100cqw);
-	background-color: #ddeeff;
-	background-image: var(--thumb-bg);
-	background-repeat: no-repeat;
-	background-position: center;
-	background-size: 100% 100%;
+	border-radius: calc(12 / 1400 * 100cqw);
 	box-sizing: border-box;
 }
 
-/* 选中态直接换 active-bg（稿面已含描边） */
-.deviceCardActive .deviceThumb {
-	background-image: var(--thumb-bg-active);
+.sidebar {
+	flex: none;
+	width: calc(350 / 1400 * 100cqw);
+	display: flex;
+	flex-direction: column;
+	align-self: stretch;
+	min-height: 0;
+	padding: calc(16 / 1400 * 100cqw);
 }
 
-.deviceCode {
+.segment {
+	flex: none;
+	display: flex;
+	width: 100%;
+	height: calc(40 / 1400 * 100cqw);
+	border-radius: calc(20 / 1400 * 100cqw);
+	background: #efefef;
+	overflow: hidden;
+}
+
+.segmentItem {
+	flex: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border: none;
+	background: transparent;
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	font-weight: 400;
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #000000;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.segmentItemActive {
+	border-radius: calc(20 / 1400 * 100cqw);
+	background: #0984ff;
+	font-family:
+		"HarmonyOS_Sans_SC_Medium", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-weight: 500;
+	color: #ffffff;
+}
+
+.list {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	gap: calc(12 / 1400 * 100cqw);
+	margin-top: calc(16 / 1400 * 100cqw);
+	overflow: auto;
+}
+
+.listItem {
+	position: relative;
+	flex: none;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: calc(16 / 1400 * 100cqw);
+	width: 100%;
+	min-height: calc(100 / 1400 * 100cqw);
+	padding: calc(16 / 1400 * 100cqw);
+	overflow: hidden;
+	border: 1px solid transparent;
+	border-radius: calc(10 / 1400 * 100cqw);
+	background: #f8f8f8;
+	text-align: left;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.listItem::after {
+	content: "";
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	width: calc(77 / 1400 * 100cqw);
+	height: calc(50 / 1400 * 100cqw);
+	background:
+		url("../../assets/device-control/list-item-deco.webp") no-repeat center
+		/ 100% 100%;
+	pointer-events: none;
+	z-index: 0;
+}
+
+.listItemActive {
+	background: #e4f2ff;
+	border-color: #0984ff;
+}
+
+.listItemTop {
 	position: relative;
 	z-index: 1;
-	color: #0053a6;
-	font-size: calc(24 / 1400 * 100cqw);
-	font-weight: 700;
-	line-height: calc(32 / 1400 * 100cqw);
+	display: flex;
+	align-items: center;
+	min-width: 0;
 }
 
-.deviceName {
+.listIcon {
+	flex: none;
+	width: calc(20 / 1400 * 100cqw);
+	height: calc(20 / 1400 * 100cqw);
+	margin-right: calc(5 / 1400 * 100cqw);
+	color: #5094ff;
+}
+
+.listTitle {
+	flex: 1;
+	min-width: 0;
 	overflow: hidden;
 	font-family:
 		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
 		"Microsoft YaHei", sans-serif;
 	font-size: calc(19 / 1400 * 100cqw);
-	font-style: normal;
 	line-height: calc(22 / 1400 * 100cqw);
-	color: #494949;
-	text-align: center;
+	color: #000000;
 	white-space: nowrap;
 	text-overflow: ellipsis;
 }
 
-/* —— 详情 —— */
-.detail {
-	flex: 1;
-	min-width: 0;
-	display: flex;
-	flex-direction: column;
-	overflow: hidden;
-	border-radius: calc(12 / 1400 * 100cqw);
-	background: #fff;
+.statusTag {
+	flex: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: calc(71 / 1400 * 100cqw);
+	height: calc(26 / 1400 * 100cqw);
+	padding: 0 calc(8 / 1400 * 100cqw);
+	border-radius: calc(6 / 1400 * 100cqw);
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(17 / 1400 * 100cqw);
+	line-height: calc(20 / 1400 * 100cqw);
+	white-space: nowrap;
 }
 
-.detailHeader {
-	flex: none;
+.statusOn {
+	background: #e3fde7;
+	color: #3ad453;
+}
+
+.statusOff {
+	background: #ffffff;
+	color: #8e8e8e;
+}
+
+.listMeta {
 	position: relative;
 	z-index: 1;
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	height: calc(55 / 1400 * 100cqw);
-	min-height: calc(55 / 1400 * 100cqw);
-	padding: 0 calc(24 / 1400 * 100cqw);
-	border-radius: calc(12 / 1400 * 100cqw) calc(12 / 1400 * 100cqw) 0 0;
-	background: linear-gradient(270deg, #7e99ff 0%, #4492ff 100%);
-	color: #fff;
+	min-width: 0;
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+	white-space: nowrap;
+}
+
+.metaLabel {
+	flex: none;
+	color: #666666;
+}
+
+.metaValue {
+	flex: none;
+	max-width: calc(80 / 1400 * 100cqw);
+	margin-left: calc(6 / 1400 * 100cqw);
+	overflow: hidden;
+	color: #666666;
+	text-overflow: ellipsis;
+}
+
+.metaValueActive {
+	color: #2378ff;
+}
+
+.metaCodes {
+	flex: 1;
+	min-width: 0;
+	max-width: none;
+}
+
+.metaGap {
+	flex: none;
+	width: calc(30 / 1400 * 100cqw);
+}
+
+.detail {
+	flex: 1;
+	min-width: 0;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	gap: calc(16 / 1400 * 100cqw);
+}
+
+.infoPanel {
+	flex: none;
+	display: flex;
+	flex-direction: column;
+	padding: calc(16 / 1400 * 100cqw);
+}
+
+.sectionTitle {
+	flex: none;
+	font-family:
+		"HarmonyOS_Sans_SC_Medium", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(21 / 1400 * 100cqw);
+	font-weight: 500;
+	line-height: calc(24 / 1400 * 100cqw);
+	color: #000000;
+}
+
+.sectionLine {
+	flex: none;
+	width: 100%;
+	height: 1px;
+	margin: calc(10 / 1400 * 100cqw) 0;
+	background: #eeeeee;
+}
+
+.infoCard {
+	flex: none;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
 	box-sizing: border-box;
 }
 
-.detailHeaderMain {
+.infoAccent {
+	flex: none;
+	width: calc(4 / 1400 * 100cqw);
+	height: calc(18 / 1400 * 100cqw);
+	margin-right: calc(6 / 1400 * 100cqw);
+	border-radius: 1px;
+	background: #5094ff;
+}
+
+.infoGrid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	column-gap: calc(20 / 1400 * 100cqw);
+	align-items: center;
+	min-height: calc(48 / 1400 * 100cqw);
+	padding: 0 calc(16 / 1400 * 100cqw);
+	border-radius: calc(4 / 1400 * 100cqw);
+	background: #ffffff;
+}
+
+.infoGridRoom {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	column-gap: calc(24 / 1400 * 100cqw);
+	row-gap: calc(8 / 1400 * 100cqw);
+	grid-template-columns: none;
+}
+
+.infoCell {
 	display: flex;
 	align-items: center;
 	min-width: 0;
-	white-space: nowrap;
+	overflow: hidden;
 }
 
-/* 蓝湖：设备名 / 19px / 白 80% */
-.deviceNameLabel {
-	flex: none;
-	font-family:
-		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
-		"Microsoft YaHei", sans-serif;
-	font-size: calc(19 / 1400 * 100cqw);
-	font-style: normal;
-	line-height: calc(22 / 1400 * 100cqw);
-	color: rgba(255, 255, 255, 0.8);
-	text-align: center;
-}
-
-/* 完整设备名：距标签 8px，距监控房 68px；左侧列表截断，此处完整展示 */
-.deviceNameValue {
-	flex: none;
-	max-width: none;
-	margin-left: calc(8 / 1400 * 100cqw);
-	margin-right: calc(68 / 1400 * 100cqw);
+.infoGridRoom .infoCell {
+	flex: 0 0 auto;
 	overflow: visible;
+	min-width: auto;
+}
+
+.infoCellGrow {
+	flex: 1 1 calc(200 / 1400 * 100cqw);
+	min-width: calc(160 / 1400 * 100cqw);
+	max-width: 100%;
+}
+
+.infoCellGrow .infoCellValue {
+	flex: 1;
+	min-width: 0;
+	overflow: visible;
+	white-space: normal;
+	word-break: keep-all;
+	overflow-wrap: break-word;
+	text-overflow: unset;
+}
+
+.infoCellLabel {
+	flex: none;
+	margin-right: calc(8 / 1400 * 100cqw);
 	font-family:
 		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
 		"Microsoft YaHei", sans-serif;
 	font-size: calc(19 / 1400 * 100cqw);
-	font-style: normal;
 	line-height: calc(22 / 1400 * 100cqw);
-	color: #ffffff;
-	text-align: center;
-	white-space: nowrap;
-	text-overflow: clip;
-}
-
-/* 蓝湖：监控房 / 19px / 白 80% */
-.roomLabel {
-	flex: none;
-	font-family:
-		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
-		"Microsoft YaHei", sans-serif;
-	font-size: calc(19 / 1400 * 100cqw);
-	font-style: normal;
-	line-height: calc(22 / 1400 * 100cqw);
-	color: rgba(255, 255, 255, 0.8);
-	text-align: center;
-}
-
-.roomValue {
-	flex: none;
-	margin-left: calc(8 / 1400 * 100cqw);
-	font-family:
-		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
-		"Microsoft YaHei", sans-serif;
-	font-size: calc(19 / 1400 * 100cqw);
-	font-style: normal;
-	line-height: calc(22 / 1400 * 100cqw);
-	color: #ffffff;
-	text-align: center;
-}
-
-.detailSwitch {
-	flex: none;
-	display: inline-flex;
-	align-items: center;
-	gap: calc(12 / 1400 * 100cqw);
-	margin: 0;
-	cursor: pointer;
+	color: #808080;
 	white-space: nowrap;
 }
 
-.switchLabel {
+.infoCellValue {
+	min-width: 0;
+	overflow: hidden;
 	font-family:
 		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
 		"Microsoft YaHei", sans-serif;
 	font-size: calc(19 / 1400 * 100cqw);
-	font-style: normal;
 	line-height: calc(22 / 1400 * 100cqw);
-	color: rgba(255, 255, 255, 0.8);
+	color: #000000;
+	white-space: nowrap;
+	text-overflow: ellipsis;
 }
 
-.detailBody {
-	--corner-r: calc(12 / 1400 * 100cqw);
+.mainPanel {
 	flex: 1;
 	min-height: 0;
-	position: relative;
-	/* 蓝湖 1400×920：详情内容区内边距 16 */
+	display: flex;
+	flex-direction: column;
 	padding: calc(16 / 1400 * 100cqw);
-	overflow: auto;
-	background: #fff;
-}
-
-/* 蓝头与白底交界：左右内凹圆角（对齐头图渐变左右色） */
-.detailBody::before,
-.detailBody::after {
-	content: "";
-	position: absolute;
-	top: 0;
-	width: var(--corner-r);
-	height: var(--corner-r);
-	pointer-events: none;
-	z-index: 2;
-}
-
-.detailBody::before {
-	left: 0;
-	background: radial-gradient(
-		circle at 100% 100%,
-		transparent var(--corner-r),
-		#4492ff var(--corner-r)
-	);
-}
-
-.detailBody::after {
-	right: 0;
-	background: radial-gradient(
-		circle at 0 100%,
-		transparent var(--corner-r),
-		#7e99ff var(--corner-r)
-	);
-}
-
-.cleanBtn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: calc(8 / 1400 * 100cqw);
-	width: calc(140 / 1400 * 100cqw);
-	height: calc(44 / 1400 * 100cqw);
-	margin-bottom: calc(16 / 1400 * 100cqw);
-	padding: 0;
-	border: 1px solid #0984ff;
-	border-radius: calc(8 / 1400 * 100cqw);
-	background: #e2f0ff;
-	cursor: pointer;
-	box-sizing: border-box;
-}
-
-.cleanIcon {
-	flex: none;
-	color: #0984ff;
-	font-size: calc(18 / 1400 * 100cqw);
-}
-
-.cleanText {
-	flex: none;
-	width: calc(76 / 1400 * 100cqw);
-	height: calc(22 / 1400 * 100cqw);
-	font-family:
-		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
-		"Microsoft YaHei", sans-serif;
-	font-size: calc(19 / 1400 * 100cqw);
-	font-style: normal;
-	line-height: calc(22 / 1400 * 100cqw);
-	color: #0984ff;
-	text-align: center;
-}
-
-/* 蓝湖「清洗中」：140×44 / #E2FBFF / 描边·文案 #0099AF / 圆角 8；可点击取消清洗 */
-.cleaningStatus {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: calc(8 / 1400 * 100cqw);
-	width: calc(140 / 1400 * 100cqw);
-	height: calc(44 / 1400 * 100cqw);
-	margin-bottom: calc(16 / 1400 * 100cqw);
-	padding: 0;
-	border: 1px solid #0099af;
-	border-radius: calc(8 / 1400 * 100cqw);
-	background: #e2fbff;
-	cursor: pointer;
-	box-sizing: border-box;
-}
-
-.cleaningIcon {
-	flex: none;
-	width: calc(18 / 1400 * 100cqw);
-	height: calc(18 / 1400 * 100cqw);
-	display: block;
-	animation: cleaningSpin 1s linear infinite;
-	transform-origin: center;
-}
-
-.cleaningText {
-	flex: none;
-	height: calc(22 / 1400 * 100cqw);
-	font-family:
-		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
-		"Microsoft YaHei", sans-serif;
-	font-size: calc(19 / 1400 * 100cqw);
-	font-style: normal;
-	line-height: calc(22 / 1400 * 100cqw);
-	color: #0099af;
-	text-align: center;
-	white-space: nowrap;
-}
-
-@keyframes cleaningSpin {
-	to {
-		transform: rotate(360deg);
-	}
 }
 
 .metricRow {
+	flex: none;
 	display: flex;
-	align-items: flex-start;
-	gap: calc(15 / 1400 * 100cqw);
+	flex-wrap: wrap;
+	align-items: stretch;
+	gap: calc(12 / 1400 * 100cqw);
 }
 
-/* 蓝湖 1400×920：137×172 / #F6F9FE / 圆角 10；上 35 / 下 33，数值+单位靠上、标签靠下 */
 .metricCard {
-	width: calc(137 / 1400 * 100cqw);
-	height: calc(172 / 1400 * 100cqw);
+	flex: none;
+	width: max-content;
+	height: calc(90 / 1400 * 100cqw);
 	display: flex;
-	flex-direction: column;
 	align-items: center;
-	padding: calc(35 / 1400 * 100cqw) 0 calc(33 / 1400 * 100cqw);
-	border-radius: calc(10 / 1400 * 100cqw);
-	background: #f6f9fe;
+	justify-content: space-between;
+	padding: calc(16 / 1400 * 100cqw);
+	border: 1px solid transparent;
+	border-radius: calc(8 / 1400 * 100cqw);
+	background: #f6faff;
 	box-sizing: border-box;
-	flex-shrink: 0;
 }
 
-/* 蓝湖：height 28 / Medium 24 / #003C78 / 行高 29 */
-.metricValue {
-	height: calc(28 / 1400 * 100cqw);
-	font-family:
-		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC_Medium", "PingFang SC",
-		"Microsoft YaHei", sans-serif;
-	font-size: calc(24 / 1400 * 100cqw);
-	font-weight: 500;
-	font-style: normal;
-	line-height: calc(29 / 1400 * 100cqw);
-	color: #003c78;
-	text-align: center;
+.metricCardActive {
+	border-color: #0984ff;
 }
 
-/* 蓝湖：height 22 / 19 / #292929 / 行高 22；距数值约 10；始终占位避免无单位时布局跳动 */
-.metricUnit {
-	margin-top: calc(10 / 1400 * 100cqw);
-	min-height: calc(22 / 1400 * 100cqw);
-	height: calc(22 / 1400 * 100cqw);
-	font-family:
-		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
-		"Microsoft YaHei", sans-serif;
-	font-size: calc(19 / 1400 * 100cqw);
-	font-style: normal;
-	line-height: calc(22 / 1400 * 100cqw);
-	color: #292929;
-	text-align: center;
+button.metricCard {
+	font: inherit;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
 }
 
-/* 蓝湖：height 22 / 19 / #000000 / 行高 22 */
-.metricLabel {
-	margin-top: auto;
-	height: calc(22 / 1400 * 100cqw);
-	font-family:
-		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
-		"Microsoft YaHei", sans-serif;
-	font-size: calc(19 / 1400 * 100cqw);
-	font-style: normal;
-	line-height: calc(22 / 1400 * 100cqw);
-	color: #000000;
-	text-align: center;
-}
-
-/* 首轮实时数据返回前只保留一张静态占位卡，避免内容与卡片数量切换。 */
 .metricCardSkeleton {
 	pointer-events: none;
 }
 
-.metricCardSkeleton .metricValue,
-.metricCardSkeleton .metricLabel {
-	color: transparent;
-	background: rgba(0, 60, 120, 0.08);
-	border-radius: calc(4 / 1400 * 100cqw);
+.metricCardRoom {
+	height: calc(56 / 1400 * 100cqw);
 }
 
-.metricCardSkeleton .metricValue {
-	width: calc(56 / 1400 * 100cqw);
+.metricCardRoom .metricText {
+	justify-content: center;
 }
 
-.metricCardSkeleton .metricLabel {
-	width: calc(72 / 1400 * 100cqw);
+.metricCardRoom .metricLabel {
+	color: #333333;
+}
+
+.metricText {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-self: stretch;
+	flex: none;
+	padding-right: calc(8 / 1400 * 100cqw);
+}
+
+.metricLabel {
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(16 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #999999;
+	white-space: nowrap;
+}
+
+.metricValueRow {
+	display: flex;
+	align-items: baseline;
+	gap: calc(4 / 1400 * 100cqw);
+	white-space: nowrap;
+}
+
+.metricValue {
+	font-family:
+		"HarmonyOS_Sans_SC_Medium", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(24 / 1400 * 100cqw);
+	font-weight: 600;
+	line-height: calc(33 / 1400 * 100cqw);
+	color: #000000;
+	white-space: nowrap;
+}
+
+.metricUnit {
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(16 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #000000;
+	white-space: nowrap;
+}
+
+.metricIcon {
+	flex: none;
+	width: calc(52 / 1400 * 100cqw);
+	height: calc(52 / 1400 * 100cqw);
+	color: #0984ff;
+}
+
+.trendChart {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	margin-top: calc(8 / 1400 * 100cqw);
+}
+
+.legend {
+	flex: none;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: calc(34 / 1400 * 100cqw);
+	margin: calc(10 / 1400 * 100cqw) 0 calc(4 / 1400 * 100cqw);
+}
+
+.legendItem {
+	display: flex;
+	align-items: center;
+	gap: calc(8 / 1400 * 100cqw);
+}
+
+.legendMark {
+	width: calc(16 / 1400 * 100cqw);
+	height: calc(6 / 1400 * 100cqw);
+	border-radius: 1px;
+}
+
+.legendText {
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(17 / 1400 * 100cqw);
+	line-height: calc(20 / 1400 * 100cqw);
+	color: #2d2d2d;
+}
+
+.chartWrap {
+	flex: 1;
+	min-height: 0;
+	width: 100%;
+	min-width: 0;
+	display: flex;
+}
+
+.footer {
+	flex: none;
+	display: flex;
+	align-items: center;
+	min-height: calc(92 / 1400 * 100cqw);
+	padding: 0 calc(16 / 1400 * 100cqw);
+}
+
+.powerBtn {
+	display: flex;
+	align-items: center;
+	gap: calc(25 / 1400 * 100cqw);
+	padding: 0;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+}
+
+.powerCircle {
+	flex: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: calc(60 / 1400 * 100cqw);
+	height: calc(60 / 1400 * 100cqw);
+	border-radius: 50%;
+	color: #ffffff;
+}
+
+.powerOn {
+	background: linear-gradient(180deg, #14b5ff 0%, #0a88ff 100%);
+}
+
+.powerOff {
+	background: #cecece;
+}
+
+.powerIcon {
+	width: calc(36 / 1400 * 100cqw);
+	height: calc(36 / 1400 * 100cqw);
+}
+
+.powerText {
+	font-family:
+		"HarmonyOS_Sans_SC_Medium", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(21 / 1400 * 100cqw);
+	font-weight: 500;
+	line-height: calc(24 / 1400 * 100cqw);
+	color: #000000;
+	white-space: nowrap;
+}
+
+.footerActions {
+	display: flex;
+	align-items: center;
+	gap: calc(17 / 1400 * 100cqw);
+	margin-left: auto;
+}
+
+.actionBtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: calc(121 / 1400 * 100cqw);
+	height: calc(48 / 1400 * 100cqw);
+	padding: 0;
+	border: none;
+	border-radius: calc(12 / 1400 * 100cqw);
+	background: #0984ff;
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #ffffff;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.actionBtn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.emptyWrap {
+	flex: 1;
+	min-height: calc(120 / 1400 * 100cqw);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.modal :global(.ant-modal-content) {
+	padding: calc(16 / 1400 * 100cqw) calc(16 / 1400 * 100cqw)
+		calc(20 / 1400 * 100cqw);
+	border-radius: calc(10 / 1400 * 100cqw);
+}
+
+.modal :global(.ant-modal-header) {
+	margin-bottom: calc(14 / 1400 * 100cqw);
+}
+
+.modal :global(.ant-modal-title) {
+	font-family:
+		"HarmonyOS_Sans_SC_Medium", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #000000;
+}
+
+.modal :global(.ant-form-item-label > label) {
+	font-size: calc(19 / 1400 * 100cqw);
+	color: #333333;
+}
+
+.modal :global(.ant-input),
+.modal :global(.ant-select-selection-item),
+.modal :global(.ant-select-selection-placeholder) {
+	font-size: calc(19 / 1400 * 100cqw);
+	line-height: calc(26 / 1400 * 100cqw);
+}
+
+.modal :global(.ant-input),
+.modal :global(.ant-select-selector) {
+	height: calc(40 / 1400 * 100cqw) !important;
+	border-radius: calc(6 / 1400 * 100cqw);
+}
+
+.modalHint {
+	margin-top: calc(8 / 1400 * 100cqw);
+	font-size: calc(19 / 1400 * 100cqw);
+	line-height: calc(26 / 1400 * 100cqw);
+	color: rgba(0, 0, 0, 0.25);
 }

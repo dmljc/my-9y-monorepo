@@ -1,10 +1,9 @@
-import { ClearOutlined } from "@ant-design/icons";
-import { App, Empty, Switch } from "antd";
-import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { App, Empty, Modal } from "antd";
+import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
-import activeBg from "@/assets/device-control/active-bg.webp";
-import unActiveBg from "@/assets/device-control/un-active-bg.webp";
 import Access from "@/components/Access";
+import LineCharts from "@/components/LineCharts";
+import LineChartsByRoom from "@/components/LineChartsByRoom";
 import {
 	DEVICE_CONTROL_BUILDING_PERMS,
 	PERM_DEVICE_CONTROL,
@@ -14,36 +13,236 @@ import BuildingPageHeader from "@/layout/BuildingPageHeader";
 import { filterBuildingsByPermission, subscribeTabletWs } from "@/utils";
 import {
 	listBuildings,
+	listDeviceTrend,
 	listRooms,
+	listRoomTrend,
 	switchBuilding,
 	switchDevice,
 	toggleClean,
 } from "./api";
 import styles from "./index.module.css";
-import type { BuildingTab, DeviceItem } from "./interface";
+import type {
+	BuildingTab,
+	DeviceItem,
+	DeviceMetric,
+	DeviceTrendChartData,
+	ListMode,
+	RoomTrendSeriesItem,
+} from "./interface";
 import {
+	buildEmptyRoomTrendSeries,
+	collectRoomMetrics,
 	deriveMasterOn,
+	displayDash,
+	EMPTY_TREND_CHART,
 	findWsDeviceForItem,
+	formatFlowRate,
 	formatMetric,
+	getMetricIconKey,
 	getTabletWsDevices,
+	groupDevicesByRoom,
 	indexTabletWsDevices,
 	isTabletRealtimeTopic,
+	joinDeviceCodes,
+	joinDeviceNames,
+	LIST_MODE_OPTIONS,
+	type MetricIconKey,
 	mapRuntimeParams,
 	mergeDeviceFromWs,
 	normalizeBuildingTabs,
 	normalizeDeviceCode,
 	parseDevicesFromRooms,
 	parseTabletWsMessage,
+	previewDeviceCodes,
+	TREND_RANGE_MS,
+	toRoomTrendSeries,
+	toTrendChartData,
 } from "./utils";
 
-/** 设备卡背景：选中 active-bg，未选中 un-active-bg（均为设计稿 304×160）。 */
-const THUMB_BG = {
-	"--thumb-bg": `url(${unActiveBg})`,
-	"--thumb-bg-active": `url(${activeBg})`,
-} as CSSProperties;
+/** 实时状态模块暂隐，接好展示后再打开 */
+const SHOW_REALTIME_STATUS = true;
+
+const DEFAULT_METRIC_CARDS: DeviceMetric[] = [
+	{ key: "flow", propertyId: "", label: "流量", value: null, unit: "m³/s" },
+	{
+		key: "pressure",
+		propertyId: "",
+		label: "压力",
+		value: null,
+		unit: "pa",
+	},
+	{
+		key: "concentration",
+		propertyId: "",
+		label: "浓度",
+		value: null,
+		unit: "mol/L",
+	},
+	{
+		key: "velocity",
+		propertyId: "",
+		label: "流速",
+		value: null,
+		unit: "m/s",
+	},
+];
+
+const DeviceGlyph = ({ className }: { className?: string }) => (
+	<svg className={className} viewBox="0 0 40 40" fill="none" aria-hidden>
+		<title>设备</title>
+		<rect x="4" y="8" width="32" height="10" rx="2" fill="currentColor" />
+		<rect x="4" y="22" width="32" height="10" rx="2" fill="currentColor" />
+		<rect x="10" y="12" width="8" height="2" rx="1" fill="#fff" />
+		<rect x="10" y="26" width="8" height="2" rx="1" fill="#fff" />
+	</svg>
+);
+
+const PowerGlyph = ({ className }: { className?: string }) => (
+	<svg className={className} viewBox="0 0 72 72" fill="none" aria-hidden>
+		<title>电源</title>
+		<path
+			d="M36 8v28"
+			stroke="currentColor"
+			strokeWidth="7"
+			strokeLinecap="round"
+		/>
+		<path
+			d="M22 18.5a24 24 0 1 0 28 0"
+			stroke="currentColor"
+			strokeWidth="7"
+			strokeLinecap="round"
+		/>
+	</svg>
+);
+
+const MetricGlyph = ({
+	type,
+	className,
+}: {
+	type: MetricIconKey;
+	className?: string;
+}) => {
+	if (type === "pressure") {
+		return (
+			<svg
+				className={className}
+				viewBox="0 0 88 88"
+				fill="none"
+				aria-hidden
+			>
+				<title>压力</title>
+				<path
+					d="M18 58a26 26 0 1 1 52 0"
+					stroke="currentColor"
+					strokeWidth="6"
+					strokeLinecap="round"
+				/>
+				<circle cx="44" cy="58" r="5" fill="currentColor" />
+				<path
+					d="M44 58 58 40"
+					stroke="#000"
+					strokeWidth="5"
+					strokeLinecap="round"
+				/>
+			</svg>
+		);
+	}
+	if (type === "concentration") {
+		return (
+			<svg
+				className={className}
+				viewBox="0 0 88 88"
+				fill="none"
+				aria-hidden
+			>
+				<title>浓度</title>
+				<circle cx="30" cy="28" r="7" fill="currentColor" />
+				<circle cx="52" cy="24" r="5" fill="#1a1a1a" />
+				<circle cx="44" cy="42" r="6" fill="currentColor" />
+				<circle cx="28" cy="48" r="4" fill="#1a1a1a" />
+				<path
+					d="M16 64c10-10 18 10 28 0s18 10 28 0"
+					stroke="currentColor"
+					strokeWidth="5"
+					strokeLinecap="round"
+				/>
+			</svg>
+		);
+	}
+	if (type === "velocity") {
+		return (
+			<svg
+				className={className}
+				viewBox="0 0 88 88"
+				fill="none"
+				aria-hidden
+			>
+				<title>流速</title>
+				<path
+					d="M14 28c8-10 16 10 26 0s16 10 26 0"
+					stroke="currentColor"
+					strokeWidth="6"
+					strokeLinecap="round"
+				/>
+				<path
+					d="M14 44c8-10 16 10 26 0s16 10 26 0"
+					stroke="#1a1a1a"
+					strokeWidth="6"
+					strokeLinecap="round"
+				/>
+				<path
+					d="M14 60c8-10 16 10 26 0s16 10 26 0"
+					stroke="currentColor"
+					strokeWidth="6"
+					strokeLinecap="round"
+				/>
+			</svg>
+		);
+	}
+	if (type === "temperature") {
+		return (
+			<svg
+				className={className}
+				viewBox="0 0 88 88"
+				fill="none"
+				aria-hidden
+			>
+				<title>温度</title>
+				<rect
+					x="38"
+					y="16"
+					width="12"
+					height="40"
+					rx="6"
+					stroke="currentColor"
+					strokeWidth="5"
+				/>
+				<circle cx="44" cy="62" r="12" fill="currentColor" />
+				<path
+					d="M44 36v22"
+					stroke="#fff"
+					strokeWidth="4"
+					strokeLinecap="round"
+				/>
+			</svg>
+		);
+	}
+	return (
+		<svg className={className} viewBox="0 0 88 88" fill="none" aria-hidden>
+			<title>流量</title>
+			<path
+				d="M14 48c8-16 14 16 22 0s14 16 22 0 14 16 16 0"
+				stroke="currentColor"
+				strokeWidth="6"
+				strokeLinecap="round"
+			/>
+		</svg>
+	);
+};
 
 const DeviceControl = () => {
 	const { message } = App.useApp();
+	const pageRef = useRef<HTMLDivElement>(null);
 	const canList = usePermission(PERM_DEVICE_CONTROL.LIST);
 	const canSwitchBuilding = usePermission(
 		PERM_DEVICE_CONTROL.SWITCH_BUILDING,
@@ -53,18 +252,25 @@ const DeviceControl = () => {
 	const [devices, setDevices] = useState<DeviceItem[]>([]);
 	const [masterOn, setMasterOn] = useState(true);
 	const [loading, setLoading] = useState(false);
-	/** 已完成首轮实时数据请求的设备，避免切换时短暂渲染默认指标。 */
+	const [listMode, setListMode] = useState<ListMode>("device");
+	const [configType, setConfigType] = useState<"instance" | "room" | null>(
+		null,
+	);
 	const [realtimeLoadedIds, setRealtimeLoadedIds] = useState<
 		Record<number, true>
 	>({});
-	/** 各厂房上次选中的设备 id，切 Tab 回来时恢复。 */
 	const [selectedIdByBuilding, setSelectedIdByBuilding] = useState<
 		Record<string, number>
 	>({});
-	/**
-	 * WebSocket 推送的指标缓存（rooms deviceId / deviceCode / deviceName）。
-	 * rooms 与 WS 的 deviceId 可能不一致，需多键对齐。
-	 */
+	const [selectedRoomKeyByBuilding, setSelectedRoomKeyByBuilding] = useState<
+		Record<string, string>
+	>({});
+	const [trendPropertyId, setTrendPropertyId] = useState("");
+	const [trendChart, setTrendChart] =
+		useState<DeviceTrendChartData>(EMPTY_TREND_CHART);
+	const [roomTrendSeries, setRoomTrendSeries] = useState<
+		RoomTrendSeriesItem[]
+	>([]);
 	const wsMetricsRef = useRef<{
 		byId: Map<number, DeviceItem["metrics"]>;
 		byCode: Map<string, DeviceItem["metrics"]>;
@@ -77,7 +283,7 @@ const DeviceControl = () => {
 
 	const pickCachedMetrics = (item: DeviceItem) => {
 		const cache = wsMetricsRef.current;
-		if (cache.byId.has(item.id)) return cache.byId.get(item.id);
+		if (cache.byId.has(item.deviceId)) return cache.byId.get(item.deviceId);
 		const code = normalizeDeviceCode(item.code);
 		if (code && cache.byCode.has(code)) return cache.byCode.get(code);
 		const name = normalizeDeviceCode(item.name);
@@ -87,19 +293,50 @@ const DeviceControl = () => {
 
 	const currentBuilding =
 		buildings.find((item) => item.key === buildingKey) ?? null;
+	const roomGroups = groupDevicesByRoom(devices);
 	const selectedId = selectedIdByBuilding[buildingKey] ?? null;
+	const selectedRoomKey =
+		selectedRoomKeyByBuilding[buildingKey] ?? roomGroups[0]?.key ?? "";
+	const selectedRoom =
+		roomGroups.find((item) => item.key === selectedRoomKey) ??
+		roomGroups[0] ??
+		null;
+	const selectedById =
+		devices.find((item) => item.deviceId === selectedId) ??
+		devices[0] ??
+		null;
 	const selected =
-		devices.find((item) => item.id === selectedId) ?? devices[0] ?? null;
+		listMode === "room"
+			? (selectedRoom?.devices.find(
+					(item) => item.deviceId === selectedId,
+				) ??
+				selectedRoom?.devices[0] ??
+				null)
+			: selectedById;
 	const isRealtimePending = Boolean(
 		selected &&
 			selected.metrics.length === 0 &&
-			!realtimeLoadedIds[selected.id],
+			!realtimeLoadedIds[selected.deviceId],
 	);
+	const roomMetrics = collectRoomMetrics(selectedRoom?.devices ?? []);
+	const isRoomRealtimePending =
+		listMode === "room" &&
+		roomMetrics.length === 0 &&
+		(selectedRoom?.devices ?? []).some(
+			(item) => !realtimeLoadedIds[item.deviceId],
+		);
+	const metricCards =
+		listMode === "room"
+			? roomMetrics.length > 0
+				? roomMetrics
+				: DEFAULT_METRIC_CARDS
+			: selected && selected.metrics.length > 0
+				? selected.metrics
+				: DEFAULT_METRIC_CARDS;
 
 	const applyDevices = (
 		buildingKeyNext: string,
 		next: DeviceItem[],
-		/** 总开关操作后传入，避免 rooms 延迟导致 UI 被旧状态盖回 */
 		forceEnabled?: boolean,
 	) => {
 		const devicesNext =
@@ -108,26 +345,29 @@ const DeviceControl = () => {
 				: next.map((item) => ({ ...item, enabled: forceEnabled }));
 		setDevices((prev) => {
 			const metricsById = new Map(
-				prev.map((item) => [item.id, item.metrics]),
+				prev.map((item) => [item.deviceId, item.metrics]),
 			);
 			return devicesNext.map((item) => ({
 				...item,
 				metrics:
 					pickCachedMetrics(item) ??
-					metricsById.get(item.id) ??
+					metricsById.get(item.deviceId) ??
 					item.metrics,
 			}));
 		});
 		setRealtimeLoadedIds((prev) => {
 			let changed = false;
-			const next = { ...prev };
+			const nextLoaded = { ...prev };
 			for (const item of devicesNext) {
-				if (pickCachedMetrics(item) !== undefined && !next[item.id]) {
-					next[item.id] = true;
+				if (
+					pickCachedMetrics(item) !== undefined &&
+					!nextLoaded[item.deviceId]
+				) {
+					nextLoaded[item.deviceId] = true;
 					changed = true;
 				}
 			}
-			return changed ? next : prev;
+			return changed ? nextLoaded : prev;
 		});
 		setMasterOn(
 			forceEnabled !== undefined
@@ -138,11 +378,25 @@ const DeviceControl = () => {
 			const remembered = prev[buildingKeyNext];
 			if (
 				remembered &&
-				devicesNext.some((item) => item.id === remembered)
+				devicesNext.some((item) => item.deviceId === remembered)
 			) {
 				return prev;
 			}
-			const fallback = devicesNext[0]?.id;
+			const fallback = devicesNext[0]?.deviceId;
+			if (!fallback) {
+				const cleared = { ...prev };
+				delete cleared[buildingKeyNext];
+				return cleared;
+			}
+			return { ...prev, [buildingKeyNext]: fallback };
+		});
+		setSelectedRoomKeyByBuilding((prev) => {
+			const groups = groupDevicesByRoom(devicesNext);
+			const remembered = prev[buildingKeyNext];
+			if (remembered && groups.some((item) => item.key === remembered)) {
+				return prev;
+			}
+			const fallback = groups[0]?.key;
 			if (!fallback) {
 				const cleared = { ...prev };
 				delete cleared[buildingKeyNext];
@@ -191,17 +445,95 @@ const DeviceControl = () => {
 		loadBuildings();
 	}, [canList]);
 
-	/**
-	 * 订阅平板 WebSocket（tablet_init / tablet_data）。
-	 * 按 deviceId（主）/ deviceCode / deviceName 把 runtimeParams 回显到右侧详情卡。
-	 */
+	useEffect(() => {
+		const metrics =
+			listMode === "room" ? roomMetrics : (selected?.metrics ?? []);
+		const firstPropertyId = metrics[0]?.propertyId ?? "";
+		if (!firstPropertyId) {
+			if (listMode === "device") setTrendPropertyId("");
+			return;
+		}
+		setTrendPropertyId((prev) =>
+			metrics.some((item) => item.propertyId === prev)
+				? prev
+				: firstPropertyId,
+		);
+	}, [
+		listMode,
+		selected?.deviceId,
+		selected?.metrics[0]?.propertyId,
+		selected?.metrics.length,
+		roomMetrics[0]?.propertyId,
+		roomMetrics.length,
+	]);
+
+	useEffect(() => {
+		const deviceId = selected?.deviceId ?? 0;
+		const propertyId = trendPropertyId;
+		if (listMode !== "device" || !deviceId || !propertyId) {
+			setTrendChart(EMPTY_TREND_CHART);
+			return;
+		}
+		let cancelled = false;
+		const to = Date.now();
+		const from = to - TREND_RANGE_MS;
+		listDeviceTrend({ deviceId, propertyId, from, to })
+			.then((data) => {
+				if (cancelled) return;
+				setTrendChart(toTrendChartData(data));
+			})
+			.catch(() => {
+				if (!cancelled) setTrendChart(EMPTY_TREND_CHART);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [listMode, selected?.deviceId, trendPropertyId]);
+
+	useEffect(() => {
+		const buildingId = currentBuilding?.buildingId ?? 0;
+		const roomId = selectedRoom?.roomId ?? 0;
+		const roomDevices = selectedRoom?.devices ?? [];
+		if (listMode !== "room" || !buildingId || !roomId) {
+			setRoomTrendSeries([]);
+			return;
+		}
+		const propertyId = trendPropertyId;
+		const emptySeries = buildEmptyRoomTrendSeries(roomDevices);
+		if (!propertyId) {
+			setRoomTrendSeries(emptySeries);
+			return;
+		}
+		setRoomTrendSeries(emptySeries);
+		let cancelled = false;
+		const to = Date.now();
+		const from = to - TREND_RANGE_MS;
+		listRoomTrend({ buildingId, roomId, propertyId, from, to })
+			.then((data) => {
+				if (cancelled) return;
+				const series = toRoomTrendSeries(data);
+				setRoomTrendSeries(series.length ? series : emptySeries);
+			})
+			.catch(() => {
+				if (!cancelled) setRoomTrendSeries(emptySeries);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [
+		listMode,
+		currentBuilding?.buildingId,
+		selectedRoom?.roomId,
+		trendPropertyId,
+	]);
+
 	useEffect(() => {
 		return subscribeTabletWs((raw) => {
-			const message = parseTabletWsMessage(raw);
-			const devicesFromWs = getTabletWsDevices(message);
+			const wsMessage = parseTabletWsMessage(raw);
+			const devicesFromWs = getTabletWsDevices(wsMessage);
 			if (
 				!isTabletRealtimeTopic(
-					message?.topic,
+					wsMessage?.topic,
 					devicesFromWs.length > 0,
 				)
 			) {
@@ -230,9 +562,8 @@ const DeviceControl = () => {
 					const row = findWsDeviceForItem(item, wsIndex);
 					if (!row) return item;
 					const merged = mergeDeviceFromWs(item, row);
-					/* 按 rooms 的 deviceId 再缓存一份，保证左侧点选后右侧能命中 */
-					cache.byId.set(item.id, merged.metrics);
-					touchedIds.push(item.id);
+					cache.byId.set(item.deviceId, merged.metrics);
+					touchedIds.push(item.deviceId);
 					return merged;
 				});
 
@@ -261,10 +592,33 @@ const DeviceControl = () => {
 		if (tab) loadDevices(tab.buildingId, key);
 	};
 
-	const handleSelectDevice = (id: number) => {
+	const handleSelectDevice = (deviceId: number) => {
+		const device = devices.find((item) => item.deviceId === deviceId);
 		setSelectedIdByBuilding((prev) => ({
 			...prev,
-			[buildingKey]: id,
+			[buildingKey]: deviceId,
+		}));
+		if (!device) return;
+		const roomKey = device.roomId
+			? String(device.roomId)
+			: device.roomLabel;
+		setSelectedRoomKeyByBuilding((prev) => ({
+			...prev,
+			[buildingKey]: roomKey,
+		}));
+	};
+
+	const handleSelectRoom = (key: string) => {
+		const group = roomGroups.find((item) => item.key === key);
+		setSelectedRoomKeyByBuilding((prev) => ({
+			...prev,
+			[buildingKey]: key,
+		}));
+		const firstId = group?.devices[0]?.deviceId;
+		if (!firstId) return;
+		setSelectedIdByBuilding((prev) => ({
+			...prev,
+			[buildingKey]: firstId,
 		}));
 	};
 
@@ -280,7 +634,6 @@ const DeviceControl = () => {
 				currentBuilding.buildingId,
 				checked ? "on" : "off",
 			);
-			/* 接口成功后先同步 UI；rooms 重拉可能有延迟，避免总开关被旧状态盖回 */
 			setMasterOn(checked);
 			setDevices((prev) =>
 				prev.map((item) => ({ ...item, enabled: checked })),
@@ -300,9 +653,11 @@ const DeviceControl = () => {
 		if (!selected || !currentBuilding) return;
 		setLoading(true);
 		try {
-			await switchDevice(selected.id, checked ? "on" : "off");
+			await switchDevice(selected.deviceId, checked ? "on" : "off");
 			const nextDevices = devices.map((item) =>
-				item.id === selected.id ? { ...item, enabled: checked } : item,
+				item.deviceId === selected.deviceId
+					? { ...item, enabled: checked }
+					: item,
 			);
 			setDevices(nextDevices);
 			setMasterOn(deriveMasterOn(nextDevices));
@@ -318,7 +673,7 @@ const DeviceControl = () => {
 		const wasCleaning = selected.cleaning;
 		setLoading(true);
 		try {
-			await toggleClean(selected.id);
+			await toggleClean(selected.deviceId);
 			await loadDevices(currentBuilding.buildingId, buildingKey);
 			message.success(
 				wasCleaning ? "已取消设备清洗" : "已下发设备清洗指令",
@@ -328,15 +683,74 @@ const DeviceControl = () => {
 		}
 	};
 
+	const renderPower = (className: string) => {
+		if (!selected) return null;
+		return (
+			<Access code={PERM_DEVICE_CONTROL.SWITCH_DEVICE}>
+				<button
+					type="button"
+					className={className}
+					onClick={() => {
+						handleDeviceSwitch(!selected.enabled);
+					}}
+					disabled={loading}
+					aria-label={selected.enabled ? "关闭设备" : "开启设备"}
+				>
+					<span
+						className={`${styles.powerCircle} ${
+							selected.enabled ? styles.powerOn : styles.powerOff
+						}`}
+					>
+						<PowerGlyph className={styles.powerIcon} />
+					</span>
+					<span className={styles.powerText}>
+						{selected.enabled ? "设备已开启" : "设备已关闭"}
+					</span>
+				</button>
+			</Access>
+		);
+	};
+
 	if (!canList) {
 		return <Navigate to="/home" replace />;
 	}
 
+	const infoTitle = listMode === "room" ? "房间信息" : "设备信息";
+	const infoNameLabel = listMode === "room" ? "房间名称" : "设备名称";
+	const infoNameValue =
+		listMode === "room"
+			? displayDash(selectedRoom?.roomLabel ?? selected?.roomLabel)
+			: displayDash(selected?.name);
+	const infoCells =
+		listMode === "room"
+			? [
+					[infoNameLabel, infoNameValue],
+					[
+						"设备名称",
+						displayDash(
+							joinDeviceNames(selectedRoom?.devices ?? []),
+						),
+					],
+					[
+						"设备编码",
+						displayDash(
+							joinDeviceCodes(selectedRoom?.devices ?? []),
+						),
+					],
+					["管道编号", displayDash(selected?.pipeNo)],
+				]
+			: [
+					[infoNameLabel, infoNameValue],
+					["设备编号", displayDash(selected?.code)],
+					["管道编号", displayDash(selected?.pipeNo)],
+					["监控房间", displayDash(selected?.roomLabel)],
+				];
+
 	return (
 		<div
+			ref={pageRef}
 			className={styles.deviceControl}
 			data-page="device-control"
-			style={THUMB_BG}
 		>
 			<div className={styles.stage}>
 				<BuildingPageHeader
@@ -355,38 +769,200 @@ const DeviceControl = () => {
 
 				<div className={styles.body}>
 					<aside className={styles.sidebar}>
+						<div className={styles.segment} role="tablist">
+							{LIST_MODE_OPTIONS.map((item) => (
+								<button
+									key={item.key}
+									type="button"
+									role="tab"
+									aria-selected={listMode === item.key}
+									className={`${styles.segmentItem} ${
+										listMode === item.key
+											? styles.segmentItemActive
+											: ""
+									}`}
+									onClick={() => setListMode(item.key)}
+								>
+									{item.label}
+								</button>
+							))}
+						</div>
+
 						{devices.length === 0 ? (
 							<div className={styles.emptyWrap}>
 								<Empty />
 							</div>
 						) : (
-							<div className={styles.deviceGrid}>
-								{devices.map((device) => {
-									const active = selected?.id === device.id;
-									return (
-										<button
-											key={device.id}
-											type="button"
-											className={`${styles.deviceCard} ${active ? styles.deviceCardActive : ""}`}
-											onClick={() => {
-												handleSelectDevice(device.id);
-											}}
-										>
-											<div className={styles.deviceThumb}>
-												<span
-													className={
-														styles.deviceCode
-													}
+							<div className={styles.list}>
+								{listMode === "device"
+									? devices.map((device) => {
+											const active =
+												selected?.deviceId ===
+												device.deviceId;
+											const metaActive = device.enabled;
+											return (
+												<button
+													key={device.deviceId}
+													type="button"
+													className={`${styles.listItem} ${active ? styles.listItemActive : ""}`}
+													onClick={() => {
+														handleSelectDevice(
+															device.deviceId,
+														);
+													}}
 												>
-													{device.roomLabel}
-												</span>
-											</div>
-											<span className={styles.deviceName}>
-												{device.name}
-											</span>
-										</button>
-									);
-								})}
+													<div
+														className={
+															styles.listItemTop
+														}
+													>
+														<DeviceGlyph
+															className={
+																styles.listIcon
+															}
+														/>
+														<span
+															className={
+																styles.listTitle
+															}
+														>
+															{device.name}
+														</span>
+														<span
+															className={`${styles.statusTag} ${
+																device.enabled
+																	? styles.statusOn
+																	: styles.statusOff
+															}`}
+														>
+															{device.enabled
+																? "已开启"
+																: "已关闭"}
+														</span>
+													</div>
+													<div
+														className={
+															styles.listMeta
+														}
+													>
+														<span
+															className={
+																styles.metaLabel
+															}
+														>
+															管道号
+														</span>
+														<span
+															className={`${styles.metaValue} ${metaActive ? styles.metaValueActive : ""}`}
+														>
+															{displayDash(
+																device.pipeNo,
+															)}
+														</span>
+														<span
+															className={
+																styles.metaGap
+															}
+														/>
+														<span
+															className={
+																styles.metaLabel
+															}
+														>
+															监控房
+														</span>
+														<span
+															className={`${styles.metaValue} ${metaActive ? styles.metaValueActive : ""}`}
+														>
+															{displayDash(
+																device.roomLabel,
+															)}
+														</span>
+													</div>
+												</button>
+											);
+										})
+									: roomGroups.map((group) => {
+											const active =
+												selectedRoom?.key === group.key;
+											const deviceCodes =
+												previewDeviceCodes(
+													group.devices,
+												);
+											return (
+												<button
+													key={group.key}
+													type="button"
+													className={`${styles.listItem} ${active ? styles.listItemActive : ""}`}
+													onClick={() => {
+														handleSelectRoom(
+															group.key,
+														);
+													}}
+												>
+													<div
+														className={
+															styles.listItemTop
+														}
+													>
+														<DeviceGlyph
+															className={
+																styles.listIcon
+															}
+														/>
+														<span
+															className={
+																styles.listTitle
+															}
+														>
+															房间：
+															{displayDash(
+																group.roomLabel,
+															)}
+														</span>
+													</div>
+													<div
+														className={
+															styles.listMeta
+														}
+													>
+														<span
+															className={
+																styles.metaLabel
+															}
+														>
+															管道号
+														</span>
+														<span
+															className={`${styles.metaValue} ${active ? styles.metaValueActive : ""}`}
+														>
+															{displayDash(
+																group.pipeNo,
+															)}
+														</span>
+														<span
+															className={
+																styles.metaGap
+															}
+														/>
+														<span
+															className={
+																styles.metaLabel
+															}
+														>
+															设备编码
+														</span>
+														<span
+															className={`${styles.metaValue} ${styles.metaCodes} ${active ? styles.metaValueActive : ""}`}
+														>
+															{displayDash(
+																deviceCodes,
+															)}
+														</span>
+													</div>
+												</button>
+											);
+										})}
 							</div>
 						)}
 					</aside>
@@ -394,209 +970,266 @@ const DeviceControl = () => {
 					<section className={styles.detail}>
 						{selected ? (
 							<>
-								<div className={styles.detailHeader}>
-									<div className={styles.detailHeaderMain}>
-										<span
-											className={styles.deviceNameLabel}
-										>
-											设备名称
-										</span>
-										<span
-											className={styles.deviceNameValue}
-										>
-											{selected.name}
-										</span>
-										<span className={styles.roomLabel}>
-											监控房
-										</span>
-										<span className={styles.roomValue}>
-											{selected.roomLabel}
-										</span>
+								<div className={styles.infoPanel}>
+									<div className={styles.sectionTitle}>
+										{infoTitle}
 									</div>
-									<Access
-										code={PERM_DEVICE_CONTROL.SWITCH_DEVICE}
-									>
-										<div className={styles.detailSwitch}>
-											<span
-												className={styles.switchLabel}
-											>
-												开关
-											</span>
-											<Switch
-												checked={selected.enabled}
-												onChange={(checked) => {
-													handleDeviceSwitch(checked);
-												}}
-												disabled={loading}
-												className={styles.controlSwitch}
-												aria-label="开关"
-											/>
+									<div className={styles.sectionLine} />
+									<div className={styles.infoCard}>
+										<div
+											className={`${styles.infoGrid} ${listMode === "room" ? styles.infoGridRoom : ""}`}
+										>
+											{infoCells.map(
+												([label, value], index) => {
+													const grow =
+														listMode === "room" &&
+														(label === "设备名称" ||
+															label ===
+																"设备编码");
+													return (
+														<div
+															key={label}
+															className={`${styles.infoCell} ${grow ? styles.infoCellGrow : ""}`}
+														>
+															{index === 0 ? (
+																<span
+																	className={
+																		styles.infoAccent
+																	}
+																/>
+															) : null}
+															<span
+																className={
+																	styles.infoCellLabel
+																}
+															>
+																{label}
+															</span>
+															<span
+																className={
+																	styles.infoCellValue
+																}
+															>
+																{value}
+															</span>
+														</div>
+													);
+												},
+											)}
 										</div>
-									</Access>
-								</div>
-
-								<div className={styles.detailBody}>
-									<Access code={PERM_DEVICE_CONTROL.CLEAN}>
-										{selected.cleaning ? (
-											<button
-												type="button"
-												className={
-													styles.cleaningStatus
-												}
-												onClick={() => {
-													handleClean();
-												}}
-												disabled={loading}
-												aria-label="取消设备清洗"
-											>
-												<svg
-													className={
-														styles.cleaningIcon
-													}
-													xmlns="http://www.w3.org/2000/svg"
-													viewBox="0 0 18 18"
-													fill="none"
-													aria-hidden
-												>
-													<title>清洗中</title>
-													<g fill="#0099AF">
-														<circle
-															cx="9"
-															cy="2.2"
-															r="1.7"
-														/>
-														<circle
-															cx="13.8"
-															cy="4.2"
-															r="1.55"
-														/>
-														<circle
-															cx="15.8"
-															cy="9"
-															r="1.35"
-														/>
-														<circle
-															cx="13.8"
-															cy="13.8"
-															r="1.15"
-														/>
-														<circle
-															cx="9"
-															cy="15.8"
-															r="1"
-														/>
-														<circle
-															cx="4.2"
-															cy="13.8"
-															r="0.85"
-														/>
-														<circle
-															cx="2.2"
-															cy="9"
-															r="0.7"
-														/>
-														<circle
-															cx="4.2"
-															cy="4.2"
-															r="0.55"
-														/>
-													</g>
-												</svg>
-												<span
-													className={
-														styles.cleaningText
-													}
-												>
-													清洗中
-												</span>
-											</button>
-										) : (
-											<button
-												type="button"
-												className={styles.cleanBtn}
-												onClick={() => {
-													handleClean();
-												}}
-												disabled={loading}
-											>
-												<ClearOutlined
-													className={styles.cleanIcon}
-												/>
-												<span
-													className={styles.cleanText}
-												>
-													设备清洗
-												</span>
-											</button>
-										)}
-									</Access>
-
-									<div className={styles.metricRow}>
-										{isRealtimePending
-											? [0].map((index) => (
-													<div
-														key={`metric-${index}`}
-														className={`${styles.metricCard} ${styles.metricCardSkeleton}`}
-														aria-hidden
-													>
-														<div
-															className={
-																styles.metricValue
-															}
-														>
-															—
-														</div>
-														<div
-															className={
-																styles.metricUnit
-															}
-														>
-															{"\u00A0"}
-														</div>
-														<div
-															className={
-																styles.metricLabel
-															}
-														>
-															{"\u00A0"}
-														</div>
-													</div>
-												))
-											: selected.metrics.map((metric) => (
-													<div
-														key={metric.key}
-														className={
-															styles.metricCard
-														}
-													>
-														<div
-															className={
-																styles.metricValue
-															}
-														>
-															{formatMetric(
-																metric,
-															)}
-														</div>
-														<div
-															className={
-																styles.metricUnit
-															}
-														>
-															{metric.unit ||
-																"\u00A0"}
-														</div>
-														<div
-															className={
-																styles.metricLabel
-															}
-														>
-															{metric.label}
-														</div>
-													</div>
-												))}
 									</div>
 								</div>
+
+								<div className={styles.mainPanel}>
+									{SHOW_REALTIME_STATUS ? (
+										<>
+											<div
+												className={styles.sectionTitle}
+											>
+												实时状态
+											</div>
+											<div
+												className={styles.sectionLine}
+											/>
+											<div className={styles.metricRow}>
+												{metricCards.map((metric) => {
+													const pending =
+														(listMode ===
+															"device" &&
+															(isRealtimePending ||
+																(metric.value ===
+																	null &&
+																	!metric.textValue &&
+																	selected
+																		.metrics
+																		.length ===
+																		0))) ||
+														isRoomRealtimePending;
+													const metricActive =
+														Boolean(
+															trendPropertyId,
+														) &&
+														metric.propertyId ===
+															trendPropertyId;
+													const cardClassName = `${styles.metricCard} ${listMode === "room" ? styles.metricCardRoom : ""} ${pending ? styles.metricCardSkeleton : ""} ${metricActive ? styles.metricCardActive : ""}`;
+													const cardInner = (
+														<>
+															<div
+																className={
+																	styles.metricText
+																}
+															>
+																<div
+																	className={
+																		styles.metricLabel
+																	}
+																>
+																	{
+																		metric.label
+																	}
+																</div>
+																{listMode ===
+																"device" ? (
+																	<div
+																		className={
+																			styles.metricValueRow
+																		}
+																	>
+																		<span
+																			className={
+																				styles.metricValue
+																			}
+																		>
+																			{pending
+																				? "—"
+																				: formatMetric(
+																						metric,
+																					)}
+																		</span>
+																		<span
+																			className={
+																				styles.metricUnit
+																			}
+																		>
+																			{metric.unit ||
+																				"\u00A0"}
+																		</span>
+																	</div>
+																) : null}
+															</div>
+															<MetricGlyph
+																type={getMetricIconKey(
+																	metric.label,
+																)}
+																className={
+																	styles.metricIcon
+																}
+															/>
+														</>
+													);
+													return (
+														<button
+															key={metric.key}
+															type="button"
+															className={
+																cardClassName
+															}
+															onClick={() => {
+																if (
+																	!metric.propertyId
+																) {
+																	return;
+																}
+																setTrendPropertyId(
+																	metric.propertyId,
+																);
+															}}
+														>
+															{cardInner}
+														</button>
+													);
+												})}
+											</div>
+										</>
+									) : null}
+
+									<div className={styles.trendChart}>
+										{listMode === "room" ? (
+											<>
+												<div className={styles.legend}>
+													{roomTrendSeries.map(
+														(item, index) => (
+															<div
+																key={`${item.name}-${index}`}
+																className={
+																	styles.legendItem
+																}
+															>
+																<span
+																	className={
+																		styles.legendMark
+																	}
+																	style={{
+																		background:
+																			item.color,
+																	}}
+																/>
+																<span
+																	className={
+																		styles.legendText
+																	}
+																>
+																	{item.name}
+																</span>
+															</div>
+														),
+													)}
+												</div>
+												<div
+													className={styles.chartWrap}
+												>
+													<LineChartsByRoom
+														series={roomTrendSeries}
+													/>
+												</div>
+											</>
+										) : (
+											<div className={styles.chartWrap}>
+												<LineCharts
+													xAxisData={
+														trendChart.xAxisData
+													}
+													yAxisData={
+														trendChart.yAxisData
+													}
+													yAxis={trendChart.yAxis}
+												/>
+											</div>
+										)}
+									</div>
+								</div>
+
+								{listMode === "device" ? (
+									<div className={styles.footer}>
+										{renderPower(styles.powerBtn)}
+										<div className={styles.footerActions}>
+											<button
+												type="button"
+												className={styles.actionBtn}
+												onClick={() => {
+													setConfigType("instance");
+												}}
+											>
+												实例配置
+											</button>
+											<button
+												type="button"
+												className={styles.actionBtn}
+												onClick={() => {
+													setConfigType("room");
+												}}
+											>
+												房间配置
+											</button>
+											<Access
+												code={PERM_DEVICE_CONTROL.CLEAN}
+											>
+												<button
+													type="button"
+													className={styles.actionBtn}
+													onClick={() => {
+														handleClean();
+													}}
+													disabled={loading}
+												>
+													{selected.cleaning
+														? "清洗中"
+														: "设备清洗"}
+												</button>
+											</Access>
+										</div>
+									</div>
+								) : null}
 							</>
 						) : (
 							<div className={styles.emptyWrap}>
@@ -606,6 +1239,40 @@ const DeviceControl = () => {
 					</section>
 				</div>
 			</div>
+
+			<Modal
+				className={styles.modal}
+				title={configType === "room" ? "连接房间" : "实例配置"}
+				open={Boolean(configType)}
+				onCancel={() => setConfigType(null)}
+				onOk={() => setConfigType(null)}
+				destroyOnHidden
+				centered
+				width="calc(730 / 1400 * 100cqw)"
+				getContainer={() => pageRef.current ?? document.body}
+			>
+				{configType === "room" ? (
+					<div>
+						<p>设备名称　{displayDash(selected?.name)}</p>
+						<p>设备编号　{displayDash(selected?.code)}</p>
+						<p>房间名称　{displayDash(selected?.roomLabel)}</p>
+						<p>流量　　　{formatFlowRate(selected?.flowRate)}</p>
+						<div className={styles.modalHint}>
+							提示:操作前请确认信息准确无误!
+						</div>
+					</div>
+				) : (
+					<div>
+						<p>设备名称　{displayDash(selected?.name)}</p>
+						<p>设备编号　{displayDash(selected?.code)}</p>
+						<p>设备厂家　{displayDash(selected?.manufacturer)}</p>
+						<p>选择实例　{displayDash(selected?.thingId)}</p>
+						<div className={styles.modalHint}>
+							提示:操作前请确认信息准确无误!
+						</div>
+					</div>
+				)}
+			</Modal>
 		</div>
 	);
 };

@@ -3,12 +3,46 @@ import type {
 	BuildingTab,
 	DeviceItem,
 	DeviceMetric,
+	DeviceTrendChartData,
+	DeviceTrendPoint,
+	ListMode,
 	RoomDeviceItem,
 	RoomDeviceRow,
+	RoomGroup,
+	RoomTrendSeriesItem,
 	RuntimeParam,
 	TabletWsDevice,
 	TabletWsMessage,
 } from "./interface";
+
+/**
+ * 左侧列表切换选项。
+ */
+export const LIST_MODE_OPTIONS: { key: ListMode; label: string }[] = [
+	{ key: "device", label: "设备" },
+	{ key: "room", label: "房间" },
+];
+
+/**
+ * 实时指标卡图标类型。
+ */
+export type MetricIconKey =
+	| "flow"
+	| "pressure"
+	| "concentration"
+	| "velocity"
+	| "temperature";
+
+/**
+ * 指标名称到设计稿图标的匹配表。
+ */
+const METRIC_ICON_MATCHERS: { test: RegExp; key: MetricIconKey }[] = [
+	{ test: /流量/, key: "flow" },
+	{ test: /压力/, key: "pressure" },
+	{ test: /浓度/, key: "concentration" },
+	{ test: /流速/, key: "velocity" },
+	{ test: /温度/, key: "temperature" },
+];
 
 /**
  * 将单条 WS runtimeParam 转为指标卡。
@@ -16,23 +50,23 @@ import type {
  *
  * @param {RuntimeParam} - WS 运行参数项。
  * @param {number} - 列表序号，用于兜底 key。
- * @returns {DeviceMetric | null} - 指标；无 label/displayField 时 null。
+ * @returns {DeviceMetric | null} - 指标；无 propertyId/label/displayField 时 null。
  */
-const toMetric = (
-	item: RuntimeParam,
-	index: number,
-): DeviceMetric | null => {
-	const key = String(item.displayField ?? "").trim();
+const toMetric = (item: RuntimeParam, index: number): DeviceMetric | null => {
+	const propertyId = String(item.propertyId ?? "").trim();
+	const displayField = String(item.displayField ?? "").trim();
 	const label = String(item.label ?? "").trim();
-	if (!key && !label) return null;
+	if (!propertyId && !displayField && !label) return null;
 
 	const raw = item.value;
 	const num = Number(raw);
-	const hasNumber = raw !== "" && raw !== null && raw !== undefined && Number.isFinite(num);
+	const hasNumber =
+		raw !== "" && raw !== null && raw !== undefined && Number.isFinite(num);
 
 	return {
-		key: key || label || `metric-${index}`,
-		label: label || key || "指标",
+		key: propertyId || displayField || label || `metric-${index}`,
+		propertyId,
+		label: label || propertyId || displayField || "指标",
 		value: hasNumber ? num : null,
 		unit: String(item.unit ?? "").trim(),
 		textValue:
@@ -104,11 +138,20 @@ export const mapRoomDeviceToItem = (
 	const id = Number(device.deviceId ?? 0);
 	if (!id) return null;
 
+	const flowRaw = Number(device.flowRate);
+	const flowRate = Number.isFinite(flowRaw) ? flowRaw : null;
+
 	return {
 		id,
+		deviceId: id,
 		code: String(device.deviceCode ?? "").trim() || `设备${id}`,
 		name: String(device.deviceName ?? "").trim() || `设备${id}`,
 		roomLabel: formatRoomLabel(room.room),
+		roomId: Number(room.roomId ?? 0),
+		pipeNo: String(device.pipelineId ?? room.pipelineId ?? "").trim(),
+		flowRate:
+			flowRate !== null && Number.isFinite(flowRate) ? flowRate : null,
+		manufacturer: String(device.manufacturer ?? "").trim(),
 		/* 后端可能回 number / string；仅 "1" 表示已关闭 */
 		enabled: String(device.deviceStatus ?? "") !== "1",
 		cleaning: String(device.cleanStatus ?? "") === "1",
@@ -198,7 +241,7 @@ export const normalizeDeviceCode = (value: unknown): string => {
 };
 
 /**
- * 用 WebSocket 设备快照合并列表项（名称、开关、清洗、运行参数）。
+ * 用 WebSocket 设备快照合并列表项（名称、开关、清洗、管道编号、运行参数）。
  * 注意：保留 rooms 的 deviceId，供开关/清洗接口使用。
  * runtimeParams 只要是数组就覆盖指标（无过程量时清空，避免串台残留）。
  *
@@ -212,17 +255,20 @@ export const mergeDeviceFromWs = (
 ): DeviceItem => {
 	const name = String(row.deviceName ?? "").trim();
 	const code = String(row.deviceCode ?? "").trim();
-	const hasStatus = row.deviceStatus !== undefined && row.deviceStatus !== null;
+	const hasStatus =
+		row.deviceStatus !== undefined && row.deviceStatus !== null;
 	const hasClean = row.cleanStatus !== undefined && row.cleanStatus !== null;
 	const hasRuntimeParams = Array.isArray(row.runtimeParams);
 	const metrics = hasRuntimeParams
 		? mapRuntimeParams(row.runtimeParams)
 		: item.metrics;
+	const pipelineId = String(row.pipelineId ?? "").trim();
 
 	return {
 		...item,
 		name: name || item.name,
 		code: code || item.code,
+		pipeNo: pipelineId || item.pipeNo,
 		enabled: hasStatus
 			? String(row.deviceStatus ?? "") !== "1"
 			: item.enabled,
@@ -308,8 +354,7 @@ export const parseTabletWsMessage = (raw: string): TabletWsMessage | null => {
 			return { data: { devices } };
 		}
 		const root = parsed as Record<string, unknown>;
-		const topic =
-			typeof root.topic === "string" ? root.topic : undefined;
+		const topic = typeof root.topic === "string" ? root.topic : undefined;
 		return {
 			topic,
 			data: { devices },
@@ -378,7 +423,7 @@ export const findWsDeviceForItem = (
 	index: TabletWsDeviceIndex,
 ): TabletWsDevice | undefined => {
 	return (
-		index.byId.get(item.id) ??
+		index.byId.get(item.deviceId) ??
 		index.byCode.get(normalizeDeviceCode(item.code)) ??
 		index.byName.get(normalizeDeviceCode(item.name))
 	);
@@ -398,4 +443,406 @@ export const formatMetric = (metric: DeviceMetric): string => {
 	const { value } = metric;
 	if (value === null || !Number.isFinite(value)) return "—";
 	return String(value);
+};
+
+/**
+ * 空文案展示为破折号。
+ *
+ * @param {string | undefined} - 原始文案。
+ * @returns {string} - 展示字符串。
+ */
+export const displayDash = (value?: string): string => {
+	const text = String(value ?? "").trim();
+	return text && text !== "—" ? text : "—";
+};
+
+/**
+ * 取出设备列表中的有效编码。
+ *
+ * @param {DeviceItem[]} - 设备列表。
+ * @returns {string[]} - 去空后的编码。
+ */
+export const getDeviceCodes = (devices: DeviceItem[]): string[] => {
+	return devices.map((item) => item.code.trim()).filter(Boolean);
+};
+
+/**
+ * 拼接全部设备编码（右侧房间信息）。
+ *
+ * @param {DeviceItem[]} - 设备列表。
+ * @returns {string} - 顿号连接的完整编码。
+ */
+export const joinDeviceCodes = (devices: DeviceItem[]): string => {
+	return getDeviceCodes(devices).join("、");
+};
+
+/**
+ * 取出设备列表中的有效名称。
+ *
+ * @param {DeviceItem[]} - 设备列表。
+ * @returns {string[]} - 去空后的名称。
+ */
+export const getDeviceNames = (devices: DeviceItem[]): string[] => {
+	return devices.map((item) => item.name.trim()).filter(Boolean);
+};
+
+/**
+ * 拼接全部设备名称（右侧房间信息）。
+ *
+ * @param {DeviceItem[]} - 设备列表。
+ * @returns {string} - 顿号连接的完整名称。
+ */
+export const joinDeviceNames = (devices: DeviceItem[]): string => {
+	return getDeviceNames(devices).join("、");
+};
+
+/**
+ * 左侧房间卡片编码预览：多个时只展示第一个并加省略号。
+ *
+ * @param {DeviceItem[]} - 设备列表。
+ * @returns {string} - 预览文案。
+ */
+export const previewDeviceCodes = (devices: DeviceItem[]): string => {
+	const codes = getDeviceCodes(devices);
+	if (codes.length === 0) return "";
+	if (codes.length === 1) return codes[0];
+	return `${codes[0]}...`;
+};
+
+/**
+ * 配置流速展示（保留两位小数并带 m/s）。
+ *
+ * @param {number | null | undefined} - 流速。
+ * @returns {string} - 展示字符串。
+ */
+export const formatFlowRate = (value?: number | null): string => {
+	if (value === null || value === undefined || !Number.isFinite(value)) {
+		return "—";
+	}
+	return `${value.toFixed(2)}m/s`;
+};
+
+/**
+ * 按房间聚合设备列表（保持 rooms 接口顺序）。
+ *
+ * @param {DeviceItem[]} - 设备列表。
+ * @returns {RoomGroup[]} - 房间分组。
+ */
+export const groupDevicesByRoom = (devices: DeviceItem[]): RoomGroup[] => {
+	const groups: RoomGroup[] = [];
+	const indexByKey = new Map<string, number>();
+
+	for (const item of devices) {
+		const key = item.roomId ? String(item.roomId) : item.roomLabel;
+		const existing = indexByKey.get(key);
+		if (existing !== undefined) {
+			groups[existing].devices.push(item);
+			if (!groups[existing].pipeNo && item.pipeNo) {
+				groups[existing].pipeNo = item.pipeNo;
+			}
+			continue;
+		}
+		indexByKey.set(key, groups.length);
+		groups.push({
+			key,
+			roomId: item.roomId,
+			roomLabel: item.roomLabel,
+			pipeNo: item.pipeNo,
+			devices: [item],
+		});
+	}
+	return groups;
+};
+
+/**
+ * 按指标名称匹配设计稿图标。
+ *
+ * @param {string} - 指标名称。
+ * @returns {MetricIconKey} - 图标类型。
+ */
+export const getMetricIconKey = (label: string): MetricIconKey => {
+	const text = String(label ?? "").trim();
+	for (const item of METRIC_ICON_MATCHERS) {
+		if (item.test.test(text)) return item.key;
+	}
+	return "flow";
+};
+
+/**
+ * 趋势查询时间跨度（毫秒），近 5 分钟。
+ */
+export const TREND_RANGE_MS = 5 * 60 * 1000;
+
+/**
+ * 折线图抽稀上限，避免类目轴点过多。
+ */
+const TREND_MAX_POINTS = 310;
+
+/**
+ * 空趋势图占位。
+ */
+export const EMPTY_TREND_CHART: DeviceTrendChartData = {
+	xAxisData: [],
+	yAxisData: [],
+	yAxis: { min: 0, max: 1 },
+};
+
+const pad2 = (value: number) => String(value).padStart(2, "0");
+
+/**
+ * 将未知时间字段转为毫秒时间戳。
+ *
+ * @param {unknown} - 毫秒、秒或日期字符串。
+ * @returns {number} - 毫秒时间戳；无法解析时为 NaN。
+ */
+const toTrendTime = (raw: unknown): number => {
+	if (typeof raw === "number" && Number.isFinite(raw)) {
+		return raw > 0 && raw < 1e12 ? raw * 1000 : raw;
+	}
+	if (typeof raw === "string") {
+		const trimmed = raw.trim();
+		if (!trimmed) return Number.NaN;
+		const numeric = Number(trimmed);
+		if (Number.isFinite(numeric)) {
+			return numeric > 0 && numeric < 1e12 ? numeric * 1000 : numeric;
+		}
+		const parsed = Date.parse(trimmed);
+		return Number.isNaN(parsed) ? Number.NaN : parsed;
+	}
+	return Number.NaN;
+};
+
+/**
+ * 解析单个趋势点。
+ *
+ * @param {unknown} - 对象或 `[time, value]`。
+ * @returns {DeviceTrendPoint | null} - 有效点；否则 null。
+ */
+const parseTrendPoint = (item: unknown): DeviceTrendPoint | null => {
+	if (Array.isArray(item) && item.length >= 2) {
+		const time = toTrendTime(item[0]);
+		const value = Number(item[1]);
+		if (Number.isFinite(time) && Number.isFinite(value)) {
+			return { time, value };
+		}
+		return null;
+	}
+	if (!item || typeof item !== "object") return null;
+	const record = item as Record<string, unknown>;
+	const time = toTrendTime(
+		record.time ??
+			record.timestamp ??
+			record.ts ??
+			record.dataTime ??
+			record.t ??
+			record.x,
+	);
+	const value = Number(record.value ?? record.y ?? record.val ?? record.v);
+	if (!Number.isFinite(time) || !Number.isFinite(value)) return null;
+	return { time, value };
+};
+
+/**
+ * 从数组中提取趋势点（点数组或分段数组）。
+ *
+ * @param {unknown[]} - 原始数组。
+ * @returns {DeviceTrendPoint[]} - 点列表。
+ */
+const parseTrendPointList = (list: unknown[]): DeviceTrendPoint[] => {
+	const direct = list
+		.map(parseTrendPoint)
+		.filter((item): item is DeviceTrendPoint => item !== null);
+	if (direct.length) return direct;
+	const nested: DeviceTrendPoint[] = [];
+	for (const item of list) {
+		if (!item || typeof item !== "object") continue;
+		const record = item as Record<string, unknown>;
+		const child =
+			record.points ?? record.data ?? record.values ?? record.list;
+		if (Array.isArray(child)) {
+			nested.push(...parseTrendPointList(child));
+		}
+	}
+	return nested;
+};
+
+/**
+ * 解析趋势接口 data（兼容点数组、分段、平行 timestamps/values）。
+ *
+ * @param {unknown} - `/iiot/tablet/device/{id}/trend` 解包后的 data。
+ * @returns {DeviceTrendPoint[]} - 按时间升序的点。
+ */
+export const parseDeviceTrend = (data: unknown): DeviceTrendPoint[] => {
+	if (data == null) return [];
+	if (Array.isArray(data)) {
+		return parseTrendPointList(data).sort((a, b) => a.time - b.time);
+	}
+	if (typeof data !== "object") return [];
+	const record = data as Record<string, unknown>;
+	const times = record.timestamps ?? record.times ?? record.time;
+	const values = record.values ?? record.value;
+	if (Array.isArray(times) && Array.isArray(values)) {
+		const points: DeviceTrendPoint[] = [];
+		const size = Math.min(times.length, values.length);
+		for (let index = 0; index < size; index += 1) {
+			const point = parseTrendPoint([times[index], values[index]]);
+			if (point) points.push(point);
+		}
+		return points.sort((a, b) => a.time - b.time);
+	}
+	const nested =
+		record.segments ??
+		record.rooms ??
+		record.list ??
+		record.points ??
+		record.data ??
+		record.series;
+	if (Array.isArray(nested)) {
+		return parseTrendPointList(nested).sort((a, b) => a.time - b.time);
+	}
+
+	const fromValues: DeviceTrendPoint[] = [];
+	for (const value of Object.values(record)) {
+		if (!Array.isArray(value)) continue;
+		fromValues.push(...parseTrendPointList(value));
+	}
+	return fromValues.sort((a, b) => a.time - b.time);
+};
+
+/**
+ * 格式化趋势图 X 轴日期。
+ *
+ * @param {number} - 毫秒时间戳。
+ * @returns {string} - `MM/DD`。
+ */
+export const formatTrendAxisTime = (time: number): string => {
+	const date = new Date(time);
+	return `${pad2(date.getMonth() + 1)}/${pad2(date.getDate())}`;
+};
+
+/**
+ * 按上限均匀抽稀趋势点。
+ *
+ * @param {DeviceTrendPoint[]} - 原始点。
+ * @param {number} - 最大点数。
+ * @returns {DeviceTrendPoint[]} - 抽稀后的点。
+ */
+const downsampleTrendPoints = (
+	points: DeviceTrendPoint[],
+	maxPoints = TREND_MAX_POINTS,
+): DeviceTrendPoint[] => {
+	if (points.length <= maxPoints) return points;
+	const step = (points.length - 1) / (maxPoints - 1);
+	const next: DeviceTrendPoint[] = [];
+	for (let index = 0; index < maxPoints; index += 1) {
+		next.push(points[Math.round(index * step)]);
+	}
+	return next;
+};
+
+/**
+ * 按数值范围生成 Y 轴刻度。
+ *
+ * @param {number[]} - 折线数值。
+ * @returns {DeviceTrendChartData["yAxis"]} - min/max。
+ */
+export const buildTrendYAxis = (
+	values: number[],
+): DeviceTrendChartData["yAxis"] => {
+	if (!values.length) return { min: 0, max: 1 };
+	const maxVal = Math.max(...values);
+	const minVal = Math.min(...values);
+	const min = minVal >= 0 ? 0 : Math.floor(minVal);
+	const paddedMax = maxVal === min ? maxVal + 1 : maxVal;
+	const max = Math.max(min + 1, Math.ceil(paddedMax));
+	return max - min <= 8 ? { min, max, interval: 1 } : { min, max };
+};
+
+/**
+ * 将趋势点转为按设备折线图数据。
+ *
+ * @param {unknown} - 趋势接口 data。
+ * @returns {DeviceTrendChartData} - 类目轴与 Y 轴配置。
+ */
+export const toTrendChartData = (data: unknown): DeviceTrendChartData => {
+	const points = downsampleTrendPoints(parseDeviceTrend(data));
+	if (!points.length) return EMPTY_TREND_CHART;
+	const yAxisData = points.map((item) => item.value);
+	return {
+		xAxisData: points.map((item) => formatTrendAxisTime(item.time)),
+		yAxisData,
+		yAxis: buildTrendYAxis(yAxisData),
+	};
+};
+
+/**
+ * 房间折线默认色板（与 LineChartsByRoom 一致）。
+ */
+export const ROOM_TREND_COLORS = ["#EE8C45", "#6BC7A6", "#7492DB"];
+
+/**
+ * 按房间设备生成空折线（接口失败或尚无点时占位图例）。
+ *
+ * @param {DeviceItem[]} - 房间内设备。
+ * @returns {RoomTrendSeriesItem[]} - 空序列。
+ */
+export const buildEmptyRoomTrendSeries = (
+	devices: DeviceItem[],
+): RoomTrendSeriesItem[] => {
+	return devices.map((item, index) => ({
+		name: item.name.trim() || item.code || `设备${item.deviceId}`,
+		color: ROOM_TREND_COLORS[index % ROOM_TREND_COLORS.length],
+		data: [],
+	}));
+};
+
+/**
+ * 将房间趋势接口 data 转为多 Y 轴折线序列。
+ *
+ * @param {unknown} - `/iiot/tablet/device/room/trend` 解包后的 data。
+ * @returns {RoomTrendSeriesItem[]} - 按设备分系列，点来自 `series[].points`。
+ */
+export const toRoomTrendSeries = (data: unknown): RoomTrendSeriesItem[] => {
+	if (!data || typeof data !== "object") return [];
+	const record = data as Record<string, unknown>;
+	if (!Array.isArray(record.series)) return [];
+
+	return record.series.map((row, index) => {
+		const item =
+			row && typeof row === "object"
+				? (row as Record<string, unknown>)
+				: {};
+		const name =
+			String(item.deviceName ?? "").trim() ||
+			String(item.deviceCode ?? "").trim() ||
+			`设备${index + 1}`;
+		const points = downsampleTrendPoints(parseDeviceTrend(item));
+		return {
+			name,
+			color: ROOM_TREND_COLORS[index % ROOM_TREND_COLORS.length],
+			data: points.map((point) => ({
+				time: point.time,
+				value: point.value,
+			})),
+		};
+	});
+};
+
+/**
+ * 按房间汇总 WS 实时点位卡（按 propertyId 去重，保留首次出现顺序）。
+ *
+ * @param {DeviceItem[]} - 房间内设备。
+ * @returns {DeviceMetric[]} - 实时点位列表。
+ */
+export const collectRoomMetrics = (devices: DeviceItem[]): DeviceMetric[] => {
+	const seen = new Set<string>();
+	const metrics: DeviceMetric[] = [];
+	for (const device of devices) {
+		for (const metric of device.metrics) {
+			if (!metric.propertyId || seen.has(metric.propertyId)) continue;
+			seen.add(metric.propertyId);
+			metrics.push(metric);
+		}
+	}
+	return metrics;
 };

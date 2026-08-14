@@ -42,16 +42,6 @@ export interface DeviceFormValues {
 	deviceCode: string;
 	deviceName: string;
 	manufacturer: string;
-	/** 物实例 ID 列表（多选）。 */
-	thingIds: string[];
-}
-
-/**
- * 选择实例下拉选项。
- */
-export interface ThingOption {
-	label: string;
-	value: string;
 }
 
 /**

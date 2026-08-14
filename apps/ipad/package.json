@@ -12,6 +12,7 @@
 		"@ant-design/icons": "catalog:",
 		"antd": "catalog:",
 		"axios": "catalog:",
+		"echarts": "catalog:",
 		"react": "catalog:",
 		"react-dom": "catalog:",
 		"react-router-dom": "catalog:",

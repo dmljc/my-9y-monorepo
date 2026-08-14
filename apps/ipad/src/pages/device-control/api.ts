@@ -1,4 +1,5 @@
 import { request } from "@/utils";
+import type { DeviceTrendQuery, RoomTrendQuery } from "./interface";
 
 /**
  * 查询厂房列表。
@@ -46,6 +47,27 @@ export const switchDevice = (
 	return request.put(`/iiot/tablet/device/${deviceId}/switch`, {
 		action,
 	});
+};
+
+/**
+ * 查询设备点位历史趋势（按房间分段）。
+ *
+ * @param {DeviceTrendQuery} - 设备、点位与时间范围；deviceId 仅作路径参数。
+ */
+export const listDeviceTrend = ({
+	deviceId,
+	...params
+}: DeviceTrendQuery): Promise<any> => {
+	return request.get(`/iiot/tablet/device/${deviceId}/trend`, { params });
+};
+
+/**
+ * 查询房间点位历史趋势（按设备分系列）。
+ *
+ * @param {RoomTrendQuery} - 厂房、房间、点位与时间范围。
+ */
+export const listRoomTrend = (params: RoomTrendQuery): Promise<any> => {
+	return request.get("/iiot/tablet/device/room/trend", { params });
 };
 
 /**

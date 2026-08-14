@@ -6,7 +6,6 @@ import type {
 	DeviceStatus,
 	TabletDevicePayload,
 	TabletDeviceRow,
-	ThingOption,
 } from "./interface";
 
 /** 设备编码最大长度（后端约束）。 */
@@ -117,67 +116,6 @@ export const joinThingIds = (thingIds?: string[]): string => {
 };
 
 /**
- * 规范化 things 接口返回为物实例数组。
- *
- * @param {unknown} - `/iiot/device-control/things` 解包后的 data。
- * @returns {Record<string, unknown>[]} - 物实例列表。
- */
-export const normalizeThingsList = (
-	data: unknown,
-): Record<string, unknown>[] => {
-	if (Array.isArray(data)) return data as Record<string, unknown>[];
-	if (!data || typeof data !== "object") return [];
-	const record = data as Record<string, unknown>;
-	if (Array.isArray(record.things)) {
-		return record.things as Record<string, unknown>[];
-	}
-	if (Array.isArray(record.list)) {
-		return record.list as Record<string, unknown>[];
-	}
-	if (record.data && typeof record.data === "object") {
-		const nested = record.data as Record<string, unknown>;
-		if (Array.isArray(nested.things)) {
-			return nested.things as Record<string, unknown>[];
-		}
-		if (Array.isArray(record.data)) {
-			return record.data as Record<string, unknown>[];
-		}
-	}
-	return [];
-};
-
-/**
- * 将物实例列表转为下拉选项。
- *
- * @param {unknown} - `/iiot/device-control/things` 解包后的 data。
- * @returns {ThingOption[]} - 下拉选项。
- */
-export const toThingOptions = (data: unknown): ThingOption[] => {
-	const options: ThingOption[] = [];
-	for (const item of normalizeThingsList(data)) {
-		if (!item || typeof item !== "object") continue;
-		const thingId = String(
-			item.thing_id ?? item.thingId ?? item.id ?? "",
-		).trim();
-		if (!thingId) continue;
-		const thingName = String(
-			item.thing_name ?? item.thingName ?? "",
-		).trim();
-		const modelName = String(
-			item.model_name ?? item.modelName ?? "",
-		).trim();
-		let label = thingId;
-		if (thingName && thingName !== thingId) {
-			label = `${thingName}（${thingId}）`;
-		} else if (modelName) {
-			label = `${modelName}（${thingId}）`;
-		}
-		options.push({ value: thingId, label });
-	}
-	return options;
-};
-
-/**
  * 解析设备详情（兼容 `{ device, thingIds }` 与扁平旧结构）。
  *
  * @param {unknown} - `/iiot/tablet/ledger/{id}` 解包后的 data。
@@ -264,13 +202,10 @@ export const buildCreatePayload = (
 	values: DeviceFormValues,
 	building: BuildingTab,
 ): TabletDevicePayload => {
-	const thingIds = parseThingIds(values.thingIds);
 	return {
 		deviceCode: values.deviceCode.trim(),
 		deviceName: values.deviceName.trim(),
 		manufacturer: values.manufacturer.trim(),
-		thingIds,
-		thingId: joinThingIds(thingIds),
 		buildingId: building.buildingId,
 		building: building.building,
 	};
@@ -290,15 +225,11 @@ export const buildUpdatePayload = (
 	building: BuildingTab | null,
 ): TabletDevicePayload => {
 	const manufacturer = values.manufacturer.trim();
-	const thingIds = parseThingIds(values.thingIds);
 	return {
 		id: record.id,
 		deviceCode: values.deviceCode.trim(),
 		deviceName: values.deviceName.trim(),
 		...(manufacturer ? { manufacturer } : {}),
-		...(thingIds.length
-			? { thingIds, thingId: joinThingIds(thingIds) }
-			: {}),
 		buildingId: record.buildingId || building?.buildingId || 0,
 		building: building?.building,
 		deviceStatus: record.deviceStatus,

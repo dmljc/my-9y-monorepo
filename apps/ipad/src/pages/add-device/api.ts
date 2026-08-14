@@ -31,26 +31,12 @@ export const lookup = (deviceCode: string): Promise<any> => {
 };
 
 /**
- * 获取设备详情（编辑回显物实例等精简列表未返回字段）。
+ * 获取设备详情（编辑回显厂家等精简列表未返回字段）。
  *
  * @param {number} - 设备 id。
  */
 export const detail = (id: number): Promise<any> => {
 	return request.get(`/iiot/tablet/ledger/${id}`);
-};
-
-/**
- * 查询物实例列表（支持 keyword 模糊查询）。
- *
- * @param {string} - 模糊关键词（thing_id / thing_name 等）。
- */
-export const listThings = (keyword?: string): Promise<any> => {
-	const trimmed = keyword?.trim();
-	return request.get("/iiot/device-control/things", {
-		params: {
-			...(trimmed ? { keyword: trimmed } : {}),
-		},
-	});
 };
 
 /**

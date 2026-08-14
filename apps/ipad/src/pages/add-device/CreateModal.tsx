@@ -1,19 +1,10 @@
-import { Form, Input, Modal, Select } from "antd";
+import { Form, Input, Modal } from "antd";
 import type { Rule } from "antd/es/form";
-import { useEffect, useRef, useState } from "react";
-import { detail, listThings, lookup } from "./api";
+import { useEffect, useState } from "react";
+import { detail, lookup } from "./api";
 import styles from "./index.module.css";
-import type { Device, DeviceFormValues, ThingOption } from "./interface";
-import {
-	MAX_LENGTH_12,
-	MAX_LENGTH_100,
-	parseDeviceDetail,
-	parseThingIds,
-	toThingOptions,
-} from "./utils";
-
-/** 物实例远程搜索防抖间隔（毫秒）。 */
-const THING_SEARCH_DEBOUNCE_MS = 300;
+import type { Device, DeviceFormValues } from "./interface";
+import { MAX_LENGTH_12, MAX_LENGTH_100, parseDeviceDetail } from "./utils";
 
 /** 设备编码校验。 */
 const deviceCodeRules: Rule[] = [
@@ -25,11 +16,6 @@ const deviceCodeRules: Rule[] = [
 const deviceNameRules: Rule[] = [
 	{ required: true, whitespace: true, message: "请输入设备名称" },
 	{ max: MAX_LENGTH_12, message: `最多输入${MAX_LENGTH_12}个字符` },
-];
-
-/** 选择实例校验。 */
-const thingIdsRules: Rule[] = [
-	{ required: true, type: "array", min: 1, message: "请选择实例" },
 ];
 
 /**
@@ -60,11 +46,6 @@ const CreateModal = ({
 }: CreateModalProps) => {
 	const [form] = Form.useForm<DeviceFormValues>();
 	const [loading, setLoading] = useState(false);
-	const [thingLoading, setThingLoading] = useState(false);
-	const [thingOptions, setThingOptions] = useState<ThingOption[]>([]);
-	const thingSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-		null,
-	);
 	const isEdit = editingRecord !== null;
 
 	/** 厂家：新增必填；列表不回传厂家，编辑改为选填。 */
@@ -78,48 +59,23 @@ const CreateModal = ({
 				},
 			];
 
-	const loadThings = async (keyword = "") => {
-		setThingLoading(true);
-		try {
-			const thingsData = await listThings(keyword);
-			setThingOptions(toThingOptions(thingsData));
-		} catch {
-			setThingOptions([]);
-		} finally {
-			setThingLoading(false);
-		}
-	};
-
-	const handleThingSearch = (value: string) => {
-		if (thingSearchTimerRef.current) {
-			clearTimeout(thingSearchTimerRef.current);
-		}
-		thingSearchTimerRef.current = setTimeout(() => {
-			loadThings(value);
-		}, THING_SEARCH_DEBOUNCE_MS);
-	};
-
 	useEffect(() => {
 		if (!open) return;
 
 		const initModal = async () => {
-			await loadThings();
-
 			if (editingRecord) {
 				form.setFieldsValue({
 					deviceCode: editingRecord.deviceCode,
 					deviceName: editingRecord.deviceName,
 					manufacturer: editingRecord.manufacturer,
-					thingIds: parseThingIds(editingRecord.thingId),
 				});
 				try {
 					const data = await detail(editingRecord.id);
-					const { device, thingIds } = parseDeviceDetail(data);
+					const { device } = parseDeviceDetail(data);
 					const manufacturer = String(
 						device.manufacturer ?? "",
 					).trim();
 					const next: Partial<DeviceFormValues> = {};
-					if (thingIds.length) next.thingIds = thingIds;
 					if (manufacturer) next.manufacturer = manufacturer;
 					if (device.deviceName) {
 						next.deviceName = String(device.deviceName);
@@ -128,21 +84,6 @@ const CreateModal = ({
 						next.deviceCode = String(device.deviceCode);
 					}
 					if (Object.keys(next).length) form.setFieldsValue(next);
-					if (thingIds.length) {
-						setThingOptions((prev) => {
-							const missing = thingIds.filter(
-								(id) => !prev.some((item) => item.value === id),
-							);
-							if (!missing.length) return prev;
-							return [
-								...prev,
-								...missing.map((id) => ({
-									value: id,
-									label: id,
-								})),
-							];
-						});
-					}
 				} catch {
 					// 详情失败时保留列表行回显，不阻断编辑。
 				}
@@ -153,12 +94,6 @@ const CreateModal = ({
 		};
 
 		initModal();
-
-		return () => {
-			if (thingSearchTimerRef.current) {
-				clearTimeout(thingSearchTimerRef.current);
-			}
-		};
 	}, [open, editingRecord]);
 
 	const handleLookup = async () => {
@@ -245,25 +180,6 @@ const CreateModal = ({
 					<Input
 						placeholder="请输入设备厂家"
 						maxLength={MAX_LENGTH_12}
-					/>
-				</Form.Item>
-				<Form.Item
-					name="thingIds"
-					label="选择实例"
-					rules={thingIdsRules}
-				>
-					<Select
-						className={styles.thingSelect}
-						mode="multiple"
-						showSearch={{
-							filterOption: false,
-							onSearch: handleThingSearch,
-						}}
-						loading={thingLoading}
-						placeholder="请选择实例"
-						options={thingOptions}
-						allowClear
-						maxTagCount="responsive"
 					/>
 				</Form.Item>
 			</Form>

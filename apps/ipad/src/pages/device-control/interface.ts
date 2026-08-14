@@ -26,6 +26,9 @@ export interface RoomDeviceItem {
 	cleanStatus?: string;
 	cleanStartTime?: string | null;
 	flowRate?: number;
+	/** 管道编号。 */
+	pipelineId?: string;
+	manufacturer?: string;
 }
 
 /**
@@ -36,13 +39,22 @@ export interface RoomDeviceRow {
 	room?: string;
 	buildingId?: number;
 	building?: string;
+	/** 房间绑定的管道编号。 */
+	pipelineId?: string;
 	devices?: RoomDeviceItem[];
 }
+
+/**
+ * 左侧列表切换：按设备 / 按房间。
+ */
+export type ListMode = "device" | "room";
 
 /**
  * WebSocket `/api/ws/tablet` 推送的运行参数。
  */
 export interface RuntimeParam {
+	/** 点位 ID，趋势接口 propertyId 用此字段。 */
+	propertyId?: string;
 	displayField?: string;
 	label?: string;
 	value?: string | number;
@@ -62,6 +74,8 @@ export interface TabletWsDevice {
 	cleanStatus?: string | number;
 	/** 运行参数；右侧指标卡按该数组动态渲染。 */
 	runtimeParams?: RuntimeParam[];
+	/** 管道编号。 */
+	pipelineId?: string;
 }
 
 /**
@@ -80,6 +94,8 @@ export interface TabletWsMessage {
  */
 export interface DeviceMetric {
 	key: string;
+	/** WS `runtimeParams.propertyId`，趋势查询用。 */
+	propertyId: string;
 	label: string;
 	value: number | null;
 	unit: string;
@@ -92,9 +108,17 @@ export interface DeviceMetric {
  */
 export interface DeviceItem {
 	id: number;
+	/** rooms 接口 `devices[].deviceId`，趋势 / 开关 / 清洗用。 */
+	deviceId: number;
 	code: string;
 	name: string;
 	roomLabel: string;
+	roomId: number;
+	/** 管道编号。 */
+	pipeNo: string;
+	/** 配置流速（接口原值）。 */
+	flowRate: number | null;
+	manufacturer: string;
 	/** 开关：deviceStatus === "0"。 */
 	enabled: boolean;
 	/** 清洗中：cleanStatus === "1"。 */
@@ -103,4 +127,81 @@ export interface DeviceItem {
 	thingId: string;
 	/** 实时指标（来自 WebSocket runtimeParams）。 */
 	metrics: DeviceMetric[];
+}
+
+/**
+ * 设备历史趋势查询参数。
+ */
+export interface DeviceTrendQuery {
+	/** 设备 ID（路径参数，取 rooms `devices[].deviceId`）。 */
+	deviceId: number;
+	/** 点位 ID（WS `runtimeParams.propertyId`）。 */
+	propertyId: string;
+	/** 开始时间戳（毫秒）。 */
+	from: number;
+	/** 结束时间戳（毫秒）。 */
+	to: number;
+}
+
+/**
+ * 按房间查询点位历史趋势。
+ */
+export interface RoomTrendQuery {
+	/** 厂房 ID。 */
+	buildingId: number;
+	/** 房间 ID。 */
+	roomId: number;
+	/** 点位 ID（WS `runtimeParams.propertyId`）。 */
+	propertyId: string;
+	/** 开始时间戳（毫秒）。 */
+	from: number;
+	/** 结束时间戳（毫秒）。 */
+	to: number;
+}
+
+/**
+ * 房间折线一条设备序列。
+ */
+export interface RoomTrendSeriesItem {
+	/** 图例名称（设备名称）。 */
+	name: string;
+	/** 折线颜色。 */
+	color: string;
+	/** 时序点。 */
+	data: { time: number; value: number }[];
+}
+
+/**
+ * 趋势折线数据点。
+ */
+export interface DeviceTrendPoint {
+	/** 时间戳（毫秒）。 */
+	time: number;
+	/** 点位数值。 */
+	value: number;
+}
+
+/**
+ * 按设备折线图数据。
+ */
+export interface DeviceTrendChartData {
+	xAxisData: string[];
+	yAxisData: number[];
+	yAxis: {
+		min: number;
+		max: number;
+		interval?: number;
+	};
+}
+
+/**
+ * 按房间聚合后的列表项。
+ */
+export interface RoomGroup {
+	/** 列表 key（优先 roomId）。 */
+	key: string;
+	roomId: number;
+	roomLabel: string;
+	pipeNo: string;
+	devices: DeviceItem[];
 }
