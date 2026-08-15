@@ -105,10 +105,10 @@
 	flex: none;
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
+	justify-content: flex-start;
 	gap: calc(16 / 1400 * 100cqw);
 	width: 100%;
-	min-height: calc(100 / 1400 * 100cqw);
+	height: calc(100 / 1400 * 100cqw);
 	padding: calc(16 / 1400 * 100cqw);
 	overflow: hidden;
 	border: 1px solid transparent;
@@ -144,6 +144,7 @@
 	display: flex;
 	align-items: center;
 	min-width: 0;
+	height: calc(26 / 1400 * 100cqw);
 }
 
 .listIcon {
@@ -201,6 +202,7 @@
 	display: flex;
 	align-items: center;
 	min-width: 0;
+	height: calc(22 / 1400 * 100cqw);
 	font-family:
 		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
 		"Microsoft YaHei", sans-serif;
