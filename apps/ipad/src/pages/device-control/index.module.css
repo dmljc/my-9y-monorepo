@@ -32,12 +32,6 @@
 	padding: calc(16 / 1400 * 100cqw);
 }
 
-@media (min-aspect-ratio: 16 / 10) {
-	.body {
-		padding: calc(16 / 1400 * 100cqw) 0;
-	}
-}
-
 .sidebar,
 .infoPanel,
 .mainPanel,

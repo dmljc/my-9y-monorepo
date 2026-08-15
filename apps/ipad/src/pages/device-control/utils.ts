@@ -482,6 +482,9 @@ export const indexTabletWsDevices = (devices: TabletWsDevice[]) => {
 	return { byId, byCode, byName };
 };
 
+/**
+ * WebSocket 设备索引（deviceId / deviceCode / 唯一 deviceName）。
+ */
 export type TabletWsDeviceIndex = ReturnType<typeof indexTabletWsDevices>;
 
 /**
@@ -580,19 +583,6 @@ export const previewDeviceCodes = (devices: DeviceItem[]): string => {
 	if (codes.length === 0) return "";
 	if (codes.length === 1) return codes[0];
 	return `${codes[0]}...`;
-};
-
-/**
- * 配置流速展示（保留两位小数并带 m/s）。
- *
- * @param {number | null | undefined} - 流速。
- * @returns {string} - 展示字符串。
- */
-export const formatFlowRate = (value?: number | null): string => {
-	if (value === null || value === undefined || !Number.isFinite(value)) {
-		return "—";
-	}
-	return `${value.toFixed(2)}m/s`;
 };
 
 /** 流量最小值。 */

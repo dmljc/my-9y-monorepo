@@ -18,7 +18,7 @@ interface InstanceModalProps {
 	open: boolean;
 	/** 当前设备。 */
 	device: DeviceItem | null;
-	/** 弹窗挂载容器（页面根，便于 cqw 缩放）。 */
+	/** 弹窗挂载容器（contain 舞台，便于 cqw 与舞台同步缩放）。 */
 	getContainer: () => HTMLElement;
 	/** 取消。 */
 	onCancel: () => void;
@@ -53,7 +53,6 @@ const InstanceModal = ({
 			deviceCode: device?.code ?? "",
 			manufacturer: device?.manufacturer ?? "",
 			thingIds: parseThingIds(device?.thingId),
-			deviceStatus: device?.enabled ? "0" : "1",
 		});
 
 		let ignore = false;
@@ -82,13 +81,6 @@ const InstanceModal = ({
 					if (parsed.device.deviceCode) {
 						next.deviceCode = String(parsed.device.deviceCode);
 					}
-					if (parsed.device.deviceType) {
-						next.deviceType = String(parsed.device.deviceType);
-					}
-					const deviceStatus = String(
-						parsed.device.deviceStatus ?? "",
-					).trim();
-					if (deviceStatus) next.deviceStatus = deviceStatus;
 					selectedIds = parsed.thingIds;
 					form.setFieldsValue(next);
 				}
@@ -156,12 +148,6 @@ const InstanceModal = ({
 				</Form.Item>
 				<Form.Item name="deviceCode" label="设备编号">
 					<Input disabled />
-				</Form.Item>
-				<Form.Item name="deviceType" hidden>
-					<Input />
-				</Form.Item>
-				<Form.Item name="deviceStatus" hidden>
-					<Input />
 				</Form.Item>
 				<Form.Item name="manufacturer" label="设备厂家">
 					<Select

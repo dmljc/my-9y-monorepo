@@ -231,11 +231,6 @@ export interface DeviceDetailRow {
 	deviceCode?: string;
 	deviceName?: string;
 	manufacturer?: string;
-	building?: string;
-	buildingId?: number;
-	room?: string;
-	deviceType?: string;
-	deviceStatus?: string;
 	/** @deprecated 旧字段：逗号分隔物实例 ID。 */
 	thingId?: string;
 	/** 物实例 ID 列表。 */
@@ -250,10 +245,6 @@ export interface InstanceFormValues {
 	deviceCode: string;
 	manufacturer?: string;
 	thingIds?: string[];
-	/** 详情带回，提交编辑设备时透传。 */
-	deviceType?: string;
-	/** 详情带回，提交编辑设备时透传。 */
-	deviceStatus?: string;
 }
 
 /**
@@ -283,11 +274,7 @@ export interface DeviceUpdatePayload {
 	id: number;
 	deviceCode: string;
 	deviceName: string;
-	manufacturer?: string;
+	manufacturer: string;
 	/** 物实例 ID 列表。 */
 	thingIds: string[];
-	buildingId: number;
-	building?: string;
-	deviceStatus?: string;
-	deviceType?: string;
 }

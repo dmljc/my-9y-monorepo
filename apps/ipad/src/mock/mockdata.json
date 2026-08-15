@@ -344,54 +344,6 @@
 			"flowRate": ""
 		},
 		{
-			"id": "x12-device-1",
-			"deviceCode": "ZS14_XCZ_OH357_4912",
-			"deviceName": "设备B",
-			"sampleRoom": "102",
-			"status": "running",
-			"buildingKey": "x12",
-			"configType": "device",
-			"pipeIn": "",
-			"pipeOut": "03",
-			"flowRate": "12.50"
-		},
-		{
-			"id": "x12-device-2",
-			"deviceCode": "ZS14_XCZ_OH357_5384",
-			"deviceName": "设备A",
-			"sampleRoom": "211",
-			"status": "closed",
-			"buildingKey": "x12",
-			"configType": "device",
-			"pipeIn": "",
-			"pipeOut": "14",
-			"flowRate": "8.00"
-		},
-		{
-			"id": "x12-device-3",
-			"deviceCode": "ZS14_XCZ_OH357_5559",
-			"deviceName": "设备D",
-			"sampleRoom": "302",
-			"status": "closed",
-			"buildingKey": "x12",
-			"configType": "device",
-			"pipeIn": "",
-			"pipeOut": "17",
-			"flowRate": "35.5"
-		},
-		{
-			"id": "x12-device-4",
-			"deviceCode": "ZS14_XCZ_OH357_5558",
-			"deviceName": "设备C",
-			"sampleRoom": "314",
-			"status": "closed",
-			"buildingKey": "x12",
-			"configType": "device",
-			"pipeIn": "",
-			"pipeOut": "19",
-			"flowRate": "10.00"
-		},
-		{
 			"id": "x03-room-1",
 			"deviceCode": "R-102",
 			"deviceName": "房间102",
@@ -404,18 +356,6 @@
 			"flowRate": ""
 		},
 		{
-			"id": "x03-device-1",
-			"deviceCode": "201",
-			"deviceName": "一号取样泵机组",
-			"sampleRoom": "211",
-			"status": "running",
-			"buildingKey": "x03",
-			"configType": "device",
-			"pipeIn": "",
-			"pipeOut": "14",
-			"flowRate": "100"
-		},
-		{
 			"id": "x06-room-1",
 			"deviceCode": "R-302",
 			"deviceName": "房间302",
@@ -426,18 +366,6 @@
 			"pipeIn": "17",
 			"pipeOut": "",
 			"flowRate": ""
-		},
-		{
-			"id": "x06-device-1",
-			"deviceCode": "202",
-			"deviceName": "循环取样泵",
-			"sampleRoom": "314",
-			"status": "closed",
-			"buildingKey": "x06",
-			"configType": "device",
-			"pipeIn": "",
-			"pipeOut": "19",
-			"flowRate": "0.01"
 		}
 	]
 }

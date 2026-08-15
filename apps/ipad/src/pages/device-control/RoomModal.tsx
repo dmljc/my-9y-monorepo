@@ -21,7 +21,7 @@ interface RoomModalProps {
 	device: DeviceItem | null;
 	/** 当前厂房 ID。 */
 	buildingId: number;
-	/** 弹窗挂载容器（页面根，便于 cqw 缩放）。 */
+	/** 弹窗挂载容器（contain 舞台，便于 cqw 与舞台同步缩放）。 */
 	getContainer: () => HTMLElement;
 	/** 取消。 */
 	onCancel: () => void;

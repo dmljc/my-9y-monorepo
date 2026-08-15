@@ -23,7 +23,6 @@ export const PERM_LEDGER = {
 /** 管道配置 - 按钮 / 厂房权限码。 */
 export const PERM_PIPELINE = {
 	LIST: "iiot:tablet:pipeline:list",
-	SAVE_DEVICE: "iiot:tablet:pipeline:saveDevice",
 	SAVE_ROOM: "iiot:tablet:pipeline:saveRoom",
 	BUILDING_X03: "iiot:tablet:pipeline:building:x03",
 	BUILDING_X12: "iiot:tablet:pipeline:building:x12",

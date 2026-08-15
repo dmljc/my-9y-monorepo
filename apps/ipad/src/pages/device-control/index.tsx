@@ -66,9 +66,6 @@ import {
 	toTrendChartData,
 } from "./utils";
 
-/** 实时状态模块暂隐，接好展示后再打开 */
-const SHOW_REALTIME_STATUS = true;
-
 const DEFAULT_METRIC_CARDS: DeviceMetric[] = [
 	{ key: "flow", propertyId: "", label: "流量", value: null, unit: "m³/s" },
 	{
@@ -94,7 +91,11 @@ const DEFAULT_METRIC_CARDS: DeviceMetric[] = [
 	},
 ];
 
-const DeviceGlyph = ({ className }: { className?: string }) => (
+interface DeviceGlyphProps {
+	className?: string;
+}
+
+const DeviceGlyph = ({ className }: DeviceGlyphProps) => (
 	<svg className={className} viewBox="0 0 40 40" fill="none" aria-hidden>
 		<title>设备</title>
 		<rect x="4" y="8" width="32" height="10" rx="2" fill="currentColor" />
@@ -104,7 +105,11 @@ const DeviceGlyph = ({ className }: { className?: string }) => (
 	</svg>
 );
 
-const PowerGlyph = ({ className }: { className?: string }) => (
+interface PowerGlyphProps {
+	className?: string;
+}
+
+const PowerGlyph = ({ className }: PowerGlyphProps) => (
 	<svg className={className} viewBox="0 0 72 72" fill="none" aria-hidden>
 		<title>电源</title>
 		<path
@@ -122,13 +127,12 @@ const PowerGlyph = ({ className }: { className?: string }) => (
 	</svg>
 );
 
-const MetricGlyph = ({
-	type,
-	className,
-}: {
+interface MetricGlyphProps {
 	type: MetricIconKey;
 	className?: string;
-}) => {
+}
+
+const MetricGlyph = ({ type, className }: MetricGlyphProps) => {
 	if (type === "pressure") {
 		return (
 			<svg
@@ -249,7 +253,7 @@ const MetricGlyph = ({
 
 const DeviceControl = () => {
 	const { message } = App.useApp();
-	const pageRef = useRef<HTMLDivElement>(null);
+	const stageRef = useRef<HTMLDivElement>(null);
 	const canList = usePermission(PERM_DEVICE_CONTROL.LIST);
 	const canSwitchBuilding = usePermission(
 		PERM_DEVICE_CONTROL.SWITCH_BUILDING,
@@ -794,17 +798,12 @@ const DeviceControl = () => {
 
 	const handleInstanceSubmit = async (values: InstanceFormValues) => {
 		if (!selected || !currentBuilding) return;
-		const manufacturer = values.manufacturer?.trim();
 		await update({
 			id: selected.id,
 			deviceCode: values.deviceCode.trim(),
 			deviceName: values.deviceName.trim(),
-			...(manufacturer ? { manufacturer } : {}),
+			manufacturer: values.manufacturer?.trim() ?? "",
 			thingIds: values.thingIds ?? [],
-			buildingId: selected.buildingId || currentBuilding.buildingId,
-			building: currentBuilding.building,
-			deviceStatus: values.deviceStatus ?? (selected.enabled ? "0" : "1"),
-			deviceType: values.deviceType,
 		});
 		message.success("实例配置成功");
 		await loadDevices(currentBuilding.buildingId, buildingKey);
@@ -824,34 +823,6 @@ const DeviceControl = () => {
 		});
 		message.success("房间配置成功");
 		await loadDevices(currentBuilding.buildingId, buildingKey);
-	};
-
-	const renderPower = (className: string) => {
-		if (!selected) return null;
-		return (
-			<Access code={PERM_DEVICE_CONTROL.SWITCH_DEVICE}>
-				<button
-					type="button"
-					className={className}
-					onClick={() => {
-						handleDeviceSwitch(!selected.enabled);
-					}}
-					disabled={loading}
-					aria-label={selected.enabled ? "关闭设备" : "开启设备"}
-				>
-					<span
-						className={`${styles.powerCircle} ${
-							selected.enabled ? styles.powerOn : styles.powerOff
-						}`}
-					>
-						<PowerGlyph className={styles.powerIcon} />
-					</span>
-					<span className={styles.powerText}>
-						{selected.enabled ? "设备已开启" : "设备已关闭"}
-					</span>
-				</button>
-			</Access>
-		);
 	};
 
 	if (!canList) {
@@ -890,12 +861,8 @@ const DeviceControl = () => {
 				];
 
 	return (
-		<div
-			ref={pageRef}
-			className={styles.deviceControl}
-			data-page="device-control"
-		>
-			<div className={styles.stage}>
+		<div className={styles.deviceControl} data-page="device-control">
+			<div ref={stageRef} className={styles.stage}>
 				<BuildingPageHeader
 					buildingKey={buildingKey}
 					buildings={buildings}
@@ -1164,117 +1131,94 @@ const DeviceControl = () => {
 								</div>
 
 								<div className={styles.mainPanel}>
-									{SHOW_REALTIME_STATUS ? (
-										<>
-											<div
-												className={styles.sectionTitle}
-											>
-												实时状态
-											</div>
-											<div
-												className={styles.sectionLine}
-											/>
-											<div className={styles.metricRow}>
-												{metricCards.map((metric) => {
-													const pending =
-														(listMode ===
-															"device" &&
-															(isRealtimePending ||
-																(metric.value ===
-																	null &&
-																	!metric.textValue &&
-																	selected
-																		.metrics
-																		.length ===
-																		0))) ||
-														isRoomRealtimePending;
-													const metricActive =
-														Boolean(
-															trendPropertyId,
-														) &&
-														metric.propertyId ===
-															trendPropertyId;
-													const cardClassName = `${styles.metricCard} ${listMode === "room" ? styles.metricCardRoom : ""} ${pending ? styles.metricCardSkeleton : ""} ${metricActive ? styles.metricCardActive : ""}`;
-													const cardInner = (
-														<>
+									<div className={styles.sectionTitle}>
+										实时状态
+									</div>
+									<div className={styles.sectionLine} />
+									<div className={styles.metricRow}>
+										{metricCards.map((metric) => {
+											const pending =
+												(listMode === "device" &&
+													(isRealtimePending ||
+														(metric.value ===
+															null &&
+															!metric.textValue &&
+															selected.metrics
+																.length ===
+																0))) ||
+												isRoomRealtimePending;
+											const metricActive =
+												Boolean(trendPropertyId) &&
+												metric.propertyId ===
+													trendPropertyId;
+											const cardClassName = `${styles.metricCard} ${listMode === "room" ? styles.metricCardRoom : ""} ${pending ? styles.metricCardSkeleton : ""} ${metricActive ? styles.metricCardActive : ""}`;
+											return (
+												<button
+													key={metric.key}
+													type="button"
+													className={cardClassName}
+													onClick={() => {
+														if (!metric.propertyId) {
+															return;
+														}
+														setTrendPropertyId(
+															metric.propertyId,
+														);
+													}}
+												>
+													<div
+														className={
+															styles.metricText
+														}
+													>
+														<div
+															className={
+																styles.metricLabel
+															}
+														>
+															{metric.label}
+														</div>
+														{listMode ===
+														"device" ? (
 															<div
 																className={
-																	styles.metricText
+																	styles.metricValueRow
 																}
 															>
-																<div
+																<span
 																	className={
-																		styles.metricLabel
+																		styles.metricValue
 																	}
 																>
-																	{
-																		metric.label
+																	{pending
+																		? "—"
+																		: formatMetric(
+																				metric,
+																			)}
+																</span>
+																<span
+																	className={
+																		styles.metricUnit
 																	}
-																</div>
-																{listMode ===
-																"device" ? (
-																	<div
-																		className={
-																			styles.metricValueRow
-																		}
-																	>
-																		<span
-																			className={
-																				styles.metricValue
-																			}
-																		>
-																			{pending
-																				? "—"
-																				: formatMetric(
-																						metric,
-																					)}
-																		</span>
-																		<span
-																			className={
-																				styles.metricUnit
-																			}
-																		>
-																			{metric.unit ||
-																				"\u00A0"}
-																		</span>
-																	</div>
-																) : null}
+																>
+																	{metric.unit ||
+																		"\u00A0"}
+																</span>
 															</div>
-															<MetricGlyph
-																type={getMetricIconKey(
-																	metric.label,
-																)}
-																className={
-																	styles.metricIcon
-																}
-															/>
-														</>
-													);
-													return (
-														<button
-															key={metric.key}
-															type="button"
-															className={
-																cardClassName
-															}
-															onClick={() => {
-																if (
-																	!metric.propertyId
-																) {
-																	return;
-																}
-																setTrendPropertyId(
-																	metric.propertyId,
-																);
-															}}
-														>
-															{cardInner}
-														</button>
-													);
-												})}
-											</div>
-										</>
-									) : null}
+														) : null}
+													</div>
+													<MetricGlyph
+														type={getMetricIconKey(
+															metric.label,
+														)}
+														className={
+															styles.metricIcon
+														}
+													/>
+												</button>
+											);
+										})}
+									</div>
 
 									<div className={styles.trendChart}>
 										{listMode === "room" ? (
@@ -1375,7 +1319,48 @@ const DeviceControl = () => {
 
 								{listMode === "device" ? (
 									<div className={styles.footer}>
-										{renderPower(styles.powerBtn)}
+										<Access
+											code={
+												PERM_DEVICE_CONTROL.SWITCH_DEVICE
+											}
+										>
+											<button
+												type="button"
+												className={styles.powerBtn}
+												onClick={() => {
+													handleDeviceSwitch(
+														!selected.enabled,
+													);
+												}}
+												disabled={loading}
+												aria-label={
+													selected.enabled
+														? "关闭设备"
+														: "开启设备"
+												}
+											>
+												<span
+													className={`${styles.powerCircle} ${
+														selected.enabled
+															? styles.powerOn
+															: styles.powerOff
+													}`}
+												>
+													<PowerGlyph
+														className={
+															styles.powerIcon
+														}
+													/>
+												</span>
+												<span
+													className={styles.powerText}
+												>
+													{selected.enabled
+														? "设备已开启"
+														: "设备已关闭"}
+												</span>
+											</button>
+										</Access>
 										<div className={styles.footerActions}>
 											<button
 												type="button"
@@ -1422,23 +1407,23 @@ const DeviceControl = () => {
 						)}
 					</section>
 				</div>
-			</div>
 
-			<InstanceModal
-				open={instanceOpen}
-				device={selected}
-				getContainer={() => pageRef.current ?? document.body}
-				onCancel={() => setInstanceOpen(false)}
-				onOk={handleInstanceSubmit}
-			/>
-			<RoomModal
-				open={roomOpen}
-				device={selected}
-				buildingId={currentBuilding?.buildingId ?? 0}
-				getContainer={() => pageRef.current ?? document.body}
-				onCancel={() => setRoomOpen(false)}
-				onOk={handleRoomSubmit}
-			/>
+				<InstanceModal
+					open={instanceOpen}
+					device={selected}
+					getContainer={() => stageRef.current ?? document.body}
+					onCancel={() => setInstanceOpen(false)}
+					onOk={handleInstanceSubmit}
+				/>
+				<RoomModal
+					open={roomOpen}
+					device={selected}
+					buildingId={currentBuilding?.buildingId ?? 0}
+					getContainer={() => stageRef.current ?? document.body}
+					onCancel={() => setRoomOpen(false)}
+					onOk={handleRoomSubmit}
+				/>
+			</div>
 		</div>
 	);
 };
