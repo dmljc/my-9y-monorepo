@@ -224,6 +224,20 @@ export interface SelectOption {
 }
 
 /**
+ * 查询物实例列表参数。
+ */
+export interface ThingsListQuery {
+	/** 物模型 ID。 */
+	modelId?: string;
+	/** 模糊搜索关键字。 */
+	keyword?: string;
+	/** 返回条数。 */
+	limit: number;
+	/** 起始偏移。 */
+	offset: number;
+}
+
+/**
  * `/iiot/tablet/ledger/{id}` 详情中的设备字段。
  */
 export interface DeviceDetailRow {

@@ -591,6 +591,12 @@ export const FLOW_RATE_MIN = 0;
 /** 流量最大值。 */
 export const FLOW_RATE_MAX = 999999.99;
 
+/** 物实例下拉查询条数。 */
+export const THING_LIST_LIMIT = 100;
+
+/** 物实例下拉查询偏移。 */
+export const THING_LIST_OFFSET = 0;
+
 /**
  * 将未知列表规范为数组。
  *

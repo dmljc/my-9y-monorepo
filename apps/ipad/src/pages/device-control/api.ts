@@ -4,6 +4,7 @@ import type {
 	DeviceUpdatePayload,
 	RoomConfigPayload,
 	RoomTrendQuery,
+	ThingsListQuery,
 } from "./interface";
 
 /**
@@ -96,10 +97,12 @@ export const listAlarmRooms = (buildingId: number): Promise<any> => {
 };
 
 /**
- * 查询物实例列表。
+ * 查询物实例列表（支持 keyword 模糊搜索）。
+ *
+ * @param {ThingsListQuery} - 关键字、分页 limit / offset。
  */
-export const listThings = (): Promise<any> => {
-	return request.get("/iiot/device-control/things");
+export const listThings = (data: ThingsListQuery): Promise<any> => {
+	return request.get("/iiot/device-control/things", { params: data });
 };
 
 /**

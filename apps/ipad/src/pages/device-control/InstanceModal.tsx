@@ -1,14 +1,41 @@
 import { Form, Input, Modal, Select } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { detail, listThings } from "./api";
 import styles from "./index.module.css";
 import type { DeviceItem, InstanceFormValues, SelectOption } from "./interface";
 import {
+	THING_LIST_LIMIT,
+	THING_LIST_OFFSET,
 	mergeSelectOption,
 	parseDeviceDetail,
 	parseThingIds,
 	toThingOptions,
 } from "./utils";
+
+const THING_SEARCH_DEBOUNCE_MS = 300;
+
+const mergeThingOptions = (
+	data: unknown,
+	prev: SelectOption[],
+	selectedIds: string[],
+	keyword = "",
+): SelectOption[] => {
+	const text = keyword.trim().toLowerCase();
+	let next = toThingOptions(data);
+	if (text) {
+		next = next.filter((item) =>
+			String(item.label).toLowerCase().includes(text),
+		);
+	}
+	for (const id of selectedIds) {
+		next = mergeSelectOption(
+			next,
+			id,
+			prev.find((item) => item.value === id)?.label ?? id,
+		);
+	}
+	return next;
+};
 
 /**
  * 实例配置弹窗 props。
@@ -41,10 +68,44 @@ const InstanceModal = ({
 	const [instanceLoading, setInstanceLoading] = useState(false);
 	const [instanceOptions, setInstanceOptions] = useState<SelectOption[]>([]);
 	const manufacturerValue = Form.useWatch("manufacturer", form);
+	const thingsReqRef = useRef(0);
+	const keywordRef = useRef("");
+	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+		undefined,
+	);
+
+	const fetchThings = (keyword: string) => {
+		const text = keyword.trim();
+		keywordRef.current = text;
+		const reqId = ++thingsReqRef.current;
+		setInstanceLoading(true);
+		listThings({
+			limit: THING_LIST_LIMIT,
+			offset: THING_LIST_OFFSET,
+			keyword: text,
+		})
+			.then((data) => {
+				if (reqId !== thingsReqRef.current) return;
+				const selectedIds = parseThingIds(
+					form.getFieldValue("thingIds"),
+				);
+				setInstanceOptions((prev) =>
+					mergeThingOptions(data, prev, selectedIds, text),
+				);
+			})
+			.finally(() => {
+				if (reqId === thingsReqRef.current) {
+					setInstanceLoading(false);
+				}
+			});
+	};
 
 	useEffect(() => {
 		if (!open) {
 			setInstanceOptions([]);
+			keywordRef.current = "";
+			thingsReqRef.current += 1;
+			window.clearTimeout(searchTimerRef.current);
 			return;
 		}
 
@@ -57,14 +118,21 @@ const InstanceModal = ({
 
 		let ignore = false;
 		const deviceId = device?.id ?? 0;
+		const reqId = ++thingsReqRef.current;
+		keywordRef.current = "";
 		setInstanceLoading(true);
 		Promise.all([
-			listThings(),
-			deviceId ? detail(deviceId).catch(() => null) : Promise.resolve(null),
+			listThings({
+				limit: THING_LIST_LIMIT,
+				offset: THING_LIST_OFFSET,
+				keyword: "",
+			}),
+			deviceId
+				? detail(deviceId).catch(() => null)
+				: Promise.resolve(null),
 		])
 			.then(([thingsData, detailData]) => {
-				if (ignore) return;
-				const options = toThingOptions(thingsData);
+				if (ignore || reqId !== thingsReqRef.current) return;
 				let selectedIds = parseThingIds(device?.thingId);
 				if (detailData) {
 					const parsed = parseDeviceDetail(detailData);
@@ -84,20 +152,45 @@ const InstanceModal = ({
 					selectedIds = parsed.thingIds;
 					form.setFieldsValue(next);
 				}
-				let nextOptions = options;
-				for (const id of selectedIds) {
-					nextOptions = mergeSelectOption(nextOptions, id, id);
-				}
-				setInstanceOptions(nextOptions);
+				setInstanceOptions((prev) =>
+					mergeThingOptions(thingsData, prev, selectedIds),
+				);
 			})
 			.finally(() => {
-				if (!ignore) setInstanceLoading(false);
+				if (!ignore && reqId === thingsReqRef.current) {
+					setInstanceLoading(false);
+				}
 			});
 
 		return () => {
 			ignore = true;
+			window.clearTimeout(searchTimerRef.current);
 		};
 	}, [open, device?.deviceId]);
+
+	const handleThingSearch = (raw: string) => {
+		window.clearTimeout(searchTimerRef.current);
+		const keyword = raw.trim();
+		if (!keyword) {
+			fetchThings("");
+			return;
+		}
+		searchTimerRef.current = setTimeout(() => {
+			fetchThings(keyword);
+		}, THING_SEARCH_DEBOUNCE_MS);
+	};
+
+	const onClear = () => {
+		window.clearTimeout(searchTimerRef.current);
+		fetchThings("");
+	};
+
+	const onOpenChange = (visible: boolean) => {
+		if (visible) return;
+		window.clearTimeout(searchTimerRef.current);
+		if (!keywordRef.current) return;
+		fetchThings("");
+	};
 
 	const onOk = async () => {
 		try {
@@ -178,12 +271,17 @@ const InstanceModal = ({
 				>
 					<Select
 						mode="multiple"
-						showSearch={{ optionFilterProp: "label" }}
+						showSearch={{
+							filterOption: false,
+							onSearch: handleThingSearch,
+						}}
 						placeholder="请选择实例"
 						options={instanceOptions}
 						loading={instanceLoading}
 						allowClear
 						maxTagCount="responsive"
+						onClear={onClear}
+						onOpenChange={onOpenChange}
 						getPopupContainer={getContainer}
 						classNames={{
 							popup: { root: styles.modalPopup },
