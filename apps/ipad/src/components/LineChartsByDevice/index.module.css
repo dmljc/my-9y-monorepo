@@ -40,6 +40,22 @@
 	color: #ffffff;
 }
 
+.sliderTicks {
+	position: absolute;
+	z-index: 1;
+	overflow: hidden;
+	pointer-events: none;
+}
+
+.sliderTick {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: calc(2 / 1400 * 100cqw);
+	background: #ffffff;
+	transform: translateX(-50%);
+}
+
 .sideBtn {
 	position: absolute;
 	z-index: 3;

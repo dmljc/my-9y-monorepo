@@ -413,6 +413,30 @@ const LineCharts = ({
 	return (
 		<div ref={wrapRef} className={styles.container}>
 			<div ref={chartRef} className={styles.chart} />
+			{box.width > 0 && totalRangeDays > 1 ? (
+				<div
+					className={styles.sliderTicks}
+					style={{
+						top: layout.dataZoomTop,
+						left: layout.left,
+						right: layout.sliderRight,
+						height: layout.dataZoomHeight,
+					}}
+				>
+					{Array.from(
+						{ length: totalRangeDays - 1 },
+						(_, index) => (
+							<span
+								key={index}
+								className={styles.sliderTick}
+								style={{
+									left: `${((index + 1) / totalRangeDays) * 100}%`,
+								}}
+							/>
+						),
+					)}
+				</div>
+			) : null}
 			{chrome ? (
 				<>
 					<span
