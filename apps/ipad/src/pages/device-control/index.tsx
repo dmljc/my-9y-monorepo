@@ -1,4 +1,4 @@
-import { App, Empty, Modal } from "antd";
+import { App, Empty } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import Access from "@/components/Access";
@@ -16,13 +16,18 @@ import {
 	listDeviceTrend,
 	listRooms,
 	listRoomTrend,
+	saveInstanceConfig,
+	saveRoomConfig,
 	switchBuilding,
 	switchDevice,
 	toggleClean,
 } from "./api";
+import ConfigModal from "./ConfigModal";
 import styles from "./index.module.css";
 import type {
 	BuildingTab,
+	ConfigFormValues,
+	ConfigType,
 	DeviceItem,
 	DeviceMetric,
 	DeviceTrendChartData,
@@ -36,7 +41,6 @@ import {
 	displayDash,
 	EMPTY_TREND_CHART,
 	findWsDeviceForItem,
-	formatFlowRate,
 	formatMetric,
 	getMetricIconKey,
 	getTabletWsDevices,
@@ -255,9 +259,7 @@ const DeviceControl = () => {
 	const [masterOn, setMasterOn] = useState(true);
 	const [loading, setLoading] = useState(false);
 	const [listMode, setListMode] = useState<ListMode>("device");
-	const [configType, setConfigType] = useState<"instance" | "room" | null>(
-		null,
-	);
+	const [configType, setConfigType] = useState<ConfigType | null>(null);
 	const [realtimeLoadedIds, setRealtimeLoadedIds] = useState<
 		Record<number, true>
 	>({});
@@ -732,6 +734,29 @@ const DeviceControl = () => {
 		} finally {
 			setLoading(false);
 		}
+	};
+
+	const handleConfigSubmit = async (values: ConfigFormValues) => {
+		if (!selected || !currentBuilding || !configType) return;
+		if (configType === "room") {
+			const roomId = Number(values.roomId);
+			const flowRate = Number(values.flowRate);
+			const roomGroup = roomGroups.find(
+				(item) => String(item.roomId) === String(values.roomId),
+			);
+			await saveRoomConfig(selected.deviceId, {
+				roomId,
+				room: values.room ?? roomGroup?.roomLabel,
+				flowRate,
+			});
+			message.success("房间配置成功");
+		} else {
+			await saveInstanceConfig(selected.deviceId, {
+				thingIds: values.thingIds ?? [],
+			});
+			message.success("实例配置成功");
+		}
+		await loadDevices(currentBuilding.buildingId, buildingKey);
 	};
 
 	const renderPower = (className: string) => {
@@ -1297,39 +1322,15 @@ const DeviceControl = () => {
 				</div>
 			</div>
 
-			<Modal
-				className={styles.modal}
-				title={configType === "room" ? "连接房间" : "实例配置"}
+			<ConfigModal
 				open={Boolean(configType)}
-				onCancel={() => setConfigType(null)}
-				onOk={() => setConfigType(null)}
-				destroyOnHidden
-				centered
-				width="calc(730 / 1400 * 100cqw)"
+				configType={configType}
+				device={selected}
+				buildingId={currentBuilding?.buildingId ?? 0}
 				getContainer={() => pageRef.current ?? document.body}
-			>
-				{configType === "room" ? (
-					<div>
-						<p>设备名称　{displayDash(selected?.name)}</p>
-						<p>设备编号　{displayDash(selected?.code)}</p>
-						<p>房间名称　{displayDash(selected?.roomLabel)}</p>
-						<p>流量　　　{formatFlowRate(selected?.flowRate)}</p>
-						<div className={styles.modalHint}>
-							提示:操作前请确认信息准确无误!
-						</div>
-					</div>
-				) : (
-					<div>
-						<p>设备名称　{displayDash(selected?.name)}</p>
-						<p>设备编号　{displayDash(selected?.code)}</p>
-						<p>设备厂家　{displayDash(selected?.manufacturer)}</p>
-						<p>选择实例　{displayDash(selected?.thingId)}</p>
-						<div className={styles.modalHint}>
-							提示:操作前请确认信息准确无误!
-						</div>
-					</div>
-				)}
-			</Modal>
+				onCancel={() => setConfigType(null)}
+				onOk={handleConfigSubmit}
+			/>
 		</div>
 	);
 };

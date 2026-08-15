@@ -10,13 +10,12 @@ import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useEchartsInit } from "../hooks/useEchartsInit";
-import type { LineChartsProps } from "./interface";
 import styles from "./index.module.css";
+import type { LineChartsProps } from "./interface";
 import {
 	buildLineChartOption,
 	computeDefaultZoom,
 	computeViewExtent,
-	stepZoomWindowDays,
 	DEFAULT_PAGE_SIZE,
 	formatRangeDate,
 	formatRangeDuration,
@@ -26,6 +25,7 @@ import {
 	padTimeExtent,
 	pageViewExtent,
 	resolveSeries,
+	stepZoomWindowDays,
 } from "./utils";
 
 echarts.use([
@@ -59,6 +59,7 @@ interface SliderChrome {
 
 const PlusIcon = () => (
 	<svg className={styles.zoomIcon} viewBox="0 0 12 12" aria-hidden>
+		<title>放大</title>
 		<path
 			d="M6 2v8M2 6h8"
 			stroke="currentColor"
@@ -70,6 +71,7 @@ const PlusIcon = () => (
 
 const MinusIcon = () => (
 	<svg className={styles.zoomIcon} viewBox="0 0 12 12" aria-hidden>
+		<title>缩小</title>
 		<path
 			d="M2 6h8"
 			stroke="currentColor"
@@ -81,6 +83,7 @@ const MinusIcon = () => (
 
 const ChevronLeftIcon = () => (
 	<svg className={styles.sideIcon} viewBox="0 0 16 16" aria-hidden>
+		<title>上一页</title>
 		<path
 			d="M10 3 5 8l5 5"
 			fill="none"
@@ -94,6 +97,7 @@ const ChevronLeftIcon = () => (
 
 const ChevronRightIcon = () => (
 	<svg className={styles.sideIcon} viewBox="0 0 16 16" aria-hidden>
+		<title>下一页</title>
 		<path
 			d="M6 3l5 5-5 5"
 			fill="none"
@@ -133,6 +137,7 @@ const LineCharts = ({
 	const [box, setBox] = useState({ width: 0, height: 0, scale: 1 });
 	const [chrome, setChrome] = useState<SliderChrome | null>(null);
 	const [viewExtent, setViewExtent] = useState<[number, number] | null>(null);
+	const [nowMs, setNowMs] = useState(() => Date.now());
 
 	const resolved = useMemo(() => resolveSeries(series), [series]);
 	const timeExtent = useMemo(() => {
@@ -165,10 +170,15 @@ const LineCharts = ({
 		lastEmittedRangeRef.current = null;
 	}
 
-	const chartViewExtent = useMemo(
-		() => viewExtent ?? computeViewExtent(timeExtent[1], axisRangeMs),
-		[viewExtent, timeExtent, axisRangeMs],
-	);
+	const chartViewExtent = useMemo(() => {
+		const maxEnd = Math.min(timeExtent[1], nowMs);
+		const raw =
+			viewExtent ?? computeViewExtent(timeExtent[1], axisRangeMs, nowMs);
+		if (raw[1] <= maxEnd) {
+			return raw;
+		}
+		return computeViewExtent(maxEnd, axisRangeMs, nowMs);
+	}, [viewExtent, timeExtent, axisRangeMs, nowMs]);
 
 	const option = useMemo(
 		() =>
@@ -197,6 +207,15 @@ const LineCharts = ({
 	const chartRef = useEchartsInit(option);
 
 	useEffect(() => {
+		const timer = window.setInterval(() => {
+			setNowMs(Date.now());
+		}, 1000);
+		return () => {
+			window.clearInterval(timer);
+		};
+	}, []);
+
+	useEffect(() => {
 		if (viewLockedRef.current) {
 			return;
 		}
@@ -207,7 +226,7 @@ const LineCharts = ({
 			timeExtent[0] + (span * zoom.end) / 100,
 		];
 		sliderWindowRef.current = slider;
-		setViewExtent(computeViewExtent(slider[1], axisRangeMs));
+		setViewExtent(computeViewExtent(slider[1], axisRangeMs, Date.now()));
 	}, [extentKey]);
 
 	useEffect(() => {
@@ -308,7 +327,7 @@ const LineCharts = ({
 			sliderWindowRef.current = [startMs, endMs];
 			if (fromUserZoom && zoomChanged && !viewLockedRef.current) {
 				sliderDirtyRef.current = true;
-				const nextView = computeViewExtent(endMs, axisRangeMs);
+				const nextView = computeViewExtent(endMs, axisRangeMs, Date.now());
 				setViewExtent((prev) =>
 					prev && prev[0] === nextView[0] && prev[1] === nextView[1]
 						? prev
@@ -389,7 +408,7 @@ const LineCharts = ({
 		viewLockedRef.current = false;
 		sliderWindowRef.current = [next.from, next.to];
 		sliderDirtyRef.current = false;
-		setViewExtent(computeViewExtent(next.to, axisRangeMs));
+		setViewExtent(computeViewExtent(next.to, axisRangeMs, Date.now()));
 		emitSliderRange(next.from, next.to);
 		chart.dispatchAction({
 			type: "dataZoom",
@@ -404,16 +423,21 @@ const LineCharts = ({
 	};
 
 	const applyTimePage = (direction: -1 | 1) => {
+		const now = Date.now();
 		const nextView = pageViewExtent(
 			chartViewExtent,
 			direction,
 			axisRangeMs,
 			timeExtent,
+			now,
 		);
 		if (
 			nextView[0] === chartViewExtent[0] &&
 			nextView[1] === chartViewExtent[1]
 		) {
+			return;
+		}
+		if (direction > 0 && nextView[1] > now) {
 			return;
 		}
 		viewLockedRef.current = true;
@@ -429,7 +453,9 @@ const LineCharts = ({
 	const canZoomIn = sliderDays > 1;
 	const canZoomOut = sliderDays < totalRangeDays;
 	const canPagePrev = chartViewExtent[0] - axisRangeMs >= timeExtent[0];
-	const canPageNext = chartViewExtent[1] <= timeExtent[1];
+	const canPageNext =
+		pageViewExtent(chartViewExtent, 1, axisRangeMs, timeExtent, nowMs)[1] >
+		chartViewExtent[1];
 	const sideTop =
 		layout.dataZoomTop +
 		layout.dataZoomHeight +

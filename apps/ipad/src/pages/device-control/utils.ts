@@ -11,6 +11,7 @@ import type {
 	RoomGroup,
 	RoomTrendSeriesItem,
 	RuntimeParam,
+	SelectOption,
 	TabletWsDevice,
 	TabletWsMessage,
 } from "./interface";
@@ -125,6 +126,47 @@ export const formatRoomLabel = (room?: string): string => {
 };
 
 /**
+ * 将后端物实例字段解析为多选值（兼容逗号串 / 字符串数组）。
+ *
+ * @param {unknown} - thingId 字符串、thingIds 数组，或其它。
+ * @returns {string[]} - 物实例 ID 列表。
+ */
+export const parseThingIds = (value?: unknown): string[] => {
+	if (Array.isArray(value)) {
+		return [
+			...new Set(
+				value.map((item) => String(item ?? "").trim()).filter(Boolean),
+			),
+		];
+	}
+	if (typeof value === "string") {
+		if (!value.trim()) return [];
+		return [
+			...new Set(
+				value
+					.split(/[,，]/)
+					.map((item) => item.trim())
+					.filter(Boolean),
+			),
+		];
+	}
+	return [];
+};
+
+/**
+ * 将多选物实例 ID 序列化为逗号分隔字符串。
+ *
+ * @param {string[] | undefined} - 物实例 ID 列表。
+ * @returns {string} - 逗号分隔字符串。
+ */
+export const joinThingIds = (thingIds?: string[]): string => {
+	if (!Array.isArray(thingIds)) return "";
+	return [
+		...new Set(thingIds.map((item) => item.trim()).filter(Boolean)),
+	].join(",");
+};
+
+/**
  * 将房间下的单台设备映射为列表项。
  *
  * @param {RoomDeviceRow} - 房间行。
@@ -156,7 +198,9 @@ export const mapRoomDeviceToItem = (
 		enabled: String(device.deviceStatus ?? "") !== "1",
 		cleaning: String(device.cleanStatus ?? "") === "1",
 		buildingId: Number(room.buildingId ?? 0),
-		thingId: String(device.thingId ?? "").trim(),
+		thingId:
+			joinThingIds(parseThingIds(device.thingIds ?? device.thingId)) ||
+			String(device.thingId ?? "").trim(),
 		metrics: [],
 	};
 };
@@ -520,6 +564,131 @@ export const formatFlowRate = (value?: number | null): string => {
 		return "—";
 	}
 	return `${value.toFixed(2)}m/s`;
+};
+
+/** 流量最小值。 */
+export const FLOW_RATE_MIN = 0;
+
+/** 流量最大值。 */
+export const FLOW_RATE_MAX = 999999.99;
+
+/**
+ * 将未知列表规范为数组。
+ *
+ * @param {unknown} - 接口 data。
+ * @returns {unknown[]} - 数组。
+ */
+const toArray = (data: unknown): unknown[] => {
+	if (Array.isArray(data)) return data;
+	if (!data || typeof data !== "object") return [];
+	const record = data as Record<string, unknown>;
+	if (Array.isArray(record.list)) return record.list;
+	if (Array.isArray(record.rows)) return record.rows;
+	if (Array.isArray(record.rooms)) return record.rooms;
+	return [];
+};
+
+/**
+ * 将房间列表接口响应转为 Select 选项（value 为房间 ID）。
+ *
+ * @param {unknown} - `/iiot/alarm/rooms` 解包后的 data。
+ * @returns {SelectOption[]} - 下拉选项。
+ */
+export const normalizeRoomOptions = (data: unknown): SelectOption[] => {
+	const options: SelectOption[] = [];
+	const seen = new Set<string>();
+	for (const item of toArray(data)) {
+		if (typeof item === "string" && item.trim()) {
+			if (seen.has(item)) continue;
+			seen.add(item);
+			options.push({ label: item, value: item });
+			continue;
+		}
+		if (!item || typeof item !== "object") continue;
+		const record = item as Record<string, unknown>;
+		const value = String(
+			record.value ??
+				record.roomId ??
+				record.id ??
+				record.room ??
+				record.roomName ??
+				record.name ??
+				record.label ??
+				"",
+		).trim();
+		if (!value || seen.has(value)) continue;
+		seen.add(value);
+		options.push({
+			label: String(
+				record.label ??
+					record.room ??
+					record.roomName ??
+					record.name ??
+					record.roomNo ??
+					value,
+			).trim(),
+			value,
+		});
+	}
+	return options;
+};
+
+/**
+ * 规范化 things 接口返回。
+ *
+ * @param {unknown} - `/iiot/device-control/things` 解包后的 data。
+ * @returns {unknown[]} - 物实例数组。
+ */
+export const normalizeThingsList = (data: unknown): unknown[] => {
+	if (Array.isArray(data)) return data;
+	if (!data || typeof data !== "object") return [];
+	const record = data as Record<string, unknown>;
+	if (Array.isArray(record.things)) return record.things;
+	if (record.data && typeof record.data === "object") {
+		const nested = record.data as Record<string, unknown>;
+		if (Array.isArray(nested.things)) return nested.things;
+		if (Array.isArray(record.data)) return record.data;
+	}
+	return toArray(data);
+};
+
+/**
+ * 物实例 → 下拉选项（label=thing_name，value=thing_id）。
+ *
+ * @param {unknown} - things 接口 data。
+ * @returns {SelectOption[]} - 下拉选项。
+ */
+export const toThingOptions = (data: unknown): SelectOption[] => {
+	return normalizeThingsList(data).flatMap((item) => {
+		if (!item || typeof item !== "object") return [];
+		const record = item as Record<string, unknown>;
+		const value = String(record.thing_id ?? record.thingId ?? "").trim();
+		if (!value) return [];
+		const name = String(record.thing_name ?? record.thingName ?? "").trim();
+		return [{ label: name || value, value }];
+	});
+};
+
+/**
+ * 把当前回显值补进选项，避免下拉尚未加载时空白。
+ *
+ * @param {SelectOption[]} - 已有选项。
+ * @param {string | undefined} - 回显 value。
+ * @param {string | undefined} - 回显 label。
+ * @returns {SelectOption[]} - 合并后的选项。
+ */
+export const mergeSelectOption = (
+	options: SelectOption[],
+	value?: string,
+	label?: string,
+): SelectOption[] => {
+	const text = String(value ?? "").trim();
+	if (!text) return options;
+	if (options.some((item) => item.value === text)) return options;
+	return [
+		{ label: String(label ?? "").trim() || text, value: text },
+		...options,
+	];
 };
 
 /**

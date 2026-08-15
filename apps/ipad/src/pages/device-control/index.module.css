@@ -621,14 +621,28 @@ button.metricCard {
 	justify-content: center;
 }
 
+.modalRoot :global(.ant-modal-mask) {
+	background: rgba(0, 0, 0, 0.45);
+}
+
+.modal :global(.ant-modal-container),
+.modal:global(.ant-modal) {
+	padding: 0;
+}
+
 .modal :global(.ant-modal-content) {
-	padding: calc(16 / 1400 * 100cqw) calc(16 / 1400 * 100cqw)
-		calc(20 / 1400 * 100cqw);
+	padding: 0;
 	border-radius: calc(10 / 1400 * 100cqw);
+	overflow: hidden;
+	box-shadow: 0 calc(8 / 1400 * 100cqw) calc(28 / 1400 * 100cqw)
+		rgba(0, 0, 0, 0.12);
 }
 
 .modal :global(.ant-modal-header) {
-	margin-bottom: calc(14 / 1400 * 100cqw);
+	margin: 0;
+	padding: calc(20 / 1400 * 100cqw) calc(20 / 1400 * 100cqw)
+		calc(18 / 1400 * 100cqw);
+	border-bottom: 1px solid #ebebeb;
 }
 
 .modal :global(.ant-modal-title) {
@@ -640,27 +654,182 @@ button.metricCard {
 	color: #000000;
 }
 
-.modal :global(.ant-form-item-label > label) {
+.modal :global(.ant-modal-close) {
+	top: calc(18 / 1400 * 100cqw);
+	inset-inline-end: calc(20 / 1400 * 100cqw);
+	width: calc(24 / 1400 * 100cqw);
+	height: calc(24 / 1400 * 100cqw);
+	color: #999999;
+}
+
+.modal :global(.ant-modal-close:hover) {
+	color: #666666;
+	background: transparent;
+}
+
+.modal :global(.ant-modal-close .ant-modal-close-x),
+.modal :global(.ant-modal-close .ant-modal-close-icon) {
+	width: 100%;
+	height: 100%;
+	font-size: calc(24 / 1400 * 100cqw);
+	line-height: calc(24 / 1400 * 100cqw);
+}
+
+.modal :global(.ant-modal-body) {
+	padding: calc(20 / 1400 * 100cqw) calc(20 / 1400 * 100cqw) 0;
+}
+
+.modal :global(.ant-modal-footer) {
+	margin: 0;
+	padding: calc(16 / 1400 * 100cqw) calc(20 / 1400 * 100cqw)
+		calc(20 / 1400 * 100cqw);
+	border-top: 1px solid #ebebeb;
+}
+
+.modal :global(.ant-modal-footer .ant-btn) {
+	min-width: calc(90 / 1400 * 100cqw);
+	height: calc(40 / 1400 * 100cqw);
+	padding: 0 calc(16 / 1400 * 100cqw);
+	border-radius: calc(6 / 1400 * 100cqw);
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(17 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+}
+
+.modal :global(.ant-modal-footer .ant-btn + .ant-btn) {
+	margin-inline-start: calc(12 / 1400 * 100cqw);
+}
+
+.modal :global(.ant-modal-footer .ant-btn-default) {
+	border-color: #d9d9d9;
+	color: #333333;
+	background: #fff;
+	box-shadow: none;
+}
+
+.modal :global(.ant-modal-footer .ant-btn-primary) {
+	background: #0984ff;
+	border-color: #0984ff;
+	box-shadow: none;
+}
+
+.form :global(.ant-form-item) {
+	margin-bottom: calc(24 / 1400 * 100cqw);
+}
+
+.form :global(.ant-form-item-label) {
+	padding: 0 0 calc(8 / 1400 * 100cqw);
+}
+
+.form :global(.ant-form-item-label > label) {
+	height: auto;
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
 	font-size: calc(19 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
 	color: #333333;
 }
 
-.modal :global(.ant-input),
-.modal :global(.ant-select-selection-item),
-.modal :global(.ant-select-selection-placeholder) {
+.form :global(.ant-form-item-explain-error) {
+	font-size: calc(14 / 1400 * 100cqw);
+}
+
+.form :global(.ant-input),
+.form :global(.ant-select-selection-item),
+.form :global(.ant-select-selection-placeholder) {
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
 	font-size: calc(19 / 1400 * 100cqw);
 	line-height: calc(26 / 1400 * 100cqw);
 }
 
-.modal :global(.ant-input),
-.modal :global(.ant-select-selector) {
+.form :global(.ant-input::placeholder),
+.form :global(.ant-select-selection-placeholder) {
+	color: rgba(0, 0, 0, 0.25);
+}
+
+.form :global(.ant-input),
+.form :global(.ant-select-selector) {
 	height: calc(40 / 1400 * 100cqw) !important;
 	border-radius: calc(6 / 1400 * 100cqw);
+	border-color: #d9d9d9;
+}
+
+.form :global(.ant-input-disabled),
+.form :global(.ant-select-disabled .ant-select-selector) {
+	color: #000000;
+	background: #fff;
+}
+
+.form :global(.ant-select-selection-overflow) {
+	flex-wrap: nowrap;
+}
+
+.form :global(.ant-select-multiple .ant-select-selection-item) {
+	height: calc(28 / 1400 * 100cqw);
+	margin-block: calc(5 / 1400 * 100cqw);
+	padding-inline: calc(8 / 1400 * 100cqw);
+	border-radius: calc(4 / 1400 * 100cqw);
+	line-height: calc(26 / 1400 * 100cqw);
+	font-size: calc(16 / 1400 * 100cqw);
+}
+
+.flowRow {
+	display: flex;
+	align-items: flex-start;
+	gap: calc(12 / 1400 * 100cqw);
+}
+
+.flowItem {
+	width: calc(218 / 1400 * 100cqw);
+	margin-bottom: calc(24 / 1400 * 100cqw);
+}
+
+.flowItem :global(.ant-input) {
+	width: 100%;
+}
+
+.flowUnit {
+	flex: none;
+	margin-top: calc(30 / 1400 * 100cqw);
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	line-height: calc(40 / 1400 * 100cqw);
+	color: #333333;
+}
+
+.modalFooter {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: calc(8 / 1400 * 100cqw);
+}
+
+.modalFooterBtns {
+	display: flex;
+	justify-content: flex-end;
 }
 
 .modalHint {
-	margin-top: calc(8 / 1400 * 100cqw);
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
 	font-size: calc(19 / 1400 * 100cqw);
 	line-height: calc(26 / 1400 * 100cqw);
 	color: rgba(0, 0, 0, 0.25);
+}
+
+.modalPopup :global(.ant-select-item) {
+	font-family:
+		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	line-height: calc(36 / 1400 * 100cqw);
+	min-height: calc(36 / 1400 * 100cqw);
 }

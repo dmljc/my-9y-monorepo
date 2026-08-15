@@ -21,6 +21,22 @@ const MS_HOUR = 60 * 60 * 1000;
 const MS_MINUTE = 60 * 1000;
 
 /**
+ * 判定「已贴齐当前时间」的容差，避免 1ms 误差导致还能再翻一页。
+ */
+export const NOW_PAGE_EPSILON_MS = 1000;
+
+/**
+ * 将时间戳钳到不超过当前时间。
+ *
+ * @param {number} - 原始时间戳。
+ * @param {number} [nowMs] - 当前时间，默认 `Date.now()`。
+ * @returns {number} - 不超过 now 的时间戳。
+ */
+export function clampTimeToNow(ms: number, nowMs = Date.now()): number {
+	return Math.min(ms, nowMs);
+}
+
+/**
  * 按舞台 `container-type` 祖先计算相对 1400 的缩放比，使 ECharts 字号与 cqw 同步。
  *
  * @param {HTMLElement} - 图表容器或包裹节点。
@@ -129,6 +145,7 @@ export function getTimeExtent(
 
 /**
  * 将时间轴补齐为「最近 N 天」，保证滑块总范围不随稀疏数据收缩。
+ * 右端不超过当前时间。
  *
  * @param {[number, number] | null} - 数据实际时间范围。
  * @param {number} - 滑块总天数。
@@ -141,35 +158,41 @@ export function padTimeExtent(
 	endMs = Date.now(),
 ): [number, number] {
 	const span = Math.max(totalRangeDays, 0) * MS_DAY;
-	const end = extent ? extent[1] : endMs;
+	const now = Date.now();
+	const end = clampTimeToNow(extent ? extent[1] : endMs, now);
 	if (span <= 0) {
-		return extent ?? [end, end];
+		return [end, end];
 	}
 	return [end - span, end];
 }
 
 /**
- * 由滑块窗口右端计算图表 X 轴范围（贴齐窗口末尾）。
+ * 由滑块窗口右端计算图表 X 轴范围（贴齐窗口末尾，右端不超过当前时间）。
  *
  * @param {number} - 滑块选中区间结束时间。
  * @param {number} - X 轴可见时长（毫秒）。
+ * @param {number} [maxEndMs] - 右端上限，默认当前时间。
  * @returns {[number, number]} - `[start, end]`。
  */
 export function computeViewExtent(
 	sliderEndMs: number,
 	axisRangeMs: number,
+	maxEndMs = Date.now(),
 ): [number, number] {
 	const window = Math.max(axisRangeMs, 0);
-	return [sliderEndMs - window, sliderEndMs];
+	const end = clampTimeToNow(sliderEndMs, maxEndMs);
+	return [end - window, end];
 }
 
 /**
  * 按 5 分钟一页平移 X 轴：上一页为 `[start-5min, start]`，下一页为 `[end, end+5min]`。
+ * 下一页右端不超过当前时间；已贴齐当前时间时保持原值。
  *
  * @param {[number, number]} - 当前可见区间。
  * @param {-1 | 1} - `-1` 上一页，`1` 下一页。
  * @param {number} - 每页时长（毫秒）。
  * @param {[number, number]} - 允许的总范围（轨道起止）。
+ * @param {number} [maxEndMs] - 右端上限，默认当前时间。
  * @returns {[number, number]} - 新的可见区间；越界时保持原值。
  */
 export function pageViewExtent(
@@ -177,13 +200,14 @@ export function pageViewExtent(
 	direction: -1 | 1,
 	axisRangeMs: number,
 	bounds: [number, number],
+	maxEndMs = Date.now(),
 ): [number, number] {
 	const span = Math.max(axisRangeMs, 0);
 	if (span <= 0) {
 		return current;
 	}
 	const boundStart = Math.min(bounds[0], bounds[1]);
-	const boundEnd = Math.max(bounds[0], bounds[1]);
+	const boundEnd = clampTimeToNow(Math.max(bounds[0], bounds[1]), maxEndMs);
 	if (direction < 0) {
 		const end = current[0];
 		const start = end - span;
@@ -192,12 +216,46 @@ export function pageViewExtent(
 		}
 		return [start, end];
 	}
-	const start = current[1];
-	const end = start + span;
-	if (start > boundEnd) {
+	if (current[1] >= boundEnd - NOW_PAGE_EPSILON_MS) {
 		return current;
 	}
-	return [start, end];
+	const end = Math.min(current[1] + span, boundEnd);
+	if (end <= current[1]) {
+		return current;
+	}
+	return [end - span, end];
+}
+
+/**
+ * 生成不超出区间的 X 轴刻度，避免 ECharts 为对齐整分而把右端扩到当前时间之后。
+ *
+ * @param {number} - 轴起点毫秒。
+ * @param {number} - 轴终点毫秒。
+ * @param {number} [intervalMs] - 中间刻度间隔，默认 1 分钟。
+ * @returns {number[]} - 含两端的刻度时间戳。
+ */
+function buildTimeAxisTicks(
+	min: number,
+	max: number,
+	intervalMs = MS_MINUTE,
+): number[] {
+	if (!Number.isFinite(min) || !Number.isFinite(max) || max < min) {
+		return [];
+	}
+	if (max === min || intervalMs <= 0) {
+		return [min];
+	}
+	const ticks = [min];
+	let next = Math.floor(min / intervalMs) * intervalMs + intervalMs;
+	if (next <= min) {
+		next += intervalMs;
+	}
+	while (next < max) {
+		ticks.push(next);
+		next += intervalMs;
+	}
+	ticks.push(max);
+	return ticks;
 }
 
 /**
@@ -598,20 +656,31 @@ export function buildLineChartOption(
 		outerBoundsMode: "none" as const,
 	}));
 
+	const now = Date.now();
+	const viewSpan =
+		viewExtent != null ? Math.max(viewExtent[1] - viewExtent[0], 0) : 0;
+	const axisMax =
+		viewExtent != null ? clampTimeToNow(viewExtent[1], now) : undefined;
+	const axisMin =
+		axisMax != null ? axisMax - viewSpan : viewExtent?.[0];
+	const axisTicks =
+		axisMin != null && axisMax != null
+			? buildTimeAxisTicks(axisMin, axisMax)
+			: undefined;
+
 	const xAxisOption = [
 		...Array.from({ length: count }, (_, index) => {
 			const isLast = index === count - 1;
 			return {
 				type: "time" as const,
 				gridIndex: index,
-				min: viewExtent?.[0],
-				max: viewExtent?.[1],
-				minInterval: MS_MINUTE,
-				splitNumber: 5,
+				min: axisMin,
+				max: axisMax,
 				show: true,
 				nameMoveOverlap: false,
 				axisTick: {
 					show: isLast,
+					customValues: axisTicks,
 					length: 4 * scale,
 					lineStyle: { color: "#c9cdd4" },
 				},
@@ -621,13 +690,19 @@ export function buildLineChartOption(
 				},
 				axisLabel: {
 					show: isLast,
+					customValues: axisTicks,
 					showMinLabel: true,
 					showMaxLabel: true,
 					color: "#86909c",
 					fontSize,
 					hideOverlap: true,
 					margin: 10 * scale,
-					formatter: (value: number) => formatAxisTime(value),
+					formatter: (value: number) => {
+						if (axisMax != null && value > axisMax) {
+							return "";
+						}
+						return formatAxisTime(value);
+					},
 				},
 				splitLine: { show: false },
 				axisPointer: {
@@ -641,7 +716,10 @@ export function buildLineChartOption(
 			type: "time" as const,
 			gridIndex: 0,
 			min: timeExtent?.[0],
-			max: timeExtent?.[1],
+			max:
+				timeExtent?.[1] != null
+					? clampTimeToNow(timeExtent[1], now)
+					: undefined,
 			show: false,
 		},
 	];

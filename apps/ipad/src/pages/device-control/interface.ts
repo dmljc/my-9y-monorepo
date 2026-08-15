@@ -29,6 +29,8 @@ export interface RoomDeviceItem {
 	/** 管道编号。 */
 	pipelineId?: string;
 	manufacturer?: string;
+	/** 物实例 ID 列表。 */
+	thingIds?: string[];
 }
 
 /**
@@ -204,4 +206,46 @@ export interface RoomGroup {
 	roomLabel: string;
 	pipeNo: string;
 	devices: DeviceItem[];
+}
+
+/**
+ * 配置弹窗类型。
+ */
+export type ConfigType = "instance" | "room";
+
+/**
+ * 下拉选项。
+ */
+export interface SelectOption {
+	label: string;
+	value: string;
+}
+
+/**
+ * 房间 / 实例配置表单值。
+ */
+export interface ConfigFormValues {
+	deviceName: string;
+	deviceCode: string;
+	manufacturer?: string;
+	roomId?: string;
+	room?: string;
+	flowRate?: string;
+	thingIds?: string[];
+}
+
+/**
+ * 保存房间配置请求体。
+ */
+export interface RoomConfigPayload {
+	roomId: number;
+	room?: string;
+	flowRate: number;
+}
+
+/**
+ * 保存实例配置请求体。
+ */
+export interface InstanceConfigPayload {
+	thingIds: string[];
 }
