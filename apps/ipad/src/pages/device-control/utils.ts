@@ -28,6 +28,24 @@ export const LIST_MODE_OPTIONS: { key: ListMode; label: string }[] = [
 ];
 
 /**
+ * 后端 deviceStatus：0 关闭 / 1 运行。
+ */
+export const DEVICE_STATUS = {
+	CLOSED: "0",
+	RUNNING: "1",
+} as const;
+
+/**
+ * 是否为运行中（仅 deviceStatus === "1"）。
+ *
+ * @param {string | number | undefined} - 后端状态码。
+ * @returns {boolean} - 是否已开启。
+ */
+export const isDeviceRunning = (deviceStatus?: string | number): boolean => {
+	return String(deviceStatus ?? "") === DEVICE_STATUS.RUNNING;
+};
+
+/**
  * 实时指标卡图标类型。
  */
 export type MetricIconKey =
@@ -251,8 +269,8 @@ export const mapRoomDeviceToItem = (
 		flowRate:
 			flowRate !== null && Number.isFinite(flowRate) ? flowRate : null,
 		manufacturer: String(device.manufacturer ?? "").trim(),
-		/* 后端可能回 number / string；仅 "1" 表示已关闭 */
-		enabled: String(device.deviceStatus ?? "") !== "1",
+		/* 后端可能回 number / string；仅 "1" 表示运行中 */
+		enabled: isDeviceRunning(device.deviceStatus),
 		cleaning: String(device.cleanStatus ?? "") === "1",
 		buildingId: Number(room.buildingId ?? 0),
 		thingId:
@@ -370,9 +388,7 @@ export const mergeDeviceFromWs = (
 		name: name || item.name,
 		code: code || item.code,
 		pipeNo: pipelineId || item.pipeNo,
-		enabled: hasStatus
-			? String(row.deviceStatus ?? "") !== "1"
-			: item.enabled,
+		enabled: hasStatus ? isDeviceRunning(row.deviceStatus) : item.enabled,
 		cleaning: hasClean
 			? String(row.cleanStatus ?? "") === "1"
 			: item.cleaning,

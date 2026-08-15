@@ -4,6 +4,7 @@ import type {
 	Device,
 	DeviceFormValues,
 	DeviceStatus,
+	DeviceStatusCode,
 	TabletDevicePayload,
 	TabletDeviceRow,
 } from "./interface";
@@ -21,6 +22,14 @@ export const DEFAULT_PAGE_SIZE = 10;
 export const PAGE_SIZE_OPTIONS = ["10", "15", "20", "25", "50", "100"];
 
 /**
+ * 后端 deviceStatus：0 关闭 / 1 运行。
+ */
+export const DEVICE_STATUS = {
+	CLOSED: "0",
+	RUNNING: "1",
+} as const;
+
+/**
  * 状态展示文案。
  */
 export const STATUS_LABEL: Record<DeviceStatus, string> = {
@@ -29,15 +38,31 @@ export const STATUS_LABEL: Record<DeviceStatus, string> = {
 };
 
 /**
- * 将后端 deviceStatus 转为页面状态。
+ * 将后端 deviceStatus 规范为 0 / 1（仅 1 为运行，其余视为关闭）。
  *
- * @param {string | undefined} - 后端状态码。
+ * @param {string | number | undefined} - 后端状态码。
+ * @returns {DeviceStatusCode} - 规范化后的状态码。
+ */
+export const toDeviceStatusCode = (
+	deviceStatus?: string | number,
+): DeviceStatusCode => {
+	return String(deviceStatus ?? "") === DEVICE_STATUS.RUNNING
+		? DEVICE_STATUS.RUNNING
+		: DEVICE_STATUS.CLOSED;
+};
+
+/**
+ * 将后端 deviceStatus 转为页面状态（0 关闭 / 1 运行）。
+ *
+ * @param {string | number | undefined} - 后端状态码。
  * @returns {DeviceStatus} - 页面状态。
  */
 export const toDeviceStatus = (
 	deviceStatus?: string | number,
 ): DeviceStatus => {
-	return String(deviceStatus ?? "") === "1" ? "closed" : "running";
+	return toDeviceStatusCode(deviceStatus) === DEVICE_STATUS.RUNNING
+		? "running"
+		: "closed";
 };
 
 /**
@@ -70,7 +95,7 @@ export const mapRowToDevice = (row: TabletDeviceRow): Device => {
 		status: toDeviceStatus(row.deviceStatus),
 		buildingId: Number(row.buildingId ?? 0),
 		deviceType: row.deviceType,
-		deviceStatus: row.deviceStatus ?? "0",
+		deviceStatus: toDeviceStatusCode(row.deviceStatus),
 	};
 };
 
@@ -192,7 +217,7 @@ export const deriveMasterOn = (devices: Device[]): boolean => {
 };
 
 /**
- * 组装新增请求体（deviceStatus 固定为 0）。
+ * 组装新增请求体（deviceStatus 固定为关闭）。
  *
  * @param {DeviceFormValues} - 表单值。
  * @param {BuildingTab} - 当前厂房。
@@ -208,7 +233,7 @@ export const buildCreatePayload = (
 		manufacturer: values.manufacturer.trim(),
 		buildingId: building.buildingId,
 		building: building.building,
-		deviceStatus: "0",
+		deviceStatus: DEVICE_STATUS.CLOSED,
 	};
 };
 
@@ -233,7 +258,7 @@ export const buildUpdatePayload = (
 		...(manufacturer ? { manufacturer } : {}),
 		buildingId: record.buildingId || building?.buildingId || 0,
 		building: building?.building,
-		deviceStatus: record.deviceStatus,
+		deviceStatus: toDeviceStatusCode(record.deviceStatus),
 		deviceType: record.deviceType,
 	};
 };

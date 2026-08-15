@@ -20,7 +20,7 @@ export interface RoomDeviceItem {
 	deviceCode?: string;
 	deviceName?: string;
 	thingId?: string;
-	/** 0 运行中 / 1 已关闭。 */
+	/** 0 关闭 / 1 运行。 */
 	deviceStatus?: string;
 	/** 0 空闲 / 1 清洗中。 */
 	cleanStatus?: string;
@@ -70,7 +70,7 @@ export interface TabletWsDevice {
 	deviceId?: number;
 	deviceCode?: string;
 	deviceName?: string;
-	/** 0 运行中 / 1 已关闭。 */
+	/** 0 关闭 / 1 运行。 */
 	deviceStatus?: string | number;
 	/** 0 空闲 / 1 清洗中。 */
 	cleanStatus?: string | number;
@@ -121,7 +121,7 @@ export interface DeviceItem {
 	/** 配置流速（接口原值）。 */
 	flowRate: number | null;
 	manufacturer: string;
-	/** 开关：deviceStatus === "0"。 */
+	/** 开关：deviceStatus === "1" 为已开启。 */
 	enabled: boolean;
 	/** 清洗中：cleanStatus === "1"。 */
 	cleaning: boolean;

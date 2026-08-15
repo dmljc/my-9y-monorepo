@@ -13,7 +13,12 @@ export interface BuildingTab {
 }
 
 /**
- * 设备运行状态（与后端 deviceStatus 对应：0 运行中 / 1 已关闭）。
+ * 后端 deviceStatus（0 关闭 / 1 运行）。
+ */
+export type DeviceStatusCode = "0" | "1";
+
+/**
+ * 页面设备运行状态（由 deviceStatus 映射：0 → closed / 1 → running）。
  */
 export type DeviceStatus = "running" | "closed";
 
@@ -32,7 +37,8 @@ export interface Device {
 	status: DeviceStatus;
 	buildingId: number;
 	deviceType?: string;
-	deviceStatus: string;
+	/** 0 关闭 / 1 运行。 */
+	deviceStatus: DeviceStatusCode;
 }
 
 /**
@@ -56,7 +62,8 @@ export interface TabletDeviceRow {
 	buildingId?: number;
 	room?: string;
 	deviceType?: string;
-	deviceStatus?: string;
+	/** 0 关闭 / 1 运行。 */
+	deviceStatus?: DeviceStatusCode | number;
 	/** @deprecated 旧字段：逗号分隔物实例 ID。 */
 	thingId?: string;
 	/** 新字段：物实例 ID 列表。 */
@@ -88,7 +95,8 @@ export interface TabletDevicePayload {
 	thingId?: string;
 	building?: string;
 	buildingId: number;
-	deviceStatus?: string;
+	/** 0 关闭 / 1 运行。 */
+	deviceStatus?: DeviceStatusCode;
 	deviceType?: string;
 	room?: string;
 }
