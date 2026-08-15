@@ -1,7 +1,7 @@
 import { request } from "@/utils";
 import type {
 	DeviceTrendQuery,
-	InstanceConfigPayload,
+	DeviceUpdatePayload,
 	RoomConfigPayload,
 	RoomTrendQuery,
 } from "./interface";
@@ -103,6 +103,15 @@ export const listThings = (): Promise<any> => {
 };
 
 /**
+ * 获取设备详情（含厂家、thingId 列表）。
+ *
+ * @param {number} - 设备 id（台账 / rooms `deviceId`）。
+ */
+export const detail = (id: number): Promise<any> => {
+	return request.get(`/iiot/tablet/ledger/${id}`);
+};
+
+/**
  * 保存房间配置（房间 + 流量）。
  *
  * @param {number} - 设备 ID。
@@ -116,14 +125,10 @@ export const saveRoomConfig = (
 };
 
 /**
- * 保存实例配置（物实例绑定）。
+ * 编辑设备（实例配置确定，对齐添加设备编辑）。
  *
- * @param {number} - 设备 ID。
- * @param {InstanceConfigPayload} - 物实例 ID 列表。
+ * @param {DeviceUpdatePayload} - 含 id、thingIds 的提交体。
  */
-export const saveInstanceConfig = (
-	deviceId: number,
-	data: InstanceConfigPayload,
-): Promise<any> => {
-	return request.put(`/iiot/tablet/device/${deviceId}/instance`, data);
+export const update = (data: DeviceUpdatePayload): Promise<any> => {
+	return request.put("/iiot/tablet/ledger", data);
 };

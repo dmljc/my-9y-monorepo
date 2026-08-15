@@ -216,11 +216,6 @@ export interface RoomGroup {
 }
 
 /**
- * 配置弹窗类型。
- */
-export type ConfigType = "instance" | "room";
-
-/**
  * 下拉选项。
  */
 export interface SelectOption {
@@ -229,16 +224,47 @@ export interface SelectOption {
 }
 
 /**
- * 房间 / 实例配置表单值。
+ * `/iiot/tablet/ledger/{id}` 详情中的设备字段。
  */
-export interface ConfigFormValues {
+export interface DeviceDetailRow {
+	id?: number;
+	deviceCode?: string;
+	deviceName?: string;
+	manufacturer?: string;
+	building?: string;
+	buildingId?: number;
+	room?: string;
+	deviceType?: string;
+	deviceStatus?: string;
+	/** @deprecated 旧字段：逗号分隔物实例 ID。 */
+	thingId?: string;
+	/** 物实例 ID 列表。 */
+	thingIds?: string[];
+}
+
+/**
+ * 实例配置表单值。
+ */
+export interface InstanceFormValues {
 	deviceName: string;
 	deviceCode: string;
 	manufacturer?: string;
+	thingIds?: string[];
+	/** 详情带回，提交编辑设备时透传。 */
+	deviceType?: string;
+	/** 详情带回，提交编辑设备时透传。 */
+	deviceStatus?: string;
+}
+
+/**
+ * 房间配置表单值。
+ */
+export interface RoomFormValues {
+	deviceName: string;
+	deviceCode: string;
 	roomId?: string;
 	room?: string;
 	flowRate?: string;
-	thingIds?: string[];
 }
 
 /**
@@ -251,8 +277,17 @@ export interface RoomConfigPayload {
 }
 
 /**
- * 保存实例配置请求体。
+ * 编辑设备请求体（实例配置提交，对齐 PUT /iiot/tablet/ledger）。
  */
-export interface InstanceConfigPayload {
+export interface DeviceUpdatePayload {
+	id: number;
+	deviceCode: string;
+	deviceName: string;
+	manufacturer?: string;
+	/** 物实例 ID 列表。 */
 	thingIds: string[];
+	buildingId: number;
+	building?: string;
+	deviceStatus?: string;
+	deviceType?: string;
 }

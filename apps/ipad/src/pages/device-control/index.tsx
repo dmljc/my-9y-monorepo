@@ -16,22 +16,23 @@ import {
 	listDeviceTrend,
 	listRooms,
 	listRoomTrend,
-	saveInstanceConfig,
 	saveRoomConfig,
 	switchBuilding,
 	switchDevice,
 	toggleClean,
+	update,
 } from "./api";
-import ConfigModal from "./ConfigModal";
+import InstanceModal from "./InstanceModal";
+import RoomModal from "./RoomModal";
 import styles from "./index.module.css";
 import type {
 	BuildingTab,
-	ConfigFormValues,
-	ConfigType,
 	DeviceItem,
 	DeviceMetric,
 	DeviceTrendChartData,
+	InstanceFormValues,
 	ListMode,
+	RoomFormValues,
 	RoomTrendSeriesItem,
 } from "./interface";
 import {
@@ -259,7 +260,8 @@ const DeviceControl = () => {
 	const [masterOn, setMasterOn] = useState(true);
 	const [loading, setLoading] = useState(false);
 	const [listMode, setListMode] = useState<ListMode>("device");
-	const [configType, setConfigType] = useState<ConfigType | null>(null);
+	const [instanceOpen, setInstanceOpen] = useState(false);
+	const [roomOpen, setRoomOpen] = useState(false);
 	const [realtimeLoadedIds, setRealtimeLoadedIds] = useState<
 		Record<number, true>
 	>({});
@@ -790,26 +792,37 @@ const DeviceControl = () => {
 		}
 	};
 
-	const handleConfigSubmit = async (values: ConfigFormValues) => {
-		if (!selected || !currentBuilding || !configType) return;
-		if (configType === "room") {
-			const roomId = Number(values.roomId);
-			const flowRate = Number(values.flowRate);
-			const roomGroup = roomGroups.find(
-				(item) => String(item.roomId) === String(values.roomId),
-			);
-			await saveRoomConfig(selected.deviceId, {
-				roomId,
-				room: values.room ?? roomGroup?.roomLabel,
-				flowRate,
-			});
-			message.success("房间配置成功");
-		} else {
-			await saveInstanceConfig(selected.deviceId, {
-				thingIds: values.thingIds ?? [],
-			});
-			message.success("实例配置成功");
-		}
+	const handleInstanceSubmit = async (values: InstanceFormValues) => {
+		if (!selected || !currentBuilding) return;
+		const manufacturer = values.manufacturer?.trim();
+		await update({
+			id: selected.id,
+			deviceCode: values.deviceCode.trim(),
+			deviceName: values.deviceName.trim(),
+			...(manufacturer ? { manufacturer } : {}),
+			thingIds: values.thingIds ?? [],
+			buildingId: selected.buildingId || currentBuilding.buildingId,
+			building: currentBuilding.building,
+			deviceStatus: values.deviceStatus ?? (selected.enabled ? "0" : "1"),
+			deviceType: values.deviceType,
+		});
+		message.success("实例配置成功");
+		await loadDevices(currentBuilding.buildingId, buildingKey);
+	};
+
+	const handleRoomSubmit = async (values: RoomFormValues) => {
+		if (!selected || !currentBuilding) return;
+		const roomId = Number(values.roomId);
+		const flowRate = Number(values.flowRate);
+		const roomGroup = roomGroups.find(
+			(item) => String(item.roomId) === String(values.roomId),
+		);
+		await saveRoomConfig(selected.deviceId, {
+			roomId,
+			room: values.room ?? roomGroup?.roomLabel,
+			flowRate,
+		});
+		message.success("房间配置成功");
 		await loadDevices(currentBuilding.buildingId, buildingKey);
 	};
 
@@ -1368,7 +1381,7 @@ const DeviceControl = () => {
 												type="button"
 												className={styles.actionBtn}
 												onClick={() => {
-													setConfigType("instance");
+													setInstanceOpen(true);
 												}}
 											>
 												实例配置
@@ -1377,7 +1390,7 @@ const DeviceControl = () => {
 												type="button"
 												className={styles.actionBtn}
 												onClick={() => {
-													setConfigType("room");
+													setRoomOpen(true);
 												}}
 											>
 												房间配置
@@ -1411,14 +1424,20 @@ const DeviceControl = () => {
 				</div>
 			</div>
 
-			<ConfigModal
-				open={Boolean(configType)}
-				configType={configType}
+			<InstanceModal
+				open={instanceOpen}
+				device={selected}
+				getContainer={() => pageRef.current ?? document.body}
+				onCancel={() => setInstanceOpen(false)}
+				onOk={handleInstanceSubmit}
+			/>
+			<RoomModal
+				open={roomOpen}
 				device={selected}
 				buildingId={currentBuilding?.buildingId ?? 0}
 				getContainer={() => pageRef.current ?? document.body}
-				onCancel={() => setConfigType(null)}
-				onOk={handleConfigSubmit}
+				onCancel={() => setRoomOpen(false)}
+				onOk={handleRoomSubmit}
 			/>
 		</div>
 	);

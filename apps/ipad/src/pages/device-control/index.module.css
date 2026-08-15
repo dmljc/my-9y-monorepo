@@ -759,12 +759,6 @@ button.metricCard {
 	border-color: #d9d9d9;
 }
 
-.form :global(.ant-input-disabled),
-.form :global(.ant-select-disabled .ant-select-selector) {
-	color: #000000;
-	background: #fff;
-}
-
 .form :global(.ant-select-selection-overflow) {
 	flex-wrap: nowrap;
 }

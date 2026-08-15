@@ -1,6 +1,7 @@
 import { sortBuildingTabs } from "@/utils/buildingTabs";
 import type {
 	BuildingTab,
+	DeviceDetailRow,
 	DeviceItem,
 	DeviceMetric,
 	DeviceTrendChartData,
@@ -165,6 +166,33 @@ export const joinThingIds = (thingIds?: string[]): string => {
 	return [
 		...new Set(thingIds.map((item) => item.trim()).filter(Boolean)),
 	].join(",");
+};
+
+/**
+ * 解析设备详情（兼容 `{ device, thingIds }` 与扁平旧结构）。
+ *
+ * @param {unknown} - `/iiot/tablet/ledger/{id}` 解包后的 data。
+ * @returns {{ device: DeviceDetailRow; thingIds: string[] }} - 设备字段与物实例列表。
+ */
+export const parseDeviceDetail = (
+	data: unknown,
+): { device: DeviceDetailRow; thingIds: string[] } => {
+	if (!data || typeof data !== "object") {
+		return { device: {}, thingIds: [] };
+	}
+	const record = data as Record<string, unknown>;
+	const nestedDevice =
+		record.device && typeof record.device === "object"
+			? (record.device as DeviceDetailRow)
+			: null;
+	const device = nestedDevice ?? (record as DeviceDetailRow);
+	const thingIds = parseThingIds(
+		record.thingIds ??
+			record.thingId ??
+			nestedDevice?.thingId ??
+			device.thingIds,
+	);
+	return { device, thingIds };
 };
 
 /**
