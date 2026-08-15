@@ -689,7 +689,7 @@ const DeviceControl = () => {
 	};
 
 	const handleClean = async () => {
-		if (!selected || !currentBuilding) return;
+		if (!selected || !currentBuilding || selected.enabled) return;
 		const wasCleaning = selected.cleaning;
 		setLoading(true);
 		try {
@@ -1251,6 +1251,7 @@ const DeviceControl = () => {
 											<Button
 												type="primary"
 												className={styles.actionBtn}
+												disabled={selected.enabled}
 												onClick={() => {
 													setInstanceOpen(true);
 												}}
@@ -1260,6 +1261,7 @@ const DeviceControl = () => {
 											<Button
 												type="primary"
 												className={styles.actionBtn}
+												disabled={selected.enabled}
 												onClick={() => {
 													setRoomOpen(true);
 												}}
@@ -1272,6 +1274,7 @@ const DeviceControl = () => {
 												<Button
 													type="primary"
 													className={styles.actionBtn}
+													disabled={selected.enabled}
 													onClick={() => {
 														handleClean();
 													}}
