@@ -184,11 +184,23 @@ export interface DeviceTrendPoint {
 }
 
 /**
+ * 按设备折线一条房间分段序列。
+ */
+export interface DeviceTrendSeriesItem {
+	/** 图例名称（房间）。 */
+	name: string;
+	/** 折线颜色。 */
+	color: string;
+	/** 时序点，来自 `segments[].points`。 */
+	data: DeviceTrendPoint[];
+}
+
+/**
  * 按设备折线图数据。
  */
 export interface DeviceTrendChartData {
-	/** 时序点，供 LineCharts 时间轴使用。 */
-	data: DeviceTrendPoint[];
+	/** 按 `segments` 拆分的多条折线。 */
+	series: DeviceTrendSeriesItem[];
 }
 
 /**

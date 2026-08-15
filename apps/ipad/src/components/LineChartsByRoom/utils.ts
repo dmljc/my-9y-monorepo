@@ -767,59 +767,37 @@ export function buildLineChartOption(
 				align: "right" as const,
 				formatter: endpoints.formatter,
 			},
-			splitLine: {
-				show: hasData,
-				interval: (_index: number, value: string | number) =>
-					endpoints.isEndpoint(Number(value)),
-				lineStyle: { color, width: 1, type: "solid" as const },
-			},
+			splitLine: { show: false },
 		};
 	});
 
-	const seriesOption = series.map((item, index) => {
-		const hasData = item.data.length > 0;
-		return {
-			type: "line" as const,
-			name: item.name,
-			data: item.data,
-			xAxisIndex: index,
-			yAxisIndex: index,
-			showSymbol: item.data.length <= 120,
-			symbol: "emptyCircle",
-			symbolSize: 6 * scale,
-			smooth: item.smooth ?? false,
-			step: item.step || undefined,
-			connectNulls: false,
-			sampling: "lttb" as const,
-			lineStyle: {
-				width: 1.5 * scale,
-				color: item.color,
-			},
-			itemStyle: {
-				color: item.color,
-				borderColor: item.color,
-				borderWidth: Math.max(1 * scale, 1),
-			},
-			emphasis: {
-				scale: false,
-				lineStyle: { width: 1.5 * scale },
-			},
-			markLine: {
-				silent: true,
-				symbol: "none",
-				animation: false,
-				label: { show: false },
-				lineStyle: {
-					color: item.color,
-					width: 1,
-					type: "solid" as const,
-				},
-				data: hasData
-					? [{ type: "min" as const }, { type: "max" as const }]
-					: [],
-			},
-		};
-	});
+	const seriesOption = series.map((item, index) => ({
+		type: "line" as const,
+		name: item.name,
+		data: item.data,
+		xAxisIndex: index,
+		yAxisIndex: index,
+		showSymbol: item.data.length <= 120,
+		symbol: "emptyCircle",
+		symbolSize: 6 * scale,
+		smooth: item.smooth ?? false,
+		step: item.step || undefined,
+		connectNulls: false,
+		sampling: "lttb" as const,
+		lineStyle: {
+			width: 1.5 * scale,
+			color: item.color,
+		},
+		itemStyle: {
+			color: item.color,
+			borderColor: item.color,
+			borderWidth: Math.max(1 * scale, 1),
+		},
+		emphasis: {
+			scale: false,
+			lineStyle: { width: 1.5 * scale },
+		},
+	}));
 
 	const seriesAxisIndex = Array.from({ length: count }, (_, index) => index);
 	const sliderAxisIndex = count;

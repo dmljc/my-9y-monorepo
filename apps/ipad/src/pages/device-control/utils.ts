@@ -5,6 +5,7 @@ import type {
 	DeviceMetric,
 	DeviceTrendChartData,
 	DeviceTrendPoint,
+	DeviceTrendSeriesItem,
 	ListMode,
 	RoomDeviceItem,
 	RoomDeviceRow,
@@ -751,7 +752,7 @@ const TREND_MAX_POINTS = 310;
  * 空趋势图占位。
  */
 export const EMPTY_TREND_CHART: DeviceTrendChartData = {
-	data: [],
+	series: [],
 };
 
 /**
@@ -895,19 +896,93 @@ const downsampleTrendPoints = (
 };
 
 /**
- * 将趋势点转为按设备折线图数据。
- *
- * @param {unknown} - 趋势接口 data。
- * @returns {DeviceTrendChartData} - 时序点。
+ * 折线默认色板（设备分段 / 房间设备共用）。
  */
-export const toTrendChartData = (data: unknown): DeviceTrendChartData => {
-	const points = downsampleTrendPoints(parseDeviceTrend(data));
-	if (!points.length) return EMPTY_TREND_CHART;
-	return { data: points };
+export const ROOM_TREND_COLORS = ["#EE8C45", "#6BC7A6", "#7492DB"];
+
+/**
+ * 从分段对象取出图例名称（优先房间）。
+ *
+ * @param {Record<string, unknown>} - `segments[]` 单项。
+ * @param {number} - 分段序号，名称缺失时作兜底。
+ * @returns {string} - 图例文案。
+ */
+const toSegmentSeriesName = (
+	item: Record<string, unknown>,
+	index: number,
+): string => {
+	const room = String(item.room ?? item.roomName ?? "").trim();
+	if (room) {
+		return room.startsWith("房间") ? room : `房间${room}`;
+	}
+	const deviceName = String(item.deviceName ?? item.deviceCode ?? "").trim();
+	if (deviceName) return deviceName;
+	const pipelineId = String(item.pipelineId ?? "").trim();
+	if (pipelineId) return pipelineId;
+	return `分段${index + 1}`;
 };
 
 /**
- * 将后拉取的设备趋势点合并进已有数据（按时间去重升序）。
+ * 将设备趋势接口 data.segments[].points 转为多条折线。
+ *
+ * @param {unknown} - `/iiot/tablet/device/{id}/trend` 解包后的 data。
+ * @returns {DeviceTrendSeriesItem[]} - 按房间分段的序列。
+ */
+export const parseDeviceTrendSeries = (
+	data: unknown,
+): DeviceTrendSeriesItem[] => {
+	if (!data || typeof data !== "object") return [];
+	const record = data as Record<string, unknown>;
+	if (!Array.isArray(record.segments)) return [];
+
+	const series: DeviceTrendSeriesItem[] = [];
+	const indexByName = new Map<string, number>();
+	for (const [index, row] of record.segments.entries()) {
+		const item =
+			row && typeof row === "object"
+				? (row as Record<string, unknown>)
+				: {};
+		const name = toSegmentSeriesName(item, index);
+		const rawPoints = Array.isArray(item.points) ? item.points : [];
+		const points = downsampleTrendPoints(
+			parseTrendPointList(rawPoints).sort((a, b) => a.time - b.time),
+		);
+		const existing = indexByName.get(name);
+		if (existing != null) {
+			const current = series[existing];
+			const merged = new Map(
+				current.data.map((point) => [point.time, point]),
+			);
+			for (const point of points) {
+				merged.set(point.time, point);
+			}
+			current.data = [...merged.values()].sort((a, b) => a.time - b.time);
+			continue;
+		}
+		indexByName.set(name, series.length);
+		series.push({
+			name,
+			color: ROOM_TREND_COLORS[series.length % ROOM_TREND_COLORS.length],
+			data: points,
+		});
+	}
+	return series;
+};
+
+/**
+ * 将趋势接口 data 转为按设备折线图数据（按房间分段、分色）。
+ *
+ * @param {unknown} - 趋势接口 data。
+ * @returns {DeviceTrendChartData} - 多条折线。
+ */
+export const toTrendChartData = (data: unknown): DeviceTrendChartData => {
+	const series = parseDeviceTrendSeries(data);
+	if (!series.length) return EMPTY_TREND_CHART;
+	return { series };
+};
+
+/**
+ * 将后拉取的设备趋势合并进已有序列（按名称对齐，按时间去重升序）。
  *
  * @param {DeviceTrendChartData} - 当前已展示的数据。
  * @param {DeviceTrendChartData} - 新拉取的数据。
@@ -917,21 +992,31 @@ export const mergeTrendChartData = (
 	current: DeviceTrendChartData,
 	incoming: DeviceTrendChartData,
 ): DeviceTrendChartData => {
-	if (!incoming.data.length) return current;
-	if (!current.data.length) return incoming;
-	const points = new Map(current.data.map((point) => [point.time, point]));
-	for (const point of incoming.data) {
-		points.set(point.time, point);
+	if (!incoming.series.length) return current;
+	if (!current.series.length) return incoming;
+	const incomingByName = new Map(
+		incoming.series.map((item) => [item.name, item]),
+	);
+	const used = new Set<string>();
+	const merged = current.series.map((item) => {
+		const next = incomingByName.get(item.name);
+		if (!next) return item;
+		used.add(item.name);
+		if (!next.data.length) return item;
+		const points = new Map(item.data.map((point) => [point.time, point]));
+		for (const point of next.data) {
+			points.set(point.time, point);
+		}
+		return {
+			...item,
+			data: [...points.values()].sort((a, b) => a.time - b.time),
+		};
+	});
+	for (const item of incoming.series) {
+		if (!used.has(item.name)) merged.push(item);
 	}
-	return {
-		data: [...points.values()].sort((a, b) => a.time - b.time),
-	};
+	return { series: merged };
 };
-
-/**
- * 房间折线默认色板（与 LineChartsByRoom 一致）。
- */
-export const ROOM_TREND_COLORS = ["#EE8C45", "#6BC7A6", "#7492DB"];
 
 /**
  * 按房间设备生成空折线（接口失败或尚无点时占位图例）。

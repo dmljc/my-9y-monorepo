@@ -566,7 +566,7 @@ const DeviceControl = () => {
 			.then((data) => {
 				if (reqId !== deviceTrendReqRef.current) return;
 				const next = toTrendChartData(data);
-				if (!next.data.length) return;
+				if (!next.series.length) return;
 				setTrendChart((prev) => mergeTrendChartData(prev, next));
 			})
 			.catch(() => undefined);
@@ -1310,17 +1310,52 @@ const DeviceControl = () => {
 												</div>
 											</>
 										) : (
-											<div className={styles.chartWrap}>
-												<LineCharts
-													data={trendChart.data}
-													onTimePage={
-														handleDeviceTrendTimePage
-													}
-													onRangeChange={
-														handleDeviceTrendRangeChange
-													}
-												/>
-											</div>
+											<>
+												<div className={styles.legend}>
+													{trendChart.series.map(
+														(item, index) => (
+															<div
+																key={`${item.name}-${index}`}
+																className={
+																	styles.legendItem
+																}
+															>
+																<span
+																	className={
+																		styles.legendMark
+																	}
+																	style={{
+																		background:
+																			item.color,
+																	}}
+																/>
+																<span
+																	className={
+																		styles.legendText
+																	}
+																>
+																	{item.name}
+																</span>
+															</div>
+														),
+													)}
+												</div>
+												<div
+													className={styles.chartWrap}
+												>
+													<LineCharts
+														series={
+															trendChart.series
+														}
+														onTimePage={
+															handleDeviceTrendTimePage
+														}
+														onRangeChange={
+															handleDeviceTrendRangeChange
+														}
+													/>
+												</div>
+											</>
 										)}
 									</div>
 								</div>

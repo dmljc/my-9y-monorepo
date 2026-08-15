@@ -9,23 +9,20 @@ import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useEchartsInit } from "../hooks/useEchartsInit";
-import styles from "./index.module.css";
-import type { LineChartsProps } from "./interface";
 import {
-	buildLineChartOption,
 	computeDefaultZoom,
 	computeViewExtent,
-	DEFAULT_PAGE_SIZE,
 	formatRangeDate,
 	formatRangeDuration,
 	getLineChartLayout,
 	getStageScale,
-	getTimeExtent,
 	padTimeExtent,
 	pageViewExtent,
-	resolveSeries,
 	stepZoomWindowDays,
-} from "./utils";
+} from "../LineChartsByRoom/utils";
+import styles from "./index.module.css";
+import type { LineChartsProps } from "./interface";
+import { buildLineChartOption, getPointsExtent, resolveSeries } from "./utils";
 
 echarts.use([
 	LineChartSeries,
@@ -39,6 +36,7 @@ echarts.use([
 const SLIDER_RANGE_MS = 24 * 60 * 60 * 1000;
 const AXIS_RANGE_MS = 5 * 60 * 1000;
 const TOTAL_RANGE_DAYS = 7;
+const DEFAULT_LINE_WIDTH = 2;
 const defaultValueFormatter = (value: number) => String(value);
 
 /**
@@ -108,14 +106,14 @@ const ChevronRightIcon = () => (
 );
 
 /**
- * 左侧多条独立 Y 轴的时序折线图：顶部 dataZoom、+/- 缩放、时间轴翻页、自定义 Tooltip。
+ * 多系列同轴时序折线图：X 轴与 LineChartsByRoom 相同（时间轴、滑块、+/-、翻页）。
  */
 const LineCharts = ({
 	series,
+	lineWidth = DEFAULT_LINE_WIDTH,
 	defaultRangeMs = SLIDER_RANGE_MS,
 	axisRangeMs = AXIS_RANGE_MS,
 	totalRangeDays = TOTAL_RANGE_DAYS,
-	pageSize = DEFAULT_PAGE_SIZE,
 	valueFormatter = defaultValueFormatter,
 	onTimePage,
 	onRangeChange,
@@ -137,8 +135,12 @@ const LineCharts = ({
 	const [viewExtent, setViewExtent] = useState<[number, number] | null>(null);
 
 	const resolved = useMemo(() => resolveSeries(series), [series]);
+	const points = useMemo(
+		() => resolved.flatMap((item) => item.data),
+		[resolved],
+	);
 	const timeExtent = useMemo(() => {
-		const dataExtent = getTimeExtent(resolved);
+		const dataExtent = getPointsExtent(points);
 		if (!dataExtent && !emptyEndRef.current) {
 			emptyEndRef.current = Date.now();
 		}
@@ -150,12 +152,8 @@ const LineCharts = ({
 			totalRangeDays,
 			emptyEndRef.current || Date.now(),
 		);
-	}, [resolved, totalRangeDays]);
+	}, [points, totalRangeDays]);
 	const layout = useMemo(() => getLineChartLayout(box.scale), [box.scale]);
-	const visibleSeries = useMemo(
-		() => resolved.slice(0, pageSize),
-		[resolved, pageSize],
-	);
 	const extentKey = `${timeExtent[0]}_${timeExtent[1]}_${defaultRangeMs}_${axisRangeMs}_${totalRangeDays}`;
 
 	if (extentKeyRef.current !== extentKey) {
@@ -182,23 +180,23 @@ const LineCharts = ({
 		() =>
 			box.width < 8 || box.height < 8
 				? {}
-				: buildLineChartOption(visibleSeries, {
+				: buildLineChartOption(resolved, lineWidth, valueFormatter, {
 						width: box.width,
 						height: box.height,
 						scale: box.scale,
 						zoom: zoomRef.current,
 						timeExtent,
 						viewExtent: chartViewExtent,
-						valueFormatter,
 					}),
 		[
-			visibleSeries,
+			resolved,
+			lineWidth,
+			valueFormatter,
 			box.width,
 			box.height,
 			box.scale,
 			extentKey,
 			chartViewExtent,
-			valueFormatter,
 		],
 	);
 
@@ -271,10 +269,6 @@ const LineCharts = ({
 		let cancelled = false;
 		const syncChrome = (fromUserZoom: boolean) => {
 			if (cancelled || chart.isDisposed()) {
-				return;
-			}
-			if (!timeExtent) {
-				setChrome(null);
 				return;
 			}
 
@@ -405,18 +399,13 @@ const LineCharts = ({
 		});
 	};
 
-	const sliderStartMs =
-		timeExtent[0] +
-		((chrome?.startPct ?? zoomRef.current.start) / 100) *
-			(timeExtent[1] - timeExtent[0]);
-
 	const applyTimePage = (direction: -1 | 1) => {
 		const now = Date.now();
 		const nextView = pageViewExtent(
 			chartViewExtent,
 			direction,
 			axisRangeMs,
-			[sliderStartMs, timeExtent[1]],
+			timeExtent,
 			now,
 		);
 		if (
@@ -440,7 +429,7 @@ const LineCharts = ({
 	const sliderDays = Math.max(1, Math.round(sliderSpanMs / SLIDER_RANGE_MS));
 	const canZoomIn = sliderDays > 1;
 	const canZoomOut = sliderDays < totalRangeDays;
-	const canPagePrev = chartViewExtent[0] - sliderStartMs >= axisRangeMs;
+	const canPagePrev = chartViewExtent[0] - axisRangeMs >= timeExtent[0];
 	const canPageNext =
 		pageViewExtent(
 			chartViewExtent,
