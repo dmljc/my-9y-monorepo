@@ -234,7 +234,7 @@ export function pageViewExtent(
  * @param {number} [intervalMs] - 中间刻度间隔，默认 1 分钟。
  * @returns {number[]} - 含两端的刻度时间戳。
  */
-function buildTimeAxisTicks(
+export function buildTimeAxisTicks(
 	min: number,
 	max: number,
 	intervalMs = MS_MINUTE,
@@ -403,7 +403,7 @@ function getHoveredTime(raw: unknown): number | null {
  * @param {number} - 毫秒时间戳。
  * @returns {string} - 如 `18:35` 或 `08/11`。
  */
-function formatAxisTime(value: number): string {
+export function formatAxisTime(value: number): string {
 	const date = new Date(value);
 	const month = String(date.getMonth() + 1).padStart(2, "0");
 	const day = String(date.getDate()).padStart(2, "0");

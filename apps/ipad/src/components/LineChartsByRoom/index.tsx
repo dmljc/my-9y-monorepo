@@ -407,13 +407,18 @@ const LineCharts = ({
 		});
 	};
 
+	const sliderStartMs =
+		timeExtent[0] +
+		((chrome?.startPct ?? zoomRef.current.start) / 100) *
+			(timeExtent[1] - timeExtent[0]);
+
 	const applyTimePage = (direction: -1 | 1) => {
 		const now = Date.now();
 		const nextView = pageViewExtent(
 			chartViewExtent,
 			direction,
 			axisRangeMs,
-			timeExtent,
+			[sliderStartMs, timeExtent[1]],
 			now,
 		);
 		if (
@@ -437,7 +442,7 @@ const LineCharts = ({
 	const sliderDays = Math.max(1, Math.round(sliderSpanMs / SLIDER_RANGE_MS));
 	const canZoomIn = sliderDays > 1;
 	const canZoomOut = sliderDays < totalRangeDays;
-	const canPagePrev = chartViewExtent[0] - axisRangeMs >= timeExtent[0];
+	const canPagePrev = chartViewExtent[0] - sliderStartMs >= axisRangeMs;
 	const canPageNext =
 		pageViewExtent(
 			chartViewExtent,
