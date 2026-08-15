@@ -137,7 +137,6 @@ const LineCharts = ({
 	const [box, setBox] = useState({ width: 0, height: 0, scale: 1 });
 	const [chrome, setChrome] = useState<SliderChrome | null>(null);
 	const [viewExtent, setViewExtent] = useState<[number, number] | null>(null);
-	const [nowMs, setNowMs] = useState(() => Date.now());
 
 	const resolved = useMemo(() => resolveSeries(series), [series]);
 	const timeExtent = useMemo(() => {
@@ -171,14 +170,15 @@ const LineCharts = ({
 	}
 
 	const chartViewExtent = useMemo(() => {
-		const maxEnd = Math.min(timeExtent[1], nowMs);
+		const now = Date.now();
+		const maxEnd = Math.min(timeExtent[1], now);
 		const raw =
-			viewExtent ?? computeViewExtent(timeExtent[1], axisRangeMs, nowMs);
+			viewExtent ?? computeViewExtent(timeExtent[1], axisRangeMs, now);
 		if (raw[1] <= maxEnd) {
 			return raw;
 		}
-		return computeViewExtent(maxEnd, axisRangeMs, nowMs);
-	}, [viewExtent, timeExtent, axisRangeMs, nowMs]);
+		return computeViewExtent(maxEnd, axisRangeMs, now);
+	}, [viewExtent, timeExtent, axisRangeMs]);
 
 	const option = useMemo(
 		() =>
@@ -205,15 +205,6 @@ const LineCharts = ({
 	);
 
 	const chartRef = useEchartsInit(option);
-
-	useEffect(() => {
-		const timer = window.setInterval(() => {
-			setNowMs(Date.now());
-		}, 1000);
-		return () => {
-			window.clearInterval(timer);
-		};
-	}, []);
 
 	useEffect(() => {
 		if (viewLockedRef.current) {
@@ -325,14 +316,9 @@ const LineCharts = ({
 			const badgeLeft = layout.left + (track * startPct) / 100;
 			const badgeWidth = (track * (endPct - startPct)) / 100;
 			sliderWindowRef.current = [startMs, endMs];
-			if (fromUserZoom && zoomChanged && !viewLockedRef.current) {
+			if (fromUserZoom && zoomChanged) {
+				viewLockedRef.current = false;
 				sliderDirtyRef.current = true;
-				const nextView = computeViewExtent(endMs, axisRangeMs, Date.now());
-				setViewExtent((prev) =>
-					prev && prev[0] === nextView[0] && prev[1] === nextView[1]
-						? prev
-						: nextView,
-				);
 			}
 			setChrome({
 				startDate: formatRangeDate(timeExtent[0]),
@@ -351,11 +337,7 @@ const LineCharts = ({
 		};
 		const flushSliderRange = () => {
 			requestAnimationFrame(() => {
-				if (
-					cancelled ||
-					viewLockedRef.current ||
-					!sliderDirtyRef.current
-				) {
+				if (cancelled || !sliderDirtyRef.current) {
 					return;
 				}
 				sliderDirtyRef.current = false;
@@ -363,23 +345,26 @@ const LineCharts = ({
 				if (!range) {
 					return;
 				}
+				viewLockedRef.current = false;
+				setViewExtent(
+					computeViewExtent(range[1], axisRangeMs, Date.now()),
+				);
 				emitSliderRange(range[0], range[1]);
 			});
 		};
 		chart.on("dataZoom", onDataZoom);
-		const wrapEl = wrapRef.current;
-		wrapEl?.addEventListener("pointerup", flushSliderRange, true);
-		wrapEl?.addEventListener("pointercancel", flushSliderRange, true);
-		wrapEl?.addEventListener("touchend", flushSliderRange, true);
+		window.addEventListener("pointerup", flushSliderRange, true);
+		window.addEventListener("pointercancel", flushSliderRange, true);
+		window.addEventListener("touchend", flushSliderRange, true);
 		const rafId = requestAnimationFrame(() => {
 			syncChrome(false);
 		});
 		return () => {
 			cancelled = true;
 			cancelAnimationFrame(rafId);
-			wrapEl?.removeEventListener("pointerup", flushSliderRange, true);
-			wrapEl?.removeEventListener("pointercancel", flushSliderRange, true);
-			wrapEl?.removeEventListener("touchend", flushSliderRange, true);
+			window.removeEventListener("pointerup", flushSliderRange, true);
+			window.removeEventListener("pointercancel", flushSliderRange, true);
+			window.removeEventListener("touchend", flushSliderRange, true);
 			if (!chart.isDisposed()) {
 				chart.off("dataZoom", onDataZoom);
 			}
@@ -454,8 +439,13 @@ const LineCharts = ({
 	const canZoomOut = sliderDays < totalRangeDays;
 	const canPagePrev = chartViewExtent[0] - axisRangeMs >= timeExtent[0];
 	const canPageNext =
-		pageViewExtent(chartViewExtent, 1, axisRangeMs, timeExtent, nowMs)[1] >
-		chartViewExtent[1];
+		pageViewExtent(
+			chartViewExtent,
+			1,
+			axisRangeMs,
+			timeExtent,
+			Date.now(),
+		)[1] > chartViewExtent[1];
 	const sideTop =
 		layout.dataZoomTop +
 		layout.dataZoomHeight +
