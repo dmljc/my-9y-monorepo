@@ -262,6 +262,18 @@ export interface InstanceFormValues {
 }
 
 /**
+ * `/iiot/tablet/pipeline/device/{deviceId}` 房间配置详情。
+ */
+export interface RoomDeviceInfo {
+	deviceId?: number;
+	deviceCode?: string;
+	deviceName?: string;
+	flowRate?: number | null;
+	roomId?: number;
+	room?: string;
+}
+
+/**
  * 房间配置表单值。
  */
 export interface RoomFormValues {
@@ -273,9 +285,11 @@ export interface RoomFormValues {
 }
 
 /**
- * 保存房间配置请求体。
+ * 保存房间配置请求体（POST /iiot/tablet/pipeline/device/save）。
  */
 export interface RoomConfigPayload {
+	/** 设备 ID。 */
+	deviceId: number;
 	roomId: number;
 	room?: string;
 	flowRate: number;

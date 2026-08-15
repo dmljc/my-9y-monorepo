@@ -46,7 +46,7 @@ export interface LineChartsProps {
 	valueFormatter?: (value: number, seriesName: string) => string;
 	/** 时间轴翻页：回传新的 5 分钟查询区间 */
 	onTimePage?: (range: { from: number; to: number }) => void;
-	/** 滑块拖动结束（含 +/-）：回传当前选中窗口，供趋势接口 `from` / `to` */
+	/** 滑块拖动结束：回传当前选中窗口（整天步幅），供趋势接口 `from` / `to` */
 	onRangeChange?: (range: { from: number; to: number }) => void;
 }
 
@@ -71,14 +71,14 @@ export interface LineChartResolvedSeries {
 }
 
 /**
- * 与 ECharts grid / dataZoom 对齐的像素布局，供顶部窗口标签与按钮定位。
+ * 与 ECharts grid / dataZoom 对齐的像素布局，供顶部窗口标签定位。
  */
 export interface LineChartLayout {
 	/** 绘图区左侧（Y 轴宽度） */
 	left: number;
 	/** 绘图区右侧留白 */
 	right: number;
-	/** dataZoom 右侧留白（为 +/- 按钮预留） */
+	/** dataZoom 右侧留白，与绘图区 right 对齐 */
 	sliderRight: number;
 	/** 轨道上方日期行高度 */
 	dateHeight: number;
@@ -86,10 +86,6 @@ export interface LineChartLayout {
 	dataZoomTop: number;
 	/** dataZoom 轨道高度 */
 	dataZoomHeight: number;
-	/** +/- 按钮边长 */
-	zoomBtnSize: number;
-	/** +/- 按钮间距 */
-	zoomBtnGap: number;
 }
 
 /**

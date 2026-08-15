@@ -1,7 +1,7 @@
 import { Form, Input, Modal, Select } from "antd";
 import type { Rule } from "antd/es/form";
 import { useEffect, useState } from "react";
-import { listAlarmRooms } from "./api";
+import { listAlarmRooms, roomDetail } from "./api";
 import styles from "./index.module.css";
 import type { DeviceItem, RoomFormValues, SelectOption } from "./interface";
 import {
@@ -9,6 +9,7 @@ import {
 	FLOW_RATE_MIN,
 	mergeSelectOption,
 	normalizeRoomOptions,
+	parseRoomDeviceInfo,
 } from "./utils";
 
 /**
@@ -52,7 +53,7 @@ const flowRateRules: Rule[] = [
 ];
 
 /**
- * 房间配置弹窗（蓝湖：房间配置）。
+ * 连接房间弹窗。
  */
 const RoomModal = ({
 	open,
@@ -84,18 +85,48 @@ const RoomModal = ({
 					: undefined,
 		});
 
-		if (!buildingId) return;
-
 		let ignore = false;
+		const deviceId = device?.deviceId ?? 0;
 		setRoomLoading(true);
-		listAlarmRooms(buildingId)
-			.then((data) => {
+		Promise.all([
+			buildingId ? listAlarmRooms(buildingId) : Promise.resolve(null),
+			deviceId
+				? roomDetail(deviceId).catch(() => null)
+				: Promise.resolve(null),
+		])
+			.then(([roomsData, infoData]) => {
 				if (ignore) return;
+				let roomId = device?.roomId
+					? String(device.roomId)
+					: undefined;
+				let roomLabel = device?.roomLabel;
+				if (infoData) {
+					const parsed = parseRoomDeviceInfo(infoData);
+					const next: Partial<RoomFormValues> = {};
+					if (parsed.deviceName) next.deviceName = parsed.deviceName;
+					if (parsed.deviceCode) next.deviceCode = parsed.deviceCode;
+					if (parsed.roomId) {
+						roomId = String(parsed.roomId);
+						next.roomId = roomId;
+					}
+					if (parsed.room) {
+						roomLabel = parsed.room;
+						next.room = parsed.room;
+					}
+					next.flowRate =
+						parsed.flowRate !== null &&
+						parsed.flowRate !== undefined
+							? String(parsed.flowRate)
+							: undefined;
+					form.setFieldsValue(next);
+				}
 				setRoomOptions(
 					mergeSelectOption(
-						normalizeRoomOptions(data),
-						device?.roomId ? String(device.roomId) : undefined,
-						device?.roomLabel,
+						roomsData != null
+							? normalizeRoomOptions(roomsData)
+							: [],
+						roomId,
+						roomLabel,
 					),
 				);
 			})
@@ -129,7 +160,7 @@ const RoomModal = ({
 		<Modal
 			className={styles.modal}
 			rootClassName={styles.modalRoot}
-			title="房间配置"
+			title="连接房间"
 			open={open}
 			onOk={onOk}
 			onCancel={onCancel}
@@ -191,13 +222,13 @@ const RoomModal = ({
 				<div className={styles.flowRow}>
 					<Form.Item
 						name="flowRate"
-						label="流量"
+						label="流速"
 						rules={flowRateRules}
 						className={styles.flowItem}
 					>
-						<Input placeholder="请输入流量" />
+						<Input placeholder="请输入流速" />
 					</Form.Item>
-					<span className={styles.flowUnit}>m/s</span>
+					<span className={styles.flowUnit}>m³/h</span>
 				</div>
 			</Form>
 		</Modal>

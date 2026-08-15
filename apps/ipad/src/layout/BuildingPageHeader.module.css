@@ -96,60 +96,28 @@
 	flex-shrink: 0;
 }
 
-.masterLabel {
-	width: calc(95 / 1400 * 100cqw);
-	height: calc(22 / 1400 * 100cqw);
+.masterBtn {
+	margin-right: calc(23 / 1400 * 100cqw);
+	width: auto;
+	height: calc(48 / 1400 * 100cqw);
+	padding: 0 calc(16 / 1400 * 100cqw);
+	border: none;
+	border-radius: calc(12 / 1400 * 100cqw);
+	background: #0984ff;
+	border-color: #0984ff;
+	box-shadow: none;
 	font-family:
 		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
 		"Microsoft YaHei", sans-serif;
 	font-size: calc(19 / 1400 * 100cqw);
-	font-style: normal;
 	line-height: calc(22 / 1400 * 100cqw);
-	color: #2d2d2d;
-	text-align: center;
+	color: #ffffff;
 	white-space: nowrap;
 }
 
-.masterSwitch:global(.ant-switch) {
-	margin-left: calc(15 / 1400 * 100cqw);
-	margin-right: calc(23 / 1400 * 100cqw);
-}
-
-.controlSwitch:global(.ant-switch) {
-	min-width: calc(40 / 1400 * 100cqw);
-	width: calc(40 / 1400 * 100cqw);
-	height: calc(20 / 1400 * 100cqw);
-	line-height: calc(20 / 1400 * 100cqw);
-	background: #bfbfbf;
-}
-
-.controlSwitch:global(.ant-switch):hover:not(:global(.ant-switch-checked)) {
-	background: #bfbfbf;
-}
-
-.controlSwitch:global(.ant-switch) :global(.ant-switch-handle) {
-	width: calc(16 / 1400 * 100cqw);
-	height: calc(16 / 1400 * 100cqw);
-	inset-inline-start: calc(2 / 1400 * 100cqw);
-	top: calc(2 / 1400 * 100cqw);
-}
-
-.controlSwitch:global(.ant-switch) :global(.ant-switch-handle::before) {
-	background: #fff;
-}
-
-.controlSwitch:global(.ant-switch-checked) {
+.masterBtn:global(.ant-btn-primary):not(:disabled):hover,
+.masterBtn:global(.ant-btn-primary):not(:disabled):focus {
 	background: #0984ff;
-}
-
-.controlSwitch:global(.ant-switch-checked):hover {
-	background: #0984ff;
-}
-
-.controlSwitch:global(.ant-switch-checked) :global(.ant-switch-handle) {
-	inset-inline-start: calc(100% - (18 / 1400 * 100cqw));
-}
-
-.controlSwitch:global(.ant-switch-checked) :global(.ant-switch-handle::before) {
-	background: #fff;
+	border-color: #0984ff;
+	color: #ffffff;
 }

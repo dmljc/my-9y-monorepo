@@ -115,16 +115,21 @@ export const detail = (id: number): Promise<any> => {
 };
 
 /**
+ * 房间配置详情（弹窗回显）。
+ *
+ * @param {number} - 设备 ID（rooms `deviceId`）。
+ */
+export const roomDetail = (deviceId: number): Promise<any> => {
+	return request.get(`/iiot/tablet/pipeline/device/${deviceId}`);
+};
+
+/**
  * 保存房间配置（房间 + 流量）。
  *
- * @param {number} - 设备 ID。
- * @param {RoomConfigPayload} - 房间与流量。
+ * @param {RoomConfigPayload} - deviceId / 房间 / 流量。
  */
-export const saveRoomConfig = (
-	deviceId: number,
-	data: RoomConfigPayload,
-): Promise<any> => {
-	return request.put(`/iiot/tablet/device/${deviceId}/room`, data);
+export const saveRoomConfig = (data: RoomConfigPayload): Promise<any> => {
+	return request.post("/iiot/tablet/pipeline/device/save", data);
 };
 
 /**

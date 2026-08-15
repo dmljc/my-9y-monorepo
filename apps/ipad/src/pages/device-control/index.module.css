@@ -380,6 +380,14 @@
 	gap: calc(12 / 1400 * 100cqw);
 }
 
+.metricEmpty {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
 .metricCard {
 	flex: none;
 	width: max-content;
@@ -403,10 +411,6 @@ button.metricCard {
 	color: inherit;
 	text-align: left;
 	cursor: pointer;
-}
-
-.metricCardSkeleton {
-	pointer-events: none;
 }
 
 .metricCardRoom {
@@ -530,51 +534,6 @@ button.metricCard {
 	padding: 0 calc(16 / 1400 * 100cqw);
 }
 
-.powerBtn {
-	display: flex;
-	align-items: center;
-	gap: calc(25 / 1400 * 100cqw);
-	padding: 0;
-	border: none;
-	background: transparent;
-	cursor: pointer;
-}
-
-.powerCircle {
-	flex: none;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: calc(60 / 1400 * 100cqw);
-	height: calc(60 / 1400 * 100cqw);
-	border-radius: 50%;
-	color: #ffffff;
-}
-
-.powerOn {
-	background: linear-gradient(180deg, #14b5ff 0%, #0a88ff 100%);
-}
-
-.powerOff {
-	background: #cecece;
-}
-
-.powerIcon {
-	width: calc(36 / 1400 * 100cqw);
-	height: calc(36 / 1400 * 100cqw);
-}
-
-.powerText {
-	font-family:
-		"HarmonyOS_Sans_SC_Medium", "HarmonyOS Sans SC", "PingFang SC",
-		"Microsoft YaHei", sans-serif;
-	font-size: calc(21 / 1400 * 100cqw);
-	font-weight: 500;
-	line-height: calc(24 / 1400 * 100cqw);
-	color: #000000;
-	white-space: nowrap;
-}
-
 .footerActions {
 	display: flex;
 	align-items: center;
@@ -583,15 +542,14 @@ button.metricCard {
 }
 
 .actionBtn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
 	width: calc(121 / 1400 * 100cqw);
 	height: calc(48 / 1400 * 100cqw);
 	padding: 0;
 	border: none;
 	border-radius: calc(12 / 1400 * 100cqw);
 	background: #0984ff;
+	border-color: #0984ff;
+	box-shadow: none;
 	font-family:
 		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
 		"Microsoft YaHei", sans-serif;
@@ -599,7 +557,13 @@ button.metricCard {
 	line-height: calc(22 / 1400 * 100cqw);
 	color: #ffffff;
 	white-space: nowrap;
-	cursor: pointer;
+}
+
+.actionBtn:global(.ant-btn-primary):not(:disabled):hover,
+.actionBtn:global(.ant-btn-primary):not(:disabled):focus {
+	background: #0984ff;
+	border-color: #0984ff;
+	color: #ffffff;
 }
 
 .actionBtn:disabled {

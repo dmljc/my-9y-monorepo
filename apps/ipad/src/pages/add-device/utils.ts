@@ -192,7 +192,7 @@ export const deriveMasterOn = (devices: Device[]): boolean => {
 };
 
 /**
- * 组装新增请求体。
+ * 组装新增请求体（deviceStatus 固定为 0）。
  *
  * @param {DeviceFormValues} - 表单值。
  * @param {BuildingTab} - 当前厂房。
@@ -208,6 +208,7 @@ export const buildCreatePayload = (
 		manufacturer: values.manufacturer.trim(),
 		buildingId: building.buildingId,
 		building: building.building,
+		deviceStatus: "0",
 	};
 };
 

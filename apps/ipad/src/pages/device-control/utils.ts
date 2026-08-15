@@ -8,6 +8,7 @@ import type {
 	DeviceTrendPoint,
 	DeviceTrendSeriesItem,
 	ListMode,
+	RoomDeviceInfo,
 	RoomDeviceItem,
 	RoomDeviceRow,
 	RoomGroup,
@@ -193,6 +194,33 @@ export const parseDeviceDetail = (
 			device.thingIds,
 	);
 	return { device, thingIds };
+};
+
+/**
+ * 解析房间配置详情。
+ *
+ * @param {unknown} - `/iiot/tablet/pipeline/device/{deviceId}` 解包后的 data。
+ * @returns {RoomDeviceInfo} - 房间、流量与设备字段。
+ */
+export const parseRoomDeviceInfo = (data: unknown): RoomDeviceInfo => {
+	if (!data || typeof data !== "object") return {};
+	const record = data as Record<string, unknown>;
+	const flowRaw = record.flowRate;
+	const flowNum = Number(flowRaw);
+	const hasFlow =
+		flowRaw !== "" &&
+		flowRaw !== null &&
+		flowRaw !== undefined &&
+		Number.isFinite(flowNum);
+
+	return {
+		deviceId: Number(record.deviceId ?? 0) || undefined,
+		deviceCode: String(record.deviceCode ?? "").trim() || undefined,
+		deviceName: String(record.deviceName ?? "").trim() || undefined,
+		flowRate: hasFlow ? flowNum : null,
+		roomId: Number(record.roomId ?? 0) || undefined,
+		room: String(record.room ?? "").trim() || undefined,
+	};
 };
 
 /**
@@ -718,6 +746,7 @@ export const mergeSelectOption = (
 
 /**
  * 按房间聚合设备列表（保持 rooms 接口顺序）。
+ * 无 `roomId` 的设备不进入房间列表（如「未分配房间」）。
  *
  * @param {DeviceItem[]} - 设备列表。
  * @returns {RoomGroup[]} - 房间分组。
@@ -727,7 +756,8 @@ export const groupDevicesByRoom = (devices: DeviceItem[]): RoomGroup[] => {
 	const indexByKey = new Map<string, number>();
 
 	for (const item of devices) {
-		const key = item.roomId ? String(item.roomId) : item.roomLabel;
+		if (!item.roomId) continue;
+		const key = String(item.roomId);
 		const existing = indexByKey.get(key);
 		if (existing !== undefined) {
 			groups[existing].devices.push(item);

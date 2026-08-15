@@ -24,7 +24,7 @@ import {
 	padTimeExtent,
 	pageViewExtent,
 	resolveSeries,
-	stepZoomWindowDays,
+	snapZoomWindowDays,
 } from "./utils";
 
 echarts.use([
@@ -55,30 +55,6 @@ interface SliderChrome {
 	showBadge: boolean;
 }
 
-const PlusIcon = () => (
-	<svg className={styles.zoomIcon} viewBox="0 0 12 12" aria-hidden>
-		<title>放大</title>
-		<path
-			d="M6 2v8M2 6h8"
-			stroke="currentColor"
-			strokeWidth="1.6"
-			strokeLinecap="round"
-		/>
-	</svg>
-);
-
-const MinusIcon = () => (
-	<svg className={styles.zoomIcon} viewBox="0 0 12 12" aria-hidden>
-		<title>缩小</title>
-		<path
-			d="M2 6h8"
-			stroke="currentColor"
-			strokeWidth="1.6"
-			strokeLinecap="round"
-		/>
-	</svg>
-);
-
 const ChevronLeftIcon = () => (
 	<svg className={styles.sideIcon} viewBox="0 0 16 16" aria-hidden>
 		<title>上一页</title>
@@ -108,7 +84,7 @@ const ChevronRightIcon = () => (
 );
 
 /**
- * 左侧多条独立 Y 轴的时序折线图：顶部 dataZoom、+/- 缩放、时间轴翻页、自定义 Tooltip。
+ * 左侧多条独立 Y 轴的时序折线图：顶部 dataZoom、时间轴翻页、自定义 Tooltip。
  */
 const LineCharts = ({
 	series,
@@ -127,6 +103,7 @@ const LineCharts = ({
 	const sliderWindowRef = useRef<[number, number] | null>(null);
 	const viewLockedRef = useRef(false);
 	const sliderDirtyRef = useRef(false);
+	const snappingRef = useRef(false);
 	const lastEmittedRangeRef = useRef<{ from: number; to: number } | null>(
 		null,
 	);
@@ -314,10 +291,11 @@ const LineCharts = ({
 			const badgeLeft = layout.left + (track * startPct) / 100;
 			const badgeWidth = (track * (endPct - startPct)) / 100;
 			sliderWindowRef.current = [startMs, endMs];
-			if (fromUserZoom && zoomChanged) {
+			if (fromUserZoom && zoomChanged && !snappingRef.current) {
 				viewLockedRef.current = false;
 				sliderDirtyRef.current = true;
 			}
+			snappingRef.current = false;
 			setChrome({
 				startDate: formatRangeDate(timeExtent[0]),
 				endDate: formatRangeDate(timeExtent[1]),
@@ -343,11 +321,35 @@ const LineCharts = ({
 				if (!range) {
 					return;
 				}
+				const next = snapZoomWindowDays(range[0], range[1], timeExtent);
+				zoomRef.current = { start: next.start, end: next.end };
+				sliderWindowRef.current = [next.from, next.to];
 				viewLockedRef.current = false;
 				setViewExtent(
-					computeViewExtent(range[1], axisRangeMs, Date.now()),
+					computeViewExtent(next.to, axisRangeMs, Date.now()),
 				);
-				emitSliderRange(range[0], range[1]);
+				emitSliderRange(next.from, next.to);
+				if (
+					Math.abs(next.from - range[0]) > 1 ||
+					Math.abs(next.to - range[1]) > 1
+				) {
+					snappingRef.current = true;
+					chart.dispatchAction({
+						type: "dataZoom",
+						batch: [
+							{
+								dataZoomIndex: 0,
+								start: next.start,
+								end: next.end,
+							},
+							{
+								dataZoomIndex: 1,
+								start: next.start,
+								end: next.end,
+							},
+						],
+					});
+				}
 			});
 		};
 		chart.on("dataZoom", onDataZoom);
@@ -377,38 +379,14 @@ const LineCharts = ({
 		axisRangeMs,
 	]);
 
-	const applyZoom = (deltaDays: number) => {
-		const el = chartRef.current;
-		if (!el) {
-			return;
-		}
-		const chart = echarts.getInstanceByDom(el);
-		if (!chart || chart.isDisposed()) {
-			return;
-		}
-		const next = stepZoomWindowDays(zoomRef.current, timeExtent, deltaDays);
-		zoomRef.current = { start: next.start, end: next.end };
-		viewLockedRef.current = false;
-		sliderWindowRef.current = [next.from, next.to];
-		sliderDirtyRef.current = false;
-		setViewExtent(computeViewExtent(next.to, axisRangeMs, Date.now()));
-		emitSliderRange(next.from, next.to);
-		chart.dispatchAction({
-			type: "dataZoom",
-			batch: [
-				{ dataZoomIndex: 0, start: next.start, end: next.end },
-				{ dataZoomIndex: 1, start: next.start, end: next.end },
-			],
-		});
-		requestAnimationFrame(() => {
-			sliderDirtyRef.current = false;
-		});
-	};
-
+	const sliderSpan = timeExtent[1] - timeExtent[0];
 	const sliderStartMs =
 		timeExtent[0] +
-		((chrome?.startPct ?? zoomRef.current.start) / 100) *
-			(timeExtent[1] - timeExtent[0]);
+		((chrome?.startPct ?? zoomRef.current.start) / 100) * sliderSpan;
+	const sliderEndMs =
+		timeExtent[0] +
+		((chrome?.endPct ?? zoomRef.current.end) / 100) * sliderSpan;
+	const sliderBounds: [number, number] = [sliderStartMs, sliderEndMs];
 
 	const applyTimePage = (direction: -1 | 1) => {
 		const now = Date.now();
@@ -416,7 +394,7 @@ const LineCharts = ({
 			chartViewExtent,
 			direction,
 			axisRangeMs,
-			[sliderStartMs, timeExtent[1]],
+			sliderBounds,
 			now,
 		);
 		if (
@@ -433,20 +411,13 @@ const LineCharts = ({
 		onTimePage?.({ from: nextView[0], to: nextView[1] });
 	};
 
-	const sliderSpanMs = chrome
-		? ((chrome.endPct - chrome.startPct) / 100) *
-			(timeExtent[1] - timeExtent[0])
-		: SLIDER_RANGE_MS;
-	const sliderDays = Math.max(1, Math.round(sliderSpanMs / SLIDER_RANGE_MS));
-	const canZoomIn = sliderDays > 1;
-	const canZoomOut = sliderDays < totalRangeDays;
 	const canPagePrev = chartViewExtent[0] - sliderStartMs >= axisRangeMs;
 	const canPageNext =
 		pageViewExtent(
 			chartViewExtent,
 			1,
 			axisRangeMs,
-			timeExtent,
+			sliderBounds,
 			Date.now(),
 		)[1] > chartViewExtent[1];
 	const sideTop =
@@ -494,48 +465,6 @@ const LineCharts = ({
 					) : null}
 				</>
 			) : null}
-			<div
-				className={styles.zoomGroup}
-				style={{
-					top: layout.dataZoomTop,
-					right: layout.right,
-					height: layout.dataZoomHeight,
-					gap: layout.zoomBtnGap,
-				}}
-			>
-				<button
-					type="button"
-					className={styles.zoomBtn}
-					style={{
-						width: layout.zoomBtnSize,
-						height: layout.zoomBtnSize,
-						borderRadius: 4 * box.scale,
-					}}
-					disabled={!canZoomIn}
-					aria-label="放大"
-					onClick={() => {
-						applyZoom(-1);
-					}}
-				>
-					<PlusIcon />
-				</button>
-				<button
-					type="button"
-					className={styles.zoomBtn}
-					style={{
-						width: layout.zoomBtnSize,
-						height: layout.zoomBtnSize,
-						borderRadius: 4 * box.scale,
-					}}
-					disabled={!canZoomOut}
-					aria-label="缩小"
-					onClick={() => {
-						applyZoom(1);
-					}}
-				>
-					<MinusIcon />
-				</button>
-			</div>
 			<button
 				type="button"
 				className={`${styles.sideBtn} ${styles.sidePrev}`}

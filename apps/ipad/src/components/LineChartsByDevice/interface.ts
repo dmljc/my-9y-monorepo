@@ -50,7 +50,7 @@ export interface LineChartsProps {
 	valueFormatter?: (value: number) => string;
 	/** 时间轴翻页：回传新的 5 分钟查询区间 */
 	onTimePage?: (range: { from: number; to: number }) => void;
-	/** 滑块拖动结束（含 +/-）：回传当前选中窗口 */
+	/** 滑块拖动结束：回传当前选中窗口（整天步幅） */
 	onRangeChange?: (range: { from: number; to: number }) => void;
 }
 

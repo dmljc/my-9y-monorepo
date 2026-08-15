@@ -1,4 +1,4 @@
-import { App, Empty } from "antd";
+import { App, Button, Empty } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import Access from "@/components/Access";
@@ -28,7 +28,6 @@ import styles from "./index.module.css";
 import type {
 	BuildingTab,
 	DeviceItem,
-	DeviceMetric,
 	DeviceTrendChartData,
 	InstanceFormValues,
 	ListMode,
@@ -66,31 +65,6 @@ import {
 	toTrendChartData,
 } from "./utils";
 
-const DEFAULT_METRIC_CARDS: DeviceMetric[] = [
-	{ key: "flow", propertyId: "", label: "流量", value: null, unit: "m³/s" },
-	{
-		key: "pressure",
-		propertyId: "",
-		label: "压力",
-		value: null,
-		unit: "pa",
-	},
-	{
-		key: "concentration",
-		propertyId: "",
-		label: "浓度",
-		value: null,
-		unit: "mol/L",
-	},
-	{
-		key: "velocity",
-		propertyId: "",
-		label: "流速",
-		value: null,
-		unit: "m/s",
-	},
-];
-
 interface DeviceGlyphProps {
 	className?: string;
 }
@@ -102,28 +76,6 @@ const DeviceGlyph = ({ className }: DeviceGlyphProps) => (
 		<rect x="4" y="22" width="32" height="10" rx="2" fill="currentColor" />
 		<rect x="10" y="12" width="8" height="2" rx="1" fill="#fff" />
 		<rect x="10" y="26" width="8" height="2" rx="1" fill="#fff" />
-	</svg>
-);
-
-interface PowerGlyphProps {
-	className?: string;
-}
-
-const PowerGlyph = ({ className }: PowerGlyphProps) => (
-	<svg className={className} viewBox="0 0 72 72" fill="none" aria-hidden>
-		<title>电源</title>
-		<path
-			d="M36 8v28"
-			stroke="currentColor"
-			strokeWidth="7"
-			strokeLinecap="round"
-		/>
-		<path
-			d="M22 18.5a24 24 0 1 0 28 0"
-			stroke="currentColor"
-			strokeWidth="7"
-			strokeLinecap="round"
-		/>
 	</svg>
 );
 
@@ -266,9 +218,6 @@ const DeviceControl = () => {
 	const [listMode, setListMode] = useState<ListMode>("device");
 	const [instanceOpen, setInstanceOpen] = useState(false);
 	const [roomOpen, setRoomOpen] = useState(false);
-	const [realtimeLoadedIds, setRealtimeLoadedIds] = useState<
-		Record<number, true>
-	>({});
 	const [selectedIdByBuilding, setSelectedIdByBuilding] = useState<
 		Record<string, number>
 	>({});
@@ -327,26 +276,9 @@ const DeviceControl = () => {
 				selectedRoom?.devices[0] ??
 				null)
 			: selectedById;
-	const isRealtimePending = Boolean(
-		selected &&
-			selected.metrics.length === 0 &&
-			!realtimeLoadedIds[selected.deviceId],
-	);
 	const roomMetrics = collectRoomMetrics(selectedRoom?.devices ?? []);
-	const isRoomRealtimePending =
-		listMode === "room" &&
-		roomMetrics.length === 0 &&
-		(selectedRoom?.devices ?? []).some(
-			(item) => !realtimeLoadedIds[item.deviceId],
-		);
 	const metricCards =
-		listMode === "room"
-			? roomMetrics.length > 0
-				? roomMetrics
-				: DEFAULT_METRIC_CARDS
-			: selected && selected.metrics.length > 0
-				? selected.metrics
-				: DEFAULT_METRIC_CARDS;
+		listMode === "room" ? roomMetrics : (selected?.metrics ?? []);
 
 	const applyDevices = (
 		buildingKeyNext: string,
@@ -368,20 +300,6 @@ const DeviceControl = () => {
 					metricsById.get(item.deviceId) ??
 					item.metrics,
 			}));
-		});
-		setRealtimeLoadedIds((prev) => {
-			let changed = false;
-			const nextLoaded = { ...prev };
-			for (const item of devicesNext) {
-				if (
-					pickCachedMetrics(item) !== undefined &&
-					!nextLoaded[item.deviceId]
-				) {
-					nextLoaded[item.deviceId] = true;
-					changed = true;
-				}
-			}
-			return changed ? nextLoaded : prev;
 		});
 		setMasterOn(
 			forceEnabled !== undefined
@@ -682,17 +600,6 @@ const DeviceControl = () => {
 
 				if (!touchedIds.length) return prev;
 
-				setRealtimeLoadedIds((loaded) => {
-					let loadedChanged = false;
-					const nextLoaded = { ...loaded };
-					for (const id of touchedIds) {
-						if (!nextLoaded[id]) {
-							nextLoaded[id] = true;
-							loadedChanged = true;
-						}
-					}
-					return loadedChanged ? nextLoaded : loaded;
-				});
 				setMasterOn(deriveMasterOn(next));
 				return next;
 			});
@@ -816,12 +723,13 @@ const DeviceControl = () => {
 		const roomGroup = roomGroups.find(
 			(item) => String(item.roomId) === String(values.roomId),
 		);
-		await saveRoomConfig(selected.deviceId, {
+		await saveRoomConfig({
+			deviceId: selected.deviceId,
 			roomId,
 			room: values.room ?? roomGroup?.roomLabel,
 			flowRate,
 		});
-		message.success("房间配置成功");
+		message.success("连接房间成功");
 		await loadDevices(currentBuilding.buildingId, buildingKey);
 	};
 
@@ -1135,92 +1043,91 @@ const DeviceControl = () => {
 										实时状态
 									</div>
 									<div className={styles.sectionLine} />
-									<div className={styles.metricRow}>
-										{metricCards.map((metric) => {
-											const pending =
-												(listMode === "device" &&
-													(isRealtimePending ||
-														(metric.value ===
-															null &&
-															!metric.textValue &&
-															selected.metrics
-																.length ===
-																0))) ||
-												isRoomRealtimePending;
-											const metricActive =
-												Boolean(trendPropertyId) &&
-												metric.propertyId ===
-													trendPropertyId;
-											const cardClassName = `${styles.metricCard} ${listMode === "room" ? styles.metricCardRoom : ""} ${pending ? styles.metricCardSkeleton : ""} ${metricActive ? styles.metricCardActive : ""}`;
-											return (
-												<button
-													key={metric.key}
-													type="button"
-													className={cardClassName}
-													onClick={() => {
-														if (!metric.propertyId) {
-															return;
-														}
-														setTrendPropertyId(
-															metric.propertyId,
-														);
-													}}
-												>
-													<div
+									{metricCards.length > 0 ? (
+										<div className={styles.metricRow}>
+											{metricCards.map((metric) => {
+												const metricActive =
+													Boolean(trendPropertyId) &&
+													metric.propertyId ===
+														trendPropertyId;
+												const cardClassName = `${styles.metricCard} ${listMode === "room" ? styles.metricCardRoom : ""} ${metricActive ? styles.metricCardActive : ""}`;
+												return (
+													<button
+														key={metric.key}
+														type="button"
 														className={
-															styles.metricText
+															cardClassName
 														}
+														onClick={() => {
+															if (
+																!metric.propertyId
+															) {
+																return;
+															}
+															setTrendPropertyId(
+																metric.propertyId,
+															);
+														}}
 													>
 														<div
 															className={
-																styles.metricLabel
+																styles.metricText
 															}
 														>
-															{metric.label}
-														</div>
-														{listMode ===
-														"device" ? (
 															<div
 																className={
-																	styles.metricValueRow
+																	styles.metricLabel
 																}
 															>
-																<span
-																	className={
-																		styles.metricValue
-																	}
-																>
-																	{pending
-																		? "—"
-																		: formatMetric(
-																				metric,
-																			)}
-																</span>
-																<span
-																	className={
-																		styles.metricUnit
-																	}
-																>
-																	{metric.unit ||
-																		"\u00A0"}
-																</span>
+																{metric.label}
 															</div>
-														) : null}
-													</div>
-													<MetricGlyph
-														type={getMetricIconKey(
-															metric.label,
-														)}
-														className={
-															styles.metricIcon
-														}
-													/>
-												</button>
-											);
-										})}
-									</div>
+															{listMode ===
+															"device" ? (
+																<div
+																	className={
+																		styles.metricValueRow
+																	}
+																>
+																	<span
+																		className={
+																			styles.metricValue
+																		}
+																	>
+																		{formatMetric(
+																			metric,
+																		)}
+																	</span>
+																	<span
+																		className={
+																			styles.metricUnit
+																		}
+																	>
+																		{metric.unit ||
+																			"\u00A0"}
+																	</span>
+																</div>
+															) : null}
+														</div>
+														<MetricGlyph
+															type={getMetricIconKey(
+																metric.label,
+															)}
+															className={
+																styles.metricIcon
+															}
+														/>
+													</button>
+												);
+											})}
+										</div>
+									) : (
+										<div className={styles.metricEmpty}>
+											<Empty />
+										</div>
+									)}
 
-									<div className={styles.trendChart}>
+									{metricCards.length > 0 ? (
+										<div className={styles.trendChart}>
 										{listMode === "room" ? (
 											<>
 												<div className={styles.legend}>
@@ -1314,7 +1221,8 @@ const DeviceControl = () => {
 												</div>
 											</>
 										)}
-									</div>
+										</div>
+									) : null}
 								</div>
 
 								{listMode === "device" ? (
@@ -1324,77 +1232,55 @@ const DeviceControl = () => {
 												PERM_DEVICE_CONTROL.SWITCH_DEVICE
 											}
 										>
-											<button
-												type="button"
-												className={styles.powerBtn}
+											<Button
+												type="primary"
+												className={styles.actionBtn}
 												onClick={() => {
 													handleDeviceSwitch(
 														!selected.enabled,
 													);
 												}}
-												disabled={loading}
-												aria-label={
-													selected.enabled
-														? "关闭设备"
-														: "开启设备"
-												}
+												loading={loading}
 											>
-												<span
-													className={`${styles.powerCircle} ${
-														selected.enabled
-															? styles.powerOn
-															: styles.powerOff
-													}`}
-												>
-													<PowerGlyph
-														className={
-															styles.powerIcon
-														}
-													/>
-												</span>
-												<span
-													className={styles.powerText}
-												>
-													{selected.enabled
-														? "设备已开启"
-														: "设备已关闭"}
-												</span>
-											</button>
+												{selected.enabled
+													? "关闭设备"
+													: "开启设备"}
+											</Button>
 										</Access>
 										<div className={styles.footerActions}>
-											<button
-												type="button"
+											<Button
+												type="primary"
 												className={styles.actionBtn}
 												onClick={() => {
 													setInstanceOpen(true);
 												}}
 											>
 												实例配置
-											</button>
-											<button
-												type="button"
+											</Button>
+											<Button
+												type="primary"
 												className={styles.actionBtn}
 												onClick={() => {
 													setRoomOpen(true);
 												}}
 											>
-												房间配置
-											</button>
+												连接房间
+											</Button>
 											<Access
 												code={PERM_DEVICE_CONTROL.CLEAN}
 											>
-												<button
-													type="button"
+												<Button
+													type="primary"
 													className={styles.actionBtn}
 													onClick={() => {
 														handleClean();
 													}}
-													disabled={loading}
+													loading={loading}
 												>
 													{selected.cleaning
 														? "清洗中"
 														: "设备清洗"}
-												</button>
+												</Button>
 											</Access>
 										</div>
 									</div>

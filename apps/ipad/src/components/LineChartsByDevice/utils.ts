@@ -428,7 +428,7 @@ export function buildLineChartOption(
 				start: zoom.start,
 				end: zoom.end,
 				minValueSpan: MS_DAY,
-				zoomOnMouseWheel: true,
+				zoomOnMouseWheel: false,
 				moveOnMouseMove: true,
 				moveOnMouseWheel: false,
 			},

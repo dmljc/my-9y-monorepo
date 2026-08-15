@@ -61,25 +61,19 @@ export function getStageScale(el: HTMLElement): number {
  * @returns {LineChartLayout} - 与 option 中 left/right/top/height 一致的布局。
  */
 export function getLineChartLayout(scale: number): LineChartLayout {
-	const zoomBtnSize = 22 * scale;
-	const zoomBtnGap = 6 * scale;
 	const dateHeight = 16 * scale;
 	const sideGutter = 56 * scale;
 	/** 左右各少留 20px，折线 canvas 总宽增加 */
 	const extraCanvas = 20 * scale;
 	const left = 32 * scale + sideGutter - extraCanvas;
 	const right = 16 * scale + sideGutter - extraCanvas;
-	/** 滑块右柄外伸 + 与 +/- 的间距，避免范围块盖住按钮 */
-	const zoomSliderGap = 20 * scale;
 	return {
 		left,
 		right,
-		sliderRight: right + zoomBtnSize * 2 + zoomBtnGap + zoomSliderGap,
+		sliderRight: right,
 		dateHeight,
 		dataZoomTop: dateHeight + 4 * scale,
 		dataZoomHeight: 22 * scale,
-		zoomBtnSize,
-		zoomBtnGap,
 	};
 }
 
@@ -282,42 +276,44 @@ export function computeDefaultZoom(
 }
 
 /**
- * 按整天缩放 dataZoom 窗口，保持右端不变（减号 +1 天，加号 -1 天）。
+ * 将滑块窗口对齐到整天步幅：起点、终点相对轨道左端均为整天，时长至少 1 天。
  *
- * @param {{ start: number; end: number }} - 当前起止百分比。
+ * @param {number} - 窗口起点毫秒。
+ * @param {number} - 窗口终点毫秒。
  * @param {[number, number]} - 轨道总时间范围。
- * @param {number} - 天数增量，`1` 扩大、`-1` 缩小。
- * @returns {{ start: number; end: number; from: number; to: number }} - 新窗口百分比与精确起止时间。
+ * @returns {{ start: number; end: number; from: number; to: number }} - 对齐后的百分比与精确起止时间。
  */
-export function stepZoomWindowDays(
-	current: { start: number; end: number },
+export function snapZoomWindowDays(
+	startMs: number,
+	endMs: number,
 	extent: [number, number],
-	deltaDays: number,
 ): { start: number; end: number; from: number; to: number } {
 	const total = extent[1] - extent[0];
 	const fallback = {
-		start: current.start,
-		end: current.end,
+		start: 0,
+		end: 100,
 		from: extent[0],
 		to: extent[1],
 	};
 	if (total <= 0) {
 		return fallback;
 	}
-	const currentSpanMs = ((current.end - current.start) / 100) * total;
-	const currentDays = Math.max(1, Math.round(currentSpanMs / MS_DAY));
-	const maxDays = Math.max(1, Math.round(total / MS_DAY));
-	const nextDays = Math.min(maxDays, Math.max(1, currentDays + deltaDays));
-	const windowMs = Math.min(total, nextDays * MS_DAY);
-	let to = extent[0] + (total * current.end) / 100;
-	let from = to - windowMs;
-	if (from < extent[0]) {
-		from = extent[0];
-		to = from + windowMs;
-	}
-	if (to > extent[1]) {
-		to = extent[1];
-		from = to - windowMs;
+	const snapToDay = (ms: number) =>
+		extent[0] + Math.round((ms - extent[0]) / MS_DAY) * MS_DAY;
+	let from = Math.min(
+		Math.max(snapToDay(startMs), extent[0]),
+		extent[1] - MS_DAY,
+	);
+	let to = Math.min(
+		Math.max(snapToDay(endMs), extent[0] + MS_DAY),
+		extent[1],
+	);
+	if (to - from < MS_DAY) {
+		to = from + MS_DAY;
+		if (to > extent[1]) {
+			to = extent[1];
+			from = to - MS_DAY;
+		}
 	}
 	return {
 		start: ((from - extent[0]) / total) * 100,
@@ -873,7 +869,7 @@ export function buildLineChartOption(
 				start: zoom.start,
 				end: zoom.end,
 				minValueSpan: MS_DAY,
-				zoomOnMouseWheel: true,
+				zoomOnMouseWheel: false,
 				moveOnMouseMove: true,
 				moveOnMouseWheel: false,
 			},

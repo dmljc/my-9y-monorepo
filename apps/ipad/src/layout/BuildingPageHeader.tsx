@@ -1,4 +1,4 @@
-import { Switch } from "antd";
+import { Button } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
 import iconBack from "@/assets/device-control/icon-back.webp";
 import tabIndicator from "@/assets/device-control/tab-indicator.webp";
@@ -91,14 +91,13 @@ const BuildingPageHeader = ({
 
 			<div className={styles.headerRight}>
 				{onMasterChange ? (
-					<>
-						<span className={styles.masterLabel}>厂房总开关</span>
-						<Switch
-							checked={masterOn}
-							onChange={onMasterChange}
-							className={`${styles.controlSwitch} ${styles.masterSwitch}`}
-						/>
-					</>
+					<Button
+						type="primary"
+						className={styles.masterBtn}
+						onClick={() => onMasterChange(!masterOn)}
+					>
+						{masterOn ? "关闭厂房总开关" : "开启厂房总开关"}
+					</Button>
 				) : null}
 				<UserDropdown />
 			</div>
