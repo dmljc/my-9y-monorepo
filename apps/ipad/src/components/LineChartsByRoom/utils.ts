@@ -49,10 +49,16 @@ export function getLineChartLayout(scale: number): LineChartLayout {
 	const zoomBtnGap = 6 * scale;
 	const dateHeight = 16 * scale;
 	const sideGutter = 56 * scale;
+	/** 左右各少留 20px，折线 canvas 总宽增加 */
+	const extraCanvas = 20 * scale;
+	const left = 32 * scale + sideGutter - extraCanvas;
+	const right = 16 * scale + sideGutter - extraCanvas;
+	/** 滑块右柄外伸 + 与 +/- 的间距，避免范围块盖住按钮 */
+	const zoomSliderGap = 20 * scale;
 	return {
-		left: 32 * scale + sideGutter,
-		right: 16 * scale + sideGutter,
-		sliderRight: 16 * scale + zoomBtnSize * 2 + zoomBtnGap + 8 * scale,
+		left,
+		right,
+		sliderRight: right + zoomBtnSize * 2 + zoomBtnGap + zoomSliderGap,
 		dateHeight,
 		dataZoomTop: dateHeight + 4 * scale,
 		dataZoomHeight: 22 * scale,
@@ -122,15 +128,88 @@ export function getTimeExtent(
 }
 
 /**
- * 按「最近 N 天」计算 dataZoom 起止百分比（窗口贴齐数据末尾）。
+ * 将时间轴补齐为「最近 N 天」，保证滑块总范围不随稀疏数据收缩。
+ *
+ * @param {[number, number] | null} - 数据实际时间范围。
+ * @param {number} - 滑块总天数。
+ * @param {number} [endMs] - 无数据时的右端时间戳。
+ * @returns {[number, number]} - `[start, end]`。
+ */
+export function padTimeExtent(
+	extent: [number, number] | null,
+	totalRangeDays: number,
+	endMs = Date.now(),
+): [number, number] {
+	const span = Math.max(totalRangeDays, 0) * MS_DAY;
+	const end = extent ? extent[1] : endMs;
+	if (span <= 0) {
+		return extent ?? [end, end];
+	}
+	return [end - span, end];
+}
+
+/**
+ * 由滑块窗口右端计算图表 X 轴范围（贴齐窗口末尾）。
+ *
+ * @param {number} - 滑块选中区间结束时间。
+ * @param {number} - X 轴可见时长（毫秒）。
+ * @returns {[number, number]} - `[start, end]`。
+ */
+export function computeViewExtent(
+	sliderEndMs: number,
+	axisRangeMs: number,
+): [number, number] {
+	const window = Math.max(axisRangeMs, 0);
+	return [sliderEndMs - window, sliderEndMs];
+}
+
+/**
+ * 按 5 分钟一页平移 X 轴：上一页为 `[start-5min, start]`，下一页为 `[end, end+5min]`。
+ *
+ * @param {[number, number]} - 当前可见区间。
+ * @param {-1 | 1} - `-1` 上一页，`1` 下一页。
+ * @param {number} - 每页时长（毫秒）。
+ * @param {[number, number]} - 允许的总范围（轨道起止）。
+ * @returns {[number, number]} - 新的可见区间；越界时保持原值。
+ */
+export function pageViewExtent(
+	current: [number, number],
+	direction: -1 | 1,
+	axisRangeMs: number,
+	bounds: [number, number],
+): [number, number] {
+	const span = Math.max(axisRangeMs, 0);
+	if (span <= 0) {
+		return current;
+	}
+	const boundStart = Math.min(bounds[0], bounds[1]);
+	const boundEnd = Math.max(bounds[0], bounds[1]);
+	if (direction < 0) {
+		const end = current[0];
+		const start = end - span;
+		if (start < boundStart) {
+			return current;
+		}
+		return [start, end];
+	}
+	const start = current[1];
+	const end = start + span;
+	if (start > boundEnd) {
+		return current;
+	}
+	return [start, end];
+}
+
+/**
+ * 按「最近一段时间」计算 dataZoom 起止百分比（窗口贴齐时间轴末尾）。
  *
  * @param {[number, number] | null} - 全量时间范围；无数据时为 null。
- * @param {number} - 初始可见窗口天数。
+ * @param {number} - 初始可见窗口时长（毫秒）。
  * @returns {{ start: number; end: number }} - dataZoom 百分比。
  */
 export function computeDefaultZoom(
 	extent: [number, number] | null,
-	defaultRangeDays: number,
+	windowMs: number,
 ): { start: number; end: number } {
 	if (!extent) {
 		return { start: 0, end: 100 };
@@ -139,36 +218,55 @@ export function computeDefaultZoom(
 	if (span <= 0) {
 		return { start: 0, end: 100 };
 	}
-	const window = Math.min(span, defaultRangeDays * MS_DAY);
+	const window = Math.min(span, Math.max(windowMs, 0));
 	const start = ((extent[1] - window - extent[0]) / span) * 100;
 	return { start: Math.max(0, start), end: 100 };
 }
 
 /**
- * 以当前窗口中心缩放 dataZoom 百分比。
+ * 按整天缩放 dataZoom 窗口，保持右端不变（减号 +1 天，加号 -1 天）。
  *
  * @param {{ start: number; end: number }} - 当前起止百分比。
- * @param {number} - 小于 1 放大，大于 1 缩小。
- * @returns {{ start: number; end: number }} - 新的起止百分比。
+ * @param {[number, number]} - 轨道总时间范围。
+ * @param {number} - 天数增量，`1` 扩大、`-1` 缩小。
+ * @returns {{ start: number; end: number; from: number; to: number }} - 新窗口百分比与精确起止时间。
  */
-export function computeZoomWindow(
+export function stepZoomWindowDays(
 	current: { start: number; end: number },
-	factor: number,
-): { start: number; end: number } {
-	const span = Math.max(current.end - current.start, 0.5);
-	const center = (current.start + current.end) / 2;
-	const nextSpan = Math.min(100, Math.max(0.8, span * factor));
-	let start = center - nextSpan / 2;
-	let end = center + nextSpan / 2;
-	if (start < 0) {
-		end = Math.min(100, end - start);
-		start = 0;
+	extent: [number, number],
+	deltaDays: number,
+): { start: number; end: number; from: number; to: number } {
+	const total = extent[1] - extent[0];
+	const fallback = {
+		start: current.start,
+		end: current.end,
+		from: extent[0],
+		to: extent[1],
+	};
+	if (total <= 0) {
+		return fallback;
 	}
-	if (end > 100) {
-		start = Math.max(0, start - (end - 100));
-		end = 100;
+	const currentSpanMs = ((current.end - current.start) / 100) * total;
+	const currentDays = Math.max(1, Math.round(currentSpanMs / MS_DAY));
+	const maxDays = Math.max(1, Math.round(total / MS_DAY));
+	const nextDays = Math.min(maxDays, Math.max(1, currentDays + deltaDays));
+	const windowMs = Math.min(total, nextDays * MS_DAY);
+	let to = extent[0] + (total * current.end) / 100;
+	let from = to - windowMs;
+	if (from < extent[0]) {
+		from = extent[0];
+		to = from + windowMs;
 	}
-	return { start, end };
+	if (to > extent[1]) {
+		to = extent[1];
+		from = to - windowMs;
+	}
+	return {
+		start: ((from - extent[0]) / total) * 100,
+		end: ((to - extent[0]) / total) * 100,
+		from,
+		to,
+	};
 }
 
 /**
@@ -242,10 +340,10 @@ function getHoveredTime(raw: unknown): number | null {
 }
 
 /**
- * 格式化 X 轴时间：整点日期边界只显示月日，其余显示月日+时分。
+ * 格式化 X 轴时间：5 分钟窗口用 `HH:mm`，跨天零点用 `MM/DD`。
  *
  * @param {number} - 毫秒时间戳。
- * @returns {string} - 如 `08/12` 或 `08/11 16:00`。
+ * @returns {string} - 如 `18:35` 或 `08/11`。
  */
 function formatAxisTime(value: number): string {
 	const date = new Date(value);
@@ -253,12 +351,17 @@ function formatAxisTime(value: number): string {
 	const day = String(date.getDate()).padStart(2, "0");
 	const hour = date.getHours();
 	const minute = date.getMinutes();
-	if (hour === 0 && minute === 0) {
+	const second = date.getSeconds();
+	if (hour === 0 && minute === 0 && second === 0) {
 		return `${month}/${day}`;
 	}
 	const hh = String(hour).padStart(2, "0");
 	const mm = String(minute).padStart(2, "0");
-	return `${month}/${day} ${hh}:${mm}`;
+	if (second !== 0) {
+		const ss = String(second).padStart(2, "0");
+		return `${hh}:${mm}:${ss}`;
+	}
+	return `${hh}:${mm}`;
 }
 
 /**
@@ -352,35 +455,56 @@ function isYAxisEndpoint(value: number, min: number, max: number): boolean {
 }
 
 /**
+ * 将 Y 轴数据范围规范为有限区间；无数据或非法 extent 时回落到 0～1，保证两端刻度可绘制。
+ *
+ * @param {number} - 原始下限。
+ * @param {number} - 原始上限。
+ * @returns {{ min: number; max: number }} - 可用于坐标轴的区间。
+ */
+function normalizeYExtent(min: number, max: number): { min: number; max: number } {
+	if (!Number.isFinite(min) || !Number.isFinite(max)) {
+		return { min: 0, max: 1 };
+	}
+	if (max < min) {
+		return { min: max, max: min };
+	}
+	if (max === min) {
+		return min === 0 ? { min: 0, max: 1 } : { min, max };
+	}
+	return { min, max };
+}
+
+/**
  * 生成只显示数据最小 / 最大两端的 Y 轴 min/max/formatter。
  *
  * @param {number | undefined} - 业务指定下限。
  * @param {number | undefined} - 业务指定上限。
- * @returns {{ min: number | ((extent: { min: number }) => number); max: number | ((extent: { min: number; max: number }) => number); formatter: (value: number) => string; isEndpoint: (value: number) => boolean }} - Y 轴两端配置。
+ * @returns {{ min: number | ((extent: { min: number; max: number }) => number); max: number | ((extent: { min: number; max: number }) => number); formatter: (value: number) => string; isEndpoint: (value: number) => boolean }} - Y 轴两端配置。
  */
 function createYAxisEndpoints(
 	fixedMin: number | undefined,
 	fixedMax: number | undefined,
 ) {
-	const bound = {
-		min: fixedMin ?? 0,
-		max: fixedMax ?? 0,
+	const initial =
+		fixedMin != null && fixedMax != null
+			? normalizeYExtent(fixedMin, fixedMax)
+			: { min: 0, max: 1 };
+	const bound = { min: initial.min, max: initial.max };
+
+	const commitExtent = (extent: { min: number; max: number }) => {
+		const next = normalizeYExtent(extent.min, extent.max);
+		bound.min = next.min;
+		bound.max = next.max;
+		return next;
 	};
 
 	return {
 		min:
 			fixedMin ??
-			((extent: { min: number }) => {
-				bound.min = extent.min;
-				return extent.min;
-			}),
+			((extent: { min: number; max: number }) => commitExtent(extent).min),
 		max:
 			fixedMax ??
-			((extent: { min: number; max: number }) => {
-				bound.min = extent.min;
-				bound.max = extent.max > extent.min ? extent.max : extent.min;
-				return bound.max;
-			}),
+			((extent: { min: number; max: number }) => commitExtent(extent).max),
 		formatter: (value: number) => {
 			if (!isYAxisEndpoint(value, bound.min, bound.max)) {
 				return "";
@@ -454,7 +578,8 @@ export function buildLineChartOption(
 	series: LineChartResolvedSeries[],
 	context: LineChartBuildContext,
 ): EChartsOption {
-	const { width, height, scale, zoom, valueFormatter } = context;
+	const { width, height, scale, zoom, valueFormatter, timeExtent, viewExtent } =
+		context;
 	const layout = getLineChartLayout(scale);
 	const count = Math.max(series.length, 1);
 	const fontSize = 12 * scale;
@@ -464,7 +589,6 @@ export function buildLineChartOption(
 	const top0 = layout.dataZoomTop + layout.dataZoomHeight + dataZoomGap;
 	const remain = Math.max(height - top0 - xLabelSpace - gridGap * (count - 1), 0);
 	const gridHeight = remain / count;
-	const timeExtent = getTimeExtent(series);
 
 	const gridOption = Array.from({ length: count }, (_, index) => ({
 		left: layout.left,
@@ -474,40 +598,53 @@ export function buildLineChartOption(
 		outerBoundsMode: "none" as const,
 	}));
 
-	const xAxisOption = Array.from({ length: count }, (_, index) => {
-		const isLast = index === count - 1;
-		return {
+	const xAxisOption = [
+		...Array.from({ length: count }, (_, index) => {
+			const isLast = index === count - 1;
+			return {
+				type: "time" as const,
+				gridIndex: index,
+				min: viewExtent?.[0],
+				max: viewExtent?.[1],
+				minInterval: MS_MINUTE,
+				splitNumber: 5,
+				show: true,
+				nameMoveOverlap: false,
+				axisTick: {
+					show: isLast,
+					length: 4 * scale,
+					lineStyle: { color: "#c9cdd4" },
+				},
+				axisLine: {
+					show: isLast,
+					lineStyle: { color: "#e5e6eb" },
+				},
+				axisLabel: {
+					show: isLast,
+					showMinLabel: true,
+					showMaxLabel: true,
+					color: "#86909c",
+					fontSize,
+					hideOverlap: true,
+					margin: 10 * scale,
+					formatter: (value: number) => formatAxisTime(value),
+				},
+				splitLine: { show: false },
+				axisPointer: {
+					show: true,
+					lineStyle: { color: "#d9d9d9", width: 1 },
+					label: { show: false },
+				},
+			};
+		}),
+		{
 			type: "time" as const,
-			gridIndex: index,
+			gridIndex: 0,
 			min: timeExtent?.[0],
 			max: timeExtent?.[1],
-			show: true,
-			nameMoveOverlap: false,
-			axisTick: {
-				show: isLast,
-				length: 4 * scale,
-				lineStyle: { color: "#c9cdd4" },
-			},
-			axisLine: {
-				show: isLast,
-				lineStyle: { color: "#e5e6eb" },
-			},
-			axisLabel: {
-				show: isLast,
-				color: "#86909c",
-				fontSize,
-				hideOverlap: true,
-				margin: 10 * scale,
-				formatter: (value: number) => formatAxisTime(value),
-			},
-			splitLine: { show: false },
-			axisPointer: {
-				show: true,
-				lineStyle: { color: "#d9d9d9", width: 1 },
-				label: { show: false },
-			},
-		};
-	});
+			show: false,
+		},
+	];
 
 	const yAxisOption = Array.from({ length: count }, (_, index) => {
 		const item = series[index];
@@ -515,9 +652,10 @@ export function buildLineChartOption(
 		const itemMin = item?.min;
 		const itemMax = item?.max;
 		const hasFixedExtent = itemMin != null && itemMax != null;
+		const hasData = Boolean(item?.data.length);
 		const endpoints = createYAxisEndpoints(
-			hasFixedExtent ? Math.min(itemMin, itemMax) : undefined,
-			hasFixedExtent ? Math.max(itemMin, itemMax) : undefined,
+			hasFixedExtent ? Math.min(itemMin, itemMax) : hasData ? undefined : 0,
+			hasFixedExtent ? Math.max(itemMin, itemMax) : hasData ? undefined : 1,
 		);
 		return {
 			type: "value" as const,
@@ -534,14 +672,14 @@ export function buildLineChartOption(
 			},
 			axisTick: {
 				show: true,
-				inside: false,
+				inside: true,
 				length: 4 * scale,
 				lineStyle: { color, width: 1 },
 				interval: (_index: number, value: string | number) =>
 					endpoints.isEndpoint(Number(value)),
 			},
 			axisLabel: {
-				show: true,
+				show: hasData || hasFixedExtent,
 				showMinLabel: true,
 				showMaxLabel: true,
 				hideOverlap: false,
@@ -552,7 +690,7 @@ export function buildLineChartOption(
 				formatter: endpoints.formatter,
 			},
 			splitLine: {
-				show: true,
+				show: hasData,
 				interval: (_index: number, value: string | number) =>
 					endpoints.isEndpoint(Number(value)),
 				lineStyle: { color, width: 1, type: "solid" as const },
@@ -560,53 +698,59 @@ export function buildLineChartOption(
 		};
 	});
 
-	const seriesOption = series.map((item, index) => ({
-		type: "line" as const,
-		name: item.name,
-		data: item.data,
-		xAxisIndex: index,
-		yAxisIndex: index,
-		showSymbol: item.data.length <= 120,
-		symbol: "emptyCircle",
-		symbolSize: 6 * scale,
-		smooth: item.smooth ?? false,
-		step: item.step || undefined,
-		connectNulls: false,
-		sampling: "lttb" as const,
-		lineStyle: {
-			width: 1.5 * scale,
-			color: item.color,
-		},
-		itemStyle: {
-			color: item.color,
-			borderColor: item.color,
-			borderWidth: Math.max(1 * scale, 1),
-		},
-		emphasis: {
-			scale: false,
-			lineStyle: { width: 1.5 * scale },
-		},
-		markLine: {
-			silent: true,
-			symbol: "none",
-			animation: false,
-			label: { show: false },
+	const seriesOption = series.map((item, index) => {
+		const hasData = item.data.length > 0;
+		return {
+			type: "line" as const,
+			name: item.name,
+			data: item.data,
+			xAxisIndex: index,
+			yAxisIndex: index,
+			showSymbol: item.data.length <= 120,
+			symbol: "emptyCircle",
+			symbolSize: 6 * scale,
+			smooth: item.smooth ?? false,
+			step: item.step || undefined,
+			connectNulls: false,
+			sampling: "lttb" as const,
 			lineStyle: {
+				width: 1.5 * scale,
 				color: item.color,
-				width: 1,
-				type: "solid" as const,
 			},
-			data: [{ type: "min" as const }, { type: "max" as const }],
-		},
-	}));
+			itemStyle: {
+				color: item.color,
+				borderColor: item.color,
+				borderWidth: Math.max(1 * scale, 1),
+			},
+			emphasis: {
+				scale: false,
+				lineStyle: { width: 1.5 * scale },
+			},
+			markLine: {
+				silent: true,
+				symbol: "none",
+				animation: false,
+				label: { show: false },
+				lineStyle: {
+					color: item.color,
+					width: 1,
+					type: "solid" as const,
+				},
+				data: hasData
+					? [{ type: "min" as const }, { type: "max" as const }]
+					: [],
+			},
+		};
+	});
 
-	const xAxisIndex = Array.from({ length: count }, (_, index) => index);
+	const seriesAxisIndex = Array.from({ length: count }, (_, index) => index);
+	const sliderAxisIndex = count;
 	const sliderWidth = Math.max(width - layout.left - layout.sliderRight, 0);
 
 	return {
 		animationDuration: 300,
 		axisPointer: {
-			link: [{ xAxisIndex: "all" }],
+			link: [{ xAxisIndex: seriesAxisIndex }],
 		},
 		grid: gridOption,
 		xAxis: xAxisOption,
@@ -625,8 +769,8 @@ export function buildLineChartOption(
 		dataZoom: [
 			{
 				type: "slider",
-				xAxisIndex,
-				filterMode: "filter",
+				xAxisIndex: sliderAxisIndex,
+				filterMode: "none",
 				showDetail: false,
 				brushSelect: false,
 				realtime: true,
@@ -637,6 +781,7 @@ export function buildLineChartOption(
 				width: sliderWidth || undefined,
 				start: zoom.start,
 				end: zoom.end,
+				minValueSpan: MS_DAY,
 				fillerColor: "rgba(116, 146, 219, 0.42)",
 				borderColor: "transparent",
 				backgroundColor: "#eef1f6",
@@ -667,10 +812,11 @@ export function buildLineChartOption(
 			},
 			{
 				type: "inside",
-				xAxisIndex,
-				filterMode: "filter",
+				xAxisIndex: sliderAxisIndex,
+				filterMode: "none",
 				start: zoom.start,
 				end: zoom.end,
+				minValueSpan: MS_DAY,
 				zoomOnMouseWheel: true,
 				moveOnMouseMove: true,
 				moveOnMouseWheel: false,

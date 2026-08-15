@@ -15,13 +15,16 @@ import styles from "./index.module.css";
 import {
 	buildLineChartOption,
 	computeDefaultZoom,
-	computeZoomWindow,
+	computeViewExtent,
+	stepZoomWindowDays,
 	DEFAULT_PAGE_SIZE,
 	formatRangeDate,
 	formatRangeDuration,
 	getLineChartLayout,
 	getStageScale,
 	getTimeExtent,
+	padTimeExtent,
+	pageViewExtent,
 	resolveSeries,
 } from "./utils";
 
@@ -35,9 +38,9 @@ echarts.use([
 	CanvasRenderer,
 ]);
 
-const DEFAULT_RANGE_DAYS = 7;
-const ZOOM_IN_FACTOR = 0.65;
-const ZOOM_OUT_FACTOR = 1.55;
+const SLIDER_RANGE_MS = 24 * 60 * 60 * 1000;
+const AXIS_RANGE_MS = 5 * 60 * 1000;
+const TOTAL_RANGE_DAYS = 7;
 const defaultValueFormatter = (value: number) => String(value);
 
 /**
@@ -103,39 +106,69 @@ const ChevronRightIcon = () => (
 );
 
 /**
- * 左侧多条独立 Y 轴的时序折线图：顶部 dataZoom、+/- 缩放、序列翻页、自定义 Tooltip。
+ * 左侧多条独立 Y 轴的时序折线图：顶部 dataZoom、+/- 缩放、时间轴翻页、自定义 Tooltip。
  */
 const LineCharts = ({
 	series,
-	defaultRangeDays = DEFAULT_RANGE_DAYS,
+	defaultRangeMs = SLIDER_RANGE_MS,
+	axisRangeMs = AXIS_RANGE_MS,
+	totalRangeDays = TOTAL_RANGE_DAYS,
 	pageSize = DEFAULT_PAGE_SIZE,
 	valueFormatter = defaultValueFormatter,
+	onTimePage,
+	onRangeChange,
 }: LineChartsProps) => {
 	const wrapRef = useRef<HTMLDivElement | null>(null);
 	const zoomRef = useRef({ start: 0, end: 100 });
 	const extentKeyRef = useRef("");
-	const [pageIndex, setPageIndex] = useState(0);
+	const emptyEndRef = useRef(0);
+	const sliderWindowRef = useRef<[number, number] | null>(null);
+	const viewLockedRef = useRef(false);
+	const sliderDirtyRef = useRef(false);
+	const lastEmittedRangeRef = useRef<{ from: number; to: number } | null>(
+		null,
+	);
+	const onRangeChangeRef = useRef(onRangeChange);
+	onRangeChangeRef.current = onRangeChange;
 	const [box, setBox] = useState({ width: 0, height: 0, scale: 1 });
 	const [chrome, setChrome] = useState<SliderChrome | null>(null);
+	const [viewExtent, setViewExtent] = useState<[number, number] | null>(null);
 
 	const resolved = useMemo(() => resolveSeries(series), [series]);
-	const timeExtent = useMemo(() => getTimeExtent(resolved), [resolved]);
+	const timeExtent = useMemo(() => {
+		const dataExtent = getTimeExtent(resolved);
+		if (!dataExtent && !emptyEndRef.current) {
+			emptyEndRef.current = Date.now();
+		}
+		if (dataExtent) {
+			emptyEndRef.current = 0;
+		}
+		return padTimeExtent(
+			dataExtent,
+			totalRangeDays,
+			emptyEndRef.current || Date.now(),
+		);
+	}, [resolved, totalRangeDays]);
 	const layout = useMemo(() => getLineChartLayout(box.scale), [box.scale]);
-	const pageCount = Math.max(1, Math.ceil(resolved.length / pageSize) || 1);
-	const safePage = Math.min(pageIndex, pageCount - 1);
 	const visibleSeries = useMemo(
-		() =>
-			resolved.slice(safePage * pageSize, safePage * pageSize + pageSize),
-		[resolved, safePage, pageSize],
+		() => resolved.slice(0, pageSize),
+		[resolved, pageSize],
 	);
-	const extentKey = timeExtent
-		? `${timeExtent[0]}_${timeExtent[1]}_${defaultRangeDays}`
-		: `empty_${defaultRangeDays}`;
+	const extentKey = `${timeExtent[0]}_${timeExtent[1]}_${defaultRangeMs}_${axisRangeMs}_${totalRangeDays}`;
 
 	if (extentKeyRef.current !== extentKey) {
 		extentKeyRef.current = extentKey;
-		zoomRef.current = computeDefaultZoom(timeExtent, defaultRangeDays);
+		zoomRef.current = computeDefaultZoom(timeExtent, defaultRangeMs);
+		sliderWindowRef.current = null;
+		viewLockedRef.current = false;
+		sliderDirtyRef.current = false;
+		lastEmittedRangeRef.current = null;
 	}
+
+	const chartViewExtent = useMemo(
+		() => viewExtent ?? computeViewExtent(timeExtent[1], axisRangeMs),
+		[viewExtent, timeExtent, axisRangeMs],
+	);
 
 	const option = useMemo(
 		() =>
@@ -146,6 +179,8 @@ const LineCharts = ({
 						height: box.height,
 						scale: box.scale,
 						zoom: zoomRef.current,
+						timeExtent,
+						viewExtent: chartViewExtent,
 						valueFormatter,
 					}),
 		[
@@ -154,11 +189,26 @@ const LineCharts = ({
 			box.height,
 			box.scale,
 			extentKey,
+			chartViewExtent,
 			valueFormatter,
 		],
 	);
 
 	const chartRef = useEchartsInit(option);
+
+	useEffect(() => {
+		if (viewLockedRef.current) {
+			return;
+		}
+		const span = timeExtent[1] - timeExtent[0];
+		const zoom = zoomRef.current;
+		const slider: [number, number] = [
+			timeExtent[0] + (span * zoom.start) / 100,
+			timeExtent[0] + (span * zoom.end) / 100,
+		];
+		sliderWindowRef.current = slider;
+		setViewExtent(computeViewExtent(slider[1], axisRangeMs));
+	}, [extentKey]);
 
 	useEffect(() => {
 		const el = wrapRef.current;
@@ -182,6 +232,23 @@ const LineCharts = ({
 		};
 	}, []);
 
+	const emitSliderRange = (from: number, to: number) => {
+		const next = { from: Math.round(from), to: Math.round(to) };
+		if (
+			!Number.isFinite(next.from) ||
+			!Number.isFinite(next.to) ||
+			next.from >= next.to
+		) {
+			return;
+		}
+		const prev = lastEmittedRangeRef.current;
+		if (prev && prev.from === next.from && prev.to === next.to) {
+			return;
+		}
+		lastEmittedRangeRef.current = next;
+		onRangeChangeRef.current?.(next);
+	};
+
 	useEffect(() => {
 		const el = chartRef.current;
 		if (!el || box.width < 8) {
@@ -194,7 +261,7 @@ const LineCharts = ({
 		}
 
 		let cancelled = false;
-		const syncChrome = () => {
+		const syncChrome = (fromUserZoom: boolean) => {
 			if (cancelled || chart.isDisposed()) {
 				return;
 			}
@@ -219,6 +286,9 @@ const LineCharts = ({
 
 			const startPct = Number(slider.start ?? 0);
 			const endPct = Number(slider.end ?? 100);
+			const zoomChanged =
+				Math.abs(startPct - zoomRef.current.start) > 0.15 ||
+				Math.abs(endPct - zoomRef.current.end) > 0.15;
 			zoomRef.current = { start: startPct, end: endPct };
 			const span = timeExtent[1] - timeExtent[0];
 			const parsedStart = Number(slider.startValue);
@@ -235,7 +305,16 @@ const LineCharts = ({
 			);
 			const badgeLeft = layout.left + (track * startPct) / 100;
 			const badgeWidth = (track * (endPct - startPct)) / 100;
-
+			sliderWindowRef.current = [startMs, endMs];
+			if (fromUserZoom && zoomChanged && !viewLockedRef.current) {
+				sliderDirtyRef.current = true;
+				const nextView = computeViewExtent(endMs, axisRangeMs);
+				setViewExtent((prev) =>
+					prev && prev[0] === nextView[0] && prev[1] === nextView[1]
+						? prev
+						: nextView,
+				);
+			}
 			setChrome({
 				startDate: formatRangeDate(timeExtent[0]),
 				endDate: formatRangeDate(timeExtent[1]),
@@ -248,13 +327,42 @@ const LineCharts = ({
 			});
 		};
 
-		chart.on("dataZoom", syncChrome);
-		const rafId = requestAnimationFrame(syncChrome);
+		const onDataZoom = () => {
+			syncChrome(true);
+		};
+		const flushSliderRange = () => {
+			requestAnimationFrame(() => {
+				if (
+					cancelled ||
+					viewLockedRef.current ||
+					!sliderDirtyRef.current
+				) {
+					return;
+				}
+				sliderDirtyRef.current = false;
+				const range = sliderWindowRef.current;
+				if (!range) {
+					return;
+				}
+				emitSliderRange(range[0], range[1]);
+			});
+		};
+		chart.on("dataZoom", onDataZoom);
+		const wrapEl = wrapRef.current;
+		wrapEl?.addEventListener("pointerup", flushSliderRange, true);
+		wrapEl?.addEventListener("pointercancel", flushSliderRange, true);
+		wrapEl?.addEventListener("touchend", flushSliderRange, true);
+		const rafId = requestAnimationFrame(() => {
+			syncChrome(false);
+		});
 		return () => {
 			cancelled = true;
 			cancelAnimationFrame(rafId);
+			wrapEl?.removeEventListener("pointerup", flushSliderRange, true);
+			wrapEl?.removeEventListener("pointercancel", flushSliderRange, true);
+			wrapEl?.removeEventListener("touchend", flushSliderRange, true);
 			if (!chart.isDisposed()) {
-				chart.off("dataZoom", syncChrome);
+				chart.off("dataZoom", onDataZoom);
 			}
 		};
 	}, [
@@ -264,9 +372,10 @@ const LineCharts = ({
 		layout.left,
 		layout.sliderRight,
 		timeExtent,
+		axisRangeMs,
 	]);
 
-	const applyZoom = (factor: number) => {
+	const applyZoom = (deltaDays: number) => {
 		const el = chartRef.current;
 		if (!el) {
 			return;
@@ -275,8 +384,13 @@ const LineCharts = ({
 		if (!chart || chart.isDisposed()) {
 			return;
 		}
-		const next = computeZoomWindow(zoomRef.current, factor);
-		zoomRef.current = next;
+		const next = stepZoomWindowDays(zoomRef.current, timeExtent, deltaDays);
+		zoomRef.current = { start: next.start, end: next.end };
+		viewLockedRef.current = false;
+		sliderWindowRef.current = [next.from, next.to];
+		sliderDirtyRef.current = false;
+		setViewExtent(computeViewExtent(next.to, axisRangeMs));
+		emitSliderRange(next.from, next.to);
 		chart.dispatchAction({
 			type: "dataZoom",
 			batch: [
@@ -284,15 +398,38 @@ const LineCharts = ({
 				{ dataZoomIndex: 1, start: next.start, end: next.end },
 			],
 		});
+		requestAnimationFrame(() => {
+			sliderDirtyRef.current = false;
+		});
 	};
 
-	const zoomSpan = chrome ? chrome.endPct - chrome.startPct : 100;
-	const canZoomIn = zoomSpan > 1.2;
-	const canZoomOut = Boolean(
-		chrome && (chrome.startPct > 0.2 || chrome.endPct < 99.8),
-	);
-	const canPagePrev = safePage > 0;
-	const canPageNext = safePage < pageCount - 1;
+	const applyTimePage = (direction: -1 | 1) => {
+		const nextView = pageViewExtent(
+			chartViewExtent,
+			direction,
+			axisRangeMs,
+			timeExtent,
+		);
+		if (
+			nextView[0] === chartViewExtent[0] &&
+			nextView[1] === chartViewExtent[1]
+		) {
+			return;
+		}
+		viewLockedRef.current = true;
+		setViewExtent(nextView);
+		onTimePage?.({ from: nextView[0], to: nextView[1] });
+	};
+
+	const sliderSpanMs = chrome
+		? ((chrome.endPct - chrome.startPct) / 100) *
+			(timeExtent[1] - timeExtent[0])
+		: SLIDER_RANGE_MS;
+	const sliderDays = Math.max(1, Math.round(sliderSpanMs / SLIDER_RANGE_MS));
+	const canZoomIn = sliderDays > 1;
+	const canZoomOut = sliderDays < totalRangeDays;
+	const canPagePrev = chartViewExtent[0] - axisRangeMs >= timeExtent[0];
+	const canPageNext = chartViewExtent[1] <= timeExtent[1];
 	const sideTop =
 		layout.dataZoomTop +
 		layout.dataZoomHeight +
@@ -358,7 +495,7 @@ const LineCharts = ({
 					disabled={!canZoomIn}
 					aria-label="放大"
 					onClick={() => {
-						applyZoom(ZOOM_IN_FACTOR);
+						applyZoom(-1);
 					}}
 				>
 					<PlusIcon />
@@ -374,7 +511,7 @@ const LineCharts = ({
 					disabled={!canZoomOut}
 					aria-label="缩小"
 					onClick={() => {
-						applyZoom(ZOOM_OUT_FACTOR);
+						applyZoom(1);
 					}}
 				>
 					<MinusIcon />
@@ -390,9 +527,9 @@ const LineCharts = ({
 					transform: "translateY(-50%)",
 				}}
 				disabled={!canPagePrev}
-				aria-label="上一组指标"
+				aria-label="上一页"
 				onClick={() => {
-					setPageIndex((prev) => Math.max(prev - 1, 0));
+					applyTimePage(-1);
 				}}
 			>
 				<ChevronLeftIcon />
@@ -407,9 +544,9 @@ const LineCharts = ({
 					transform: "translateY(-50%)",
 				}}
 				disabled={!canPageNext}
-				aria-label="下一组指标"
+				aria-label="下一页"
 				onClick={() => {
-					setPageIndex((prev) => Math.min(prev + 1, pageCount - 1));
+					applyTimePage(1);
 				}}
 			>
 				<ChevronRightIcon />

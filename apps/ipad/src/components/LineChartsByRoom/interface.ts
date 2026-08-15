@@ -34,12 +34,20 @@ export interface LineChartSeriesItem {
 export interface LineChartsProps {
 	/** 每条序列独占一条 Y 轴与一块纵向 grid */
 	series: LineChartSeriesItem[];
-	/** 初始可见窗口天数，默认 7 */
-	defaultRangeDays?: number;
-	/** 一屏展示的独立 Y 轴条数，超出后左右翻页，默认 3 */
+	/** 滑块选中窗口时长（毫秒），默认 1 天 */
+	defaultRangeMs?: number;
+	/** 图表 X 轴可见时长（毫秒），默认 5 分钟 */
+	axisRangeMs?: number;
+	/** 滑块轨道总天数，默认 7 */
+	totalRangeDays?: number;
+	/** 一屏展示的独立 Y 轴条数，默认 3 */
 	pageSize?: number;
 	/** Tooltip「原始值」格式化 */
 	valueFormatter?: (value: number, seriesName: string) => string;
+	/** 时间轴翻页：回传新的 5 分钟查询区间 */
+	onTimePage?: (range: { from: number; to: number }) => void;
+	/** 滑块拖动结束（含 +/-）：回传当前选中窗口，供趋势接口 `from` / `to` */
+	onRangeChange?: (range: { from: number; to: number }) => void;
 }
 
 /**
@@ -99,6 +107,10 @@ export interface LineChartBuildContext {
 		start: number;
 		end: number;
 	};
+	/** 滑块 / 轨道总范围 */
+	timeExtent: [number, number] | null;
+	/** 图表 X 轴可见范围（与滑块窗口解耦） */
+	viewExtent: [number, number] | null;
 	/** Tooltip 数值格式化 */
 	valueFormatter: (value: number, seriesName: string) => string;
 }

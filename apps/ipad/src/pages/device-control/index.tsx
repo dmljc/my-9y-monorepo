@@ -49,12 +49,14 @@ import {
 	type MetricIconKey,
 	mapRuntimeParams,
 	mergeDeviceFromWs,
+	mergeRoomTrendSeries,
 	normalizeBuildingTabs,
 	normalizeDeviceCode,
 	parseDevicesFromRooms,
 	parseTabletWsMessage,
 	previewDeviceCodes,
 	TREND_RANGE_MS,
+	TREND_SLIDER_RANGE_MS,
 	toRoomTrendSeries,
 	toTrendChartData,
 } from "./utils";
@@ -271,6 +273,8 @@ const DeviceControl = () => {
 	const [roomTrendSeries, setRoomTrendSeries] = useState<
 		RoomTrendSeriesItem[]
 	>([]);
+	const roomTrendReqRef = useRef(0);
+	const roomTrendFromRef = useRef<number | null>(null);
 	const wsMetricsRef = useRef<{
 		byId: Map<number, DeviceItem["metrics"]>;
 		byCode: Map<string, DeviceItem["metrics"]>;
@@ -506,19 +510,24 @@ const DeviceControl = () => {
 		}
 		setRoomTrendSeries(emptySeries);
 		let cancelled = false;
+		const reqId = ++roomTrendReqRef.current;
 		const to = Date.now();
-		const from = to - TREND_RANGE_MS;
+		const from = to - TREND_SLIDER_RANGE_MS;
+		roomTrendFromRef.current = from;
 		listRoomTrend({ buildingId, roomId, propertyId, from, to })
 			.then((data) => {
-				if (cancelled) return;
+				if (cancelled || reqId !== roomTrendReqRef.current) return;
 				const series = toRoomTrendSeries(data);
 				setRoomTrendSeries(series.length ? series : emptySeries);
 			})
 			.catch(() => {
-				if (!cancelled) setRoomTrendSeries(emptySeries);
+				if (!cancelled && reqId === roomTrendReqRef.current) {
+					setRoomTrendSeries(emptySeries);
+				}
 			});
 		return () => {
 			cancelled = true;
+			roomTrendReqRef.current += 1;
 		};
 	}, [
 		listMode,
@@ -526,6 +535,48 @@ const DeviceControl = () => {
 		selectedRoom?.roomId,
 		trendPropertyId,
 	]);
+
+	const fetchRoomTrendRange = (range: { from: number; to: number }) => {
+		const buildingId = currentBuilding?.buildingId ?? 0;
+		const roomId = selectedRoom?.roomId ?? 0;
+		const propertyId = trendPropertyId;
+		if (
+			!buildingId ||
+			!roomId ||
+			!propertyId ||
+			!Number.isFinite(range.from) ||
+			!Number.isFinite(range.to)
+		) {
+			return;
+		}
+		const reqId = ++roomTrendReqRef.current;
+		listRoomTrend({
+			buildingId,
+			roomId,
+			propertyId,
+			from: range.from,
+			to: range.to,
+		})
+			.then((data) => {
+				if (reqId !== roomTrendReqRef.current) return;
+				const series = toRoomTrendSeries(data);
+				if (!series.length) return;
+				setRoomTrendSeries((prev) => mergeRoomTrendSeries(prev, series));
+			})
+			.catch(() => undefined);
+	};
+
+	/** 翻页：沿用当前查询的 from，只更新 to */
+	const handleRoomTrendTimePage = (range: { from: number; to: number }) => {
+		const from = roomTrendFromRef.current ?? range.from;
+		fetchRoomTrendRange({ from, to: range.to });
+	};
+
+	/** 滑块松手：同时更新 from / to */
+	const handleRoomTrendRangeChange = (range: { from: number; to: number }) => {
+		roomTrendFromRef.current = range.from;
+		fetchRoomTrendRange(range);
+	};
 
 	useEffect(() => {
 		return subscribeTabletWs((raw) => {
@@ -1170,6 +1221,12 @@ const DeviceControl = () => {
 												>
 													<LineChartsByRoom
 														series={roomTrendSeries}
+														onTimePage={
+															handleRoomTrendTimePage
+														}
+														onRangeChange={
+															handleRoomTrendRangeChange
+														}
 													/>
 												</div>
 											</>

@@ -569,9 +569,14 @@ export const getMetricIconKey = (label: string): MetricIconKey => {
 };
 
 /**
- * 趋势查询时间跨度（毫秒），近 5 分钟。
+ * 趋势查询 / 滑块总范围（毫秒），最近 7 天。
  */
-export const TREND_RANGE_MS = 5 * 60 * 1000;
+export const TREND_RANGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * 房间折线滑块默认选中窗口（毫秒），与图表「1天」一致。
+ */
+export const TREND_SLIDER_RANGE_MS = 24 * 60 * 60 * 1000;
 
 /**
  * 折线图抽稀上限，避免类目轴点过多。
@@ -826,6 +831,41 @@ export const toRoomTrendSeries = (data: unknown): RoomTrendSeriesItem[] => {
 			})),
 		};
 	});
+};
+
+/**
+ * 将后拉取的房间趋势合并进已有序列（按名称对齐，按时间去重升序）。
+ *
+ * @param {RoomTrendSeriesItem[]} - 当前已展示的序列。
+ * @param {RoomTrendSeriesItem[]} - 新拉取的序列。
+ * @returns {RoomTrendSeriesItem[]} - 合并后的序列。
+ */
+export const mergeRoomTrendSeries = (
+	current: RoomTrendSeriesItem[],
+	incoming: RoomTrendSeriesItem[],
+): RoomTrendSeriesItem[] => {
+	if (!incoming.length) return current;
+	if (!current.length) return incoming;
+	const incomingByName = new Map(incoming.map((item) => [item.name, item]));
+	const used = new Set<string>();
+	const merged = current.map((item) => {
+		const next = incomingByName.get(item.name);
+		if (!next) return item;
+		used.add(item.name);
+		if (!next.data.length) return item;
+		const points = new Map(item.data.map((point) => [point.time, point]));
+		for (const point of next.data) {
+			points.set(point.time, point);
+		}
+		return {
+			...item,
+			data: [...points.values()].sort((a, b) => a.time - b.time),
+		};
+	});
+	for (const item of incoming) {
+		if (!used.has(item.name)) merged.push(item);
+	}
+	return merged;
 };
 
 /**
