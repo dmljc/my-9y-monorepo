@@ -187,13 +187,8 @@ export interface DeviceTrendPoint {
  * 按设备折线图数据。
  */
 export interface DeviceTrendChartData {
-	xAxisData: string[];
-	yAxisData: number[];
-	yAxis: {
-		min: number;
-		max: number;
-		interval?: number;
-	};
+	/** 时序点，供 LineCharts 时间轴使用。 */
+	data: DeviceTrendPoint[];
 }
 
 /**

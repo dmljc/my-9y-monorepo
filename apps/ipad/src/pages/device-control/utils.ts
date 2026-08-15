@@ -738,11 +738,6 @@ export const getMetricIconKey = (label: string): MetricIconKey => {
 };
 
 /**
- * 趋势查询 / 滑块总范围（毫秒），最近 7 天。
- */
-export const TREND_RANGE_MS = 7 * 24 * 60 * 60 * 1000;
-
-/**
  * 房间折线滑块默认选中窗口（毫秒），与图表「1天」一致。
  */
 export const TREND_SLIDER_RANGE_MS = 24 * 60 * 60 * 1000;
@@ -756,12 +751,8 @@ const TREND_MAX_POINTS = 310;
  * 空趋势图占位。
  */
 export const EMPTY_TREND_CHART: DeviceTrendChartData = {
-	xAxisData: [],
-	yAxisData: [],
-	yAxis: { min: 0, max: 1 },
+	data: [],
 };
-
-const pad2 = (value: number) => String(value).padStart(2, "0");
 
 /**
  * 将未知时间字段转为毫秒时间戳。
@@ -884,17 +875,6 @@ export const parseDeviceTrend = (data: unknown): DeviceTrendPoint[] => {
 };
 
 /**
- * 格式化趋势图 X 轴日期。
- *
- * @param {number} - 毫秒时间戳。
- * @returns {string} - `MM/DD`。
- */
-export const formatTrendAxisTime = (time: number): string => {
-	const date = new Date(time);
-	return `${pad2(date.getMonth() + 1)}/${pad2(date.getDate())}`;
-};
-
-/**
  * 按上限均匀抽稀趋势点。
  *
  * @param {DeviceTrendPoint[]} - 原始点。
@@ -915,37 +895,36 @@ const downsampleTrendPoints = (
 };
 
 /**
- * 按数值范围生成 Y 轴刻度。
- *
- * @param {number[]} - 折线数值。
- * @returns {DeviceTrendChartData["yAxis"]} - min/max。
- */
-export const buildTrendYAxis = (
-	values: number[],
-): DeviceTrendChartData["yAxis"] => {
-	if (!values.length) return { min: 0, max: 1 };
-	const maxVal = Math.max(...values);
-	const minVal = Math.min(...values);
-	const min = minVal >= 0 ? 0 : Math.floor(minVal);
-	const paddedMax = maxVal === min ? maxVal + 1 : maxVal;
-	const max = Math.max(min + 1, Math.ceil(paddedMax));
-	return max - min <= 8 ? { min, max, interval: 1 } : { min, max };
-};
-
-/**
  * 将趋势点转为按设备折线图数据。
  *
  * @param {unknown} - 趋势接口 data。
- * @returns {DeviceTrendChartData} - 类目轴与 Y 轴配置。
+ * @returns {DeviceTrendChartData} - 时序点。
  */
 export const toTrendChartData = (data: unknown): DeviceTrendChartData => {
 	const points = downsampleTrendPoints(parseDeviceTrend(data));
 	if (!points.length) return EMPTY_TREND_CHART;
-	const yAxisData = points.map((item) => item.value);
+	return { data: points };
+};
+
+/**
+ * 将后拉取的设备趋势点合并进已有数据（按时间去重升序）。
+ *
+ * @param {DeviceTrendChartData} - 当前已展示的数据。
+ * @param {DeviceTrendChartData} - 新拉取的数据。
+ * @returns {DeviceTrendChartData} - 合并后的数据。
+ */
+export const mergeTrendChartData = (
+	current: DeviceTrendChartData,
+	incoming: DeviceTrendChartData,
+): DeviceTrendChartData => {
+	if (!incoming.data.length) return current;
+	if (!current.data.length) return incoming;
+	const points = new Map(current.data.map((point) => [point.time, point]));
+	for (const point of incoming.data) {
+		points.set(point.time, point);
+	}
 	return {
-		xAxisData: points.map((item) => formatTrendAxisTime(item.time)),
-		yAxisData,
-		yAxis: buildTrendYAxis(yAxisData),
+		data: [...points.values()].sort((a, b) => a.time - b.time),
 	};
 };
 

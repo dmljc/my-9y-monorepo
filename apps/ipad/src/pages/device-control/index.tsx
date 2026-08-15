@@ -2,7 +2,7 @@ import { App, Empty } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import Access from "@/components/Access";
-import LineCharts from "@/components/LineCharts";
+import LineCharts from "@/components/LineChartsByDevice";
 import LineChartsByRoom from "@/components/LineChartsByRoom";
 import {
 	DEVICE_CONTROL_BUILDING_PERMS,
@@ -54,12 +54,12 @@ import {
 	mapRuntimeParams,
 	mergeDeviceFromWs,
 	mergeRoomTrendSeries,
+	mergeTrendChartData,
 	normalizeBuildingTabs,
 	normalizeDeviceCode,
 	parseDevicesFromRooms,
 	parseTabletWsMessage,
 	previewDeviceCodes,
-	TREND_RANGE_MS,
 	TREND_SLIDER_RANGE_MS,
 	toRoomTrendSeries,
 	toTrendChartData,
@@ -275,6 +275,8 @@ const DeviceControl = () => {
 	const [roomTrendSeries, setRoomTrendSeries] = useState<
 		RoomTrendSeriesItem[]
 	>([]);
+	const deviceTrendReqRef = useRef(0);
+	const deviceTrendFromRef = useRef<number | null>(null);
 	const roomTrendReqRef = useRef(0);
 	const roomTrendFromRef = useRef<number | null>(null);
 	const wsMetricsRef = useRef<{
@@ -481,18 +483,23 @@ const DeviceControl = () => {
 			return;
 		}
 		let cancelled = false;
+		const reqId = ++deviceTrendReqRef.current;
 		const to = Date.now();
-		const from = to - TREND_RANGE_MS;
+		const from = to - TREND_SLIDER_RANGE_MS;
+		deviceTrendFromRef.current = from;
 		listDeviceTrend({ deviceId, propertyId, from, to })
 			.then((data) => {
-				if (cancelled) return;
+				if (cancelled || reqId !== deviceTrendReqRef.current) return;
 				setTrendChart(toTrendChartData(data));
 			})
 			.catch(() => {
-				if (!cancelled) setTrendChart(EMPTY_TREND_CHART);
+				if (!cancelled && reqId === deviceTrendReqRef.current) {
+					setTrendChart(EMPTY_TREND_CHART);
+				}
 			});
 		return () => {
 			cancelled = true;
+			deviceTrendReqRef.current += 1;
 		};
 	}, [listMode, selected?.deviceId, trendPropertyId]);
 
@@ -538,6 +545,48 @@ const DeviceControl = () => {
 		trendPropertyId,
 	]);
 
+	const fetchDeviceTrendRange = (range: { from: number; to: number }) => {
+		const deviceId = selected?.deviceId ?? 0;
+		const propertyId = trendPropertyId;
+		if (
+			!deviceId ||
+			!propertyId ||
+			!Number.isFinite(range.from) ||
+			!Number.isFinite(range.to)
+		) {
+			return;
+		}
+		const reqId = ++deviceTrendReqRef.current;
+		listDeviceTrend({
+			deviceId,
+			propertyId,
+			from: range.from,
+			to: range.to,
+		})
+			.then((data) => {
+				if (reqId !== deviceTrendReqRef.current) return;
+				const next = toTrendChartData(data);
+				if (!next.data.length) return;
+				setTrendChart((prev) => mergeTrendChartData(prev, next));
+			})
+			.catch(() => undefined);
+	};
+
+	/** 翻页：沿用当前查询的 from，只更新 to */
+	const handleDeviceTrendTimePage = (range: { from: number; to: number }) => {
+		const from = deviceTrendFromRef.current ?? range.from;
+		fetchDeviceTrendRange({ from, to: range.to });
+	};
+
+	/** 滑块松手：同时更新 from / to */
+	const handleDeviceTrendRangeChange = (range: {
+		from: number;
+		to: number;
+	}) => {
+		deviceTrendFromRef.current = range.from;
+		fetchDeviceTrendRange(range);
+	};
+
 	const fetchRoomTrendRange = (range: { from: number; to: number }) => {
 		const buildingId = currentBuilding?.buildingId ?? 0;
 		const roomId = selectedRoom?.roomId ?? 0;
@@ -563,7 +612,9 @@ const DeviceControl = () => {
 				if (reqId !== roomTrendReqRef.current) return;
 				const series = toRoomTrendSeries(data);
 				if (!series.length) return;
-				setRoomTrendSeries((prev) => mergeRoomTrendSeries(prev, series));
+				setRoomTrendSeries((prev) =>
+					mergeRoomTrendSeries(prev, series),
+				);
 			})
 			.catch(() => undefined);
 	};
@@ -575,7 +626,10 @@ const DeviceControl = () => {
 	};
 
 	/** 滑块松手：同时更新 from / to */
-	const handleRoomTrendRangeChange = (range: { from: number; to: number }) => {
+	const handleRoomTrendRangeChange = (range: {
+		from: number;
+		to: number;
+	}) => {
 		roomTrendFromRef.current = range.from;
 		fetchRoomTrendRange(range);
 	};
@@ -1258,13 +1312,13 @@ const DeviceControl = () => {
 										) : (
 											<div className={styles.chartWrap}>
 												<LineCharts
-													xAxisData={
-														trendChart.xAxisData
+													data={trendChart.data}
+													onTimePage={
+														handleDeviceTrendTimePage
 													}
-													yAxisData={
-														trendChart.yAxisData
+													onRangeChange={
+														handleDeviceTrendRangeChange
 													}
-													yAxis={trendChart.yAxis}
 												/>
 											</div>
 										)}
