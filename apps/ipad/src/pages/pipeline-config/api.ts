@@ -1,8 +1,5 @@
 import { request } from "@/utils";
-import type {
-	DevicePipelineSaveParams,
-	RoomPipelinePayload,
-} from "./interface";
+import type { RoomPipelinePayload } from "./interface";
 
 /**
  * 查询厂房列表。
@@ -27,28 +24,6 @@ export const switchBuilding = (
 };
 
 /**
- * 设备-查询管道配置列表。
- *
- * @param {number} - 厂房 ID。
- */
-export const listDevicePipelines = (buildingId: number): Promise<any> => {
-	return request.get("/iiot/tablet/pipeline/device/list", {
-		params: { buildingId },
-	});
-};
-
-/**
- * 设备-保存管道配置（JSON body）。
- *
- * @param {DevicePipelineSaveParams} - deviceId / pipelineId / flowRate。
- */
-export const saveDevicePipeline = (
-	payload: DevicePipelineSaveParams,
-): Promise<any> => {
-	return request.post("/iiot/tablet/pipeline/device/save", payload);
-};
-
-/**
  * 房间-查询管道配置列表（按厂房；可不传 roomId 拉全量）。
  *
  * @param {number} - 厂房 ID。
@@ -67,7 +42,7 @@ export const listRoomPipelines = (
 };
 
 /**
- * 管道号下拉数据源（兼房间↔管道映射）。
+ * 管道号下拉数据源。
  *
  * @param {number} - 厂房 ID。
  */

@@ -13,11 +13,6 @@ export interface BuildingTab {
 }
 
 /**
- * 管道配置 Tab 类型（房间 / 设备）。
- */
-export type PipelineConfigType = "room" | "device";
-
-/**
  * 管道号下拉选项。
  */
 export interface PipeOption {
@@ -26,29 +21,20 @@ export interface PipeOption {
 }
 
 /**
- * 管道配置列表行（房间 / 设备共用表格模型）。
+ * 管道配置列表行。
  */
 export interface PipelineItem {
-	/** 行主键：房间为配置 id，设备为 deviceId。 */
+	/** 行主键：房间配置 id。 */
 	id: number;
-	/** 房间配置 id（房间 Tab）。 */
+	/** 房间配置 id。 */
 	configId?: number;
-	/** 房间 ID（房间 Tab 保存必填）。 */
+	/** 房间 ID（保存必填）。 */
 	roomId?: number;
-	/** 设备 ID（设备 Tab；与 id 相同）。 */
-	deviceId?: number;
-	deviceCode: string;
-	deviceName: string;
 	/** 房间号。 */
 	sampleRoom: string;
-	/** 管道号（IN），房间配置使用。 */
+	/** 管道号（IN）。 */
 	pipeIn: string;
-	/** 管道号（OUT），设备配置使用。 */
-	pipeOut: string;
-	/** 流量（L/min），设备配置使用；以字符串便于受控输入。 */
-	flowRate: string;
 	buildingId: number;
-	configType: PipelineConfigType;
 }
 
 /**
@@ -78,31 +64,4 @@ export interface RoomPipelinePayload {
  */
 export interface PipelineOptionRow {
 	pipelineId?: string;
-	room?: string;
-}
-
-/**
- * 设备管道配置行（对齐 device/list 精简字段）。
- */
-export interface DevicePipelineRow {
-	id?: number;
-	deviceCode?: string;
-	deviceName?: string;
-	pipelineId?: string;
-	flowRate?: number | string | null;
-	room?: string;
-}
-
-/**
- * 设备-保存管道配置请求体（方案3：用 JSON body 传参）。
- */
-export interface DevicePipelineSaveParams {
-	deviceId: number;
-	pipelineId?: string;
-	/**
-	 * 流量。
-	 * - 传 number：保存该流量
-	 * - 传 null：清空已有流量
-	 */
-	flowRate?: number | null;
 }
