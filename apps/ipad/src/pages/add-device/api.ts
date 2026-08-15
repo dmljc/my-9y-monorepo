@@ -67,15 +67,6 @@ export const remove = (ids: string): Promise<any> => {
 };
 
 /**
- * 切换设备运行状态（运行中 / 已关闭）。
- *
- * @param {number} - 设备 id。
- */
-export const toggleStatus = (id: number): Promise<any> => {
-	return request.put(`/iiot/tablet/ledger/${id}/status`);
-};
-
-/**
  * 厂房总开关（on / off），会联动该厂房设备状态。
  *
  * @param {number} - 厂房 ID。

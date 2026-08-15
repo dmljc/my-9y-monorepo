@@ -7,14 +7,7 @@ import { LEDGER_BUILDING_PERMS, PERM_LEDGER } from "@/constants/permission";
 import { usePermission } from "@/hooks/usePermission";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
 import { filterBuildingsByPermission } from "@/utils";
-import {
-	create,
-	list,
-	listBuildings,
-	remove,
-	toggleStatus,
-	update,
-} from "./api";
+import { create, list, listBuildings, remove, update } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import type { BuildingTab, Device, DeviceFormValues } from "./interface";
@@ -134,22 +127,6 @@ const AddDevice = () => {
 		});
 	};
 
-	const handleToggleStatus = (record: Device) => {
-		const closing = record.status === "running";
-		modal.confirm({
-			title: closing ? "确认关闭" : "确认开启",
-			content: closing
-				? `确定将设备「${record.deviceCode}」关闭吗？关闭后可编辑或删除。`
-				: `确定将设备「${record.deviceCode}」开启为进行中吗？`,
-			onOk: async () => {
-				await toggleStatus(record.id);
-				message.success(closing ? "已关闭" : "已开启");
-				if (currentBuilding)
-					await loadDevices(currentBuilding.buildingId);
-			},
-		});
-	};
-
 	const handleModalSubmit = async (values: DeviceFormValues) => {
 		if (editingRecord) {
 			await update(
@@ -211,21 +188,7 @@ const AddDevice = () => {
 			key: "actions",
 			align: "center",
 			render: (_, record) => {
-				if (record.status === "running") {
-					return (
-						<div className={styles.actions}>
-							<Access code={PERM_LEDGER.DISABLE}>
-								<button
-									type="button"
-									className={styles.actionBtn}
-									onClick={() => handleToggleStatus(record)}
-								>
-									关闭
-								</button>
-							</Access>
-						</div>
-					);
-				}
+				if (record.status === "running") return null;
 				return (
 					<div className={styles.actions}>
 						<Access code={PERM_LEDGER.EDIT}>
@@ -235,15 +198,6 @@ const AddDevice = () => {
 								onClick={() => handleEdit(record)}
 							>
 								编辑
-							</button>
-						</Access>
-						<Access code={PERM_LEDGER.ENABLE}>
-							<button
-								type="button"
-								className={styles.actionBtn}
-								onClick={() => handleToggleStatus(record)}
-							>
-								开启
 							</button>
 						</Access>
 						<Access code={PERM_LEDGER.REMOVE}>
