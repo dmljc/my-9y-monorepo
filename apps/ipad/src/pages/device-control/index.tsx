@@ -215,7 +215,9 @@ const DeviceControl = () => {
 	const [buildingKey, setBuildingKey] = useState("");
 	const [devices, setDevices] = useState<DeviceItem[]>([]);
 	const [masterOn, setMasterOn] = useState(true);
-	const [loading, setLoading] = useState(false);
+	const [buildingSwitchLoading, setBuildingSwitchLoading] = useState(false);
+	const [deviceSwitchLoading, setDeviceSwitchLoading] = useState(false);
+	const [cleanLoading, setCleanLoading] = useState(false);
 	const [listMode, setListMode] = useState<ListMode>("device");
 	const [instanceOpen, setInstanceOpen] = useState(false);
 	const [roomOpen, setRoomOpen] = useState(false);
@@ -643,7 +645,7 @@ const DeviceControl = () => {
 			return;
 		}
 		const name = currentBuilding.label;
-		setLoading(true);
+		setBuildingSwitchLoading(true);
 		try {
 			await switchBuilding(
 				currentBuilding.buildingId,
@@ -660,13 +662,13 @@ const DeviceControl = () => {
 			);
 			await loadDevices(currentBuilding.buildingId, buildingKey, checked);
 		} finally {
-			setLoading(false);
+			setBuildingSwitchLoading(false);
 		}
 	};
 
 	const handleDeviceSwitch = async (checked: boolean) => {
 		if (!selected || !currentBuilding) return;
-		setLoading(true);
+		setDeviceSwitchLoading(true);
 		try {
 			await switchDevice(selected.deviceId, checked ? "on" : "off");
 			const nextDevices = devices.map((item) =>
@@ -679,14 +681,14 @@ const DeviceControl = () => {
 			message.success(checked ? "设备开关已开启" : "设备开关已关闭");
 			await loadDevices(currentBuilding.buildingId, buildingKey);
 		} finally {
-			setLoading(false);
+			setDeviceSwitchLoading(false);
 		}
 	};
 
 	const handleClean = async () => {
 		if (!selected || !currentBuilding || selected.enabled) return;
 		const wasCleaning = selected.cleaning;
-		setLoading(true);
+		setCleanLoading(true);
 		try {
 			await toggleClean(selected.deviceId);
 			await loadDevices(currentBuilding.buildingId, buildingKey);
@@ -694,7 +696,7 @@ const DeviceControl = () => {
 				wasCleaning ? "已取消设备清洗" : "已下发设备清洗指令",
 			);
 		} finally {
-			setLoading(false);
+			setCleanLoading(false);
 		}
 	};
 
@@ -778,6 +780,7 @@ const DeviceControl = () => {
 								}
 							: undefined
 					}
+					masterLoading={buildingSwitchLoading}
 				/>
 
 				<div className={styles.body}>
@@ -1236,12 +1239,13 @@ const DeviceControl = () => {
 											<Button
 												type="primary"
 												className={styles.actionBtn}
+												disabled={cleanLoading}
 												onClick={() => {
 													handleDeviceSwitch(
 														!selected.enabled,
 													);
 												}}
-												loading={loading}
+												loading={deviceSwitchLoading}
 											>
 												{selected.enabled
 													? "关闭设备"
@@ -1252,7 +1256,11 @@ const DeviceControl = () => {
 											<Button
 												type="primary"
 												className={styles.actionBtn}
-												disabled={selected.enabled}
+												disabled={
+													selected.enabled ||
+													deviceSwitchLoading ||
+													cleanLoading
+												}
 												onClick={() => {
 													setInstanceOpen(true);
 												}}
@@ -1262,7 +1270,11 @@ const DeviceControl = () => {
 											<Button
 												type="primary"
 												className={styles.actionBtn}
-												disabled={selected.enabled}
+												disabled={
+													selected.enabled ||
+													deviceSwitchLoading ||
+													cleanLoading
+												}
 												onClick={() => {
 													setRoomOpen(true);
 												}}
@@ -1275,11 +1287,14 @@ const DeviceControl = () => {
 												<Button
 													type="primary"
 													className={styles.actionBtn}
-													disabled={selected.enabled}
+												disabled={
+													selected.enabled ||
+													deviceSwitchLoading
+												}
 													onClick={() => {
 														handleClean();
 													}}
-													loading={loading}
+													loading={cleanLoading}
 												>
 													{selected.cleaning
 														? "清洗中"

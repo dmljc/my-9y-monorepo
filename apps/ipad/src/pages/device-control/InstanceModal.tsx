@@ -227,7 +227,11 @@ const InstanceModal = ({
 			onOk={onOk}
 			onCancel={onCancel}
 			confirmLoading={loading}
+			cancelButtonProps={{ disabled: loading }}
+			closable={!loading}
 			destroyOnHidden
+			keyboard={!loading}
+			maskClosable={!loading}
 			centered
 			width="calc(730 / 1400 * 100cqw)"
 			getContainer={getContainer}

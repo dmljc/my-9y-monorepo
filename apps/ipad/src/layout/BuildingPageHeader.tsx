@@ -28,6 +28,8 @@ export interface BuildingPageHeaderProps {
 	masterOn?: boolean;
 	/** 厂房总开关变更；仅设备控制页传入。 */
 	onMasterChange?: (checked: boolean) => void;
+	/** 厂房总开关接口请求状态；仅设备控制页传入。 */
+	masterLoading?: boolean;
 }
 
 /**
@@ -40,6 +42,7 @@ const BuildingPageHeader = ({
 	onBuildingChange,
 	masterOn,
 	onMasterChange,
+	masterLoading = false,
 }: BuildingPageHeaderProps) => {
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -95,6 +98,7 @@ const BuildingPageHeader = ({
 						type="primary"
 						className={styles.masterBtn}
 						onClick={() => onMasterChange(!masterOn)}
+						loading={masterLoading}
 					>
 						{masterOn ? "关闭厂房总开关" : "开启厂房总开关"}
 					</Button>
