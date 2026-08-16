@@ -494,6 +494,7 @@ button.metricCard {
 	flex: none;
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	flex-wrap: wrap;
 	gap: calc(34 / 1400 * 100cqw);
 	margin: calc(10 / 1400 * 100cqw) 0 calc(4 / 1400 * 100cqw);
