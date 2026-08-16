@@ -697,26 +697,56 @@ button.metricCard {
 	font-size: calc(14 / 1400 * 100cqw);
 }
 
+.form {
+	--control-height: calc(40 / 1400 * 100cqw);
+	--control-radius: calc(6 / 1400 * 100cqw);
+	--control-font-size: calc(19 / 1400 * 100cqw);
+	--control-line-height: calc(26 / 1400 * 100cqw);
+	--control-padding-x: calc(12 / 1400 * 100cqw);
+}
+
 .form :global(.ant-input),
-.form :global(.ant-select-selection-item),
-.form :global(.ant-select-selection-placeholder) {
+.form :global(.ant-select-content),
+.form :global(.ant-select-placeholder),
+.form :global(.ant-select-selection-item) {
 	font-family:
 		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
 		"Microsoft YaHei", sans-serif;
-	font-size: calc(19 / 1400 * 100cqw);
-	line-height: calc(26 / 1400 * 100cqw);
+	font-size: var(--control-font-size);
+	line-height: var(--control-line-height);
 }
 
 .form :global(.ant-input::placeholder),
-.form :global(.ant-select-selection-placeholder) {
+.form :global(.ant-select-placeholder) {
 	color: rgba(0, 0, 0, 0.25);
 }
 
-.form :global(.ant-input),
-.form :global(.ant-select-selector) {
-	height: calc(40 / 1400 * 100cqw) !important;
-	border-radius: calc(6 / 1400 * 100cqw);
+.form :global(.ant-input) {
+	height: var(--control-height) !important;
+	border-radius: var(--control-radius);
 	border-color: #d9d9d9;
+}
+
+.form :global(.ant-select) {
+	width: 100%;
+	height: var(--control-height) !important;
+	min-height: var(--control-height) !important;
+	padding-inline: var(--control-padding-x) !important;
+	padding-block: 0 !important;
+	border-radius: var(--control-radius);
+	box-sizing: border-box;
+	align-items: center !important;
+	--ant-select-height: var(--control-height);
+	--ant-select-font-size: var(--control-font-size);
+	--ant-select-line-height: var(--control-line-height);
+	--ant-select-font-height: var(--control-line-height);
+	--ant-select-border-radius: var(--control-radius);
+	--ant-select-padding-horizontal: var(--control-padding-x);
+	--ant-select-padding-vertical: 0px;
+}
+
+.form :global(.ant-select .ant-select-content) {
+	align-self: center;
 }
 
 .form :global(.ant-select-selection-overflow) {
