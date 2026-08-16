@@ -3,11 +3,12 @@
   缩放统一：calc(n / 1400 * 100cqw)
 */
 .deviceControl {
+	/* 与管道配置 / 登录页一致：fixed 铺满，供 visualViewport 贴齐 */
+	position: fixed;
+	inset: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 100%;
-	height: 100%;
 	overflow: hidden;
 	background: #f5f5f5;
 	container-type: size;
@@ -817,4 +818,68 @@ button.metricCard {
 	font-size: calc(19 / 1400 * 100cqw);
 	line-height: calc(36 / 1400 * 100cqw);
 	min-height: calc(36 / 1400 * 100cqw);
+}
+
+/*
+ * HarmonyOS 软键盘打开：根节点已由脚本贴齐 visualViewport。
+ * 舞台铺满剩余空间，不再按 1400:920 contain 缩小；弹窗靠上并可滚动。
+ */
+.deviceControl[data-keyboard-open="true"] {
+	align-items: flex-start;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+.deviceControl[data-keyboard-open="true"] .stage {
+	width: 100%;
+	height: auto;
+	min-height: 100%;
+}
+
+/*
+ * HarmonyOS：避免下拉 overflow:hidden + 内部列表 overflow:auto 套叠。
+ * 高度由 JS 按 visualViewport 写入 --select-popup-max-height。
+ */
+.selectPopup {
+	max-height: var(--select-popup-max-height, 48cqh) !important;
+	overflow-x: hidden !important;
+	overflow-y: auto !important;
+	overscroll-behavior: contain;
+	touch-action: pan-y;
+	-webkit-overflow-scrolling: touch;
+}
+
+.selectPopup :global(.ant-select-dropdown-list-holder) {
+	max-height: none !important;
+	height: auto !important;
+	overflow: visible !important;
+}
+
+.deviceControl[data-keyboard-open="true"] .selectPopup {
+	max-height: var(
+		--select-popup-max-height,
+		calc(100cqh - calc(120 / 1400 * 100cqw))
+	) !important;
+}
+
+.deviceControl[data-keyboard-open="true"] .selectPopup :global(.ant-select-item) {
+	min-height: calc(32 / 1400 * 100cqw);
+	padding: calc(4 / 1400 * 100cqw) calc(12 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+}
+
+.modalKeyboardOpen :global(.ant-modal-wrap) {
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	overflow-x: hidden;
+	overflow-y: auto;
+	padding: calc(16 / 1400 * 100cqw) 0;
+}
+
+.modalKeyboardOpen .modal:global(.ant-modal) {
+	top: auto;
+	max-width: calc(100% - calc(32 / 1400 * 100cqw));
+	margin: 0;
+	padding-bottom: calc(16 / 1400 * 100cqw);
 }

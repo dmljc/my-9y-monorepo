@@ -12,6 +12,7 @@ import {
 } from "./utils";
 
 const THING_SEARCH_DEBOUNCE_MS = 300;
+const POPUP_VIEWPORT_GAP = 8;
 
 const mergeThingOptions = (
 	data: unknown,
@@ -34,6 +35,34 @@ const mergeThingOptions = (
 };
 
 /**
+ * 按 visualViewport 计算下拉高度，并选空间更大的一侧展开。
+ */
+const measureSelectPopup = () => {
+	const trigger = document.querySelector(
+		`.${styles.modal} .ant-select-open`,
+	);
+	if (!(trigger instanceof HTMLElement)) {
+		return undefined;
+	}
+	const viewport = window.visualViewport;
+	const rect = trigger.getBoundingClientRect();
+	const vvTop = viewport?.offsetTop ?? 0;
+	const vvBottom = vvTop + (viewport?.height ?? window.innerHeight);
+	const below = vvBottom - rect.bottom - POPUP_VIEWPORT_GAP;
+	const above = rect.top - vvTop - POPUP_VIEWPORT_GAP;
+	if (below >= above) {
+		return {
+			maxHeight: Math.max(Math.floor(below), 0),
+			placement: "bottomLeft" as const,
+		};
+	}
+	return {
+		maxHeight: Math.max(Math.floor(above), 0),
+		placement: "topLeft" as const,
+	};
+};
+
+/**
  * 实例配置弹窗 props。
  */
 interface InstanceModalProps {
@@ -41,6 +70,8 @@ interface InstanceModalProps {
 	open: boolean;
 	/** 当前设备。 */
 	device: DeviceItem | null;
+	/** 页面根层已判定软键盘打开。 */
+	keyboardOpen?: boolean;
 	/** 弹窗挂载容器（contain 舞台，便于 cqw 与舞台同步缩放）。 */
 	getContainer: () => HTMLElement;
 	/** 取消。 */
@@ -55,6 +86,7 @@ interface InstanceModalProps {
 const InstanceModal = ({
 	open,
 	device,
+	keyboardOpen = false,
 	getContainer,
 	onCancel,
 	onOk: onOkProp,
@@ -63,6 +95,11 @@ const InstanceModal = ({
 	const [loading, setLoading] = useState(false);
 	const [instanceLoading, setInstanceLoading] = useState(false);
 	const [instanceOptions, setInstanceOptions] = useState<SelectOption[]>([]);
+	const [selectOpen, setSelectOpen] = useState(false);
+	const [popupMaxHeight, setPopupMaxHeight] = useState<number>();
+	const [popupPlacement, setPopupPlacement] = useState<
+		"bottomLeft" | "topLeft"
+	>("bottomLeft");
 	const thingsReqRef = useRef(0);
 	const keywordRef = useRef("");
 	const nextOffsetRef = useRef(0);
@@ -71,6 +108,15 @@ const InstanceModal = ({
 	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
 		undefined,
 	);
+
+	const syncPopupMaxHeight = () => {
+		const next = measureSelectPopup();
+		if (!next) {
+			return;
+		}
+		setPopupMaxHeight(next.maxHeight);
+		setPopupPlacement(next.placement);
+	};
 
 	const fetchThings = (keyword: string, append = false) => {
 		const text = keyword.trim();
@@ -121,6 +167,8 @@ const InstanceModal = ({
 	useEffect(() => {
 		if (!open) {
 			setInstanceOptions([]);
+			setSelectOpen(false);
+			setPopupMaxHeight(undefined);
 			keywordRef.current = "";
 			nextOffsetRef.current = 0;
 			hasMoreRef.current = true;
@@ -174,6 +222,46 @@ const InstanceModal = ({
 		};
 	}, [open, device?.deviceId]);
 
+	useEffect(() => {
+		if (!selectOpen) {
+			return;
+		}
+		const viewport = window.visualViewport;
+		const onResize = () => syncPopupMaxHeight();
+		const measureFrame = requestAnimationFrame(() => {
+			requestAnimationFrame(syncPopupMaxHeight);
+		});
+		viewport?.addEventListener("resize", onResize);
+		viewport?.addEventListener("scroll", onResize);
+		window.addEventListener("resize", onResize);
+		return () => {
+			cancelAnimationFrame(measureFrame);
+			viewport?.removeEventListener("resize", onResize);
+			viewport?.removeEventListener("scroll", onResize);
+			window.removeEventListener("resize", onResize);
+		};
+	}, [selectOpen, keyboardOpen]);
+
+	useEffect(() => {
+		if (!selectOpen) {
+			return;
+		}
+		const popup = document.querySelector(`.${styles.selectPopup}`);
+		if (!(popup instanceof HTMLElement)) {
+			return;
+		}
+		const onScroll = () => {
+			const isNearBottom =
+				popup.scrollTop + popup.clientHeight >=
+				popup.scrollHeight - 16;
+			if (isNearBottom) fetchThings(keywordRef.current, true);
+		};
+		popup.addEventListener("scroll", onScroll);
+		return () => {
+			popup.removeEventListener("scroll", onScroll);
+		};
+	}, [selectOpen, popupMaxHeight]);
+
 	const handleThingSearch = (raw: string) => {
 		window.clearTimeout(searchTimerRef.current);
 		const keyword = raw.trim();
@@ -192,10 +280,18 @@ const InstanceModal = ({
 	};
 
 	const onOpenChange = (visible: boolean) => {
-		if (visible) return;
-		window.clearTimeout(searchTimerRef.current);
-		if (!keywordRef.current) return;
-		fetchThings("");
+		if (!visible) {
+			setSelectOpen(false);
+			setPopupMaxHeight(undefined);
+			window.clearTimeout(searchTimerRef.current);
+			if (!keywordRef.current) return;
+			fetchThings("");
+			return;
+		}
+		setSelectOpen(true);
+		requestAnimationFrame(() => {
+			requestAnimationFrame(syncPopupMaxHeight);
+		});
 	};
 
 	const handlePopupScroll = (event: UIEvent<HTMLDivElement>) => {
@@ -218,10 +314,53 @@ const InstanceModal = ({
 		}
 	};
 
+	const selectPopupProps = {
+		virtual: false as const,
+		listHeight: popupMaxHeight ?? 256,
+		getPopupContainer: getContainer,
+		classNames: {
+			popup: { root: `${styles.selectPopup} ${styles.modalPopup}` },
+		},
+		styles: popupMaxHeight
+			? {
+					popup: {
+						root: {
+							["--select-popup-max-height" as string]: `${popupMaxHeight}px`,
+						},
+					},
+				}
+			: undefined,
+		placement: keyboardOpen ? popupPlacement : undefined,
+		builtinPlacements: keyboardOpen
+			? {
+					bottomLeft: {
+						points: ["tl", "bl"] as [string, string],
+						offset: [0, 4],
+						overflow: {
+							adjustX: true,
+							adjustY: false,
+							shiftY: false,
+						},
+					},
+					topLeft: {
+						points: ["bl", "tl"] as [string, string],
+						offset: [0, -4],
+						overflow: {
+							adjustX: true,
+							adjustY: false,
+							shiftY: false,
+						},
+					},
+				}
+			: undefined,
+	};
+
 	return (
 		<Modal
 			className={styles.modal}
-			rootClassName={styles.modalRoot}
+			rootClassName={`${styles.modalRoot} ${
+				keyboardOpen ? styles.modalKeyboardOpen : ""
+			}`}
 			title="实例配置"
 			open={open}
 			onOk={onOk}
@@ -232,7 +371,7 @@ const InstanceModal = ({
 			destroyOnHidden
 			keyboard={!loading}
 			mask={{ closable: !loading }}
-			centered
+			centered={!keyboardOpen}
 			width="calc(730 / 1400 * 100cqw)"
 			getContainer={getContainer}
 			footer={(_, { OkBtn, CancelBtn }) => (
@@ -288,10 +427,7 @@ const InstanceModal = ({
 						onClear={onClear}
 						onOpenChange={onOpenChange}
 						onPopupScroll={handlePopupScroll}
-						getPopupContainer={getContainer}
-						classNames={{
-							popup: { root: styles.modalPopup },
-						}}
+						{...selectPopupProps}
 					/>
 				</Form.Item>
 			</Form>

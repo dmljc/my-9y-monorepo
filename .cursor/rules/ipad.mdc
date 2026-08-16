@@ -248,6 +248,53 @@ apps/ipad/src/
 
 **边界**：若日后更换其它平板，先更新本节设备表与比例，再改页面；电脑端不是仅用于临时调试，须按下节 contain 验收。临时调试可分别模拟接近 **3:2 横屏**的平板视口与常见宽屏电脑视口。
 
+### HarmonyOS 软键盘适配（真机已验证）
+
+现场 MatePad 横屏唤起软键盘后，HarmonyOS 浏览器会缩短并可能平移 `window.visualViewport`。凡含 **Input / 可搜索 Select** 的全屏页（登录、管道配置、设备控制弹窗等）须按本节处理，避免 contain 舞台随剩余高度整体缩小、弹窗被压扁、或 Options 无法滚动。
+
+**参考实现**：登录 `apps/ipad/src/pages/login/`；管道配置 `apps/ipad/src/pages/pipeline-config/`（`index.tsx` + `CreateModal.tsx`）；设备控制 `apps/ipad/src/pages/device-control/`（`InstanceModal.tsx` / `RoomModal.tsx`）。新页优先抄这两套，不要另起压缩弹窗或把下拉挂进 `overflow: hidden` 的 Modal 内。
+
+#### 页面根：贴齐 visualViewport
+
+- 页面根用 `position: fixed; inset: 0` + `container-type: size`，并设 `ref`；键盘打开时 `data-keyboard-open`。
+- 用 `visualViewport.height` 与本页打开后记录的**最大可视高度**之差判断键盘：差 **> 120 CSS 像素** 且文本输入仍聚焦，才进入键盘布局（避免工具栏微变误判）。
+- 聚焦判定：原生 `input` / `textarea`、`.ant-input-affix-wrapper`（密码小眼睛等附属控件）、以及 **`.ant-select-open`**（Select 搜索会唤起键盘）。
+- `focusout` 做约 **180ms** 防抖，避免输入框之间切换时布局闪烁。
+- 键盘打开期间，将根节点的 `width` / `height` / `left` / `top` 同步为 `visualViewport.width` / `height` / `offsetLeft` / `offsetTop`；监听 `visualViewport` 的 `resize` / `scroll`、窗口 `resize`、`focusin` / `focusout`。
+- **不要**按剩余高度继续 1400:920 contain 缩小舞台：`[data-keyboard-open="true"]` 下舞台改为 `width: 100%; height: auto; min-height: 100%`，字号仍按宽度 `cqw`；根节点允许 `overflow-y: auto`。
+- 无键盘时必须恢复 contain 舞台。卸载时移除全部监听、清定时器、清空根节点内联尺寸。
+
+#### 弹窗：高度与字段样式不变
+
+键盘打开时 **禁止** 收起表单项、隐藏页脚、减小 padding 来「腾高度」。弹窗须保持无键盘时的字段、间距、取消/确定（及提示文案）。
+
+- Modal `getContainer` 挂到**页面根**（visualViewport 盒子），不要挂到会被压扁的 `.stage` 内层（电脑端无键盘时 cqw 仍随根容器，MatePad 上根≈舞台）。
+- `centered={!keyboardOpen}`：键盘打开后弹窗靠上；`.ant-modal-wrap` 可纵向滚动，底部被键盘挡住时用户上滑即可操作确定。
+- 下拉 Options **盖在弹窗之上**，不要改弹窗自身高度。
+
+#### Select 下拉：可滚动、按剩余空间展开
+
+HarmonyOS 上 Ant Design 虚拟列表 + 父级 `overflow: hidden` 会导致 Options **无法触摸滚动**；键盘打开后 Ant 还会写入过小的内联 `maxHeight`。
+
+- `virtual={false}`；`getPopupContainer` 与 Modal 相同（页面根），**不要**挂到 `.ant-modal-content`。
+- 用 CSS 让弹出层自己滚动（`overflow-y: auto` + `overscroll-behavior: contain` + `touch-action: pan-y`），并让内部 `ant-select-dropdown-list-holder` 的 `max-height` / `overflow` 放开，避免双重滚动套叠。
+- 打开下拉后按 `visualViewport` 实测选择框上/下剩余高度，取较大一侧展开（`bottomLeft` / `topLeft`）；`overflow.adjustY` / `shiftY` 关掉，避免再被压成三两行。
+- 高度写入 CSS 变量 `--select-popup-max-height`，弹出层 `max-height: var(...) !important`，以覆盖 Ant 内联样式。键盘或视口变化时重新测量。
+- 需要分页加载（如实例列表）时，除 `onPopupScroll` 外须监听弹出层自身的 `scroll`（弹出层才是滚动容器）。
+
+#### 登录页额外约定
+
+- 账号 `enterKeyHint="next"`，回车聚焦密码；密码 `enterKeyHint="go"`，回车提交并阻止默认重复提交。账号关闭自动大写、自动纠错与拼写检查。
+- 验收：账号 → 密码、密码显隐、收起/再唤起键盘、校验错误撑高表单、回车提交、loading 防重复提交。
+
+#### 弹窗页验收
+
+- 无键盘：弹窗居中，字段与页脚完整，与设计稿一致。
+- 唤起键盘（Select 搜索或 Input）：弹窗高度/字段/页脚不变；可滚动看到确定；Options 能滑动且尽量铺满选择框到键盘之间的较大一侧。
+- 关掉下拉或收起键盘：恢复 contain 舞台与居中弹窗。
+
+**❌ 避免**：把下拉挂进 Modal；为键盘藏字段/藏页脚；`listHeight` 写死很小的 px；键盘打开时仍按剩余高度 contain 缩小整页。
+
 ## 视口等比适配：1400×920 contain 舞台（全站强制）
 
 适用于 **`apps/ipad` 下所有页面**（首页、登录、设备控制、管道配置等，无一例外）。现场机为 **HUAWEI MatePad 横屏**；客户也会在 **电脑浏览器** 打开。电脑端须按下方「合理表现」做 **等比缩放**：相对 MatePad **不变形、不裁切**，允许四周留白，**不要**为铺满窗口而拉伸或裁切。

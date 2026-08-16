@@ -12,6 +12,36 @@ import {
 	parseRoomDeviceInfo,
 } from "./utils";
 
+const POPUP_VIEWPORT_GAP = 8;
+
+/**
+ * 按 visualViewport 计算下拉高度，并选空间更大的一侧展开。
+ */
+const measureSelectPopup = () => {
+	const trigger = document.querySelector(
+		`.${styles.modal} .ant-select-open`,
+	);
+	if (!(trigger instanceof HTMLElement)) {
+		return undefined;
+	}
+	const viewport = window.visualViewport;
+	const rect = trigger.getBoundingClientRect();
+	const vvTop = viewport?.offsetTop ?? 0;
+	const vvBottom = vvTop + (viewport?.height ?? window.innerHeight);
+	const below = vvBottom - rect.bottom - POPUP_VIEWPORT_GAP;
+	const above = rect.top - vvTop - POPUP_VIEWPORT_GAP;
+	if (below >= above) {
+		return {
+			maxHeight: Math.max(Math.floor(below), 0),
+			placement: "bottomLeft" as const,
+		};
+	}
+	return {
+		maxHeight: Math.max(Math.floor(above), 0),
+		placement: "topLeft" as const,
+	};
+};
+
 /**
  * 房间配置弹窗 props。
  */
@@ -22,6 +52,8 @@ interface RoomModalProps {
 	device: DeviceItem | null;
 	/** 当前厂房 ID。 */
 	buildingId: number;
+	/** 页面根层已判定软键盘打开。 */
+	keyboardOpen?: boolean;
 	/** 弹窗挂载容器（contain 舞台，便于 cqw 与舞台同步缩放）。 */
 	getContainer: () => HTMLElement;
 	/** 取消。 */
@@ -59,6 +91,7 @@ const RoomModal = ({
 	open,
 	device,
 	buildingId,
+	keyboardOpen = false,
 	getContainer,
 	onCancel,
 	onOk: onOkProp,
@@ -67,10 +100,26 @@ const RoomModal = ({
 	const [loading, setLoading] = useState(false);
 	const [roomLoading, setRoomLoading] = useState(false);
 	const [roomOptions, setRoomOptions] = useState<SelectOption[]>([]);
+	const [selectOpen, setSelectOpen] = useState(false);
+	const [popupMaxHeight, setPopupMaxHeight] = useState<number>();
+	const [popupPlacement, setPopupPlacement] = useState<
+		"bottomLeft" | "topLeft"
+	>("bottomLeft");
+
+	const syncPopupMaxHeight = () => {
+		const next = measureSelectPopup();
+		if (!next) {
+			return;
+		}
+		setPopupMaxHeight(next.maxHeight);
+		setPopupPlacement(next.placement);
+	};
 
 	useEffect(() => {
 		if (!open) {
 			setRoomOptions([]);
+			setSelectOpen(false);
+			setPopupMaxHeight(undefined);
 			return;
 		}
 
@@ -139,6 +188,38 @@ const RoomModal = ({
 		};
 	}, [open, device?.deviceId, buildingId]);
 
+	useEffect(() => {
+		if (!selectOpen) {
+			return;
+		}
+		const viewport = window.visualViewport;
+		const onResize = () => syncPopupMaxHeight();
+		const measureFrame = requestAnimationFrame(() => {
+			requestAnimationFrame(syncPopupMaxHeight);
+		});
+		viewport?.addEventListener("resize", onResize);
+		viewport?.addEventListener("scroll", onResize);
+		window.addEventListener("resize", onResize);
+		return () => {
+			cancelAnimationFrame(measureFrame);
+			viewport?.removeEventListener("resize", onResize);
+			viewport?.removeEventListener("scroll", onResize);
+			window.removeEventListener("resize", onResize);
+		};
+	}, [selectOpen, keyboardOpen]);
+
+	const onSelectOpenChange = (visible: boolean) => {
+		if (!visible) {
+			setSelectOpen(false);
+			setPopupMaxHeight(undefined);
+			return;
+		}
+		setSelectOpen(true);
+		requestAnimationFrame(() => {
+			requestAnimationFrame(syncPopupMaxHeight);
+		});
+	};
+
 	const onOk = async () => {
 		try {
 			const values = await form.validateFields();
@@ -156,10 +237,53 @@ const RoomModal = ({
 		}
 	};
 
+	const selectPopupProps = {
+		virtual: false as const,
+		listHeight: popupMaxHeight ?? 256,
+		getPopupContainer: getContainer,
+		classNames: {
+			popup: { root: `${styles.selectPopup} ${styles.modalPopup}` },
+		},
+		styles: popupMaxHeight
+			? {
+					popup: {
+						root: {
+							["--select-popup-max-height" as string]: `${popupMaxHeight}px`,
+						},
+					},
+				}
+			: undefined,
+		placement: keyboardOpen ? popupPlacement : undefined,
+		builtinPlacements: keyboardOpen
+			? {
+					bottomLeft: {
+						points: ["tl", "bl"] as [string, string],
+						offset: [0, 4],
+						overflow: {
+							adjustX: true,
+							adjustY: false,
+							shiftY: false,
+						},
+					},
+					topLeft: {
+						points: ["bl", "tl"] as [string, string],
+						offset: [0, -4],
+						overflow: {
+							adjustX: true,
+							adjustY: false,
+							shiftY: false,
+						},
+					},
+				}
+			: undefined,
+	};
+
 	return (
 		<Modal
 			className={styles.modal}
-			rootClassName={styles.modalRoot}
+			rootClassName={`${styles.modalRoot} ${
+				keyboardOpen ? styles.modalKeyboardOpen : ""
+			}`}
 			title="连接房间"
 			open={open}
 			onOk={onOk}
@@ -170,7 +294,7 @@ const RoomModal = ({
 			destroyOnHidden
 			keyboard={!loading}
 			mask={{ closable: !loading }}
-			centered
+			centered={!keyboardOpen}
 			width="calc(730 / 1400 * 100cqw)"
 			getContainer={getContainer}
 			footer={(_, { OkBtn, CancelBtn }) => (
@@ -211,16 +335,14 @@ const RoomModal = ({
 						options={roomOptions}
 						loading={roomLoading}
 						allowClear
-						getPopupContainer={getContainer}
-						classNames={{
-							popup: { root: styles.modalPopup },
-						}}
+						onOpenChange={onSelectOpenChange}
 						onChange={(value) => {
 							const option = roomOptions.find(
 								(item) => item.value === value,
 							);
 							form.setFieldValue("room", option?.label);
 						}}
+						{...selectPopupProps}
 					/>
 				</Form.Item>
 				<div className={styles.flowRow}>

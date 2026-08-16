@@ -29,9 +29,35 @@ import {
 	parseRoomPipelineList,
 } from "./utils";
 
+/**
+ * 当前焦点是否位于会唤起软键盘的文本输入控件。
+ */
+const isTextInputFocused = (target: EventTarget | null) => {
+	if (!(target instanceof Element)) {
+		return false;
+	}
+	if (target instanceof HTMLTextAreaElement) {
+		return true;
+	}
+	if (target instanceof HTMLInputElement) {
+		return (
+			target.type !== "checkbox" &&
+			target.type !== "radio" &&
+			target.type !== "button" &&
+			target.type !== "submit"
+		);
+	}
+	return Boolean(
+		target.closest(".ant-input-affix-wrapper") ||
+			target.closest(".ant-select-open"),
+	);
+};
+
 const PipelineConfig = () => {
 	const { message, modal } = App.useApp();
 	const pageRef = useRef<HTMLDivElement>(null);
+	const [keyboardOpen, setKeyboardOpen] = useState(false);
+	const largestViewportHeightRef = useRef(0);
 	const canList = usePermission(PERM_PIPELINE.LIST);
 	const [buildings, setBuildings] = useState<BuildingTab[]>([]);
 	const [buildingKey, setBuildingKey] = useState("");
@@ -46,6 +72,87 @@ const PipelineConfig = () => {
 
 	const currentBuilding =
 		buildings.find((item) => item.key === buildingKey) ?? null;
+
+	/**
+	 * HarmonyOS 软键盘适配：页面根节点贴齐 visualViewport，
+	 * 避免 contain 舞台随剩余高度整体缩小。
+	 */
+	useEffect(() => {
+		const root = pageRef.current;
+		const viewport = window.visualViewport;
+		if (!root) {
+			return;
+		}
+
+		let blurTimer = 0;
+		const syncViewportBox = () => {
+			if (!viewport) {
+				root.style.width = "";
+				root.style.height = "";
+				root.style.left = "";
+				root.style.top = "";
+				root.style.right = "";
+				root.style.bottom = "";
+				return;
+			}
+			root.style.width = `${viewport.width}px`;
+			root.style.height = `${viewport.height}px`;
+			root.style.left = `${viewport.offsetLeft}px`;
+			root.style.top = `${viewport.offsetTop}px`;
+			root.style.right = "auto";
+			root.style.bottom = "auto";
+		};
+
+		const updateKeyboardState = () => {
+			const visibleHeight = viewport?.height ?? window.innerHeight;
+			largestViewportHeightRef.current = Math.max(
+				largestViewportHeightRef.current,
+				visibleHeight,
+			);
+			const focused = isTextInputFocused(document.activeElement);
+			const shrunk =
+				largestViewportHeightRef.current - visibleHeight > 120;
+			window.clearTimeout(blurTimer);
+			if (focused && shrunk) {
+				setKeyboardOpen(true);
+			} else if (!focused) {
+				blurTimer = window.setTimeout(() => {
+					if (!isTextInputFocused(document.activeElement)) {
+						setKeyboardOpen(false);
+					}
+				}, 180);
+			} else {
+				setKeyboardOpen(false);
+			}
+			syncViewportBox();
+		};
+
+		largestViewportHeightRef.current =
+			viewport?.height ?? window.innerHeight;
+		syncViewportBox();
+		updateKeyboardState();
+
+		viewport?.addEventListener("resize", updateKeyboardState);
+		viewport?.addEventListener("scroll", updateKeyboardState);
+		window.addEventListener("resize", updateKeyboardState);
+		document.addEventListener("focusin", updateKeyboardState);
+		document.addEventListener("focusout", updateKeyboardState);
+		return () => {
+			window.clearTimeout(blurTimer);
+			viewport?.removeEventListener("resize", updateKeyboardState);
+			viewport?.removeEventListener("scroll", updateKeyboardState);
+			window.removeEventListener("resize", updateKeyboardState);
+			document.removeEventListener("focusin", updateKeyboardState);
+			document.removeEventListener("focusout", updateKeyboardState);
+			root.style.width = "";
+			root.style.height = "";
+			root.style.left = "";
+			root.style.top = "";
+			root.style.right = "";
+			root.style.bottom = "";
+		};
+	}, []);
+
 	const loadRoomList = async (buildingId: number) => {
 		const listData = await listRoomPipelines(buildingId);
 		const rows = parseRoomPipelineList(listData)
@@ -219,8 +326,13 @@ const PipelineConfig = () => {
 	}
 
 	return (
-		<div className={styles.pipelineConfig} data-page="pipeline-config">
-			<div ref={pageRef} className={styles.stage}>
+		<div
+			ref={pageRef}
+			className={styles.pipelineConfig}
+			data-page="pipeline-config"
+			data-keyboard-open={keyboardOpen || undefined}
+		>
+			<div className={styles.stage}>
 				<BuildingPageHeader
 					buildingKey={buildingKey}
 					buildings={buildings}
@@ -279,6 +391,7 @@ const PipelineConfig = () => {
 				<CreateModal
 					open={modalOpen}
 					editingRecord={editingRecord}
+					keyboardOpen={keyboardOpen}
 					buildingId={currentBuilding?.buildingId ?? 0}
 					getContainer={() => pageRef.current ?? document.body}
 					onCancel={() => setModalOpen(false)}
