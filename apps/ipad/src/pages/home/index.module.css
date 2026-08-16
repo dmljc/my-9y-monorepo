@@ -144,18 +144,18 @@
 }
 
 /*
- * 三列导航：切图 676×660（2x）→ 逻辑 338×330；
- * 间距 40，总宽 3×338+2×40=1094，水平居中。
+ * 双列导航：切图 676×660（2x）→ 逻辑 338×330；
+ * 间距 40，总宽 2×338+40=716，水平居中。
  */
 .navGrid {
 	position: absolute;
 	top: calc(486 / 1400 * 100cqw);
-	left: calc((1400 - 1094) / 2 / 1400 * 100cqw);
-	width: calc(1094 / 1400 * 100cqw);
+	left: calc((1400 - 716) / 2 / 1400 * 100cqw);
+	width: calc(716 / 1400 * 100cqw);
 	height: calc(330 / 1400 * 100cqw);
 	z-index: 2;
 	display: grid;
-	grid-template-columns: repeat(3, calc(338 / 1400 * 100cqw));
+	grid-template-columns: repeat(2, calc(338 / 1400 * 100cqw));
 	gap: calc(40 / 1400 * 100cqw);
 }
 

@@ -231,7 +231,7 @@ const InstanceModal = ({
 			closable={!loading}
 			destroyOnHidden
 			keyboard={!loading}
-			maskClosable={!loading}
+			mask={{ closable: !loading }}
 			centered
 			width="calc(730 / 1400 * 100cqw)"
 			getContainer={getContainer}
