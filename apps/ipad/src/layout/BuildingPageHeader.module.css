@@ -102,7 +102,7 @@
 	height: calc(48 / 1400 * 100cqw);
 	padding: 0 calc(16 / 1400 * 100cqw);
 	border: none;
-	border-radius: calc(12 / 1400 * 100cqw);
+	border-radius: calc(25 / 1400 * 100cqw);
 	background: #0984ff;
 	border-color: #0984ff;
 	box-shadow: none;
