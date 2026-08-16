@@ -51,8 +51,8 @@ export interface PipelineFormValues {
 	roomId: string;
 	/** 房间号。 */
 	room?: string;
-	/** 管道号（IN）。 */
-	pipeIn: string;
+	/** 管道号（IN），非必填。 */
+	pipeIn?: string;
 }
 
 /**

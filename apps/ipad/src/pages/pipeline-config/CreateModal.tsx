@@ -129,11 +129,7 @@ const CreateModal = ({
 				<Form.Item name="room" hidden>
 					<input />
 				</Form.Item>
-				<Form.Item
-					name="pipeIn"
-					label="管道号（IN）"
-					rules={[{ required: true, message: "请选择管道号" }]}
-				>
+				<Form.Item name="pipeIn" label="管道号（IN）">
 					<Select
 						placeholder="请选择管道号"
 						options={PIPE_IN_OPTIONS}
