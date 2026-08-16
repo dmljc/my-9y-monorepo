@@ -1,7 +1,8 @@
 import LockOutlined from "@ant-design/icons/LockOutlined";
 import UserOutlined from "@ant-design/icons/UserOutlined";
 import { Button, Checkbox, Form, Input, Typography } from "antd";
-import { useEffect } from "react";
+import type { InputRef } from "antd";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import loginBg from "@/assets/login/login-bg.webp";
 import { DEFAULT_HOME_PATH } from "@/layout/menuConfig";
@@ -18,17 +19,122 @@ import {
 	USERNAME_PATTERN,
 } from "./utils";
 
+/**
+ * 当前焦点是否在登录输入框内（含密码框小眼睛等附属控件）。
+ */
+const isLoginTextFocus = (target: EventTarget | null) => {
+	if (!(target instanceof Element)) {
+		return false;
+	}
+	if (target instanceof HTMLTextAreaElement) {
+		return true;
+	}
+	if (target instanceof HTMLInputElement) {
+		return (
+			target.type !== "checkbox" &&
+			target.type !== "radio" &&
+			target.type !== "button" &&
+			target.type !== "submit"
+		);
+	}
+	return Boolean(target.closest(".ant-input-affix-wrapper"));
+};
+
 const Login = () => {
 	const navigate = useNavigate();
 	const [form] = Form.useForm<LoginFormValues>();
 	const login = useUserStore((state) => state.login);
 	const loading = useUserStore((state) => state.loading);
+	const loginRef = useRef<HTMLDivElement | null>(null);
+	const passwordRef = useRef<InputRef | null>(null);
+	const [keyboardOpen, setKeyboardOpen] = useState(false);
+	const largestViewportHeightRef = useRef(0);
 
 	useEffect(() => {
 		const saved = getRememberMe();
 		if (saved) {
 			form.setFieldsValue(saved);
 		}
+	}, []);
+
+	/**
+	 * HarmonyOS 浏览器唤起软键盘会缩短 visualViewport。
+	 * 将登录页贴齐可视区域，避免 contain 舞台随剩余高度整体缩小。
+	 */
+	useEffect(() => {
+		const root = loginRef.current;
+		const viewport = window.visualViewport;
+		if (!root) {
+			return;
+		}
+
+		let blurTimer = 0;
+		const syncViewportBox = () => {
+			if (!viewport) {
+				root.style.width = "";
+				root.style.height = "";
+				root.style.left = "";
+				root.style.top = "";
+				root.style.right = "";
+				root.style.bottom = "";
+				return;
+			}
+			root.style.width = `${viewport.width}px`;
+			root.style.height = `${viewport.height}px`;
+			root.style.left = `${viewport.offsetLeft}px`;
+			root.style.top = `${viewport.offsetTop}px`;
+			root.style.right = "auto";
+			root.style.bottom = "auto";
+		};
+
+		const updateKeyboardState = () => {
+			const visibleHeight = viewport?.height ?? window.innerHeight;
+			largestViewportHeightRef.current = Math.max(
+				largestViewportHeightRef.current,
+				visibleHeight,
+			);
+			const focused = isLoginTextFocus(document.activeElement);
+			const shrunk =
+				largestViewportHeightRef.current - visibleHeight > 120;
+			window.clearTimeout(blurTimer);
+			if (focused && shrunk) {
+				setKeyboardOpen(true);
+			} else if (!focused) {
+				blurTimer = window.setTimeout(() => {
+					if (!isLoginTextFocus(document.activeElement)) {
+						setKeyboardOpen(false);
+					}
+				}, 180);
+			} else {
+				setKeyboardOpen(false);
+			}
+			syncViewportBox();
+		};
+
+		largestViewportHeightRef.current =
+			viewport?.height ?? window.innerHeight;
+		syncViewportBox();
+		updateKeyboardState();
+
+		viewport?.addEventListener("resize", updateKeyboardState);
+		viewport?.addEventListener("scroll", updateKeyboardState);
+		window.addEventListener("resize", updateKeyboardState);
+		document.addEventListener("focusin", updateKeyboardState);
+		document.addEventListener("focusout", updateKeyboardState);
+		return () => {
+			window.clearTimeout(blurTimer);
+			viewport?.removeEventListener("resize", updateKeyboardState);
+			viewport?.removeEventListener("scroll", updateKeyboardState);
+			window.removeEventListener("resize", updateKeyboardState);
+			document.removeEventListener("focusin", updateKeyboardState);
+			document.removeEventListener("focusout", updateKeyboardState);
+			root.style.width = "";
+			root.style.height = "";
+			root.style.left = "";
+			root.style.top = "";
+			root.style.right = "";
+			root.style.bottom = "";
+		};
 	}, []);
 
 	const onFinish = async (values: LoginFormValues) => {
@@ -41,7 +147,12 @@ const Login = () => {
 	};
 
 	return (
-		<div className={styles.login} data-page="login">
+		<div
+			ref={loginRef}
+			className={styles.login}
+			data-page="login"
+			data-keyboard-open={keyboardOpen || undefined}
+		>
 			{/* 宽屏留白区：柔化延展，避免生硬色块；主构图仍在 contain 舞台内 */}
 			<img
 				className={styles.bgBleed}
@@ -100,6 +211,16 @@ const Login = () => {
 								placeholder="请输入用户名"
 								maxLength={USERNAME_MAX_LENGTH}
 								autoComplete="username"
+								autoCapitalize="none"
+								autoCorrect="off"
+								spellCheck={false}
+								enterKeyHint="next"
+								onPressEnter={(event) => {
+									event.preventDefault();
+									passwordRef.current?.focus({
+										cursor: "end",
+									});
+								}}
 							/>
 						</Form.Item>
 
@@ -121,12 +242,20 @@ const Login = () => {
 							]}
 						>
 							<Input.Password
+								ref={passwordRef}
 								className={styles.input}
 								size="large"
 								prefix={<LockOutlined />}
 								placeholder="请输入密码"
 								maxLength={PASSWORD_MAX_LENGTH}
 								autoComplete="current-password"
+								enterKeyHint="go"
+								onPressEnter={(event) => {
+									event.preventDefault();
+									if (!loading) {
+										form.submit();
+									}
+								}}
 							/>
 						</Form.Item>
 

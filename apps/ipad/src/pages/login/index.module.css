@@ -237,3 +237,41 @@
 .submitItem {
 	margin-bottom: 0;
 }
+
+/*
+ * HarmonyOS 软键盘会缩短 visualViewport。登录根节点由脚本贴齐可视区域后：
+ * 舞台铺满剩余空间（不再按 1400:920 contain 缩小），卡片按宽度保持字号，
+ * 并靠上紧凑排列，避免输入框和登录按钮落到键盘下方。
+ */
+.login[data-keyboard-open="true"] {
+	align-items: flex-start;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+.login[data-keyboard-open="true"] .stage {
+	width: 100%;
+	height: auto;
+	min-height: 100%;
+	align-items: flex-start;
+	padding-top: calc(24 / 1400 * 100cqw);
+	padding-bottom: calc(16 / 1400 * 100cqw);
+}
+
+.login[data-keyboard-open="true"] .panel {
+	min-height: 0;
+	padding-top: calc(38 / 1400 * 100cqw);
+	padding-bottom: calc(34 / 1400 * 100cqw);
+}
+
+.login[data-keyboard-open="true"] .title {
+	margin-bottom: calc(18 / 1400 * 100cqw);
+}
+
+.login[data-keyboard-open="true"] .form :global(.ant-form-item) {
+	margin-bottom: calc(18 / 1400 * 100cqw);
+}
+
+.login[data-keyboard-open="true"] .options {
+	margin-bottom: calc(28 / 1400 * 100cqw);
+}
