@@ -484,20 +484,29 @@ function trimDecimal(text: string): string {
 }
 
 /**
- * 格式化 Y 轴刻度：满万用「万」，否则保留数据本身的小数。
+ * 格式化 Y 轴刻度：千级用 `k`、万级用 `w`；当整数缩写会造成刻度重名时保留必要小数。
  *
  * @param {number} - 刻度数值。
- * @returns {string} - 如 `6553.5`、`1.31万`。
+ * @param {number} [span] - 当前 Y 轴数值跨度，用于确定缩写精度。
+ * @returns {string} - 如 `7k`、`2w` 或 `10.04w`。
  */
-export function formatYAxisValue(value: number): string {
+export function formatYAxisValue(value: number, span?: number): string {
 	if (!Number.isFinite(value)) {
 		return "";
 	}
 	const abs = Math.abs(value);
-	if (abs >= 10000) {
-		const wan = value / 10000;
-		const digits = abs >= 1_000_000 ? 0 : abs >= 100_000 ? 1 : 2;
-		return `${trimDecimal(wan.toFixed(digits))}万`;
+	const unit = abs >= 10000 ? 10000 : abs >= 1000 ? 1000 : 0;
+	if (unit) {
+		const relativeSpan =
+			span != null && Number.isFinite(span) && span > 0
+				? Math.abs(span) / unit
+				: 1;
+		const digits = Math.min(
+			4,
+			Math.max(0, Math.ceil(-Math.log10(relativeSpan))),
+		);
+		const suffix = unit === 10000 ? "w" : "k";
+		return `${trimDecimal((value / unit).toFixed(digits))}${suffix}`;
 	}
 	if (Math.abs(value - Math.round(value)) < 1e-8) {
 		return String(Math.round(value));
@@ -580,7 +589,7 @@ function createYAxisEndpoints(
 			if (!isYAxisEndpoint(value, bound.min, bound.max)) {
 				return "";
 			}
-			return formatYAxisValue(value);
+			return formatYAxisValue(value, bound.max - bound.min);
 		},
 		isEndpoint: (value: number) => isYAxisEndpoint(value, bound.min, bound.max),
 	};

@@ -4,6 +4,7 @@ import {
 	clampTimeToNow,
 	formatAxisTime,
 	formatTooltipTime,
+	formatYAxisValue,
 	getLineChartLayout,
 } from "../LineChartsByRoom/utils";
 import type {
@@ -119,21 +120,6 @@ export function computeVisibleYExtent(
 		};
 	}
 	return { min: minVal, max: maxVal };
-}
-
-/**
- * 根据 Y 轴跨度保留足够的小数位，避免小幅波动被格式化为相同刻度。
- *
- * @param {number} value - 坐标轴刻度值。
- * @param {number} span - 当前 Y 轴范围。
- * @returns {string} 格式化后的刻度文本。
- */
-function formatYAxisValue(value: number, span: number): string {
-	const precision =
-		span >= 1
-			? 0
-			: Math.min(4, Math.max(1, Math.ceil(-Math.log10(span)) + 1));
-	return String(Number(value.toFixed(precision)));
 }
 
 /**
