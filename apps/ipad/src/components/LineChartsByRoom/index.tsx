@@ -7,7 +7,13 @@ import {
 } from "echarts/components";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	type PointerEvent,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { useEchartsInit } from "../hooks/useEchartsInit";
 import styles from "./index.module.css";
 import type { LineChartsProps } from "./interface";
@@ -100,6 +106,7 @@ const LineCharts = ({
 	const extentKeyRef = useRef("");
 	const emptyEndRef = useRef(0);
 	const sliderWindowRef = useRef<[number, number] | null>(null);
+	const chartPanStartXRef = useRef<number | null>(null);
 	const viewLockedRef = useRef(false);
 	const sliderDirtyRef = useRef(false);
 	const snappingRef = useRef(false);
@@ -410,6 +417,27 @@ const LineCharts = ({
 		onTimePage?.({ from: nextView[0], to: nextView[1] });
 	};
 
+	const handleChartPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+		const sliderBottom =
+			layout.dataZoomTop + layout.dataZoomHeight;
+		if (event.button !== 0 || event.nativeEvent.offsetY <= sliderBottom) {
+			return;
+		}
+		chartPanStartXRef.current = event.clientX;
+		event.currentTarget.setPointerCapture(event.pointerId);
+	};
+
+	const handleChartPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+		const startX = chartPanStartXRef.current;
+		chartPanStartXRef.current = null;
+		if (startX === null) return;
+
+		const distance = event.clientX - startX;
+		const threshold = 32 * box.scale;
+		if (Math.abs(distance) < threshold) return;
+		applyTimePage(distance > 0 ? -1 : 1);
+	};
+
 	const canPagePrev = chartViewExtent[0] - sliderStartMs >= axisRangeMs;
 	const canPageNext =
 		pageViewExtent(
@@ -426,7 +454,12 @@ const LineCharts = ({
 
 	return (
 		<div ref={wrapRef} className={styles.container}>
-			<div ref={chartRef} className={styles.chart} />
+			<div
+				ref={chartRef}
+				className={styles.chart}
+				onPointerDown={handleChartPointerDown}
+				onPointerUp={handleChartPointerUp}
+			/>
 			{box.width > 0 && totalRangeDays > 1 ? (
 				<div
 					className={styles.sliderTicks}

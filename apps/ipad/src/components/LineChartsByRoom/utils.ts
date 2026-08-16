@@ -875,7 +875,7 @@ export function buildLineChartOption(
 				maxValueSpan: MS_DAY,
 				zoomLock: true,
 				zoomOnMouseWheel: false,
-				moveOnMouseMove: true,
+				moveOnMouseMove: false,
 				moveOnMouseWheel: false,
 			},
 		],
