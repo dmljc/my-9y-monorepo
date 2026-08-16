@@ -1,3 +1,4 @@
+import { LoadingOutlined } from "@ant-design/icons";
 import { Form, Modal, Select } from "antd";
 import { useEffect, useState } from "react";
 import { listAlarmRooms } from "./api";
@@ -85,8 +86,8 @@ const CreateModal = ({
 			setLoading(true);
 			await onOkProp(values);
 			onCancel();
-		} catch (err) {
-			if (err && typeof err === "object" && "errorFields" in err) return;
+		} catch {
+			// 表单校验失败或接口失败；接口 toast 已由全局 onError 弹出
 		} finally {
 			setLoading(false);
 		}
@@ -101,7 +102,12 @@ const CreateModal = ({
 			onOk={onOk}
 			onCancel={onCancel}
 			confirmLoading={loading}
+			okButtonProps={{ icon: loading ? <LoadingOutlined /> : undefined }}
+			cancelButtonProps={{ disabled: loading }}
+			closable={!loading}
 			destroyOnHidden
+			keyboard={!loading}
+			mask={{ closable: !loading }}
 			centered
 			width="calc(600 / 1400 * 100cqw)"
 			getContainer={getContainer}

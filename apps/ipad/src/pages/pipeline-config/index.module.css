@@ -296,9 +296,18 @@
 }
 
 .modal :global(.ant-modal-footer .ant-btn) {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	min-width: calc(90 / 1400 * 100cqw);
 	height: calc(40 / 1400 * 100cqw);
+	padding: 0 calc(16 / 1400 * 100cqw);
 	border-radius: calc(6 / 1400 * 100cqw);
+	font-size: calc(16 / 1400 * 100cqw);
+	line-height: calc(22 / 1400 * 100cqw);
+}
+
+.modal :global(.ant-modal-footer .ant-btn-loading .anticon) {
 	font-size: calc(16 / 1400 * 100cqw);
 }
 
