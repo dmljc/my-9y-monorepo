@@ -262,7 +262,8 @@ apps/ipad/src/
 - `focusout` 做约 **180ms** 防抖，避免输入框之间切换时布局闪烁。
 - 键盘打开期间，将根节点的 `width` / `height` / `left` / `top` 同步为 `visualViewport.width` / `height` / `offsetLeft` / `offsetTop`；监听 `visualViewport` 的 `resize` / `scroll`、窗口 `resize`、`focusin` / `focusout`。
 - **不要**按剩余高度继续 1400:920 contain 缩小舞台：`[data-keyboard-open="true"]` 下舞台改为 `width: 100%; height: auto; min-height: 100%`，字号仍按宽度 `cqw`；根节点允许 `overflow-y: auto`。
-- 无键盘时必须恢复 contain 舞台。卸载时移除全部监听、清定时器、清空根节点内联尺寸。
+- 登录、管道配置、设备控制：舞台**始终**铺满 visualViewport（无键盘时 `width/height: 100%`），不要退回 contain。HarmonyOS 浏览器工具栏会让可视区域偏离 3:2，contain 会在四边留白。
+- 卸载时移除全部监听、清定时器、清空根节点内联尺寸。
 
 #### 弹窗：高度与字段样式不变
 
@@ -285,13 +286,14 @@ HarmonyOS 上 Ant Design 虚拟列表 + 父级 `overflow: hidden` 会导致 Opti
 #### 登录页额外约定
 
 - 账号 `enterKeyHint="next"`，回车聚焦密码；密码 `enterKeyHint="go"`，回车提交并阻止默认重复提交。账号关闭自动大写、自动纠错与拼写检查。
-- 验收：账号 → 密码、密码显隐、收起/再唤起键盘、校验错误撑高表单、回车提交、loading 防重复提交。
+- **舞台始终铺满 visualViewport**（无键盘 `width/height: 100%`；键盘打开时 `height: auto; min-height: 100%` 以便滚动）。不要退回 1400:920 contain。
+- 验收：无键盘时画面铺满可视区域（无灰边）；账号 → 密码、密码显隐、收起/再唤起键盘、校验错误撑高表单、回车提交、loading 防重复提交。
 
 #### 弹窗页验收
 
 - 无键盘：弹窗居中，字段与页脚完整，与设计稿一致。
 - 唤起键盘（Select 搜索或 Input）：弹窗高度/字段/页脚不变；可滚动看到确定；Options 能滑动且尽量铺满选择框到键盘之间的较大一侧。
-- 关掉下拉或收起键盘：恢复 contain 舞台与居中弹窗。
+- 关掉下拉或收起键盘：弹窗恢复居中；舞台仍铺满可视区域。
 
 **❌ 避免**：把下拉挂进 Modal；为键盘藏字段/藏页脚；`listHeight` 写死很小的 px；键盘打开时仍按剩余高度 contain 缩小整页。
 
