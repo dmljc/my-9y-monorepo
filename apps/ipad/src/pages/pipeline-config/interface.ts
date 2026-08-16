@@ -38,6 +38,16 @@ export interface PipelineItem {
 }
 
 /**
+ * 房间管道配置表单值。
+ */
+export interface PipelineFormValues {
+	/** 房间号。 */
+	sampleRoom: string;
+	/** 管道号（IN）。 */
+	pipeIn: string;
+}
+
+/**
  * 房间管道配置行（对齐 IiotPipelineConfig）。
  */
 export interface RoomPipelineRow {

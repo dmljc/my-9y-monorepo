@@ -13,6 +13,37 @@ export const PIPE_NO_NOT_FOUND_MSG = "管道号不存在";
 /** 管道号重复提示。 */
 export const PIPE_NO_DUPLICATE_MSG = "管道号重复";
 
+/** 列表默认每页条数。 */
+export const DEFAULT_PAGE_SIZE = 10;
+
+/** 列表每页条数可选项。 */
+export const PAGE_SIZE_OPTIONS = ["10", "15", "20", "25", "50", "100"];
+
+/** 管道号（IN）下拉选项：1～26。 */
+export const PIPE_IN_OPTIONS: PipeOption[] = Array.from(
+	{ length: 26 },
+	(_, index) => {
+		const value = String(index + 1);
+		return { label: value, value };
+	},
+);
+
+/**
+ * 分页交互演示用的本地房间管道配置。
+ */
+export const DEMO_PIPELINES: PipelineItem[] = Array.from(
+	{ length: 17 },
+	(_, index) => {
+		const room = String(101 + index);
+		return {
+			id: -(index + 1),
+			sampleRoom: room,
+			pipeIn: String((index % 26) + 1),
+			buildingId: 0,
+		};
+	},
+);
+
 /**
  * 将厂房接口响应转为顶栏 Tab。
  *
