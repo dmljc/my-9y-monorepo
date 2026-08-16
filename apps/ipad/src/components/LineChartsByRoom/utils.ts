@@ -419,6 +419,23 @@ export function formatAxisTime(value: number): string {
 }
 
 /**
+ * 格式化 Tooltip 中当前指示器的完整时间。
+ *
+ * @param {number} value - 毫秒时间戳。
+ * @returns {string} - `YYYY/MM/DD HH:mm:ss`。
+ */
+export function formatTooltipTime(value: number): string {
+	const date = new Date(value);
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	const hour = String(date.getHours()).padStart(2, "0");
+	const minute = String(date.getMinutes()).padStart(2, "0");
+	const second = String(date.getSeconds()).padStart(2, "0");
+	return `${year}/${month}/${day} ${hour}:${minute}:${second}`;
+}
+
+/**
  * 格式化 dataZoom 轨道两端日期。
  *
  * @param {number} - 毫秒时间戳。
@@ -612,6 +629,7 @@ function createTooltipFormatter(
 			.join("");
 
 		return `<div style="min-width:${minWidth}px">
+<div style="margin-bottom:${gap}px;color:#86909c;font-size:${headerFont}px">当前时间：${formatTooltipTime(time)}</div>
 <div style="display:flex;justify-content:space-between;gap:${24 * scale}px;color:#86909c;font-size:${headerFont}px">
 <span>属性名称</span>
 <span>原始值</span>

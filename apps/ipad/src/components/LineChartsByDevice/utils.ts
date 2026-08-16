@@ -3,6 +3,7 @@ import {
 	buildTimeAxisTicks,
 	clampTimeToNow,
 	formatAxisTime,
+	formatTooltipTime,
 	getLineChartLayout,
 } from "../LineChartsByRoom/utils";
 import type {
@@ -81,11 +82,11 @@ export function getPointsExtent(
 }
 
 /**
- * 按当前 X 轴可见窗口计算 Y 轴整数范围，随窗口内数据变化。
+ * 按当前 X 轴可见窗口计算 Y 轴范围，随窗口内数据变化。
  *
  * @param {[number, number][]} - 全部折线点。
  * @param {[number, number] | null} - 可见时间区间。
- * @returns {{ min: number; max: number }} - 取整后的 Y 轴上下限。
+ * @returns {{ min: number; max: number }} - 与可见数据极值对齐的 Y 轴上下限。
  */
 export function computeVisibleYExtent(
 	points: [number, number][],
@@ -110,12 +111,29 @@ export function computeVisibleYExtent(
 	}
 	const minVal = Math.min(...values);
 	const maxVal = Math.max(...values);
-	const min = Math.floor(minVal);
-	let max = Math.ceil(maxVal);
-	if (max <= min) {
-		max = min + 1;
+	if (maxVal === minVal) {
+		const padding = Math.max(Math.abs(minVal) * 0.05, 0.01);
+		return {
+			min: minVal - padding,
+			max: maxVal + padding,
+		};
 	}
-	return { min, max };
+	return { min: minVal, max: maxVal };
+}
+
+/**
+ * 根据 Y 轴跨度保留足够的小数位，避免小幅波动被格式化为相同刻度。
+ *
+ * @param {number} value - 坐标轴刻度值。
+ * @param {number} span - 当前 Y 轴范围。
+ * @returns {string} 格式化后的刻度文本。
+ */
+function formatYAxisValue(value: number, span: number): string {
+	const precision =
+		span >= 1
+			? 0
+			: Math.min(4, Math.max(1, Math.ceil(-Math.log10(span)) + 1));
+	return String(Number(value.toFixed(precision)));
 }
 
 /**
@@ -231,7 +249,10 @@ function createTooltipFormatter(
 </div>`;
 			})
 			.join("");
-		return `<div style="min-width:${minWidth}px">${rows}</div>`;
+		return `<div style="min-width:${minWidth}px">
+<div style="margin-bottom:${gap}px;color:#86909c;font-size:${font}px">当前时间：${formatTooltipTime(time)}</div>
+${rows}
+</div>`;
 	};
 }
 
@@ -338,8 +359,7 @@ export function buildLineChartOption(
 		type: "value" as const,
 		min: yExtent.min,
 		max: yExtent.max,
-		minInterval: 1,
-		interval: ySpan <= 8 ? 1 : Math.max(1, Math.ceil(ySpan / 8)),
+		splitNumber: 1,
 		scale: false,
 		show: true,
 		nameMoveOverlap: false,
@@ -352,7 +372,7 @@ export function buildLineChartOption(
 			fontSize,
 			fontFamily: FONT_FAMILY,
 			margin: 8 * scale,
-			formatter: (value: number) => String(Math.round(value)),
+			formatter: (value: number) => formatYAxisValue(value, ySpan),
 		},
 		splitLine: {
 			show: true,
