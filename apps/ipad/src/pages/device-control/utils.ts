@@ -814,6 +814,11 @@ export const getMetricIconKey = (label: string): MetricIconKey => {
 export const TREND_SLIDER_RANGE_MS = 24 * 60 * 60 * 1000;
 
 /**
+ * 设备折线 X 轴可见窗口（毫秒），与 LineChartsByDevice 默认 1 小时一致。
+ */
+export const TREND_AXIS_RANGE_MS = 60 * 60 * 1000;
+
+/**
  * 折线图抽稀上限，避免类目轴点过多。
  */
 const TREND_MAX_POINTS = 310;

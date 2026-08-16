@@ -179,7 +179,7 @@ export function computeViewExtent(
 }
 
 /**
- * 按 5 分钟一页平移 X 轴：上一页为 `[start-5min, start]`，下一页为 `[end, end+5min]`。
+ * 按 `axisRangeMs` 一页平移 X 轴：上一页为 `[start-span, start]`，下一页为 `[end, end+span]`。
  * 下一页右端不超过当前时间；已贴齐当前时间时保持原值。
  *
  * @param {[number, number]} - 当前可见区间。
@@ -659,9 +659,10 @@ export function buildLineChartOption(
 		viewExtent != null ? clampTimeToNow(viewExtent[1], now) : undefined;
 	const axisMin =
 		axisMax != null ? axisMax - viewSpan : viewExtent?.[0];
+	const tickInterval = viewSpan >= MS_HOUR ? 10 * MS_MINUTE : MS_MINUTE;
 	const axisTicks =
 		axisMin != null && axisMax != null
-			? buildTimeAxisTicks(axisMin, axisMax)
+			? buildTimeAxisTicks(axisMin, axisMax, tickInterval)
 			: undefined;
 
 	const xAxisOption = [

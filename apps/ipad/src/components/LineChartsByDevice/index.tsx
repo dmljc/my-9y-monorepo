@@ -34,7 +34,7 @@ echarts.use([
 ]);
 
 const SLIDER_RANGE_MS = 24 * 60 * 60 * 1000;
-const AXIS_RANGE_MS = 5 * 60 * 1000;
+const AXIS_RANGE_MS = 60 * 60 * 1000;
 const TOTAL_RANGE_DAYS = 7;
 const DEFAULT_LINE_WIDTH = 2;
 const defaultValueFormatter = (value: number) => String(value);
@@ -373,13 +373,22 @@ const LineCharts = ({
 		axisRangeMs,
 	]);
 
+	const sliderSpan = timeExtent[1] - timeExtent[0];
+	const sliderStartMs =
+		timeExtent[0] +
+		((chrome?.startPct ?? zoomRef.current.start) / 100) * sliderSpan;
+	const sliderEndMs =
+		timeExtent[0] +
+		((chrome?.endPct ?? zoomRef.current.end) / 100) * sliderSpan;
+	const sliderBounds: [number, number] = [sliderStartMs, sliderEndMs];
+
 	const applyTimePage = (direction: -1 | 1) => {
 		const now = Date.now();
 		const nextView = pageViewExtent(
 			chartViewExtent,
 			direction,
 			axisRangeMs,
-			timeExtent,
+			sliderBounds,
 			now,
 		);
 		if (
@@ -396,13 +405,13 @@ const LineCharts = ({
 		onTimePage?.({ from: nextView[0], to: nextView[1] });
 	};
 
-	const canPagePrev = chartViewExtent[0] - axisRangeMs >= timeExtent[0];
+	const canPagePrev = chartViewExtent[0] - sliderStartMs >= axisRangeMs;
 	const canPageNext =
 		pageViewExtent(
 			chartViewExtent,
 			1,
 			axisRangeMs,
-			timeExtent,
+			sliderBounds,
 			Date.now(),
 		)[1] > chartViewExtent[1];
 	const sideTop =

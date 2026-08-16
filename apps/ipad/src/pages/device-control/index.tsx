@@ -60,6 +60,7 @@ import {
 	parseDevicesFromRooms,
 	parseTabletWsMessage,
 	previewDeviceCodes,
+	TREND_AXIS_RANGE_MS,
 	TREND_SLIDER_RANGE_MS,
 	toRoomTrendSeries,
 	toTrendChartData,
@@ -231,9 +232,7 @@ const DeviceControl = () => {
 		RoomTrendSeriesItem[]
 	>([]);
 	const deviceTrendReqRef = useRef(0);
-	const deviceTrendFromRef = useRef<number | null>(null);
 	const roomTrendReqRef = useRef(0);
-	const roomTrendFromRef = useRef<number | null>(null);
 	const wsMetricsRef = useRef<{
 		byId: Map<number, DeviceItem["metrics"]>;
 		byCode: Map<string, DeviceItem["metrics"]>;
@@ -410,7 +409,6 @@ const DeviceControl = () => {
 		const reqId = ++deviceTrendReqRef.current;
 		const to = Date.now();
 		const from = to - TREND_SLIDER_RANGE_MS;
-		deviceTrendFromRef.current = from;
 		listDeviceTrend({ deviceId, propertyId, from, to })
 			.then((data) => {
 				if (cancelled || reqId !== deviceTrendReqRef.current) return;
@@ -446,7 +444,6 @@ const DeviceControl = () => {
 		const reqId = ++roomTrendReqRef.current;
 		const to = Date.now();
 		const from = to - TREND_SLIDER_RANGE_MS;
-		roomTrendFromRef.current = from;
 		listRoomTrend({ buildingId, roomId, propertyId, from, to })
 			.then((data) => {
 				if (cancelled || reqId !== roomTrendReqRef.current) return;
@@ -476,7 +473,8 @@ const DeviceControl = () => {
 			!deviceId ||
 			!propertyId ||
 			!Number.isFinite(range.from) ||
-			!Number.isFinite(range.to)
+			!Number.isFinite(range.to) ||
+			range.from >= range.to
 		) {
 			return;
 		}
@@ -496,18 +494,16 @@ const DeviceControl = () => {
 			.catch(() => undefined);
 	};
 
-	/** 翻页：沿用当前查询的 from，只更新 to */
+	/** 翻页：按 X 轴当前 1 小时窗口查询 from / to */
 	const handleDeviceTrendTimePage = (range: { from: number; to: number }) => {
-		const from = deviceTrendFromRef.current ?? range.from;
-		fetchDeviceTrendRange({ from, to: range.to });
+		fetchDeviceTrendRange(range);
 	};
 
-	/** 滑块松手：同时更新 from / to */
+	/** 滑块松手：按滑块选中窗口（默认 1 天）查询 from / to */
 	const handleDeviceTrendRangeChange = (range: {
 		from: number;
 		to: number;
 	}) => {
-		deviceTrendFromRef.current = range.from;
 		fetchDeviceTrendRange(range);
 	};
 
@@ -520,7 +516,8 @@ const DeviceControl = () => {
 			!roomId ||
 			!propertyId ||
 			!Number.isFinite(range.from) ||
-			!Number.isFinite(range.to)
+			!Number.isFinite(range.to) ||
+			range.from >= range.to
 		) {
 			return;
 		}
@@ -543,18 +540,16 @@ const DeviceControl = () => {
 			.catch(() => undefined);
 	};
 
-	/** 翻页：沿用当前查询的 from，只更新 to */
+	/** 翻页：按 X 轴当前 1 小时窗口查询 from / to */
 	const handleRoomTrendTimePage = (range: { from: number; to: number }) => {
-		const from = roomTrendFromRef.current ?? range.from;
-		fetchRoomTrendRange({ from, to: range.to });
+		fetchRoomTrendRange(range);
 	};
 
-	/** 滑块松手：同时更新 from / to */
+	/** 滑块松手：按滑块选中窗口（默认 1 天）查询 from / to */
 	const handleRoomTrendRangeChange = (range: {
 		from: number;
 		to: number;
 	}) => {
-		roomTrendFromRef.current = range.from;
 		fetchRoomTrendRange(range);
 	};
 
@@ -1164,6 +1159,9 @@ const DeviceControl = () => {
 												>
 													<LineChartsByRoom
 														series={roomTrendSeries}
+														axisRangeMs={
+															TREND_AXIS_RANGE_MS
+														}
 														onTimePage={
 															handleRoomTrendTimePage
 														}
@@ -1210,6 +1208,9 @@ const DeviceControl = () => {
 													<LineCharts
 														series={
 															trendChart.series
+														}
+														axisRangeMs={
+															TREND_AXIS_RANGE_MS
 														}
 														onTimePage={
 															handleDeviceTrendTimePage

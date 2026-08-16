@@ -13,6 +13,8 @@ import type {
 } from "./interface";
 
 const MS_DAY = 24 * 60 * 60 * 1000;
+const MS_MINUTE = 60 * 1000;
+const MS_HOUR = 60 * 60 * 1000;
 const AXIS_LABEL_COLOR = "#86909c";
 const SPLIT_LINE_COLOR = "#f0f0f0";
 const AXIS_LINE_COLOR = "#e5e6eb";
@@ -262,9 +264,10 @@ export function buildLineChartOption(
 	const axisMax =
 		viewExtent != null ? clampTimeToNow(viewExtent[1], now) : undefined;
 	const axisMin = axisMax != null ? axisMax - viewSpan : viewExtent?.[0];
+	const tickInterval = viewSpan >= MS_HOUR ? 10 * MS_MINUTE : MS_MINUTE;
 	const axisTicks =
 		axisMin != null && axisMax != null
-			? buildTimeAxisTicks(axisMin, axisMax)
+			? buildTimeAxisTicks(axisMin, axisMax, tickInterval)
 			: undefined;
 	const sliderWidth = Math.max(width - layout.left - layout.sliderRight, 0);
 

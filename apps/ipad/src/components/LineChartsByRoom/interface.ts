@@ -36,7 +36,7 @@ export interface LineChartsProps {
 	series: LineChartSeriesItem[];
 	/** 滑块选中窗口时长（毫秒），默认 1 天 */
 	defaultRangeMs?: number;
-	/** 图表 X 轴可见时长（毫秒），默认 5 分钟 */
+	/** 图表 X 轴可见时长（毫秒），默认 1 小时 */
 	axisRangeMs?: number;
 	/** 滑块轨道总天数，默认 7 */
 	totalRangeDays?: number;
@@ -44,7 +44,7 @@ export interface LineChartsProps {
 	pageSize?: number;
 	/** Tooltip「原始值」格式化 */
 	valueFormatter?: (value: number, seriesName: string) => string;
-	/** 时间轴翻页：回传新的 5 分钟查询区间 */
+	/** 时间轴翻页：回传新的 1 小时查询区间 */
 	onTimePage?: (range: { from: number; to: number }) => void;
 	/** 滑块拖动结束：回传当前选中窗口（整天步幅），供趋势接口 `from` / `to` */
 	onRangeChange?: (range: { from: number; to: number }) => void;

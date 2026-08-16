@@ -37,7 +37,7 @@ echarts.use([
 ]);
 
 const SLIDER_RANGE_MS = 24 * 60 * 60 * 1000;
-const AXIS_RANGE_MS = 5 * 60 * 1000;
+const AXIS_RANGE_MS = 60 * 60 * 1000;
 const TOTAL_RANGE_DAYS = 7;
 const defaultValueFormatter = (value: number) => String(value);
 
