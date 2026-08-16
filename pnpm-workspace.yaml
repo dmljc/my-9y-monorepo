@@ -28,7 +28,7 @@ catalog:
   react-dom: ^19.2.8
 
   # UI
-  antd: ^6.5.4
+  antd: ^6.6.0
   "@ant-design/icons": ^6.3.2
 
   # HTTP
@@ -36,7 +36,7 @@ catalog:
 
   # Charts & Date
   echarts: ^6.1.0
-  dayjs: ^1.11.21
+  dayjs: ^1.11.22
 
   # Router
   react-router-dom: ^7.18.2
