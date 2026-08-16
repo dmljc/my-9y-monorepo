@@ -722,7 +722,7 @@ export const normalizeThingsList = (data: unknown): unknown[] => {
 };
 
 /**
- * 物实例 → 下拉选项（label=thing_name，value=thing_id）。
+ * 物实例 → 下拉选项（label=thing_name[thing_id]，value=thing_id）。
  *
  * @param {unknown} - things 接口 data。
  * @returns {SelectOption[]} - 下拉选项。
@@ -734,7 +734,7 @@ export const toThingOptions = (data: unknown): SelectOption[] => {
 		const value = String(record.thing_id ?? record.thingId ?? "").trim();
 		if (!value) return [];
 		const name = String(record.thing_name ?? record.thingName ?? "").trim();
-		return [{ label: name || value, value }];
+		return [{ label: name ? `${name}【${value}】` : value, value }];
 	});
 };
 
