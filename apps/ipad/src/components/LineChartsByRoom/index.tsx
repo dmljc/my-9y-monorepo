@@ -88,7 +88,6 @@ const ChevronRightIcon = () => (
  */
 const LineCharts = ({
 	series,
-	defaultRangeMs = SLIDER_RANGE_MS,
 	axisRangeMs = AXIS_RANGE_MS,
 	totalRangeDays = TOTAL_RANGE_DAYS,
 	pageSize = DEFAULT_PAGE_SIZE,
@@ -133,11 +132,11 @@ const LineCharts = ({
 		() => resolved.slice(0, pageSize),
 		[resolved, pageSize],
 	);
-	const extentKey = `${timeExtent[0]}_${timeExtent[1]}_${defaultRangeMs}_${axisRangeMs}_${totalRangeDays}`;
+	const extentKey = `${timeExtent[0]}_${timeExtent[1]}_${axisRangeMs}_${totalRangeDays}`;
 
 	if (extentKeyRef.current !== extentKey) {
 		extentKeyRef.current = extentKey;
-		zoomRef.current = computeDefaultZoom(timeExtent, defaultRangeMs);
+		zoomRef.current = computeDefaultZoom(timeExtent, SLIDER_RANGE_MS);
 		sliderWindowRef.current = null;
 		viewLockedRef.current = false;
 		sliderDirtyRef.current = false;

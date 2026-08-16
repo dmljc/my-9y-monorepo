@@ -34,8 +34,6 @@ export interface LineChartSeriesItem {
 export interface LineChartsProps {
 	/** 每条序列独占一条 Y 轴与一块纵向 grid */
 	series: LineChartSeriesItem[];
-	/** 滑块选中窗口时长（毫秒），默认 1 天 */
-	defaultRangeMs?: number;
 	/** 图表 X 轴可见时长（毫秒），默认 1 小时 */
 	axisRangeMs?: number;
 	/** 滑块轨道总天数，默认 7 */

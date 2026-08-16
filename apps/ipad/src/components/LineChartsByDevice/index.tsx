@@ -87,7 +87,6 @@ const ChevronRightIcon = () => (
 const LineCharts = ({
 	series,
 	lineWidth = DEFAULT_LINE_WIDTH,
-	defaultRangeMs = SLIDER_RANGE_MS,
 	axisRangeMs = AXIS_RANGE_MS,
 	totalRangeDays = TOTAL_RANGE_DAYS,
 	valueFormatter = defaultValueFormatter,
@@ -131,11 +130,11 @@ const LineCharts = ({
 		);
 	}, [points, totalRangeDays]);
 	const layout = useMemo(() => getLineChartLayout(box.scale), [box.scale]);
-	const extentKey = `${timeExtent[0]}_${timeExtent[1]}_${defaultRangeMs}_${axisRangeMs}_${totalRangeDays}`;
+	const extentKey = `${timeExtent[0]}_${timeExtent[1]}_${axisRangeMs}_${totalRangeDays}`;
 
 	if (extentKeyRef.current !== extentKey) {
 		extentKeyRef.current = extentKey;
-		zoomRef.current = computeDefaultZoom(timeExtent, defaultRangeMs);
+		zoomRef.current = computeDefaultZoom(timeExtent, SLIDER_RANGE_MS);
 		sliderWindowRef.current = null;
 		viewLockedRef.current = false;
 		sliderDirtyRef.current = false;

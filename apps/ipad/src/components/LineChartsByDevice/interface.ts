@@ -40,8 +40,6 @@ export interface LineChartsProps {
 	series: LineChartSeriesItem[];
 	/** 折线宽度（蓝湖 1400 逻辑像素） */
 	lineWidth?: number;
-	/** 滑块选中窗口时长（毫秒），默认 1 天 */
-	defaultRangeMs?: number;
 	/** 图表 X 轴可见时长（毫秒），默认 1 小时 */
 	axisRangeMs?: number;
 	/** 滑块轨道总天数，默认 7 */
