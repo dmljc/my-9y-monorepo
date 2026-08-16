@@ -665,7 +665,8 @@ export function buildLineChartOption(
 	const count = Math.max(series.length, 1);
 	const fontSize = 12 * scale;
 	const dataZoomGap = 10 * scale;
-	const gridGap = 6 * scale;
+	// 每块独立 Y 轴都显示上下端点刻度，预留一行文本高度避免相邻标签重叠。
+	const gridGap = 24 * scale;
 	const xLabelSpace = 32 * scale;
 	const top0 = layout.dataZoomTop + layout.dataZoomHeight + dataZoomGap;
 	const remain = Math.max(height - top0 - xLabelSpace - gridGap * (count - 1), 0);
