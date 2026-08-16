@@ -2,16 +2,10 @@ import { sortBuildingTabs } from "@/utils/buildingTabs";
 import type {
 	BuildingTab,
 	PipelineItem,
-	PipelineOptionRow,
 	PipeOption,
+	RoomOption,
 	RoomPipelineRow,
 } from "./interface";
-
-/** 管道号不存在提示。 */
-export const PIPE_NO_NOT_FOUND_MSG = "管道号不存在";
-
-/** 管道号重复提示。 */
-export const PIPE_NO_DUPLICATE_MSG = "管道号重复";
 
 /** 列表默认每页条数。 */
 export const DEFAULT_PAGE_SIZE = 10;
@@ -25,22 +19,6 @@ export const PIPE_IN_OPTIONS: PipeOption[] = Array.from(
 	(_, index) => {
 		const value = String(index + 1);
 		return { label: value, value };
-	},
-);
-
-/**
- * 分页交互演示用的本地房间管道配置。
- */
-export const DEMO_PIPELINES: PipelineItem[] = Array.from(
-	{ length: 17 },
-	(_, index) => {
-		const room = String(101 + index);
-		return {
-			id: -(index + 1),
-			sampleRoom: room,
-			pipeIn: String((index % 26) + 1),
-			buildingId: 0,
-		};
 	},
 );
 
@@ -84,13 +62,43 @@ export const parseRoomPipelineList = (data: unknown): RoomPipelineRow[] => {
 };
 
 /**
- * 解析管道 options 数组。
+ * 将厂房房间接口响应转为下拉选项。
  *
- * @param {unknown} - 接口解包后的 data。
- * @returns {T[]} - 行数组。
+ * @param {unknown} - `/iiot/alarm/rooms` 解包后的 data。
+ * @returns {RoomOption[]} - value 为房间 ID，label 为房间号。
  */
-export const parseArrayData = <T>(data: unknown): T[] => {
-	return Array.isArray(data) ? (data as T[]) : [];
+export const buildRoomOptions = (data: unknown): RoomOption[] => {
+	const rows = Array.isArray(data)
+		? data
+		: data && typeof data === "object"
+			? ((data as { list?: unknown; rooms?: unknown }).list ??
+				(data as { rooms?: unknown }).rooms)
+			: [];
+	if (!Array.isArray(rows)) return [];
+
+	const options: RoomOption[] = [];
+	const seen = new Set<string>();
+	for (const item of rows) {
+		if (typeof item === "string" && item.trim()) {
+			const value = item.trim();
+			if (seen.has(value)) continue;
+			seen.add(value);
+			options.push({ label: value, value });
+			continue;
+		}
+		if (!item || typeof item !== "object") continue;
+		const record = item as Record<string, unknown>;
+		const value = String(
+			record.roomId ?? record.id ?? record.value ?? "",
+		).trim();
+		const label = String(
+			record.room ?? record.roomName ?? record.name ?? record.label ?? value,
+		).trim();
+		if (!value || seen.has(value)) continue;
+		seen.add(value);
+		options.push({ label, value });
+	}
+	return options;
 };
 
 /**
@@ -127,56 +135,4 @@ export const mapRoomRowToItem = (
 		pipeIn: String(row.pipelineId ?? "").trim(),
 		buildingId: Number(row.buildingId ?? buildingId),
 	};
-};
-
-/**
- * 由管道 options 构建下拉选项。
- *
- * @param {unknown} - options 接口解包后的 data。
- * @returns {PipeOption[]} - 下拉选项。
- */
-export const buildPipeOptionsFromData = (data: unknown): PipeOption[] => {
-	const rows = parseArrayData<PipelineOptionRow>(data);
-	const options: PipeOption[] = [];
-	const seen = new Set<string>();
-
-	for (const row of rows) {
-		const pipeNo = String(row.pipelineId ?? "").trim();
-		if (!pipeNo || seen.has(pipeNo)) continue;
-		seen.add(pipeNo);
-		options.push({ label: pipeNo, value: pipeNo });
-	}
-
-	return options;
-};
-
-/**
- * 校验房间管道号（IN）。
- *
- * @param {string} - 待校验管道号。
- * @param {number} - 当前行 id。
- * @param {PipelineItem[]} - 当前列表。
- * @param {Set<string>} - 合法管道号集合。
- * @returns {string} - 错误文案；通过时为空串。
- */
-export const validateRoomPipeIn = (
-	pipeIn: string,
-	recordId: number,
-	list: PipelineItem[],
-	existingPipes: Set<string>,
-): string => {
-	const value = pipeIn.trim();
-	if (!value) {
-		return "";
-	}
-	if (existingPipes.size > 0 && !existingPipes.has(value)) {
-		return PIPE_NO_NOT_FOUND_MSG;
-	}
-	const duplicated = list.some(
-		(item) => item.id !== recordId && item.pipeIn.trim() === value,
-	);
-	if (duplicated) {
-		return PIPE_NO_DUPLICATE_MSG;
-	}
-	return "";
 };

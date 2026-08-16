@@ -42,21 +42,39 @@ export const listRoomPipelines = (
 };
 
 /**
- * 管道号下拉数据源。
+ * 查询厂房房间下拉数据源。
  *
  * @param {number} - 厂房 ID。
  */
-export const listPipelineOptions = (buildingId: number): Promise<any> => {
-	return request.get("/iiot/tablet/pipeline/options", {
+export const listAlarmRooms = (buildingId: number): Promise<any> => {
+	return request.get("/iiot/alarm/rooms", {
 		params: { buildingId },
 	});
 };
 
 /**
- * 房间-保存管道配置（含校验）。
+ * 新增房间管道配置。
+ *
+ * @param {RoomPipelinePayload} - 提交体。
+ */
+export const addRoomPipeline = (data: RoomPipelinePayload): Promise<any> => {
+	return request.post("/iiot/tablet/pipeline/add", data);
+};
+
+/**
+ * 编辑房间管道配置。
  *
  * @param {RoomPipelinePayload} - 提交体。
  */
 export const saveRoomPipeline = (data: RoomPipelinePayload): Promise<any> => {
 	return request.post("/iiot/tablet/pipeline/save", data);
+};
+
+/**
+ * 删除房间管道配置。
+ *
+ * @param {string} - 配置 ID，多个 ID 使用逗号分隔。
+ */
+export const removeRoomPipeline = (ids: string): Promise<any> => {
+	return request.delete(`/iiot/tablet/pipeline/${ids}`);
 };

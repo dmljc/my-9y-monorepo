@@ -8,8 +8,10 @@ import { usePermission } from "@/hooks/usePermission";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
 import { filterBuildingsByPermission } from "@/utils";
 import {
+	addRoomPipeline,
 	listBuildings,
 	listRoomPipelines,
+	removeRoomPipeline,
 	saveRoomPipeline,
 } from "./api";
 import CreateModal from "./CreateModal";
@@ -21,7 +23,6 @@ import type {
 } from "./interface";
 import {
 	DEFAULT_PAGE_SIZE,
-	DEMO_PIPELINES,
 	mapRoomRowToItem,
 	normalizeBuildingTabs,
 	PAGE_SIZE_OPTIONS,
@@ -45,22 +46,16 @@ const PipelineConfig = () => {
 
 	const currentBuilding =
 		buildings.find((item) => item.key === buildingKey) ?? null;
-	const loadRoomList = async (
-		buildingId: number,
-		showDemoPipelines = false,
-	) => {
+	const loadRoomList = async (buildingId: number) => {
 		const listData = await listRoomPipelines(buildingId);
 		const rows = parseRoomPipelineList(listData)
 			.map((row) => mapRoomRowToItem(row, buildingId))
 			.filter((item): item is PipelineItem => item !== null);
-		const nextRows = showDemoPipelines
-			? DEMO_PIPELINES.map((item) => ({ ...item, buildingId }))
-			: rows;
-		setPipelines(nextRows);
+		setPipelines(rows);
 		setPageNum((prev) => {
 			const maxPage = Math.max(
 				1,
-				Math.ceil(nextRows.length / pageSize) || 1,
+				Math.ceil(rows.length / pageSize) || 1,
 			);
 			return Math.min(prev, maxPage);
 		});
@@ -69,10 +64,7 @@ const PipelineConfig = () => {
 	const loadList = async (building: BuildingTab) => {
 		setLoading(true);
 		try {
-			await loadRoomList(
-				building.buildingId,
-				building.label.trim().toUpperCase() === "X12",
-			);
+			await loadRoomList(building.buildingId);
 		} finally {
 			setLoading(false);
 		}
@@ -136,17 +128,10 @@ const PipelineConfig = () => {
 			content: `确定要删除房间「${record.sampleRoom}」的管道配置吗？`,
 			okText: "删除",
 			okButtonProps: { danger: true },
-			onOk: () => {
-				setPipelines((prev) =>
-					prev.filter((item) => item.id !== record.id),
-				);
-				setPageNum((prev) =>
-					Math.min(
-						prev,
-						Math.max(1, Math.ceil((pipelines.length - 1) / pageSize)),
-					),
-				);
+			onOk: async () => {
+				await removeRoomPipeline(String(record.configId ?? record.id));
 				message.success("删除成功");
+				if (currentBuilding) await loadList(currentBuilding);
 			},
 		});
 	};
@@ -157,44 +142,31 @@ const PipelineConfig = () => {
 			throw new Error("no building");
 		}
 
-		const sampleRoom = values.sampleRoom.trim();
+		const roomId = Number(values.roomId);
 		const pipeIn = String(values.pipeIn ?? "").trim();
-		const isDemo =
-			currentBuilding.label.trim().toUpperCase() === "X12";
-
-		if (isDemo) {
-			if (editingRecord) {
-				setPipelines((prev) =>
-					prev.map((item) =>
-						item.id === editingRecord.id
-							? { ...item, sampleRoom, pipeIn }
-							: item,
-					),
-				);
-				message.success("编辑成功");
-				return;
-			}
-			const id = Math.min(0, ...pipelines.map((item) => item.id)) - 1;
-			setPipelines((prev) => [
-				...prev,
-				{
-					id,
-					sampleRoom,
-					pipeIn,
-					buildingId: currentBuilding.buildingId,
-				},
-			]);
-			message.success("新增成功");
-			return;
+		const room = values.room?.trim();
+		if (!Number.isInteger(roomId) || roomId <= 0 || !room) {
+			message.warning("请选择有效的房间号");
+			throw new Error("invalid room");
 		}
 
-		await saveRoomPipeline({
+		const payload = {
 			id: editingRecord?.configId ?? editingRecord?.id,
 			buildingId: currentBuilding.buildingId,
-			roomId: editingRecord?.roomId ?? 0,
-			room: sampleRoom,
+			roomId,
+			room,
 			pipelineId: pipeIn,
-		});
+		};
+		if (editingRecord) {
+			await saveRoomPipeline(payload);
+		} else {
+			await addRoomPipeline({
+				buildingId: payload.buildingId,
+				roomId: payload.roomId,
+				room: payload.room,
+				pipelineId: payload.pipelineId,
+			});
+		}
 		message.success(editingRecord ? "编辑成功" : "新增成功");
 		await loadList(currentBuilding);
 	};
@@ -307,6 +279,7 @@ const PipelineConfig = () => {
 				<CreateModal
 					open={modalOpen}
 					editingRecord={editingRecord}
+					buildingId={currentBuilding?.buildingId ?? 0}
 					getContainer={() => pageRef.current ?? document.body}
 					onCancel={() => setModalOpen(false)}
 					onOk={handleModalSubmit}

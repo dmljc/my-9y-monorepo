@@ -20,6 +20,12 @@ export interface PipeOption {
 	value: string;
 }
 
+/** 房间下拉选项。 */
+export interface RoomOption {
+	label: string;
+	value: string;
+}
+
 /**
  * 管道配置列表行。
  */
@@ -41,8 +47,10 @@ export interface PipelineItem {
  * 房间管道配置表单值。
  */
 export interface PipelineFormValues {
+	/** 房间 ID。 */
+	roomId: string;
 	/** 房间号。 */
-	sampleRoom: string;
+	room?: string;
 	/** 管道号（IN）。 */
 	pipeIn: string;
 }
@@ -69,9 +77,3 @@ export interface RoomPipelinePayload {
 	pipelineId?: string;
 }
 
-/**
- * 管道号下拉数据源行（options 接口）。
- */
-export interface PipelineOptionRow {
-	pipelineId?: string;
-}
