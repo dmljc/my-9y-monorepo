@@ -98,6 +98,7 @@ const LineCharts = ({
 	totalRangeDays = TOTAL_RANGE_DAYS,
 	pageSize = DEFAULT_PAGE_SIZE,
 	valueFormatter = defaultValueFormatter,
+	unit = "",
 	onTimePage,
 	onRangeChange,
 }: LineChartsProps) => {
@@ -173,6 +174,7 @@ const LineCharts = ({
 						timeExtent,
 						viewExtent: chartViewExtent,
 						valueFormatter,
+						unit,
 					}),
 		[
 			visibleSeries,
@@ -182,6 +184,7 @@ const LineCharts = ({
 			extentKey,
 			chartViewExtent,
 			valueFormatter,
+			unit,
 		],
 	);
 

@@ -96,6 +96,7 @@ const LineCharts = ({
 	axisRangeMs = AXIS_RANGE_MS,
 	totalRangeDays = TOTAL_RANGE_DAYS,
 	valueFormatter = defaultValueFormatter,
+	unit = "",
 	onTimePage,
 	onRangeChange,
 }: LineChartsProps) => {
@@ -170,11 +171,13 @@ const LineCharts = ({
 						zoom: zoomRef.current,
 						timeExtent,
 						viewExtent: chartViewExtent,
+						unit,
 					}),
 		[
 			resolved,
 			lineWidth,
 			valueFormatter,
+			unit,
 			box.width,
 			box.height,
 			box.scale,

@@ -42,6 +42,8 @@ export interface LineChartsProps {
 	pageSize?: number;
 	/** Tooltip「原始值」格式化 */
 	valueFormatter?: (value: number, seriesName: string) => string;
+	/** Tooltip 数值单位，拼在值后面 */
+	unit?: string;
 	/** 时间轴翻页：回传新的 1 小时查询区间 */
 	onTimePage?: (range: { from: number; to: number }) => void;
 	/** 滑块拖动结束：回传当前选中窗口（整天步幅），供趋势接口 `from` / `to` */
@@ -107,4 +109,6 @@ export interface LineChartBuildContext {
 	viewExtent: [number, number] | null;
 	/** Tooltip 数值格式化 */
 	valueFormatter: (value: number, seriesName: string) => string;
+	/** Tooltip 数值单位 */
+	unit?: string;
 }

@@ -601,18 +601,21 @@ function createYAxisEndpoints(
  * @param {LineChartResolvedSeries[]} - 全部序列，用于跨 grid 汇总。
  * @param {number} - 舞台缩放比。
  * @param {(value: number, seriesName: string) => string} - 数值格式化。
+ * @param {string} - 数值单位。
  * @returns {(raw: unknown) => string} - ECharts tooltip formatter。
  */
 function createTooltipFormatter(
 	series: LineChartResolvedSeries[],
 	scale: number,
 	valueFormatter: (value: number, seriesName: string) => string,
+	unit = "",
 ) {
 	const font = Math.max(12 * scale, 10);
 	const headerFont = Math.max(12 * scale, 10);
 	const gap = 8 * scale;
-	const minWidth = 220 * scale;
+	const valueGap = 12 * scale;
 	const dot = 8 * scale;
+	const unitText = unit.trim();
 
 	return (raw: unknown) => {
 		const time = getHoveredTime(raw);
@@ -626,24 +629,24 @@ function createTooltipFormatter(
 				if (value == null) {
 					return "";
 				}
-				const display = escapeHtml(valueFormatter(value, item.name));
-				return `<div style="display:flex;align-items:center;justify-content:space-between;gap:${24 * scale}px;margin-top:${gap}px">
-<span style="display:flex;align-items:center;gap:${6 * scale}px;color:#333333;font-size:${font}px">
+				const text = unitText
+					? `${valueFormatter(value, item.name)} ${unitText}`
+					: valueFormatter(value, item.name);
+				return `<span style="display:flex;align-items:center;gap:${6 * scale}px;color:#333333;font-size:${font}px">
 <span style="width:${dot}px;height:${dot}px;border-radius:50%;background:${item.color};flex:none"></span>
 <span>${escapeHtml(item.name)}</span>
 </span>
-<span style="color:#1d2129;font-size:${font}px;font-weight:600">${display}</span>
-</div>`;
+<span style="color:#1d2129;font-size:${font}px;font-weight:600;text-align:right;white-space:nowrap">${escapeHtml(text)}</span>`;
 			})
 			.join("");
 
-		return `<div style="min-width:${minWidth}px">
-<div style="margin-bottom:${gap}px;color:#86909c;font-size:${headerFont}px">当前时间：${formatTooltipTime(time)}</div>
-<div style="display:flex;justify-content:space-between;gap:${24 * scale}px;color:#86909c;font-size:${headerFont}px">
-<span>属性名称</span>
-<span>原始值</span>
-</div>
+		return `<div>
+<div style="margin-bottom:${gap}px;color:#86909c;font-size:${headerFont}px;white-space:nowrap">当前时间：${formatTooltipTime(time)}</div>
+<div style="display:grid;grid-template-columns:1fr auto;column-gap:${valueGap}px;row-gap:${gap}px;align-items:center">
+<span style="color:#86909c;font-size:${headerFont}px">属性名称</span>
+<span style="color:#86909c;font-size:${headerFont}px;text-align:right">原始值</span>
 ${rows}
+</div>
 </div>`;
 	};
 }
@@ -659,8 +662,16 @@ export function buildLineChartOption(
 	series: LineChartResolvedSeries[],
 	context: LineChartBuildContext,
 ): EChartsOption {
-	const { width, height, scale, zoom, valueFormatter, timeExtent, viewExtent } =
-		context;
+	const {
+		width,
+		height,
+		scale,
+		zoom,
+		valueFormatter,
+		timeExtent,
+		viewExtent,
+		unit = "",
+	} = context;
 	const layout = getLineChartLayout(scale);
 	const count = Math.max(series.length, 1);
 	const fontSize = 12 * scale;
@@ -847,7 +858,7 @@ export function buildLineChartOption(
 			padding: [12 * scale, 16 * scale],
 			confine: true,
 			extraCssText: `border-radius:${8 * scale}px;box-shadow:0 ${4 * scale}px ${16 * scale}px rgba(0,0,0,0.12);`,
-			formatter: createTooltipFormatter(series, scale, valueFormatter),
+			formatter: createTooltipFormatter(series, scale, valueFormatter, unit),
 		},
 		dataZoom: [
 			{

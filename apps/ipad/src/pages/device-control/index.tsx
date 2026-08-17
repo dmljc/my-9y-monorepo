@@ -387,6 +387,9 @@ const DeviceControl = () => {
 	const roomMetrics = collectRoomMetrics(selectedRoom?.devices ?? []);
 	const metricCards =
 		listMode === "room" ? roomMetrics : (selected?.metrics ?? []);
+	const trendUnit =
+		metricCards.find((item) => item.propertyId === trendPropertyId)?.unit ??
+		"";
 
 	const applyDevices = (
 		buildingKeyNext: string,
@@ -1277,6 +1280,7 @@ const DeviceControl = () => {
 														axisRangeMs={
 															TREND_AXIS_RANGE_MS
 														}
+														unit={trendUnit}
 														onTimePage={
 															handleRoomTrendTimePage
 														}
@@ -1327,6 +1331,7 @@ const DeviceControl = () => {
 														axisRangeMs={
 															TREND_AXIS_RANGE_MS
 														}
+														unit={trendUnit}
 														onTimePage={
 															handleDeviceTrendTimePage
 														}

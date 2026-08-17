@@ -46,6 +46,8 @@ export interface LineChartsProps {
 	totalRangeDays?: number;
 	/** Tooltip 数值展示格式 */
 	valueFormatter?: (value: number) => string;
+	/** Tooltip 数值单位，拼在值后面 */
+	unit?: string;
 	/** 时间轴翻页：回传新的 1 小时查询区间 */
 	onTimePage?: (range: { from: number; to: number }) => void;
 	/** 滑块拖动结束：回传当前选中窗口（整天步幅） */
@@ -71,4 +73,6 @@ export interface LineChartBuildContext {
 	timeExtent: [number, number] | null;
 	/** 图表 X 轴可见范围（与滑块窗口解耦） */
 	viewExtent: [number, number] | null;
+	/** Tooltip 数值单位 */
+	unit?: string;
 }

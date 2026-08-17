@@ -203,17 +203,20 @@ function getHoveredTime(raw: unknown): number | null {
  * @param {LineChartResolvedSeries[]} - 全部序列。
  * @param {number} - 舞台缩放比。
  * @param {(value: number) => string} - 数值格式化。
+ * @param {string} - 数值单位。
  * @returns {(raw: unknown) => string} - ECharts tooltip formatter。
  */
 function createTooltipFormatter(
 	series: LineChartResolvedSeries[],
 	scale: number,
 	valueFormatter: (value: number) => string,
+	unit = "",
 ) {
 	const font = Math.max(12 * scale, 10);
 	const gap = 8 * scale;
-	const minWidth = 220 * scale;
+	const valueGap = 12 * scale;
 	const dot = 8 * scale;
+	const unitText = unit.trim();
 
 	return (raw: unknown) => {
 		const time = getHoveredTime(raw);
@@ -226,18 +229,19 @@ function createTooltipFormatter(
 				if (value == null) {
 					return "";
 				}
-				return `<div style="display:flex;align-items:center;justify-content:space-between;gap:${24 * scale}px;margin-top:${gap}px">
-<span style="display:flex;align-items:center;gap:${6 * scale}px;color:#333333;font-size:${font}px">
+				const text = unitText
+					? `${valueFormatter(value)} ${unitText}`
+					: valueFormatter(value);
+				return `<span style="display:flex;align-items:center;gap:${6 * scale}px;color:#333333;font-size:${font}px">
 <span style="width:${dot}px;height:${dot}px;border-radius:50%;background:${item.color};flex:none"></span>
 <span>${escapeHtml(item.name)}</span>
 </span>
-<span style="color:#1d2129;font-size:${font}px;font-weight:600">${escapeHtml(valueFormatter(value))}</span>
-</div>`;
+<span style="color:#1d2129;font-size:${font}px;font-weight:600;text-align:right;white-space:nowrap">${escapeHtml(text)}</span>`;
 			})
 			.join("");
-		return `<div style="min-width:${minWidth}px">
-<div style="margin-bottom:${gap}px;color:#86909c;font-size:${font}px">当前时间：${formatTooltipTime(time)}</div>
-${rows}
+		return `<div>
+<div style="margin-bottom:${gap}px;color:#86909c;font-size:${font}px;white-space:nowrap">当前时间：${formatTooltipTime(time)}</div>
+<div style="display:grid;grid-template-columns:1fr auto;column-gap:${valueGap}px;row-gap:${gap}px;align-items:center">${rows}</div>
 </div>`;
 	};
 }
@@ -257,7 +261,7 @@ export function buildLineChartOption(
 	valueFormatter: (value: number) => string,
 	context: LineChartBuildContext,
 ): EChartsOption {
-	const { width, scale, zoom, timeExtent, viewExtent } = context;
+	const { width, scale, zoom, timeExtent, viewExtent, unit = "" } = context;
 	const layout = getLineChartLayout(scale);
 	const fontSize = 12 * scale;
 	const dataZoomGap = 10 * scale;
@@ -388,7 +392,7 @@ export function buildLineChartOption(
 			padding: [12 * scale, 16 * scale],
 			confine: true,
 			extraCssText: `border-radius:${8 * scale}px;box-shadow:0 ${4 * scale}px ${16 * scale}px rgba(0,0,0,0.12);`,
-			formatter: createTooltipFormatter(series, scale, valueFormatter),
+			formatter: createTooltipFormatter(series, scale, valueFormatter, unit),
 		},
 		dataZoom: [
 			{
