@@ -28,10 +28,13 @@ const DEFAULT_COLORS = ["#EE8C45", "#6BC7A6", "#7492DB"];
 /**
  * 将业务点转为 `[时间戳, 数值]`，按时间升序。
  *
- * @param {LineChartPoint[]} - 组件入参点列。
+ * @param {LineChartPoint[]} - 组件入参点列；缺省或非数组时返回空数组。
  * @returns {[number, number][]} - 可供 ECharts 使用的点。
  */
 export function toChartPoints(data: LineChartPoint[]): [number, number][] {
+	if (!Array.isArray(data) || data.length === 0) {
+		return [];
+	}
 	return data
 		.map((point): [number, number] => {
 			if (typeof point.time === "number") {
@@ -48,16 +51,19 @@ export function toChartPoints(data: LineChartPoint[]): [number, number][] {
 /**
  * 补齐颜色并把各序列点规范为 `[时间戳, 数值]`。
  *
- * @param {LineChartSeriesItem[]} - 组件入参序列。
+ * @param {LineChartSeriesItem[]} - 组件入参序列；缺省或非数组时返回空数组。
  * @returns {LineChartResolvedSeries[]} - 可供 ECharts 使用的序列。
  */
 export function resolveSeries(
-	series: LineChartSeriesItem[],
+	series: LineChartSeriesItem[] = [],
 ): LineChartResolvedSeries[] {
+	if (!Array.isArray(series) || series.length === 0) {
+		return [];
+	}
 	return series.map((item, index) => ({
 		name: item.name,
 		color: item.color ?? DEFAULT_COLORS[index % DEFAULT_COLORS.length],
-		data: toChartPoints(item.data),
+		data: toChartPoints(item.data ?? []),
 	}));
 }
 

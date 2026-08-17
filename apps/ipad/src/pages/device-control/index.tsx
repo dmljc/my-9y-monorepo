@@ -517,6 +517,7 @@ const DeviceControl = () => {
 			setTrendChart(EMPTY_TREND_CHART);
 			return;
 		}
+		setTrendChart(EMPTY_TREND_CHART);
 		let cancelled = false;
 		const reqId = ++deviceTrendReqRef.current;
 		const to = Date.now();
@@ -600,10 +601,16 @@ const DeviceControl = () => {
 			.then((data) => {
 				if (reqId !== deviceTrendReqRef.current) return;
 				const next = toTrendChartData(data);
-				if (!next.series.length) return;
+				if (!next.series.length) {
+					setTrendChart(EMPTY_TREND_CHART);
+					return;
+				}
 				setTrendChart((prev) => mergeTrendChartData(prev, next));
 			})
-			.catch(() => undefined);
+			.catch(() => {
+				if (reqId !== deviceTrendReqRef.current) return;
+				setTrendChart(EMPTY_TREND_CHART);
+			});
 	};
 
 	/** 翻页：按 X 轴当前 1 小时窗口查询 from / to */
@@ -623,6 +630,9 @@ const DeviceControl = () => {
 		const buildingId = currentBuilding?.buildingId ?? 0;
 		const roomId = selectedRoom?.roomId ?? 0;
 		const propertyId = trendPropertyId;
+		const emptySeries = buildEmptyRoomTrendSeries(
+			selectedRoom?.devices ?? [],
+		);
 		if (
 			!buildingId ||
 			!roomId ||
@@ -644,12 +654,18 @@ const DeviceControl = () => {
 			.then((data) => {
 				if (reqId !== roomTrendReqRef.current) return;
 				const series = toRoomTrendSeries(data);
-				if (!series.length) return;
+				if (!series.length) {
+					setRoomTrendSeries(emptySeries);
+					return;
+				}
 				setRoomTrendSeries((prev) =>
 					mergeRoomTrendSeries(prev, series),
 				);
 			})
-			.catch(() => undefined);
+			.catch(() => {
+				if (reqId !== roomTrendReqRef.current) return;
+				setRoomTrendSeries(emptySeries);
+			});
 	};
 
 	/** 翻页：按 X 轴当前 1 小时窗口查询 from / to */

@@ -94,12 +94,15 @@ function toTimestamp(time: LineChartPoint["time"]): number {
 /**
  * 补齐颜色并把数据点规范为 `[时间戳, 数值]`，按时间升序。
  *
- * @param {LineChartSeriesItem[]} - 组件入参序列。
+ * @param {LineChartSeriesItem[]} - 组件入参序列；缺省或非数组时返回空数组。
  * @returns {LineChartResolvedSeries[]} - 可供 ECharts 使用的序列。
  */
 export function resolveSeries(
-	series: LineChartSeriesItem[],
+	series: LineChartSeriesItem[] = [],
 ): LineChartResolvedSeries[] {
+	if (!Array.isArray(series) || series.length === 0) {
+		return [];
+	}
 	return series.map((item, index) => ({
 		name: item.name,
 		color: item.color ?? DEFAULT_COLORS[index % DEFAULT_COLORS.length],
@@ -107,7 +110,7 @@ export function resolveSeries(
 		max: item.max,
 		step: item.step,
 		smooth: item.smooth,
-		data: item.data
+		data: (item.data ?? [])
 			.map((point): [number, number] => [toTimestamp(point.time), point.value])
 			.filter(([time]) => Number.isFinite(time))
 			.sort((a, b) => a[0] - b[0]),

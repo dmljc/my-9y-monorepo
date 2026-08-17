@@ -36,8 +36,8 @@ export interface LineChartResolvedSeries {
  * 多系列同轴时序折线图入参（X 轴与 LineChartsByRoom 对齐）。
  */
 export interface LineChartsProps {
-	/** 多条折线，共用同一 Y 轴，颜色区分 */
-	series: LineChartSeriesItem[];
+	/** 多条折线，共用同一 Y 轴，颜色区分；缺省或非数组时按空数组渲染 */
+	series?: LineChartSeriesItem[];
 	/** 折线宽度（蓝湖 1400 逻辑像素） */
 	lineWidth?: number;
 	/** 图表 X 轴可见时长（毫秒），默认 1 小时 */

@@ -93,7 +93,7 @@ const ChevronRightIcon = () => (
  * 左侧多条独立 Y 轴的时序折线图：顶部 dataZoom、时间轴翻页、自定义 Tooltip。
  */
 const LineCharts = ({
-	series,
+	series = [],
 	axisRangeMs = AXIS_RANGE_MS,
 	totalRangeDays = TOTAL_RANGE_DAYS,
 	pageSize = DEFAULT_PAGE_SIZE,

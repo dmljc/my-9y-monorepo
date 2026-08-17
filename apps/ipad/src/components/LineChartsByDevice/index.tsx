@@ -91,7 +91,7 @@ const ChevronRightIcon = () => (
  * 多系列同轴时序折线图：X 轴与 LineChartsByRoom 相同（时间轴、滑块、翻页）。
  */
 const LineCharts = ({
-	series,
+	series = [],
 	lineWidth = DEFAULT_LINE_WIDTH,
 	axisRangeMs = AXIS_RANGE_MS,
 	totalRangeDays = TOTAL_RANGE_DAYS,
