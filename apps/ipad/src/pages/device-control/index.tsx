@@ -514,7 +514,12 @@ const DeviceControl = () => {
 	useEffect(() => {
 		const deviceId = selected?.deviceId ?? 0;
 		const propertyId = trendPropertyId;
-		if (listMode !== "device" || !deviceId || !propertyId) {
+		if (
+			listMode !== "device" ||
+			!deviceId ||
+			!propertyId ||
+			!selected?.enabled
+		) {
 			setTrendChart(EMPTY_TREND_CHART);
 			return;
 		}
@@ -537,7 +542,7 @@ const DeviceControl = () => {
 			cancelled = true;
 			deviceTrendReqRef.current += 1;
 		};
-	}, [listMode, selected?.deviceId, trendPropertyId]);
+	}, [listMode, selected?.deviceId, selected?.enabled, trendPropertyId]);
 
 	useEffect(() => {
 		const buildingId = currentBuilding?.buildingId ?? 0;
@@ -584,6 +589,7 @@ const DeviceControl = () => {
 		const deviceId = selected?.deviceId ?? 0;
 		const propertyId = trendPropertyId;
 		if (
+			!selected?.enabled ||
 			!deviceId ||
 			!propertyId ||
 			!Number.isFinite(range.from) ||
@@ -1252,7 +1258,15 @@ const DeviceControl = () => {
 										</div>
 									) : (
 										<div className={styles.metricEmpty}>
-											<Empty />
+											<Empty
+												description={
+													listMode === "device" &&
+													selected &&
+													!selected.enabled
+														? "设备已关闭，暂无实时数据"
+														: undefined
+												}
+											/>
 										</div>
 									)}
 
