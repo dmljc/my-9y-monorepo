@@ -135,6 +135,7 @@ const HistoricalData = () => {
 			key: "index",
 			width: 72,
 			align: "center",
+			fixed: "left",
 			render: (_: unknown, __: HistoricalDataRecord, index: number) =>
 				(pageNum - 1) * pageSize + index + 1,
 		},

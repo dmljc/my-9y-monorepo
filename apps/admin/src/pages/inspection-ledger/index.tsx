@@ -10,6 +10,7 @@ import statOverdueImg from "@/assets/inspection-ledger/stat-overdue.png";
 import statTotalImg from "@/assets/inspection-ledger/stat-total.png";
 import Access from "@/components/Access";
 import { PERM_INSPECTION_LEDGER } from "@/constants/permission";
+import { getTableScroll } from "@/utils";
 import {
 	create,
 	buildings as fetchBuildings,
@@ -316,7 +317,7 @@ const InspectionLedger = () => {
 					dataSource={dataSource}
 					rowKey="id"
 					loading={loading}
-					scroll={{ x: 1400 }}
+					scroll={getTableScroll({ x: 1400 })}
 					pagination={{
 						current: pageNum,
 						pageSize,

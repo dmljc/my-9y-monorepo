@@ -107,6 +107,7 @@ const ModelData = () => {
 			key: "index",
 			width: 72,
 			align: "center",
+			fixed: "left",
 			render: (_: unknown, __: DeviceDataSnapshot, index: number) =>
 				(pageNum - 1) * pageSize + index + 1,
 		},

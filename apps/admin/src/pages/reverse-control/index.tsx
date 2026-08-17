@@ -146,6 +146,7 @@ const ReverseControl = () => {
 			key: "index",
 			width: 72,
 			align: "center",
+			fixed: "left",
 			render: (_: unknown, __: IiotControlRule, index: number) =>
 				(pageNum - 1) * pageSize + index + 1,
 		},
@@ -198,6 +199,7 @@ const ReverseControl = () => {
 			title: "操作",
 			key: "actions",
 			align: "center",
+			fixed: "right",
 			width: 140,
 			render: (_: unknown, record) => (
 				<div className={styles.actions}>

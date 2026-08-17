@@ -1,3 +1,8 @@
+import type { TableProps } from "antd";
+
+/** Table scroll 配置。 */
+type TableScroll = TableProps["scroll"];
+
 /**
  * 是否为平板设备（含 iPad、iPadOS 桌面 UA、常见 Android 平板）。
  *
@@ -20,4 +25,17 @@ export function isTabletDevice(): boolean {
 	}
 
 	return false;
+}
+
+/**
+ * 组装 Table scroll：平板端横向按内容撑开，电脑端保持原配置以免改变桌面布局。
+ *
+ * @param {TableScroll} - 电脑端已有的 scroll，可不传。
+ * @returns {TableScroll} - 平板返回含 x: max-content 的配置；电脑返回原配置。
+ */
+export function getTableScroll(desktopScroll?: TableScroll): TableScroll {
+	if (isTabletDevice()) {
+		return { ...desktopScroll, x: "max-content" };
+	}
+	return desktopScroll;
 }

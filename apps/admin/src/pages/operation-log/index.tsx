@@ -147,6 +147,7 @@ const OperationLog = () => {
 			key: "index",
 			width: 72,
 			align: "center",
+			fixed: "left",
 			render: (_, __, index) => (pageNum - 1) * pageSize + index + 1,
 		},
 		{

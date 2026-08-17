@@ -8,6 +8,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import UnauthorizedModal from "@/components/UnauthorizedModal";
+import { getTableScroll } from "@/utils";
 import { requestMessageApi } from "@/utils/request";
 import App from "./App";
 import "./styles/global.css";
@@ -37,7 +38,7 @@ if (!rootEl) {
 createRoot(rootEl).render(
 	// 临时关闭 StrictMode（dev 下避免双挂载导致资源重复请求）；上线前恢复并自测
 	// <StrictMode>
-	<ConfigProvider locale={zhCN}>
+	<ConfigProvider locale={zhCN} table={{ scroll: getTableScroll() }}>
 		<AntApp>
 			<BrowserRouter>
 				<RequestMessageBridge />
