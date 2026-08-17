@@ -1386,34 +1386,46 @@ const DeviceControl = () => {
 											</Button>
 										</Access>
 										<div className={styles.footerActions}>
-											<Button
-												type="primary"
-												className={styles.actionBtn}
-												disabled={
-													selected.enabled ||
-													deviceSwitchLoading ||
-													cleanLoading
+											<Access
+												code={
+													PERM_DEVICE_CONTROL.CONFIG_INSTANCE
 												}
-												onClick={() => {
-													setInstanceOpen(true);
-												}}
 											>
-												实例配置
-											</Button>
-											<Button
-												type="primary"
-												className={styles.actionBtn}
-												disabled={
-													selected.enabled ||
-													deviceSwitchLoading ||
-													cleanLoading
+												<Button
+													type="primary"
+													className={styles.actionBtn}
+													disabled={
+														selected.enabled ||
+														deviceSwitchLoading ||
+														cleanLoading
+													}
+													onClick={() => {
+														setInstanceOpen(true);
+													}}
+												>
+													实例配置
+												</Button>
+											</Access>
+											<Access
+												code={
+													PERM_DEVICE_CONTROL.CONNECT_ROOM
 												}
-												onClick={() => {
-													setRoomOpen(true);
-												}}
 											>
-												连接房间
-											</Button>
+												<Button
+													type="primary"
+													className={styles.actionBtn}
+													disabled={
+														selected.enabled ||
+														deviceSwitchLoading ||
+														cleanLoading
+													}
+													onClick={() => {
+														setRoomOpen(true);
+													}}
+												>
+													连接房间
+												</Button>
+											</Access>
 											<Access
 												code={PERM_DEVICE_CONTROL.CLEAN}
 											>

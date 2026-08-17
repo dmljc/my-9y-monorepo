@@ -4,6 +4,10 @@ export const PERM_DEVICE_CONTROL = {
 	SWITCH_DEVICE: "iiot:tablet:deviceControl:switchDevice",
 	SWITCH_BUILDING: "iiot:tablet:deviceControl:switchBuilding",
 	CLEAN: "iiot:tablet:deviceControl:clean",
+	/** 实例配置 */
+	CONFIG_INSTANCE: "iiot:tablet:deviceControl:things",
+	/** 连接房间 */
+	CONNECT_ROOM: "iiot:tablet:deviceControl:rooms",
 	BUILDING_X03: "iiot:tablet:deviceControl:building:x03",
 	BUILDING_X12: "iiot:tablet:deviceControl:building:x12",
 } as const;
@@ -23,7 +27,11 @@ export const PERM_LEDGER = {
 /** 管道配置 - 按钮 / 厂房权限码。 */
 export const PERM_PIPELINE = {
 	LIST: "iiot:tablet:pipeline:list",
+	/** 新增；兼容旧权限码 saveRoom。 */
+	ADD: "iiot:tablet:pipeline:add",
 	SAVE_ROOM: "iiot:tablet:pipeline:saveRoom",
+	EDIT: "iiot:tablet:pipeline:edit",
+	REMOVE: "iiot:tablet:pipeline:delete",
 	BUILDING_X03: "iiot:tablet:pipeline:building:x03",
 	BUILDING_X12: "iiot:tablet:pipeline:building:x12",
 } as const;

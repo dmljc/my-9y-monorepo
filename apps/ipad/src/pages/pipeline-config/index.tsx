@@ -301,7 +301,7 @@ const PipelineConfig = () => {
 			align: "center",
 			render: (_, record) => (
 				<div className={styles.actions}>
-					<Access code={PERM_PIPELINE.SAVE_ROOM}>
+					<Access code={PERM_PIPELINE.EDIT}>
 						<button
 							type="button"
 							className={styles.actionBtn}
@@ -310,7 +310,7 @@ const PipelineConfig = () => {
 							编辑
 						</button>
 					</Access>
-					<Access code={PERM_PIPELINE.SAVE_ROOM}>
+					<Access code={PERM_PIPELINE.REMOVE}>
 						<button
 							type="button"
 							className={styles.actionBtn}
@@ -344,7 +344,9 @@ const PipelineConfig = () => {
 
 				<div className={styles.body}>
 					<div className={styles.panel}>
-						<Access code={PERM_PIPELINE.SAVE_ROOM}>
+						<Access
+							code={[PERM_PIPELINE.ADD, PERM_PIPELINE.SAVE_ROOM]}
+						>
 							<div className={styles.toolbar}>
 								<button
 									type="button"
