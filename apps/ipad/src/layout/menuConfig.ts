@@ -3,6 +3,7 @@
  */
 const PAGE_MENU_TITLES: { prefix: string; title: string }[] = [
 	{ prefix: "/device-control", title: "设备控制" },
+	{ prefix: "/add-device", title: "添加设备" },
 	{ prefix: "/pipeline-config", title: "管道配置" },
 ];
 

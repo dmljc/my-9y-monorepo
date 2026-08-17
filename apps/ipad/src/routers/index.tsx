@@ -8,6 +8,7 @@ const RouteError = lazy(() => import("@/components/RouteError"));
 const Login = lazy(() => import("@/pages/login"));
 const Home = lazy(() => import("@/pages/home"));
 const DeviceControl = lazy(() => import("@/pages/device-control"));
+const AddDevice = lazy(() => import("@/pages/add-device"));
 const PipelineConfig = lazy(() => import("@/pages/pipeline-config"));
 const NotFound = lazy(() => import("@/components/NotFound"));
 
@@ -33,6 +34,10 @@ const routes: RouteObject[] = [
 							{
 								path: "/device-control",
 								element: <DeviceControl />,
+							},
+							{
+								path: "/add-device",
+								element: <AddDevice />,
 							},
 							{
 								path: "/pipeline-config",

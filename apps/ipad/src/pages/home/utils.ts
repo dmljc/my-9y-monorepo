@@ -1,6 +1,11 @@
+import cardAddDevice from "@/assets/home/add-device.webp";
 import cardDeviceControl from "@/assets/home/device-control.webp";
 import cardPipelineConfig from "@/assets/home/pipeline-config.webp";
-import { PERM_DEVICE_CONTROL, PERM_PIPELINE } from "@/constants/permission";
+import {
+	PERM_DEVICE_CONTROL,
+	PERM_LEDGER,
+	PERM_PIPELINE,
+} from "@/constants/permission";
 
 /**
  * 首页标题中需高亮的固定文案（对齐设计稿）。
@@ -42,7 +47,7 @@ export const splitTitle = (title: string): TitleParts => {
  */
 export interface NavItem {
 	/** 导航唯一键。 */
-	key: "device-control" | "pipeline";
+	key: "device-control" | "pipeline" | "add-device";
 	/** 展示文案。 */
 	label: string;
 	/** 卡片背景切图。 */
@@ -54,7 +59,7 @@ export interface NavItem {
 }
 
 /**
- * 首页导航（assets/home 卡片切图）。
+ * 首页三列导航（assets/home 卡片切图）。
  */
 export const NAV_ITEMS: NavItem[] = [
 	{
@@ -70,5 +75,12 @@ export const NAV_ITEMS: NavItem[] = [
 		card: cardPipelineConfig,
 		path: "/pipeline-config",
 		perm: PERM_PIPELINE.LIST,
+	},
+	{
+		key: "add-device",
+		label: "添加设备",
+		card: cardAddDevice,
+		path: "/add-device",
+		perm: PERM_LEDGER.LIST,
 	},
 ];
