@@ -300,10 +300,10 @@
 }
 
 .infoGrid {
-	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	column-gap: calc(20 / 1400 * 100cqw);
+	display: flex;
+	flex-wrap: nowrap;
 	align-items: center;
+	column-gap: calc(20 / 1400 * 100cqw);
 	min-height: calc(48 / 1400 * 100cqw);
 	padding: 0 calc(16 / 1400 * 100cqw);
 	border-radius: calc(4 / 1400 * 100cqw);
@@ -311,41 +311,46 @@
 }
 
 .infoGridRoom {
-	display: flex;
 	flex-wrap: wrap;
-	align-items: center;
-	column-gap: calc(24 / 1400 * 100cqw);
 	row-gap: calc(8 / 1400 * 100cqw);
-	grid-template-columns: none;
+	column-gap: calc(24 / 1400 * 100cqw);
 }
 
 .infoCell {
+	flex: 0 0 auto;
 	display: flex;
 	align-items: center;
-	min-width: 0;
-	overflow: hidden;
+	min-width: max-content;
+	overflow: visible;
 }
 
 .infoGridRoom .infoCell {
-	flex: 0 0 auto;
-	overflow: visible;
 	min-width: auto;
 }
 
 .infoCellGrow {
+	flex: 0 0 auto;
+	overflow: visible;
+}
+
+.infoCellGrow .infoCellValue {
+	overflow: visible;
+	white-space: nowrap;
+	text-overflow: unset;
+}
+
+.infoGridRoom .infoCellGrow {
 	flex: 1 1 calc(200 / 1400 * 100cqw);
 	min-width: calc(160 / 1400 * 100cqw);
 	max-width: 100%;
 }
 
-.infoCellGrow .infoCellValue {
+.infoGridRoom .infoCellGrow .infoCellValue {
 	flex: 1;
 	min-width: 0;
-	overflow: visible;
 	white-space: normal;
 	word-break: keep-all;
 	overflow-wrap: break-word;
-	text-overflow: unset;
 }
 
 .infoCellLabel {
@@ -361,8 +366,8 @@
 }
 
 .infoCellValue {
-	min-width: 0;
-	overflow: hidden;
+	flex: none;
+	overflow: visible;
 	font-family:
 		"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC",
 		"Microsoft YaHei", sans-serif;
@@ -370,7 +375,6 @@
 	line-height: calc(22 / 1400 * 100cqw);
 	color: #000000;
 	white-space: nowrap;
-	text-overflow: ellipsis;
 }
 
 .mainPanel {
