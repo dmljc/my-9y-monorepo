@@ -730,11 +730,6 @@ export function buildLineChartOption(
 					},
 				},
 				splitLine: { show: false },
-				axisPointer: {
-					show: true,
-					lineStyle: { color: "#d9d9d9", width: 1 },
-					label: { show: false },
-				},
 			};
 		}),
 		{
@@ -746,6 +741,10 @@ export function buildLineChartOption(
 					? clampTimeToNow(timeExtent[1], now)
 					: undefined,
 			show: false,
+			axisPointer: {
+				show: false,
+				triggerTooltip: false,
+			},
 		},
 	];
 
@@ -836,7 +835,12 @@ export function buildLineChartOption(
 		yAxis: yAxisOption,
 		tooltip: {
 			trigger: "axis",
-			axisPointer: { type: "line" },
+			axisPointer: {
+				type: "line",
+				snap: true,
+				lineStyle: { color: "#d9d9d9", width: 1 },
+				label: { show: false },
+			},
 			backgroundColor: "#ffffff",
 			borderColor: "transparent",
 			borderWidth: 0,
