@@ -8,7 +8,11 @@ import type {
 	PipelineItem,
 	RoomOption,
 } from "./interface";
-import { buildRoomOptions, PIPE_IN_OPTIONS } from "./utils";
+import {
+	buildRoomOptions,
+	normalizePipeInValue,
+	PIPE_IN_OPTIONS,
+} from "./utils";
 
 type OpenSelect = "room" | "pipe" | null;
 
@@ -120,7 +124,7 @@ const CreateModal = ({
 			form.setFieldsValue({
 				roomId: String(editingRecord.roomId ?? ""),
 				room: editingRecord.sampleRoom,
-				pipeIn: editingRecord.pipeIn,
+				pipeIn: normalizePipeInValue(editingRecord.pipeIn) || undefined,
 			});
 			return;
 		}

@@ -13,11 +13,35 @@ export const DEFAULT_PAGE_SIZE = 10;
 /** 列表每页条数可选项。 */
 export const PAGE_SIZE_OPTIONS = ["10", "15", "20", "25", "50", "100"];
 
-/** 管道号（IN）下拉选项：1～26。 */
+/**
+ * 将管道号规范为提交 / 下拉 value：1～9 补前导零（1 → 01）。
+ *
+ * @param {string | undefined} - 后端或表单中的管道号。
+ * @returns {string} - 两位管道号；空值返回空串。
+ */
+export const normalizePipeInValue = (pipeIn?: string): string => {
+	const value = String(pipeIn ?? "").trim();
+	if (!value) return "";
+	const num = Number(value);
+	if (!Number.isInteger(num) || num < 1) return value;
+	return String(num).padStart(2, "0");
+};
+
+/**
+ * 管道号展示：与提交值一致，1～9 为 01～09。
+ *
+ * @param {string | undefined} - 管道号。
+ * @returns {string} - 展示文案。
+ */
+export const formatPipeInLabel = (pipeIn?: string): string => {
+	return normalizePipeInValue(pipeIn);
+};
+
+/** 管道号（IN）下拉选项：1～26，小于 10 为 01～09。 */
 export const PIPE_IN_OPTIONS: PipeOption[] = Array.from(
 	{ length: 26 },
 	(_, index) => {
-		const value = String(index + 1);
+		const value = normalizePipeInValue(String(index + 1));
 		return { label: value, value };
 	},
 );

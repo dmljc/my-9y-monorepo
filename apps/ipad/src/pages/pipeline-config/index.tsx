@@ -23,8 +23,10 @@ import type {
 } from "./interface";
 import {
 	DEFAULT_PAGE_SIZE,
+	formatPipeInLabel,
 	mapRoomRowToItem,
 	normalizeBuildingTabs,
+	normalizePipeInValue,
 	PAGE_SIZE_OPTIONS,
 	parseRoomPipelineList,
 } from "./utils";
@@ -250,7 +252,7 @@ const PipelineConfig = () => {
 		}
 
 		const roomId = Number(values.roomId);
-		const pipeIn = String(values.pipeIn ?? "").trim();
+		const pipeIn = normalizePipeInValue(values.pipeIn);
 		const room = values.room?.trim();
 		if (!Number.isInteger(roomId) || roomId <= 0 || !room) {
 			message.warning("请选择有效的房间号");
@@ -291,6 +293,7 @@ const PipelineConfig = () => {
 			dataIndex: "pipeIn",
 			key: "pipeIn",
 			ellipsis: true,
+			render: (pipeIn: string) => formatPipeInLabel(pipeIn),
 		},
 		{
 			title: "操作",
