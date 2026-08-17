@@ -35,3 +35,28 @@
 	align-items: center;
 	gap: 4px;
 }
+
+.assignTable {
+	width: 100%;
+}
+
+.assignModule {
+	white-space: nowrap;
+}
+
+.assignPage {
+	white-space: nowrap;
+}
+
+.actionGroup {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 8px 12px;
+	white-space: nowrap;
+}
+
+.actionGroup :global(.ant-checkbox-wrapper) {
+	margin-inline-end: 0;
+	flex: none;
+}

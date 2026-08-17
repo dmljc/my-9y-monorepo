@@ -2,6 +2,7 @@ import { Checkbox, Modal, Spin, Table, Tabs } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { getAssignDetail } from "./api";
+import styles from "./index.module.css";
 import type { SysRole } from "./interface";
 import type { AssignAction, AssignRow } from "./utils";
 import {
@@ -201,14 +202,7 @@ const AssignModal = ({
 		const pageChecked = keys.includes(record.pageKey);
 
 		return (
-			<div
-				style={{
-					display: "flex",
-					flexWrap: "nowrap",
-					gap: "16px 24px",
-					whiteSpace: "nowrap",
-				}}
-			>
+			<div className={styles.actionGroup}>
 				{record.actions.map((action) => (
 					<Checkbox
 						key={action.key}
@@ -269,13 +263,17 @@ const AssignModal = ({
 			title: "功能模块",
 			dataIndex: "moduleTitle",
 			key: "moduleTitle",
+			width: 112,
 			onCell: (record) => ({
 				rowSpan: record.moduleRowSpan,
+				className: styles.assignModule,
 			}),
 		},
 		{
 			title: scopeTitle,
 			key: "page",
+			width: 168,
+			onCell: () => ({ className: styles.assignPage }),
 			render: (_: unknown, record) => {
 				const checked = keys.includes(record.pageKey);
 				return (
@@ -306,7 +304,7 @@ const AssignModal = ({
 			onCancel={onCancel}
 			confirmLoading={loading}
 			destroyOnHidden
-			width="min(720px, calc(100vw - 48px))"
+			width="min(860px, calc(100vw - 48px))"
 		>
 			<Spin spinning={detailLoading}>
 				<Tabs
@@ -318,6 +316,7 @@ const AssignModal = ({
 							label: "后台管理",
 							children: (
 								<Table
+									className={styles.assignTable}
 									size="small"
 									columns={buildColumns(
 										adminTableRows,
@@ -351,6 +350,7 @@ const AssignModal = ({
 							label: "平板端",
 							children: (
 								<Table
+									className={styles.assignTable}
 									size="small"
 									columns={buildColumns(
 										ipadTableRows,
