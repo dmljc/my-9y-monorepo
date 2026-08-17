@@ -1,3 +1,4 @@
+import { LoadingOutlined } from "@ant-design/icons";
 import { App, Button, Empty } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
@@ -812,14 +813,14 @@ const DeviceControl = () => {
 	};
 
 	const handleClean = async () => {
-		if (!selected || !currentBuilding || selected.enabled) return;
-		const wasCleaning = selected.cleaning;
+		if (!selected || !currentBuilding || !selected.enabled) return;
+		const nextCleanStatus = !selected.cleaning;
 		setCleanLoading(true);
 		try {
-			await toggleClean(selected.deviceId);
+			await toggleClean(selected.deviceId, nextCleanStatus);
 			await loadDevices(currentBuilding.buildingId, buildingKey);
 			message.success(
-				wasCleaning ? "已取消设备清洗" : "已下发设备清洗指令",
+				nextCleanStatus ? "已下发设备清洗指令" : "已取消设备清洗",
 			);
 		} finally {
 			setCleanLoading(false);
@@ -1431,18 +1432,28 @@ const DeviceControl = () => {
 											>
 												<Button
 													type="primary"
-													className={styles.actionBtn}
-												disabled={
-													selected.enabled ||
-													deviceSwitchLoading
-												}
+													className={`${styles.actionBtn}${
+														selected.cleaning
+															? ` ${styles.actionBtnCleaning}`
+															: ""
+													}`}
+													disabled={
+														!selected.enabled ||
+														deviceSwitchLoading
+													}
+													icon={
+														selected.cleaning &&
+														!cleanLoading ? (
+															<LoadingOutlined spin />
+														) : undefined
+													}
 													onClick={() => {
 														handleClean();
 													}}
 													loading={cleanLoading}
 												>
 													{selected.cleaning
-														? "清洗中"
+														? "设备清洗中"
 														: "设备清洗"}
 												</Button>
 											</Access>

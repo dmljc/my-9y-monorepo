@@ -77,12 +77,19 @@ export const listRoomTrend = (params: RoomTrendQuery): Promise<any> => {
 };
 
 /**
- * 设备清洗启停（服务端自动切换状态）。
+ * 设备清洗启停。
  *
  * @param {number} - 设备 ID。
+ * @param {boolean} - true 开始清洗，false 取消清洗。
  */
-export const toggleClean = (deviceId: number): Promise<any> => {
-	return request.post(`/iiot/tablet/device/${deviceId}/clean`);
+export const toggleClean = (
+	deviceId: number,
+	cleanStatus: boolean,
+): Promise<any> => {
+	return request.post(`/iiot/tablet/device/${deviceId}/clean`, cleanStatus, {
+		headers: { "Content-Type": "application/json" },
+		transformRequest: [(data) => JSON.stringify(data)],
+	});
 };
 
 /**

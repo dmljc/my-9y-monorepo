@@ -46,6 +46,22 @@ export const isDeviceRunning = (deviceStatus?: string | number): boolean => {
 };
 
 /**
+ * 是否处于清洗中。兼容 WS / 列表接口的 boolean、1、"1"、"true"。
+ *
+ * @param {string | number | boolean | undefined} - cleanStatus。
+ * @returns {boolean} - 是否清洗中。
+ */
+export const isDeviceCleaning = (
+	cleanStatus?: string | number | boolean,
+): boolean => {
+	if (cleanStatus === true || cleanStatus === 1) return true;
+	const value = String(cleanStatus ?? "")
+		.trim()
+		.toLowerCase();
+	return value === "1" || value === "true";
+};
+
+/**
  * 实时指标卡图标类型。
  */
 export type MetricIconKey =
@@ -271,7 +287,7 @@ export const mapRoomDeviceToItem = (
 		manufacturer: String(device.manufacturer ?? "").trim(),
 		/* 后端可能回 number / string；仅 "1" 表示运行中 */
 		enabled: isDeviceRunning(device.deviceStatus),
-		cleaning: String(device.cleanStatus ?? "") === "1",
+		cleaning: isDeviceCleaning(device.cleanStatus),
 		buildingId: Number(room.buildingId ?? 0),
 		thingId:
 			joinThingIds(parseThingIds(device.thingIds ?? device.thingId)) ||
@@ -389,9 +405,7 @@ export const mergeDeviceFromWs = (
 		code: code || item.code,
 		pipeNo: pipelineId || item.pipeNo,
 		enabled: hasStatus ? isDeviceRunning(row.deviceStatus) : item.enabled,
-		cleaning: hasClean
-			? String(row.cleanStatus ?? "") === "1"
-			: item.cleaning,
+		cleaning: hasClean ? isDeviceCleaning(row.cleanStatus) : item.cleaning,
 		metrics,
 	};
 };

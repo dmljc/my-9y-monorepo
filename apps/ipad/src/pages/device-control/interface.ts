@@ -22,8 +22,8 @@ export interface RoomDeviceItem {
 	thingId?: string;
 	/** 0 关闭 / 1 运行。 */
 	deviceStatus?: string;
-	/** 0 空闲 / 1 清洗中。 */
-	cleanStatus?: string;
+	/** 清洗中：true / 1；空闲：false / 0。 */
+	cleanStatus?: string | number | boolean;
 	cleanStartTime?: string | null;
 	flowRate?: number;
 	/** 管道编号。 */
@@ -72,8 +72,8 @@ export interface TabletWsDevice {
 	deviceName?: string;
 	/** 0 关闭 / 1 运行。 */
 	deviceStatus?: string | number;
-	/** 0 空闲 / 1 清洗中。 */
-	cleanStatus?: string | number;
+	/** 清洗中：true / 1；空闲：false / 0。 */
+	cleanStatus?: string | number | boolean;
 	/** 运行参数；右侧指标卡按该数组动态渲染。 */
 	runtimeParams?: RuntimeParam[];
 	/** 管道编号。 */
@@ -123,7 +123,7 @@ export interface DeviceItem {
 	manufacturer: string;
 	/** 开关：deviceStatus === "1" 为已开启。 */
 	enabled: boolean;
-	/** 清洗中：cleanStatus === "1"。 */
+	/** 清洗中：WS / 列表 cleanStatus 为 true / 1。 */
 	cleaning: boolean;
 	buildingId: number;
 	thingId: string;

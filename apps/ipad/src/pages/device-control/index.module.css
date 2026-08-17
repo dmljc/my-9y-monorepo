@@ -581,6 +581,25 @@ button.metricCard {
 	cursor: not-allowed;
 }
 
+.actionBtnCleaning {
+	width: auto;
+	min-width: calc(121 / 1400 * 100cqw);
+	padding: 0 calc(16 / 1400 * 100cqw);
+	background: #ff9a2e;
+	border-color: #ff9a2e;
+}
+
+.actionBtnCleaning:global(.ant-btn-primary):not(:disabled):hover,
+.actionBtnCleaning:global(.ant-btn-primary):not(:disabled):focus {
+	background: #ff9a2e;
+	border-color: #ff9a2e;
+	color: #ffffff;
+}
+
+.actionBtnCleaning:global(.anticon) {
+	font-size: calc(18 / 1400 * 100cqw);
+}
+
 .emptyWrap {
 	flex: 1;
 	min-height: calc(120 / 1400 * 100cqw);
