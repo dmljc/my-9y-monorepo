@@ -9,6 +9,7 @@ import { useEffect, useRef } from "react";
  * 生命周期：
  * - 挂载时 `init` 一次，卸载时 `dispose`
  * - `option` 变化时仅 `setOption` 增量更新，避免父组件重渲染导致整表销毁重建
+ * - `setOption` 期间不 `resize`，避免 ECharts 主流程中读到已销毁的 `__ec_inner_*`
  *
  * @param {EChartsOption} - ECharts 配置项。
  * @returns {React.RefObject<HTMLDivElement | null>} - 挂载图表的容器 ref。
@@ -16,6 +17,9 @@ import { useEffect, useRef } from "react";
 export function useEchartsInit(option: EChartsOption) {
 	const chartRef = useRef<HTMLDivElement | null>(null);
 	const instanceRef = useRef<echarts.EChartsType | null>(null);
+	const optionRef = useRef(option);
+	const applyingRef = useRef(false);
+	optionRef.current = option;
 
 	useEffect(() => {
 		const chartEl = chartRef.current;
@@ -26,20 +30,49 @@ export function useEchartsInit(option: EChartsOption) {
 		const chart = echarts.init(chartEl);
 		instanceRef.current = chart;
 		let alive = true;
+		let resizeRaf = 0;
 
 		const resize = () => {
+			if (!alive || applyingRef.current || chart.isDisposed()) {
+				return;
+			}
+			try {
+				chart.resize();
+			} catch {
+				// 销毁或 setOption 主流程中 resize 可能抛 __ec_inner_*
+			}
+		};
+
+		const scheduleResize = () => {
+			if (resizeRaf) {
+				cancelAnimationFrame(resizeRaf);
+			}
+			resizeRaf = requestAnimationFrame(() => {
+				resizeRaf = 0;
+				resize();
+			});
+		};
+
+		const applyOption = (next: EChartsOption) => {
 			if (!alive || chart.isDisposed()) {
 				return;
 			}
-			chart.resize();
+			applyingRef.current = true;
+			try {
+				chart.setOption(next, { notMerge: true });
+			} catch {
+				// 实例正在销毁或内部视图未就绪
+			} finally {
+				applyingRef.current = false;
+			}
 		};
 
-		resize();
-		const rafId = requestAnimationFrame(resize);
+		if (Object.keys(optionRef.current).length > 0) {
+			applyOption(optionRef.current);
+		}
 
-		const resizeObserver = new ResizeObserver(resize);
+		const resizeObserver = new ResizeObserver(scheduleResize);
 		resizeObserver.observe(chartEl);
-
 		const parentEl = chartEl.parentElement;
 		if (parentEl) {
 			resizeObserver.observe(parentEl);
@@ -47,12 +80,19 @@ export function useEchartsInit(option: EChartsOption) {
 
 		return () => {
 			alive = false;
-			cancelAnimationFrame(rafId);
-			resizeObserver.disconnect();
-			if (!chart.isDisposed()) {
-				chart.dispose();
+			applyingRef.current = false;
+			if (resizeRaf) {
+				cancelAnimationFrame(resizeRaf);
 			}
+			resizeObserver.disconnect();
 			instanceRef.current = null;
+			if (!chart.isDisposed()) {
+				try {
+					chart.dispose();
+				} catch {
+					// ignore
+				}
+			}
 		};
 	}, []);
 
@@ -61,8 +101,17 @@ export function useEchartsInit(option: EChartsOption) {
 		if (!chart || chart.isDisposed()) {
 			return;
 		}
-		// 传入完整 option，notMerge 避免残留旧 series / 轴配置
-		chart.setOption(option, { notMerge: true });
+		if (Object.keys(option).length === 0) {
+			return;
+		}
+		applyingRef.current = true;
+		try {
+			chart.setOption(option, { notMerge: true });
+		} catch {
+			// ECharts 偶发 __ec_inner_*：销毁中或与 resize 重叠
+		} finally {
+			applyingRef.current = false;
+		}
 	}, [option]);
 
 	return chartRef;

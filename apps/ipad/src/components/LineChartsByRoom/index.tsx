@@ -264,7 +264,7 @@ const LineCharts = ({
 				return;
 			}
 
-			const raw = chart.getOption() as {
+			let raw: {
 				dataZoom?: Array<{
 					start?: number;
 					end?: number;
@@ -272,6 +272,11 @@ const LineCharts = ({
 					endValue?: number | string;
 				}>;
 			};
+			try {
+				raw = chart.getOption() as typeof raw;
+			} catch {
+				return;
+			}
 			const slider = raw.dataZoom?.[0];
 			if (!slider) {
 				setChrome(null);
@@ -322,7 +327,7 @@ const LineCharts = ({
 		};
 		const flushSliderRange = () => {
 			requestAnimationFrame(() => {
-				if (cancelled || !sliderDirtyRef.current) {
+				if (cancelled || chart.isDisposed() || !sliderDirtyRef.current) {
 					return;
 				}
 				sliderDirtyRef.current = false;
@@ -343,21 +348,25 @@ const LineCharts = ({
 					Math.abs(next.to - range[1]) > 1
 				) {
 					snappingRef.current = true;
-					chart.dispatchAction({
-						type: "dataZoom",
-						batch: [
-							{
-								dataZoomIndex: 0,
-								start: next.start,
-								end: next.end,
-							},
-							{
-								dataZoomIndex: 1,
-								start: next.start,
-								end: next.end,
-							},
-						],
-					});
+					try {
+						chart.dispatchAction({
+							type: "dataZoom",
+							batch: [
+								{
+									dataZoomIndex: 0,
+									start: next.start,
+									end: next.end,
+								},
+								{
+									dataZoomIndex: 1,
+									start: next.start,
+									end: next.end,
+								},
+							],
+						});
+					} catch {
+						// 图表已销毁或正在 setOption
+					}
 				}
 			});
 		};
@@ -375,7 +384,11 @@ const LineCharts = ({
 			window.removeEventListener("pointercancel", flushSliderRange, true);
 			window.removeEventListener("touchend", flushSliderRange, true);
 			if (!chart.isDisposed()) {
-				chart.off("dataZoom", onDataZoom);
+				try {
+					chart.off("dataZoom", onDataZoom);
+				} catch {
+					// 实例已失效
+				}
 			}
 		};
 	}, [
