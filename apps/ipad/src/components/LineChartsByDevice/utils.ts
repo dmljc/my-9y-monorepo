@@ -17,6 +17,12 @@ import type {
 const MS_DAY = 24 * 60 * 60 * 1000;
 const MS_MINUTE = 60 * 1000;
 const MS_HOUR = 60 * 60 * 1000;
+/** Tooltip 与边界附近取值允许的最大距离。 */
+const MAX_NEAREST_POINT_MS = 10 * MS_MINUTE;
+/** 动态断线阈值相对常规采样间隔的倍数。 */
+const LINE_GAP_FACTOR = 5;
+/** 动态断线阈值下限，避免偶发采样抖动造成断线。 */
+const MIN_LINE_GAP_MS = MS_MINUTE;
 const AXIS_LABEL_COLOR = "#86909c";
 const SPLIT_LINE_COLOR = "#f0f0f0";
 const AXIS_LINE_COLOR = "#e5e6eb";
@@ -24,6 +30,8 @@ const TICK_COLOR = "#c9cdd4";
 const FONT_FAMILY =
 	'"HarmonyOS Sans SC", "HarmonyOS_Sans_SC", "PingFang SC", "Microsoft YaHei", sans-serif';
 const DEFAULT_COLORS = ["#EE8C45", "#6BC7A6", "#7492DB"];
+
+type LineChartPlotPoint = [number, number | null];
 
 /**
  * 将业务点转为 `[时间戳, 数值]`，按时间升序。
@@ -46,6 +54,67 @@ export function toChartPoints(data: LineChartPoint[]): [number, number][] {
 		})
 		.filter(([time]) => Number.isFinite(time))
 		.sort((a, b) => a[0] - b[0]);
+}
+
+/**
+ * 只保留当前 X 轴窗口内的点。
+ *
+ * @param {[number, number][]} - 已按时间升序的点。
+ * @param {[number, number] | null} - 可见时间区间。
+ * @returns {[number, number][]} - 裁切后的点。
+ */
+export function clipPointsToView(
+	points: [number, number][],
+	viewExtent: [number, number] | null,
+): [number, number][] {
+	if (!viewExtent || points.length === 0) {
+		return points;
+	}
+	const [start, end] = viewExtent;
+	return points.filter(([time]) => time >= start && time <= end);
+}
+
+/**
+ * 根据当前分段的常规采样间隔计算断线阈值。
+ *
+ * @param {[number, number][]} - 已按时间升序的点。
+ * @returns {number} - 相邻点超过此毫秒数时断开。
+ */
+export function getLineGapThreshold(points: [number, number][]): number {
+	const intervals: number[] = [];
+	for (let index = 1; index < points.length; index += 1) {
+		const interval = points[index][0] - points[index - 1][0];
+		if (interval > 0) intervals.push(interval);
+	}
+	if (!intervals.length) return MIN_LINE_GAP_MS;
+	intervals.sort((a, b) => a - b);
+	const median = intervals[Math.floor(intervals.length / 2)];
+	return Math.max(MIN_LINE_GAP_MS, median * LINE_GAP_FACTOR);
+}
+
+/**
+ * 相邻点时间间隔过大时插入空值，配合 `connectNulls: false` 断开折线。
+ *
+ * @param {[number, number][]} - 已按时间升序的点。
+ * @returns {LineChartPlotPoint[]} - 可供 ECharts 使用的点（含空值）。
+ */
+export function breakLineOnGaps(
+	points: [number, number][],
+): LineChartPlotPoint[] {
+	if (points.length <= 1) {
+		return points;
+	}
+	const gapThreshold = getLineGapThreshold(points);
+	const next: LineChartPlotPoint[] = [points[0]];
+	for (let index = 1; index < points.length; index += 1) {
+		const prev = points[index - 1];
+		const current = points[index];
+		if (current[0] - prev[0] > gapThreshold) {
+			next.push([prev[0], null]);
+		}
+		next.push(current);
+	}
+	return next;
 }
 
 /**
@@ -145,30 +214,36 @@ function escapeHtml(text: string): string {
 /**
  * 在序列中取最接近目标时刻的数值。
  *
- * @param {[number, number][]} - `[时间戳, 数值]`，已按时间升序。
+ * @param {LineChartPlotPoint[]} - `[时间戳, 数值]`，已按时间升序。
  * @param {number} - 目标时间戳。
- * @returns {number | null} - 最近一点的数值；无数据为 null。
+ * @returns {number | null} - 最近一点的数值；无数据或落在空档中为 null。
  */
 function findValueAtTime(
-	data: [number, number][],
+	data: LineChartPlotPoint[],
 	time: number,
 ): number | null {
-	if (data.length === 0) {
+	const points = data.filter(
+		(item): item is [number, number] => item[1] != null,
+	);
+	if (points.length === 0) {
 		return null;
 	}
-	const start = data[0][0];
-	const end = data[data.length - 1][0];
+	const start = points[0][0];
+	const end = points[points.length - 1][0];
 	if (time < start || time > end) {
 		return null;
 	}
-	let nearest = data[0];
-	let best = Math.abs(data[0][0] - time);
-	for (let i = 1; i < data.length; i += 1) {
-		const dist = Math.abs(data[i][0] - time);
+	let nearest = points[0];
+	let best = Math.abs(points[0][0] - time);
+	for (let i = 1; i < points.length; i += 1) {
+		const dist = Math.abs(points[i][0] - time);
 		if (dist < best) {
 			best = dist;
-			nearest = data[i];
+			nearest = points[i];
 		}
+	}
+	if (best > MAX_NEAREST_POINT_MS) {
+		return null;
 	}
 	return nearest[1];
 }
@@ -203,17 +278,21 @@ function getHoveredTime(raw: unknown): number | null {
 	return null;
 }
 
+type LineChartPlottedSeries = Omit<LineChartResolvedSeries, "data"> & {
+	data: LineChartPlotPoint[];
+};
+
 /**
  * 组装多系列同轴 Tooltip。
  *
- * @param {LineChartResolvedSeries[]} - 全部序列。
+ * @param {LineChartPlottedSeries[]} - 已按窗口裁切并断开空档的序列。
  * @param {number} - 舞台缩放比。
  * @param {(value: number) => string} - 数值格式化。
  * @param {string} - 数值单位。
  * @returns {(raw: unknown) => string} - ECharts tooltip formatter。
  */
 function createTooltipFormatter(
-	series: LineChartResolvedSeries[],
+	series: LineChartPlottedSeries[],
 	scale: number,
 	valueFormatter: (value: number) => string,
 	unit = "",
@@ -229,9 +308,15 @@ function createTooltipFormatter(
 		if (time == null) {
 			return "";
 		}
-		const rows = series
-			.map((item) => {
-				const value = findValueAtTime(item.data, time);
+		const names = [...new Set(series.map((item) => item.name))];
+		const rows = names
+			.map((name) => {
+				const segments = series.filter((item) => item.name === name);
+				const item = segments[0];
+				const value =
+					segments
+						.map((segment) => findValueAtTime(segment.data, time))
+						.find((candidate) => candidate != null) ?? null;
 				if (value == null) {
 					return "";
 				}
@@ -240,7 +325,7 @@ function createTooltipFormatter(
 					: valueFormatter(value);
 				return `<span style="display:flex;align-items:center;gap:${6 * scale}px;color:#333333;font-size:${font}px">
 <span style="width:${dot}px;height:${dot}px;border-radius:50%;background:${item.color};flex:none"></span>
-<span>${escapeHtml(item.name)}</span>
+<span>${escapeHtml(name)}</span>
 </span>
 <span style="color:#1d2129;font-size:${font}px;font-weight:600;text-align:right;white-space:nowrap">${escapeHtml(text)}</span>`;
 			})
@@ -273,6 +358,10 @@ export function buildLineChartOption(
 	const dataZoomGap = 10 * scale;
 	const xLabelSpace = 32 * scale;
 	const top0 = layout.dataZoomTop + layout.dataZoomHeight + dataZoomGap;
+	const plotted = series.map((item) => ({
+		...item,
+		data: breakLineOnGaps(clipPointsToView(item.data, viewExtent)),
+	}));
 	const points = series.flatMap((item) => item.data);
 	const yExtent = computeVisibleYExtent(points, viewExtent);
 	const now = Date.now();
@@ -381,6 +470,7 @@ export function buildLineChartOption(
 
 	return {
 		animationDuration: 300,
+		animationDurationUpdate: 0,
 		grid: gridOption,
 		xAxis: xAxisOption,
 		yAxis: yAxisOption,
@@ -398,7 +488,12 @@ export function buildLineChartOption(
 			padding: [12 * scale, 16 * scale],
 			confine: true,
 			extraCssText: `border-radius:${8 * scale}px;box-shadow:0 ${4 * scale}px ${16 * scale}px rgba(0,0,0,0.12);`,
-			formatter: createTooltipFormatter(series, scale, valueFormatter, unit),
+			formatter: createTooltipFormatter(
+				plotted,
+				scale,
+				valueFormatter,
+				unit,
+			),
 		},
 		dataZoom: [
 			{
@@ -460,7 +555,7 @@ export function buildLineChartOption(
 				moveOnMouseWheel: false,
 			},
 		],
-		series: series.map((item) => ({
+		series: plotted.map((item) => ({
 			type: "line" as const,
 			name: item.name,
 			data: item.data,
@@ -470,7 +565,6 @@ export function buildLineChartOption(
 			smooth: false,
 			clip: true,
 			connectNulls: false,
-			sampling: "lttb" as const,
 			lineStyle: {
 				width: lineWidth * scale,
 				color: item.color,

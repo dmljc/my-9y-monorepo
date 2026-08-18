@@ -24,7 +24,6 @@ import {
 	update,
 } from "./api";
 import InstanceModal from "./InstanceModal";
-import RoomModal from "./RoomModal";
 import styles from "./index.module.css";
 import type {
 	BuildingTab,
@@ -35,6 +34,7 @@ import type {
 	RoomFormValues,
 	RoomTrendSeriesItem,
 } from "./interface";
+import RoomModal from "./RoomModal";
 import {
 	buildEmptyRoomTrendSeries,
 	collectRoomMetrics,
@@ -54,8 +54,6 @@ import {
 	type MetricIconKey,
 	mapRuntimeParams,
 	mergeDeviceFromWs,
-	mergeRoomTrendSeries,
-	mergeTrendChartData,
 	normalizeBuildingTabs,
 	normalizeDeviceCode,
 	parseDevicesFromRooms,
@@ -391,6 +389,14 @@ const DeviceControl = () => {
 	const trendUnit =
 		metricCards.find((item) => item.propertyId === trendPropertyId)?.unit ??
 		"";
+	const trendLegendSeries = trendChart.series.filter(
+		(item, index, list) =>
+			list.findIndex((candidate) => candidate.name === item.name) === index,
+	);
+	const roomTrendLegendSeries = roomTrendSeries.filter(
+		(item, index, list) =>
+			list.findIndex((candidate) => candidate.name === item.name) === index,
+	);
 
 	const applyDevices = (
 		buildingKeyNext: string,
@@ -531,7 +537,7 @@ const DeviceControl = () => {
 		listDeviceTrend({ deviceId, propertyId, from, to })
 			.then((data) => {
 				if (cancelled || reqId !== deviceTrendReqRef.current) return;
-				setTrendChart(toTrendChartData(data));
+				setTrendChart(toTrendChartData(data, { from, to }));
 			})
 			.catch(() => {
 				if (!cancelled && reqId === deviceTrendReqRef.current) {
@@ -566,7 +572,7 @@ const DeviceControl = () => {
 		listRoomTrend({ buildingId, roomId, propertyId, from, to })
 			.then((data) => {
 				if (cancelled || reqId !== roomTrendReqRef.current) return;
-				const series = toRoomTrendSeries(data);
+				const series = toRoomTrendSeries(data, { from, to });
 				setRoomTrendSeries(series.length ? series : emptySeries);
 			})
 			.catch(() => {
@@ -607,12 +613,12 @@ const DeviceControl = () => {
 		})
 			.then((data) => {
 				if (reqId !== deviceTrendReqRef.current) return;
-				const next = toTrendChartData(data);
+				const next = toTrendChartData(data, range);
 				if (!next.series.length) {
 					setTrendChart(EMPTY_TREND_CHART);
 					return;
 				}
-				setTrendChart((prev) => mergeTrendChartData(prev, next));
+				setTrendChart(next);
 			})
 			.catch(() => {
 				if (reqId !== deviceTrendReqRef.current) return;
@@ -660,14 +666,12 @@ const DeviceControl = () => {
 		})
 			.then((data) => {
 				if (reqId !== roomTrendReqRef.current) return;
-				const series = toRoomTrendSeries(data);
+				const series = toRoomTrendSeries(data, range);
 				if (!series.length) {
 					setRoomTrendSeries(emptySeries);
 					return;
 				}
-				setRoomTrendSeries((prev) =>
-					mergeRoomTrendSeries(prev, series),
-				);
+				setRoomTrendSeries(series);
 			})
 			.catch(() => {
 				if (reqId !== roomTrendReqRef.current) return;
@@ -1275,10 +1279,10 @@ const DeviceControl = () => {
 										{listMode === "room" ? (
 											<>
 												<div className={styles.legend}>
-													{roomTrendSeries.map(
-														(item, index) => (
+													{roomTrendLegendSeries.map(
+														(item) => (
 															<div
-																key={`${item.name}-${index}`}
+																key={item.name}
 																className={
 																	styles.legendItem
 																}
@@ -1307,6 +1311,7 @@ const DeviceControl = () => {
 													className={styles.chartWrap}
 												>
 													<LineChartsByRoom
+														key={`room-${currentBuilding?.buildingId ?? 0}-${selectedRoom?.roomId ?? 0}-${trendPropertyId}`}
 														series={roomTrendSeries}
 														axisRangeMs={
 															TREND_AXIS_RANGE_MS
@@ -1324,10 +1329,10 @@ const DeviceControl = () => {
 										) : (
 											<>
 												<div className={styles.legend}>
-													{trendChart.series.map(
-														(item, index) => (
+													{trendLegendSeries.map(
+														(item) => (
 															<div
-																key={`${item.name}-${index}`}
+																key={item.name}
 																className={
 																	styles.legendItem
 																}
@@ -1356,6 +1361,7 @@ const DeviceControl = () => {
 													className={styles.chartWrap}
 												>
 													<LineCharts
+														key={`device-${selected?.deviceId ?? 0}-${trendPropertyId}`}
 														series={
 															trendChart.series
 														}

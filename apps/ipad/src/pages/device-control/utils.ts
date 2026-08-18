@@ -985,9 +985,35 @@ const downsampleTrendPoints = (
 };
 
 /**
- * 折线默认色板（设备分段 / 房间设备共用）。
+ * 折线高对比色板（设备分段 / 房间设备共用）。
  */
-export const ROOM_TREND_COLORS = ["#EE8C45", "#6BC7A6", "#7492DB"];
+export const ROOM_TREND_COLORS = [
+	"#EE8C45",
+	"#35B88F",
+	"#5B7FE8",
+	"#E05263",
+	"#8B5FD3",
+	"#D6A11D",
+	"#23A7C9",
+	"#CF67A5",
+	"#6C9B3B",
+	"#D66B2C",
+	"#3976B8",
+	"#8C704A",
+];
+
+/**
+ * 按序号获取不循环复用的高对比折线颜色。
+ *
+ * @param {number} - 当前图表中的唯一房间 / 设备序号。
+ * @returns {string} - CSS 颜色；超出预设色板后按黄金角生成。
+ */
+export const getTrendColor = (index: number): string => {
+	const preset = ROOM_TREND_COLORS[index];
+	if (preset) return preset;
+	const hue = Math.round((index * 137.508 + 17) % 360);
+	return `hsl(${hue} 68% 46%)`;
+};
 
 /**
  * 从分段对象取出图例名称（优先房间）。
@@ -1015,7 +1041,7 @@ const toSegmentSeriesName = (
  * 将设备趋势接口 data.segments[].points 转为多条折线。
  *
  * @param {unknown} - `/iiot/tablet/device/{id}/trend` 解包后的 data。
- * @returns {DeviceTrendSeriesItem[]} - 按房间分段的序列。
+ * @returns {DeviceTrendSeriesItem[]} - 保留接口原始分段边界的序列。
  */
 export const parseDeviceTrendSeries = (
 	data: unknown,
@@ -1025,33 +1051,25 @@ export const parseDeviceTrendSeries = (
 	if (!Array.isArray(record.segments)) return [];
 
 	const series: DeviceTrendSeriesItem[] = [];
-	const indexByName = new Map<string, number>();
+	const colorByName = new Map<string, string>();
 	for (const [index, row] of record.segments.entries()) {
 		const item =
 			row && typeof row === "object"
 				? (row as Record<string, unknown>)
 				: {};
 		const name = toSegmentSeriesName(item, index);
-		const rawPoints = Array.isArray(item.points) ? item.points : [];
-		const points = downsampleTrendPoints(
-			parseTrendPointList(rawPoints).sort((a, b) => a.time - b.time),
-		);
-		const existing = indexByName.get(name);
-		if (existing != null) {
-			const current = series[existing];
-			const merged = new Map(
-				current.data.map((point) => [point.time, point]),
-			);
-			for (const point of points) {
-				merged.set(point.time, point);
-			}
-			current.data = [...merged.values()].sort((a, b) => a.time - b.time);
-			continue;
+		let color = colorByName.get(name);
+		if (!color) {
+			color = getTrendColor(colorByName.size);
+			colorByName.set(name, color);
 		}
-		indexByName.set(name, series.length);
+		const rawPoints = Array.isArray(item.points) ? item.points : [];
+		const points = parseTrendPointList(rawPoints).sort(
+			(a, b) => a.time - b.time,
+		);
 		series.push({
 			name,
-			color: ROOM_TREND_COLORS[series.length % ROOM_TREND_COLORS.length],
+			color,
 			data: points,
 		});
 	}
@@ -1062,10 +1080,24 @@ export const parseDeviceTrendSeries = (
  * 将趋势接口 data 转为按设备折线图数据（按房间分段、分色）。
  *
  * @param {unknown} - 趋势接口 data。
+ * @param {{ from: number; to: number } | undefined} - 本次查询区间。
  * @returns {DeviceTrendChartData} - 多条折线。
  */
-export const toTrendChartData = (data: unknown): DeviceTrendChartData => {
-	const series = parseDeviceTrendSeries(data);
+export const toTrendChartData = (
+	data: unknown,
+	range?: { from: number; to: number },
+): DeviceTrendChartData => {
+	const series = parseDeviceTrendSeries(data)
+		.map((item) => ({
+			...item,
+			data: range
+				? item.data.filter(
+						(point) =>
+							point.time >= range.from && point.time <= range.to,
+					)
+				: item.data,
+		}))
+		.filter((item) => item.data.length > 0);
 	if (!series.length) return EMPTY_TREND_CHART;
 	return { series };
 };
@@ -1118,7 +1150,7 @@ export const buildEmptyRoomTrendSeries = (
 ): RoomTrendSeriesItem[] => {
 	return devices.map((item, index) => ({
 		name: item.name.trim() || item.code || `设备${item.deviceId}`,
-		color: ROOM_TREND_COLORS[index % ROOM_TREND_COLORS.length],
+		color: getTrendColor(index),
 		data: [],
 	}));
 };
@@ -1127,13 +1159,18 @@ export const buildEmptyRoomTrendSeries = (
  * 将房间趋势接口 data 转为多 Y 轴折线序列。
  *
  * @param {unknown} - `/iiot/tablet/device/room/trend` 解包后的 data。
+ * @param {{ from: number; to: number } | undefined} - 本次查询区间。
  * @returns {RoomTrendSeriesItem[]} - 按设备分系列，点来自 `series[].points`。
  */
-export const toRoomTrendSeries = (data: unknown): RoomTrendSeriesItem[] => {
+export const toRoomTrendSeries = (
+	data: unknown,
+	range?: { from: number; to: number },
+): RoomTrendSeriesItem[] => {
 	if (!data || typeof data !== "object") return [];
 	const record = data as Record<string, unknown>;
 	if (!Array.isArray(record.series)) return [];
 
+	const colorByName = new Map<string, string>();
 	return record.series.map((row, index) => {
 		const item =
 			row && typeof row === "object"
@@ -1143,10 +1180,23 @@ export const toRoomTrendSeries = (data: unknown): RoomTrendSeriesItem[] => {
 			String(item.deviceName ?? "").trim() ||
 			String(item.deviceCode ?? "").trim() ||
 			`设备${index + 1}`;
-		const points = downsampleTrendPoints(parseDeviceTrend(item));
+		let color = colorByName.get(name);
+		if (!color) {
+			color = getTrendColor(colorByName.size);
+			colorByName.set(name, color);
+		}
+		const parsedPoints = parseDeviceTrend(item);
+		const points = downsampleTrendPoints(
+			range
+				? parsedPoints.filter(
+						(point) =>
+							point.time >= range.from && point.time <= range.to,
+					)
+				: parsedPoints,
+		);
 		return {
 			name,
-			color: ROOM_TREND_COLORS[index % ROOM_TREND_COLORS.length],
+			color,
 			data: points.map((point) => ({
 				time: point.time,
 				value: point.value,

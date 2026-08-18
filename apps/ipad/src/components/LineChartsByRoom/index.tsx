@@ -7,13 +7,7 @@ import {
 } from "echarts/components";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
-import {
-	type PointerEvent,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
+import { type PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useEchartsInit } from "../hooks/useEchartsInit";
 import styles from "./index.module.css";
 import type { LineChartsProps } from "./interface";
@@ -26,7 +20,6 @@ import {
 	formatRangeDuration,
 	getLineChartLayout,
 	getStageScale,
-	getTimeExtent,
 	padTimeExtent,
 	pageViewExtent,
 	resolveSeries,
@@ -105,7 +98,7 @@ const LineCharts = ({
 	const wrapRef = useRef<HTMLDivElement | null>(null);
 	const zoomRef = useRef({ start: 0, end: 100 });
 	const extentKeyRef = useRef("");
-	const emptyEndRef = useRef(0);
+	const timelineEndRef = useRef(Date.now());
 	const sliderWindowRef = useRef<[number, number] | null>(null);
 	const chartPanStartXRef = useRef<number | null>(null);
 	const viewLockedRef = useRef(false);
@@ -121,20 +114,11 @@ const LineCharts = ({
 	const [viewExtent, setViewExtent] = useState<[number, number] | null>(null);
 
 	const resolved = useMemo(() => resolveSeries(series), [series]);
-	const timeExtent = useMemo(() => {
-		const dataExtent = getTimeExtent(resolved);
-		if (!dataExtent && !emptyEndRef.current) {
-			emptyEndRef.current = Date.now();
-		}
-		if (dataExtent) {
-			emptyEndRef.current = 0;
-		}
-		return padTimeExtent(
-			dataExtent,
-			totalRangeDays,
-			emptyEndRef.current || Date.now(),
-		);
-	}, [resolved, totalRangeDays]);
+	// 导航轴在当前组件生命周期内固定，翻页接口替换数据时不能随返回点范围漂移。
+	const timeExtent = useMemo(
+		() => padTimeExtent(null, totalRangeDays, timelineEndRef.current),
+		[totalRangeDays],
+	);
 	const layout = useMemo(() => getLineChartLayout(box.scale), [box.scale]);
 	const visibleSeries = useMemo(
 		() => resolved.slice(0, pageSize),
@@ -327,7 +311,11 @@ const LineCharts = ({
 		};
 		const flushSliderRange = () => {
 			requestAnimationFrame(() => {
-				if (cancelled || chart.isDisposed() || !sliderDirtyRef.current) {
+				if (
+					cancelled ||
+					chart.isDisposed() ||
+					!sliderDirtyRef.current
+				) {
 					return;
 				}
 				sliderDirtyRef.current = false;
@@ -434,8 +422,7 @@ const LineCharts = ({
 	};
 
 	const handleChartPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-		const sliderBottom =
-			layout.dataZoomTop + layout.dataZoomHeight;
+		const sliderBottom = layout.dataZoomTop + layout.dataZoomHeight;
 		if (event.button !== 0 || event.nativeEvent.offsetY <= sliderBottom) {
 			return;
 		}
@@ -486,18 +473,15 @@ const LineCharts = ({
 						height: layout.dataZoomHeight,
 					}}
 				>
-					{Array.from(
-						{ length: totalRangeDays - 1 },
-						(_, index) => (
-							<span
-								key={index}
-								className={styles.sliderTick}
-								style={{
-									left: `${((index + 1) / totalRangeDays) * 100}%`,
-								}}
-							/>
-						),
-					)}
+					{Array.from({ length: totalRangeDays - 1 }, (_, index) => (
+						<span
+							key={index}
+							className={styles.sliderTick}
+							style={{
+								left: `${((index + 1) / totalRangeDays) * 100}%`,
+							}}
+						/>
+					))}
 				</div>
 			) : null}
 			{chrome ? (

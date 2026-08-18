@@ -841,6 +841,7 @@ export function buildLineChartOption(
 
 	return {
 		animationDuration: 300,
+		animationDurationUpdate: 0,
 		axisPointer: {
 			link: [{ xAxisIndex: seriesAxisIndex }],
 		},
