@@ -61,8 +61,10 @@ minimumReleaseAge: 0
 
 # 强制锁定传递依赖版本，用于修复重复安装或已知兼容问题
 # antd 6.6.0 需要 useDelayState（@rc-component/util >= 1.12.0）
+# antd / @rc-component/picker 会再装一份 dayjs，导致 DatePicker 中文 locale 不生效
 overrides:
   "@rc-component/util": ^1.12.0
+  dayjs: ^1.11.22
 
 # peer 依赖解析规则：放宽第三方包声明的 peer 范围，减少安装告警
 peerDependencyRules:

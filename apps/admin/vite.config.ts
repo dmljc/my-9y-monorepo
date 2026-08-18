@@ -50,7 +50,11 @@ export default defineConfig(({ mode }) => {
 			alias: {
 				"@": path.resolve(__dirname, "./src"),
 				"@utils": path.resolve(__dirname, "../../utils"),
+				// DatePicker 依赖 @rc-component/picker 内的 dayjs，与业务 dayjs 版本不一致时
+				// locale 注册不到日历上，月份/星期会仍显示英文。
+				dayjs: path.resolve(__dirname, "node_modules/dayjs"),
 			},
+			dedupe: ["dayjs"],
 		},
 		build: {
 			sourcemap: enableSourceMap,

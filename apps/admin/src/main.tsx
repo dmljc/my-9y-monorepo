@@ -1,7 +1,9 @@
 import "antd/dist/reset.css";
 import { App as AntApp, ConfigProvider } from "antd";
+import zhCN from "antd/es/locale/zh_CN";
 import type { MessageInstance } from "antd/es/message/interface";
-import zhCN from "antd/locale/zh_CN";
+import dayjs from "dayjs";
+import "dayjs/locale/zh-cn";
 // import { StrictMode } from "react";
 import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
@@ -12,6 +14,8 @@ import { getTableScroll } from "@/utils";
 import { requestMessageApi } from "@/utils/request";
 import App from "./App";
 import "./styles/global.css";
+
+dayjs.locale("zh-cn");
 
 const setMessageApi = (message: MessageInstance | null) => {
 	requestMessageApi.current = message;

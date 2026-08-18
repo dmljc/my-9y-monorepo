@@ -54,7 +54,7 @@ const Login = () => {
 
 			<div className={styles.panel}>
 				<Typography.Title level={2} className={styles.title}>
-					欢迎回来
+					{import.meta.env.VITE_APP_TITLE}
 				</Typography.Title>
 				<Typography.Text className={styles.subtitle}>
 					请使用您的账号登录系统
