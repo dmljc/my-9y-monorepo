@@ -345,6 +345,25 @@ export const mapRuntimeParams = (
 };
 
 /**
+ * 从当前设备/房间的 runtimeParams 指标中解析趋势查询用的 propertyId。
+ * 数组为空时返回空串，避免沿用上一台设备残留的点位。
+ *
+ * @param {DeviceMetric[]} - 当前设备或房间的实时指标。
+ * @param {string} - 用户选中的点位；仍存在于指标中时优先使用。
+ * @returns {string} - 趋势接口 propertyId；无过程量时为空串。
+ */
+export const resolveTrendPropertyId = (
+	metrics: DeviceMetric[],
+	preferredId = "",
+): string => {
+	if (!metrics.length) return "";
+	if (preferredId && metrics.some((item) => item.propertyId === preferredId)) {
+		return preferredId;
+	}
+	return metrics.find((item) => item.propertyId)?.propertyId ?? "";
+};
+
+/**
  * 是否为平板实时数据 topic（tablet_init / tablet_data）。
  * topic 缺失但带 devices 时也放行（兼容只推 data 的帧）。
  *

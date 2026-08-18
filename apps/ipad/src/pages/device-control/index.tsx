@@ -59,6 +59,7 @@ import {
 	parseDevicesFromRooms,
 	parseTabletWsMessage,
 	previewDeviceCodes,
+	resolveTrendPropertyId,
 	TREND_AXIS_RANGE_MS,
 	TREND_SLIDER_RANGE_MS,
 	toRoomTrendSeries,
@@ -386,9 +387,13 @@ const DeviceControl = () => {
 	const roomMetrics = collectRoomMetrics(selectedRoom?.devices ?? []);
 	const metricCards =
 		listMode === "room" ? roomMetrics : (selected?.metrics ?? []);
+	const trendQueryPropertyId = resolveTrendPropertyId(
+		metricCards,
+		trendPropertyId,
+	);
 	const trendUnit =
-		metricCards.find((item) => item.propertyId === trendPropertyId)?.unit ??
-		"";
+		metricCards.find((item) => item.propertyId === trendQueryPropertyId)
+			?.unit ?? "";
 	const trendLegendSeries = trendChart.series.filter(
 		(item, index, list) =>
 			list.findIndex((candidate) => candidate.name === item.name) === index,
@@ -498,16 +503,7 @@ const DeviceControl = () => {
 	useEffect(() => {
 		const metrics =
 			listMode === "room" ? roomMetrics : (selected?.metrics ?? []);
-		const firstPropertyId = metrics[0]?.propertyId ?? "";
-		if (!firstPropertyId) {
-			if (listMode === "device") setTrendPropertyId("");
-			return;
-		}
-		setTrendPropertyId((prev) =>
-			metrics.some((item) => item.propertyId === prev)
-				? prev
-				: firstPropertyId,
-		);
+		setTrendPropertyId((prev) => resolveTrendPropertyId(metrics, prev));
 	}, [
 		listMode,
 		selected?.deviceId,
@@ -519,13 +515,8 @@ const DeviceControl = () => {
 
 	useEffect(() => {
 		const deviceId = selected?.deviceId ?? 0;
-		const propertyId = trendPropertyId;
-		if (
-			listMode !== "device" ||
-			!deviceId ||
-			!propertyId ||
-			!selected?.enabled
-		) {
+		const propertyId = trendQueryPropertyId;
+		if (listMode !== "device" || !deviceId || !selected?.enabled) {
 			setTrendChart(EMPTY_TREND_CHART);
 			return;
 		}
@@ -548,7 +539,12 @@ const DeviceControl = () => {
 			cancelled = true;
 			deviceTrendReqRef.current += 1;
 		};
-	}, [listMode, selected?.deviceId, selected?.enabled, trendPropertyId]);
+	}, [
+		listMode,
+		selected?.deviceId,
+		selected?.enabled,
+		trendQueryPropertyId,
+	]);
 
 	useEffect(() => {
 		const buildingId = currentBuilding?.buildingId ?? 0;
@@ -558,12 +554,8 @@ const DeviceControl = () => {
 			setRoomTrendSeries([]);
 			return;
 		}
-		const propertyId = trendPropertyId;
+		const propertyId = trendQueryPropertyId;
 		const emptySeries = buildEmptyRoomTrendSeries(roomDevices);
-		if (!propertyId) {
-			setRoomTrendSeries(emptySeries);
-			return;
-		}
 		setRoomTrendSeries(emptySeries);
 		let cancelled = false;
 		const reqId = ++roomTrendReqRef.current;
@@ -588,16 +580,15 @@ const DeviceControl = () => {
 		listMode,
 		currentBuilding?.buildingId,
 		selectedRoom?.roomId,
-		trendPropertyId,
+		trendQueryPropertyId,
 	]);
 
 	const fetchDeviceTrendRange = (range: { from: number; to: number }) => {
 		const deviceId = selected?.deviceId ?? 0;
-		const propertyId = trendPropertyId;
+		const propertyId = trendQueryPropertyId;
 		if (
 			!selected?.enabled ||
 			!deviceId ||
-			!propertyId ||
 			!Number.isFinite(range.from) ||
 			!Number.isFinite(range.to) ||
 			range.from >= range.to
@@ -642,14 +633,13 @@ const DeviceControl = () => {
 	const fetchRoomTrendRange = (range: { from: number; to: number }) => {
 		const buildingId = currentBuilding?.buildingId ?? 0;
 		const roomId = selectedRoom?.roomId ?? 0;
-		const propertyId = trendPropertyId;
+		const propertyId = trendQueryPropertyId;
 		const emptySeries = buildEmptyRoomTrendSeries(
 			selectedRoom?.devices ?? [],
 		);
 		if (
 			!buildingId ||
 			!roomId ||
-			!propertyId ||
 			!Number.isFinite(range.from) ||
 			!Number.isFinite(range.to) ||
 			range.from >= range.to
@@ -1187,9 +1177,11 @@ const DeviceControl = () => {
 										<div className={styles.metricRow}>
 											{metricCards.map((metric) => {
 												const metricActive =
-													Boolean(trendPropertyId) &&
+													Boolean(
+														trendQueryPropertyId,
+													) &&
 													metric.propertyId ===
-														trendPropertyId;
+														trendQueryPropertyId;
 												const cardClassName = `${styles.metricCard} ${listMode === "room" ? styles.metricCardRoom : ""} ${metricActive ? styles.metricCardActive : ""}`;
 												return (
 													<button
@@ -1311,7 +1303,7 @@ const DeviceControl = () => {
 													className={styles.chartWrap}
 												>
 													<LineChartsByRoom
-														key={`room-${currentBuilding?.buildingId ?? 0}-${selectedRoom?.roomId ?? 0}-${trendPropertyId}`}
+														key={`room-${currentBuilding?.buildingId ?? 0}-${selectedRoom?.roomId ?? 0}-${trendQueryPropertyId}`}
 														series={roomTrendSeries}
 														axisRangeMs={
 															TREND_AXIS_RANGE_MS
@@ -1361,7 +1353,7 @@ const DeviceControl = () => {
 													className={styles.chartWrap}
 												>
 													<LineCharts
-														key={`device-${selected?.deviceId ?? 0}-${trendPropertyId}`}
+														key={`device-${selected?.deviceId ?? 0}-${trendQueryPropertyId}`}
 														series={
 															trendChart.series
 														}
