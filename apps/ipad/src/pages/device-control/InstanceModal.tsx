@@ -401,18 +401,7 @@ const InstanceModal = ({
 				<Form.Item name="manufacturer" label="设备厂家">
 					<Input disabled placeholder="请输入设备厂家" />
 				</Form.Item>
-				<Form.Item
-					name="thingIds"
-					label="选择实例"
-					rules={[
-						{
-							required: true,
-							type: "array",
-							min: 1,
-							message: "请选择实例",
-						},
-					]}
-				>
+				<Form.Item name="thingIds" label="选择实例">
 					<Select
 						mode="multiple"
 						showSearch={{
