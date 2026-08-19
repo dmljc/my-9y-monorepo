@@ -15,6 +15,7 @@ import type {
 	WarningRule,
 } from "./utils";
 import {
+	findDeviceId,
 	MAX_LENGTH_12,
 	mergeOption,
 	normalizeBuildingOptions,
@@ -57,6 +58,7 @@ const CreateModal = ({
 	const isEdit = editingRecord !== null;
 	const buildingId = Form.useWatch("buildingId", form);
 	const room = Form.useWatch("room", form);
+	const deviceName = Form.useWatch("deviceName", form);
 	const instanceName = Form.useWatch("instanceName", form);
 
 	useEffect(() => {
@@ -95,25 +97,7 @@ const CreateModal = ({
 			}
 		};
 
-		const loadInstances = async () => {
-			setInstanceLoading(true);
-			try {
-				const data = await getThings();
-				if (ignore) return;
-				setInstanceOptions(
-					mergeOption(
-						toThingOptions(data),
-						editingRecord?.instanceName,
-						editingRecord?.instanceName,
-					),
-				);
-			} finally {
-				if (!ignore) setInstanceLoading(false);
-			}
-		};
-
 		loadBuildings();
-		loadInstances();
 		return () => {
 			ignore = true;
 		};
@@ -199,6 +183,54 @@ const CreateModal = ({
 	}, [open, buildingId, room, deviceList, editingRecord]);
 
 	useEffect(() => {
+		if (!open || !deviceName) {
+			setInstanceOptions([]);
+			return;
+		}
+
+		const deviceId = findDeviceId(deviceList, deviceName);
+		if (!deviceId) {
+			setInstanceOptions(
+				mergeOption(
+					[],
+					editingRecord?.deviceName === deviceName
+						? editingRecord.instanceName
+						: undefined,
+					editingRecord?.instanceName,
+				),
+			);
+			return;
+		}
+
+		let ignore = false;
+		const loadInstances = async () => {
+			setInstanceLoading(true);
+			try {
+				const data = await getThings({ deviceId });
+				if (ignore) return;
+				const sameDevice =
+					editingRecord?.deviceName === deviceName
+						? editingRecord
+						: null;
+				setInstanceOptions(
+					mergeOption(
+						toThingOptions(data),
+						sameDevice?.instanceName,
+						sameDevice?.instanceName,
+					),
+				);
+			} finally {
+				if (!ignore) setInstanceLoading(false);
+			}
+		};
+
+		loadInstances();
+		return () => {
+			ignore = true;
+		};
+	}, [open, deviceName, deviceList, editingRecord]);
+
+	useEffect(() => {
 		if (!open || !instanceName) {
 			setPointOptions([]);
 			return;
@@ -243,6 +275,9 @@ const CreateModal = ({
 			roomId: undefined,
 			room: undefined,
 			deviceName: undefined,
+			instanceName: undefined,
+			pointName: undefined,
+			propertyName: undefined,
 		});
 	};
 
@@ -255,6 +290,17 @@ const CreateModal = ({
 			roomId: value,
 			room: selected?.label,
 			deviceName: undefined,
+			instanceName: undefined,
+			pointName: undefined,
+			propertyName: undefined,
+		});
+	};
+
+	const handleDeviceChange = () => {
+		form.setFieldsValue({
+			instanceName: undefined,
+			pointName: undefined,
+			propertyName: undefined,
 		});
 	};
 
@@ -416,6 +462,7 @@ const CreateModal = ({
 						loading={deviceLoading}
 						disabled={!buildingId}
 						allowClear
+						onChange={handleDeviceChange}
 					/>
 				</Form.Item>
 
@@ -426,9 +473,10 @@ const CreateModal = ({
 				>
 					<Select
 						showSearch={{ optionFilterProp: "label" }}
-						placeholder="请选择实例"
+						placeholder={deviceName ? "请选择实例" : "请先选择设备"}
 						options={instanceOptions}
 						loading={instanceLoading}
+						disabled={!deviceName}
 						allowClear
 						onChange={handleInstanceChange}
 					/>

@@ -1,5 +1,10 @@
 import { request } from "@/utils";
-import type { AlarmRule, RoomListQuery, RuleListQuery } from "./interface";
+import type {
+	AlarmRule,
+	RoomListQuery,
+	RuleListQuery,
+	ThingsListQuery,
+} from "./interface";
 
 export const list = (data: RuleListQuery): Promise<any> => {
 	return request.get("/iiot/alarm/rule/list", { params: data });
@@ -26,9 +31,9 @@ export const listDevices = (buildingId: string): Promise<any> => {
 	});
 };
 
-/** 查询物实例列表。 */
-export const getThings = (): Promise<any> => {
-	return request.get("/iiot/device-control/things");
+/** 按设备查询物实例列表。 */
+export const getThings = (data: ThingsListQuery): Promise<any> => {
+	return request.get("/iiot/device-control/things", { params: data });
 };
 
 /** 按物实例查询可控点位（thingId 常带前导 `/`；Tomcat 禁 `//` 与 `%2F`，路径段须去掉前导斜杠）。 */

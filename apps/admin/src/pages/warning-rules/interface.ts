@@ -15,6 +15,14 @@ export interface RoomListQuery {
 }
 
 /**
+ * 物实例列表查询参数。
+ */
+export interface ThingsListQuery {
+	/** 设备台账主键 ID。 */
+	deviceId: number;
+}
+
+/**
  * 后端报警规则实体。
  */
 export interface AlarmRule {

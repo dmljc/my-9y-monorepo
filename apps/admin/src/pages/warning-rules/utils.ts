@@ -294,6 +294,29 @@ export function normalizeDeviceOptions(
 }
 
 /**
+ * 从设备台账列表中按设备名称取主键 id。
+ *
+ * @param {unknown} - `/iiot/tablet/ledger/list` data。
+ * @param {string | undefined} - 设备名称。
+ * @returns {number | undefined} - 台账主键 id。
+ */
+export function findDeviceId(
+	data: unknown,
+	deviceName?: string,
+): number | undefined {
+	const name = deviceName?.trim();
+	if (!name) return undefined;
+	for (const item of toArray(data)) {
+		if (!item || typeof item !== "object") continue;
+		const record = item as Record<string, unknown>;
+		if (String(record.deviceName ?? "").trim() !== name) continue;
+		const id = Number(record.id ?? 0);
+		if (id) return id;
+	}
+	return undefined;
+}
+
+/**
  * 规范化 things 接口返回。
  */
 export function normalizeThingsList(data: unknown): unknown[] {
