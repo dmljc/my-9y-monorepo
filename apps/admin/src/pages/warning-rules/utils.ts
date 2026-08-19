@@ -80,7 +80,7 @@ export const MAX_LENGTH_12 = 12;
 /**
  * 报警阈值最小值。
  */
-export const THRESHOLD_MIN = 0;
+export const THRESHOLD_MIN = -99999.99;
 
 /**
  * 报警阈值最大值。
