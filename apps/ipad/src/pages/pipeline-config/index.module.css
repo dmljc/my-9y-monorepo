@@ -158,9 +158,50 @@
 }
 
 .toolbar {
+	position: relative;
 	display: flex;
+	align-items: center;
 	justify-content: flex-end;
+	min-height: calc(50 / 1400 * 100cqw);
 	margin-bottom: calc(20 / 1400 * 100cqw);
+}
+
+.tabSwitch {
+	position: absolute;
+	left: 50%;
+	display: inline-grid;
+	grid-template-columns: 1fr 1fr;
+	height: calc(50 / 1400 * 100cqw);
+	overflow: hidden;
+	border: 1px solid #e2e6eb;
+	border-radius: calc(25 / 1400 * 100cqw);
+	background: #fff;
+	box-sizing: border-box;
+	transform: translateX(-50%);
+}
+
+.tabItem {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: calc(160 / 1400 * 100cqw);
+	padding: 0 calc(28 / 1400 * 100cqw);
+	border: none;
+	background: transparent;
+	font-family:
+		"HarmonyOS_Sans_SC", "HarmonyOS Sans SC", "PingFang SC",
+		"Microsoft YaHei", sans-serif;
+	font-size: calc(19 / 1400 * 100cqw);
+	font-weight: 400;
+	line-height: calc(22 / 1400 * 100cqw);
+	color: #000000;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.tabItemActive {
+	background: #0984ff;
+	color: #fff;
 }
 
 .addBtn {

@@ -1,13 +1,9 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import { Form, Modal, Select } from "antd";
 import { useEffect, useState } from "react";
-import { listAlarmRooms } from "./api";
+import { listRooms } from "./api";
 import styles from "./index.module.css";
-import type {
-	PipelineFormValues,
-	PipelineItem,
-	RoomOption,
-} from "./interface";
+import type { PipelineFormValues, PipelineItem, RoomOption } from "./interface";
 import {
 	buildRoomOptions,
 	normalizePipeInValue,
@@ -15,6 +11,9 @@ import {
 } from "./utils";
 
 type OpenSelect = "room" | "pipe" | null;
+
+/** 管道配置弹窗房间下拉一次拉取条数。 */
+const ROOM_SELECT_PAGE_SIZE = 1000;
 
 /**
  * 房间管道配置弹窗 props。
@@ -42,9 +41,7 @@ const POPUP_VIEWPORT_GAP = 8;
  * 按 visualViewport 计算下拉高度，并选空间更大的一侧展开。
  */
 const measureSelectPopup = () => {
-	const trigger = document.querySelector(
-		`.${styles.modal} .ant-select-open`,
-	);
+	const trigger = document.querySelector(`.${styles.modal} .ant-select-open`);
 	if (!(trigger instanceof HTMLElement)) {
 		return undefined;
 	}
@@ -136,7 +133,11 @@ const CreateModal = ({
 
 		let ignore = false;
 		setRoomLoading(true);
-		listAlarmRooms(buildingId)
+		listRooms({
+			buildingId,
+			pageNum: 1,
+			pageSize: ROOM_SELECT_PAGE_SIZE,
+		})
 			.then((data) => {
 				if (!ignore) setRoomOptions(buildRoomOptions(data));
 			})
@@ -242,7 +243,12 @@ const CreateModal = ({
 			width="calc(600 / 1400 * 100cqw)"
 			getContainer={getContainer}
 		>
-			<Form form={form} layout="vertical" preserve={false} className={styles.form}>
+			<Form
+				form={form}
+				layout="vertical"
+				preserve={false}
+				className={styles.form}
+			>
 				<Form.Item
 					name="roomId"
 					label="房间号"

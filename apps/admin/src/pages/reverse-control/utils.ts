@@ -14,7 +14,7 @@ import type {
 } from "./types";
 
 /** 判断运算符下拉选项 */
-export const OPERATOR_OPTIONS = [">", ">=", "=", "<=", "<", "!="].map(
+export const OPERATOR_OPTIONS = [">", ">=", "==", "<=", "<", "!="].map(
 	(value) => ({
 		label: value,
 		value,
@@ -136,7 +136,7 @@ export function normalizeConditions(
 		thingId: item.thingId ?? item.modelId,
 		propertyId: item.propertyId,
 		propertyName: item.propertyName,
-		operator: item.operator,
+		operator: item.operator === "=" ? "==" : item.operator,
 		thresholdValue:
 			item.thresholdValue !== undefined && item.thresholdValue !== ""
 				? Number(item.thresholdValue)
@@ -312,7 +312,8 @@ export function formatConditions(rule: IiotControlRule): string {
 	return conditions
 		.map((item) => {
 			const name = item.propertyName ?? item.propertyId ?? "";
-			const operator = item.operator ?? "";
+			const operator =
+				item.operator === "=" ? "==" : (item.operator ?? "");
 			const value = item.thresholdValue ?? "";
 			return [name, operator, value].filter(Boolean).join(" ");
 		})

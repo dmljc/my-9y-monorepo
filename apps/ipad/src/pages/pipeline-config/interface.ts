@@ -77,3 +77,48 @@ export interface RoomPipelinePayload {
 	pipelineId?: string;
 }
 
+/**
+ * 配置类型 Tab。
+ */
+export type ConfigTab = "pipeline" | "room";
+
+/**
+ * 房间配置列表行。
+ */
+export interface RoomItem {
+	/** 房间主键。 */
+	id: number;
+	/** 房间号。 */
+	room: string;
+	/** 厂房 ID。 */
+	buildingId: number;
+}
+
+/**
+ * 房间配置表单值。
+ */
+export interface RoomFormValues {
+	/** 房间号。 */
+	room: string;
+}
+
+/**
+ * 房间配置提交体。
+ */
+export interface RoomPayload {
+	id?: number;
+	buildingId: number;
+	room: string;
+}
+
+/**
+ * 房间列表查询参数。
+ */
+export interface RoomListQuery {
+	/** 所属厂房 ID。 */
+	buildingId: number;
+	/** 页码。 */
+	pageNum?: number;
+	/** 每页条数。 */
+	pageSize?: number;
+}

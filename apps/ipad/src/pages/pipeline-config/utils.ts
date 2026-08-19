@@ -3,9 +3,13 @@ import type {
 	BuildingTab,
 	PipelineItem,
 	PipeOption,
+	RoomItem,
 	RoomOption,
 	RoomPipelineRow,
 } from "./interface";
+
+/** 房间号最大长度。 */
+export const MAX_LENGTH_20 = 20;
 
 /** 列表默认每页条数。 */
 export const DEFAULT_PAGE_SIZE = 10;
@@ -116,7 +120,11 @@ export const buildRoomOptions = (data: unknown): RoomOption[] => {
 			record.roomId ?? record.id ?? record.value ?? "",
 		).trim();
 		const label = String(
-			record.room ?? record.roomName ?? record.name ?? record.label ?? value,
+			record.room ??
+				record.roomName ??
+				record.name ??
+				record.label ??
+				value,
 		).trim();
 		if (!value || seen.has(value)) continue;
 		seen.add(value);
@@ -158,5 +166,46 @@ export const mapRoomRowToItem = (
 		sampleRoom: formatRoom(row.room),
 		pipeIn: String(row.pipelineId ?? "").trim(),
 		buildingId: Number(row.buildingId ?? buildingId),
+	};
+};
+
+/**
+ * 解析房间列表接口 data。
+ *
+ * @param {unknown} - `/iiot/room/list` 解包后的 data。
+ * @returns {unknown[]} - 行数组。
+ */
+export const parseRoomList = (data: unknown): unknown[] => {
+	if (Array.isArray(data)) return data;
+	if (!data || typeof data !== "object") return [];
+	const record = data as { list?: unknown; rooms?: unknown; rows?: unknown };
+	const list = record.list ?? record.rooms ?? record.rows;
+	return Array.isArray(list) ? list : [];
+};
+
+/**
+ * 将房间接口行映射为表格行。
+ *
+ * @param {unknown} - 接口行。
+ * @param {number} - 当前厂房 ID。
+ * @returns {RoomItem | null} - 表格行；缺 id 或房间号时跳过。
+ */
+export const mapRoomToItem = (
+	row: unknown,
+	buildingId: number,
+): RoomItem | null => {
+	if (!row || typeof row !== "object") return null;
+	const record = row as Record<string, unknown>;
+	const id = Number(record.id ?? record.roomId ?? 0);
+	const room = formatRoom(
+		String(
+			record.room ?? record.roomName ?? record.name ?? record.label ?? "",
+		),
+	);
+	if (!id || !room) return null;
+	return {
+		id,
+		room,
+		buildingId: Number(record.buildingId ?? buildingId),
 	};
 };

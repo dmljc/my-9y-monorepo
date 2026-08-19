@@ -8,28 +8,43 @@ import { usePermission } from "@/hooks/usePermission";
 import BuildingPageHeader from "@/layout/BuildingPageHeader";
 import { filterBuildingsByPermission } from "@/utils";
 import {
+	addRoom,
 	addRoomPipeline,
 	listBuildings,
 	listRoomPipelines,
+	listRooms,
+	removeRoom,
 	removeRoomPipeline,
+	saveRoom,
 	saveRoomPipeline,
 } from "./api";
 import CreateModal from "./CreateModal";
 import styles from "./index.module.css";
 import type {
 	BuildingTab,
+	ConfigTab,
 	PipelineFormValues,
 	PipelineItem,
+	RoomFormValues,
+	RoomItem,
 } from "./interface";
+import RoomModal from "./RoomModal";
 import {
 	DEFAULT_PAGE_SIZE,
 	formatPipeInLabel,
 	mapRoomRowToItem,
+	mapRoomToItem,
 	normalizeBuildingTabs,
 	normalizePipeInValue,
 	PAGE_SIZE_OPTIONS,
+	parseRoomList,
 	parseRoomPipelineList,
 } from "./utils";
+
+const CONFIG_TABS: { key: ConfigTab; label: string }[] = [
+	{ key: "pipeline", label: "管道配置" },
+	{ key: "room", label: "房间配置" },
+];
 
 /**
  * 当前焦点是否位于会唤起软键盘的文本输入控件。
@@ -64,13 +79,18 @@ const PipelineConfig = () => {
 	const [buildings, setBuildings] = useState<BuildingTab[]>([]);
 	const [buildingKey, setBuildingKey] = useState("");
 	const [pipelines, setPipelines] = useState<PipelineItem[]>([]);
+	const [rooms, setRooms] = useState<RoomItem[]>([]);
+	const [roomTotal, setRoomTotal] = useState(0);
 	const [loading, setLoading] = useState(false);
 	const [pageNum, setPageNum] = useState(1);
 	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+	const [activeTab, setActiveTab] = useState<ConfigTab>("pipeline");
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingRecord, setEditingRecord] = useState<PipelineItem | null>(
 		null,
 	);
+	const [roomModalOpen, setRoomModalOpen] = useState(false);
+	const [editingRoom, setEditingRoom] = useState<RoomItem | null>(null);
 
 	const currentBuilding =
 		buildings.find((item) => item.key === buildingKey) ?? null;
@@ -155,25 +175,46 @@ const PipelineConfig = () => {
 		};
 	}, []);
 
-	const loadRoomList = async (buildingId: number) => {
+	const loadPipelines = async (buildingId: number) => {
 		const listData = await listRoomPipelines(buildingId);
 		const rows = parseRoomPipelineList(listData)
 			.map((row) => mapRoomRowToItem(row, buildingId))
 			.filter((item): item is PipelineItem => item !== null);
 		setPipelines(rows);
 		setPageNum((prev) => {
-			const maxPage = Math.max(
-				1,
-				Math.ceil(rows.length / pageSize) || 1,
-			);
+			const maxPage = Math.max(1, Math.ceil(rows.length / pageSize) || 1);
 			return Math.min(prev, maxPage);
 		});
 	};
 
-	const loadList = async (building: BuildingTab) => {
+	const loadRooms = async (buildingId: number, p: number, ps: number) => {
+		const data = await listRooms({
+			buildingId,
+			pageNum: p,
+			pageSize: ps,
+		});
+		const rows = parseRoomList(data)
+			.map((row) => mapRoomToItem(row, buildingId))
+			.filter((item): item is RoomItem => item !== null);
+		setRooms(rows);
+		setRoomTotal(data?.total ?? rows.length);
+		setPageNum(data?.pageNum ?? p);
+		setPageSize(data?.pageSize ?? ps);
+	};
+
+	const loadList = async (
+		building: BuildingTab,
+		tab: ConfigTab = activeTab,
+		p: number = pageNum,
+		ps: number = pageSize,
+	) => {
 		setLoading(true);
 		try {
-			await loadRoomList(building.buildingId);
+			if (tab === "room") {
+				await loadRooms(building.buildingId, p, ps);
+			} else {
+				await loadPipelines(building.buildingId);
+			}
 		} finally {
 			setLoading(false);
 		}
@@ -189,6 +230,8 @@ const PipelineConfig = () => {
 		if (!tabs.length) {
 			setBuildingKey("");
 			setPipelines([]);
+			setRooms([]);
+			setRoomTotal(0);
 			return;
 		}
 		const nextKey =
@@ -209,17 +252,38 @@ const PipelineConfig = () => {
 		setBuildingKey(key);
 		setPageNum(1);
 		const tab = buildings.find((item) => item.key === key);
-		if (tab) loadList(tab);
+		if (tab) loadList(tab, activeTab, 1, pageSize);
+	};
+
+	const handleTabChange = (tab: ConfigTab) => {
+		if (tab === activeTab) return;
+		setActiveTab(tab);
+		setPageNum(1);
+		setModalOpen(false);
+		setRoomModalOpen(false);
+		setEditingRecord(null);
+		setEditingRoom(null);
+		if (currentBuilding) loadList(currentBuilding, tab, 1, pageSize);
 	};
 
 	const handleTableChange = (pagination: TablePaginationConfig) => {
-		setPageNum(pagination.current ?? 1);
-		setPageSize(pagination.pageSize ?? DEFAULT_PAGE_SIZE);
+		const nextPage = pagination.current ?? 1;
+		const nextSize = pagination.pageSize ?? DEFAULT_PAGE_SIZE;
+		setPageNum(nextPage);
+		setPageSize(nextSize);
+		if (activeTab === "room" && currentBuilding) {
+			loadList(currentBuilding, "room", nextPage, nextSize);
+		}
 	};
 
 	const handleAdd = () => {
 		if (!currentBuilding) {
 			message.warning("暂无可用厂房，无法新增配置");
+			return;
+		}
+		if (activeTab === "room") {
+			setEditingRoom(null);
+			setRoomModalOpen(true);
 			return;
 		}
 		setEditingRecord(null);
@@ -231,6 +295,11 @@ const PipelineConfig = () => {
 		setModalOpen(true);
 	};
 
+	const handleEditRoom = (record: RoomItem) => {
+		setEditingRoom(record);
+		setRoomModalOpen(true);
+	};
+
 	const handleDelete = (record: PipelineItem) => {
 		modal.confirm({
 			title: "确认删除",
@@ -240,7 +309,28 @@ const PipelineConfig = () => {
 			onOk: async () => {
 				await removeRoomPipeline(String(record.configId ?? record.id));
 				message.success("删除成功");
-				if (currentBuilding) await loadList(currentBuilding);
+				if (currentBuilding)
+					await loadList(currentBuilding, "pipeline");
+			},
+		});
+	};
+
+	const handleDeleteRoom = (record: RoomItem) => {
+		modal.confirm({
+			title: "确认删除",
+			content: `确定要删除房间「${record.room}」吗？`,
+			okText: "删除",
+			okButtonProps: { danger: true },
+			onOk: async () => {
+				await removeRoom(String(record.id));
+				message.success("删除成功");
+				if (currentBuilding) {
+					const nextPage =
+						rooms.length <= 1 && pageNum > 1
+							? pageNum - 1
+							: pageNum;
+					await loadList(currentBuilding, "room", nextPage, pageSize);
+				}
 			},
 		});
 	};
@@ -277,7 +367,35 @@ const PipelineConfig = () => {
 			});
 		}
 		message.success(editingRecord ? "编辑成功" : "新增成功");
-		await loadList(currentBuilding);
+		await loadList(currentBuilding, "pipeline");
+	};
+
+	const handleRoomModalSubmit = async (values: RoomFormValues) => {
+		if (!currentBuilding) {
+			message.warning("暂无可用厂房，无法新增配置");
+			throw new Error("no building");
+		}
+
+		const room = values.room.trim();
+		if (editingRoom) {
+			await saveRoom({
+				id: editingRoom.id,
+				buildingId: currentBuilding.buildingId,
+				room,
+			});
+		} else {
+			await addRoom({
+				buildingId: currentBuilding.buildingId,
+				room,
+			});
+		}
+		message.success(editingRoom ? "编辑成功" : "新增成功");
+		await loadList(
+			currentBuilding,
+			"room",
+			editingRoom ? pageNum : 1,
+			pageSize,
+		);
 	};
 
 	const columns: ColumnsType<PipelineItem> = [
@@ -324,6 +442,42 @@ const PipelineConfig = () => {
 		},
 	];
 
+	const roomColumns: ColumnsType<RoomItem> = [
+		{
+			title: "房间号",
+			dataIndex: "room",
+			key: "room",
+			ellipsis: true,
+		},
+		{
+			title: "操作",
+			key: "actions",
+			align: "center",
+			render: (_, record) => (
+				<div className={styles.actions}>
+					<Access code={PERM_PIPELINE.EDIT}>
+						<button
+							type="button"
+							className={styles.actionBtn}
+							onClick={() => handleEditRoom(record)}
+						>
+							编辑
+						</button>
+					</Access>
+					<Access code={PERM_PIPELINE.REMOVE}>
+						<button
+							type="button"
+							className={styles.actionBtn}
+							onClick={() => handleDeleteRoom(record)}
+						>
+							删除
+						</button>
+					</Access>
+				</div>
+			),
+		},
+	];
+
 	if (!canList) {
 		return <Navigate to="/home" replace />;
 	}
@@ -344,10 +498,35 @@ const PipelineConfig = () => {
 
 				<div className={styles.body}>
 					<div className={styles.panel}>
-						<Access
-							code={[PERM_PIPELINE.ADD, PERM_PIPELINE.SAVE_ROOM]}
-						>
-							<div className={styles.toolbar}>
+						<div className={styles.toolbar}>
+							<div
+								className={styles.tabSwitch}
+								role="tablist"
+								aria-label="配置类型"
+							>
+								{CONFIG_TABS.map((tab) => (
+									<button
+										key={tab.key}
+										type="button"
+										role="tab"
+										aria-selected={activeTab === tab.key}
+										className={`${styles.tabItem} ${
+											activeTab === tab.key
+												? styles.tabItemActive
+												: ""
+										}`}
+										onClick={() => handleTabChange(tab.key)}
+									>
+										{tab.label}
+									</button>
+								))}
+							</div>
+							<Access
+								code={[
+									PERM_PIPELINE.ADD,
+									PERM_PIPELINE.SAVE_ROOM,
+								]}
+							>
 								<button
 									type="button"
 									className={styles.addBtn}
@@ -358,7 +537,11 @@ const PipelineConfig = () => {
 										viewBox="0 0 24 24"
 										aria-hidden
 									>
-										<title>新增配置</title>
+										<title>
+											{activeTab === "room"
+												? "新增房间配置"
+												: "新增管道配置"}
+										</title>
 										<path
 											d="M12 5v14M5 12h14"
 											fill="none"
@@ -367,30 +550,57 @@ const PipelineConfig = () => {
 											strokeLinecap="round"
 										/>
 									</svg>
-									<span>新增配置</span>
+									<span>
+										{activeTab === "room"
+											? "新增房间配置"
+											: "新增管道配置"}
+									</span>
 								</button>
-							</div>
-						</Access>
-						<Table
-							className={styles.table}
-							columns={columns}
-							dataSource={pipelines}
-							loading={loading}
-							rowKey="id"
-							pagination={{
-								current: pageNum,
-								pageSize,
-								total: pipelines.length,
-								showSizeChanger: true,
-								pageSizeOptions: PAGE_SIZE_OPTIONS,
-								showQuickJumper: true,
-								showTotal: (count) => `共 ${count} 条`,
-							}}
-							onChange={handleTableChange}
-							rowClassName={(_, index) =>
-								index % 2 === 1 ? styles.rowStripe : ""
-							}
-						/>
+							</Access>
+						</div>
+						{activeTab === "room" ? (
+							<Table
+								className={styles.table}
+								columns={roomColumns}
+								dataSource={rooms}
+								loading={loading}
+								rowKey="id"
+								pagination={{
+									current: pageNum,
+									pageSize,
+									total: roomTotal,
+									showSizeChanger: true,
+									pageSizeOptions: PAGE_SIZE_OPTIONS,
+									showQuickJumper: true,
+									showTotal: (count) => `共 ${count} 条`,
+								}}
+								onChange={handleTableChange}
+								rowClassName={(_, index) =>
+									index % 2 === 1 ? styles.rowStripe : ""
+								}
+							/>
+						) : (
+							<Table
+								className={styles.table}
+								columns={columns}
+								dataSource={pipelines}
+								loading={loading}
+								rowKey="id"
+								pagination={{
+									current: pageNum,
+									pageSize,
+									total: pipelines.length,
+									showSizeChanger: true,
+									pageSizeOptions: PAGE_SIZE_OPTIONS,
+									showQuickJumper: true,
+									showTotal: (count) => `共 ${count} 条`,
+								}}
+								onChange={handleTableChange}
+								rowClassName={(_, index) =>
+									index % 2 === 1 ? styles.rowStripe : ""
+								}
+							/>
+						)}
 					</div>
 				</div>
 				<CreateModal
@@ -401,6 +611,14 @@ const PipelineConfig = () => {
 					getContainer={() => pageRef.current ?? document.body}
 					onCancel={() => setModalOpen(false)}
 					onOk={handleModalSubmit}
+				/>
+				<RoomModal
+					open={roomModalOpen}
+					editingRecord={editingRoom}
+					keyboardOpen={keyboardOpen}
+					getContainer={() => pageRef.current ?? document.body}
+					onCancel={() => setRoomModalOpen(false)}
+					onOk={handleRoomModalSubmit}
 				/>
 			</div>
 		</div>

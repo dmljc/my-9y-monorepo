@@ -1,5 +1,9 @@
 import { request } from "@/utils";
-import type { RoomPipelinePayload } from "./interface";
+import type {
+	RoomListQuery,
+	RoomPayload,
+	RoomPipelinePayload,
+} from "./interface";
 
 /**
  * 查询厂房列表。
@@ -42,17 +46,6 @@ export const listRoomPipelines = (
 };
 
 /**
- * 查询厂房房间下拉数据源。
- *
- * @param {number} - 厂房 ID。
- */
-export const listAlarmRooms = (buildingId: number): Promise<any> => {
-	return request.get("/iiot/alarm/rooms", {
-		params: { buildingId },
-	});
-};
-
-/**
  * 新增房间管道配置。
  *
  * @param {RoomPipelinePayload} - 提交体。
@@ -77,4 +70,40 @@ export const saveRoomPipeline = (data: RoomPipelinePayload): Promise<any> => {
  */
 export const removeRoomPipeline = (ids: string): Promise<any> => {
 	return request.delete(`/iiot/tablet/pipeline/${ids}`);
+};
+
+/**
+ * 查询房间列表。
+ *
+ * @param {RoomListQuery} - 查询参数。
+ */
+export const listRooms = (data: RoomListQuery): Promise<any> => {
+	return request.get("/iiot/room/list", { params: data });
+};
+
+/**
+ * 新增房间。
+ *
+ * @param {RoomPayload} - 提交体。
+ */
+export const addRoom = (data: RoomPayload): Promise<any> => {
+	return request.post("/iiot/room", data);
+};
+
+/**
+ * 编辑房间。
+ *
+ * @param {RoomPayload} - 提交体。
+ */
+export const saveRoom = (data: RoomPayload): Promise<any> => {
+	return request.put("/iiot/room", data);
+};
+
+/**
+ * 删除房间。
+ *
+ * @param {string} - 房间 ID，多个 ID 使用逗号分隔。
+ */
+export const removeRoom = (ids: string): Promise<any> => {
+	return request.delete(`/iiot/room/${ids}`);
 };
